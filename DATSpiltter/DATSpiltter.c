@@ -73,37 +73,39 @@ int wmain(int argc, wchar_t **argv)
 			if (arc_ID == (linkmap + i)->ArchiveID) {
 				size_t wsize = 0x100L * ((size_t) *(Addr + (linkmap + i)->FileNo + 1) - (size_t) *(Addr + (linkmap + i)->FileNo));
 
-				wchar_t newdir[_MAX_DIR];
-				wchar_t newfname[_MAX_FNAME];
-				swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname+1);
-				_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
-				struct __stat64 dpath;
-				if (_wstat64(path, &dpath) && errno == ENOENT)
-				{
-					wprintf_s(L"Out path %s created\n", path);
-					_wmkdir(path);
-				}
-				swprintf_s(newfname, _MAX_FNAME, L"%03d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
-				_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-				wprintf_s(L"Out size %5d, name %s\n", wsize, path);
+				if (wsize) {
+					wchar_t newdir[_MAX_DIR];
+					wchar_t newfname[_MAX_FNAME];
+					swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname + 1);
+					_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
+					struct __stat64 dpath;
+					if (_wstat64(path, &dpath) && errno == ENOENT)
+					{
+						wprintf_s(L"Out path %s created\n", path);
+						_wmkdir(path);
+					}
+					swprintf_s(newfname, _MAX_FNAME, L"%03d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
+					_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
+					wprintf_s(L"Out size %5d, name %s\n", wsize, path);
 
 
-				ecode = _wfopen_s(&pFo, path, L"wb");
-				if (ecode) {
-					wprintf_s(L"File open error %s.\n", *argv);
-					free(buffer);
-					exit(ecode);
-				}
+					ecode = _wfopen_s(&pFo, path, L"wb");
+					if (ecode) {
+						wprintf_s(L"File open error %s.\n", *argv);
+						free(buffer);
+						exit(ecode);
+					}
 
-				rcount = fwrite(buffer + 0x100L * *(Addr + (linkmap + i)->FileNo), 1, wsize, pFo);
-				if (rcount != wsize) {
-					wprintf_s(L"File write error %s.\n", *argv);
+					rcount = fwrite(buffer + 0x100L * *(Addr + (linkmap + i)->FileNo), 1, wsize, pFo);
+					if (rcount != wsize) {
+						wprintf_s(L"File write error %s.\n", *argv);
+						fclose(pFo);
+						free(buffer);
+						exit(-2);
+					}
+
 					fclose(pFo);
-					free(buffer);
-					exit(-2);
 				}
-
-				fclose(pFo);
 			}
 			i++;
 		}
