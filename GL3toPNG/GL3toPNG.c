@@ -19,7 +19,7 @@ struct GL3_header {
 	unsigned __int16 Rows;
 } hGL3;
 
-unsigned __int8 decode_w16(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
+unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
 	unsigned __int8 max_ccode = 0;
 	for (size_t y = 0; y < row; y++) {
@@ -43,6 +43,8 @@ unsigned __int8 decode_w16(unsigned __int64 *dst, const unsigned __int8 *src, si
 	return max_ccode + 1;
 }
 #pragma pack()
+
+unsigned __int8 screen[400][640];
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -97,7 +99,7 @@ int wmain(int argc, wchar_t **argv)
 			free(gl3_data);
 			exit(-2);
 		}
-		wprintf_s(L"Start %zu/%zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
+		wprintf_s(L"Start %04X %zu/%zu GL3 size %zu => %zu.\n", hGL3.Start & 0x8000, gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
 
 		size_t count = gl3_len, cp_len, cur_plane;
 		unsigned __int8 *src = gl3_data, *dst = gl3_data_decoded, *cp_src, toggle = 1;
@@ -179,8 +181,17 @@ int wmain(int argc, wchar_t **argv)
 			exit(-2);
 		}
 
-		decode_w16(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
+		decode2bpp(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
 		free(gl3_data_decoded);
+
+		memset(screen, 0, sizeof(screen));
+
+
+		for (size_t iy = 0; iy < hGL3.Rows; iy++) {
+			for (size_t ix = 0; ix < hGL3.Columns * 8; ix++) {
+				screen[gl3_start_y + iy][gl3_start_x + ix] = decode_buffer[iy*hGL3.Columns * 8 + ix];
+			}
+		}
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -219,20 +230,23 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		unsigned char **image;
-		image = (png_bytepp)malloc(hGL3.Rows * sizeof(png_bytep));
+		image = (png_bytepp)malloc(400 * sizeof(png_bytep));
 		if (image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			fclose(pFo);
 			exit(-2);
 		}
-		for (size_t j = 0; j < hGL3.Rows; j++)
-			image[j] = (png_bytep)&decode_buffer[j*hGL3.Columns * 8];
+		for (size_t j = 0; j < 400; j++)
+			image[j] = (png_bytep)&screen[j];
 
 		png_init_io(png_ptr, pFo);
-		png_set_IHDR(png_ptr, info_ptr, hGL3.Columns * 8, hGL3.Rows,
+		png_set_IHDR(png_ptr, info_ptr, 640, 400,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 		png_set_PLTE(png_ptr, info_ptr, pal, 16);
+		png_byte trans[16] = { 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		png_set_tRNS(png_ptr, info_ptr, trans, 16, NULL);
 
 		png_write_info(png_ptr, info_ptr);
 		png_write_image(png_ptr, image);
