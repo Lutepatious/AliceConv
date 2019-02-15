@@ -182,10 +182,9 @@ int wmain(int argc, wchar_t **argv)
 			exit(-2);
 		}
 
-		unsigned __int8 colors = decode2bpp(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
+		decode2bpp(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
 		free(gl3_data_decoded);
 
-		wprintf_s(L"Colors %u.\n", colors);
 		memset(screen, 0, sizeof(screen));
 
 		for (size_t iy = 0; iy < hGL3.Rows; iy++) {
