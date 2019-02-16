@@ -192,6 +192,7 @@ int wmain(int argc, wchar_t **argv)
 				screen[gl3_start_y + iy][gl3_start_x + ix] = decode_buffer[iy*hGL3.Columns * 8 + ix];
 			}
 		}
+		free(decode_buffer);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];

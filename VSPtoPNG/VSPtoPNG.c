@@ -243,6 +243,7 @@ int wmain(int argc, wchar_t **argv)
 				screen[vsp_in_y + iy][vsp_in_x + ix] = decode_buffer[iy*vsp_len_x + ix];
 			}
 		}
+		free(decode_buffer);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -295,10 +296,11 @@ int wmain(int argc, wchar_t **argv)
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 		png_set_PLTE(png_ptr, info_ptr, pal, 16);
+#if 0
 		png_byte trans[16] = { 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 		png_set_tRNS(png_ptr, info_ptr, trans, 16, NULL);
-
+#endif
 		png_write_info(png_ptr, info_ptr);
 		png_write_image(png_ptr, image);
 		png_write_end(png_ptr, info_ptr);
