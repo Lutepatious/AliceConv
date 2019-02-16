@@ -10,6 +10,9 @@
 
 #define BPP 8
 
+#define ROWS 480
+
+
 #pragma pack (1)
 struct VSP_header {
 	unsigned __int16 Column_in; // divided by 8
@@ -23,7 +26,7 @@ struct VSP_header {
 
 #pragma pack()
 
-unsigned __int8 screen[400][640];
+unsigned __int8 screen[ROWS][640];
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -185,17 +188,17 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		unsigned char **image;
-		image = (png_bytepp)malloc(400 * sizeof(png_bytep));
+		image = (png_bytepp)malloc(ROWS * sizeof(png_bytep));
 		if (image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			fclose(pFo);
 			exit(-2);
 		}
-		for (size_t j = 0; j < 400; j++)
+		for (size_t j = 0; j < ROWS; j++)
 			image[j] = (png_bytep)&screen[j];
 
 		png_init_io(png_ptr, pFo);
-		png_set_IHDR(png_ptr, info_ptr, 640, 400,
+		png_set_IHDR(png_ptr, info_ptr, 640, ROWS,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 		png_set_PLTE(png_ptr, info_ptr, pal, 256);
