@@ -643,6 +643,7 @@ int wmain(int argc, wchar_t **argv)
 				pal[ci].blue = Palette[ci][0] * 0x11;
 				pal[ci].red = Palette[ci][1] * 0x11;
 				pal[ci].green = Palette[ci][2] * 0x11;
+				pal[16].blue = pal[16].red = pal[16].green = 0;
 			}
 		}
 		else {
