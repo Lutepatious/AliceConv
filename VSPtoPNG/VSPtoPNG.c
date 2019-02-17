@@ -40,6 +40,13 @@ struct VSP200l_header {
 	unsigned __int16 Unknown[9];
 } hVSP200l;
 
+struct GL3_header {
+	unsigned __int8 Palette[16][3];
+	unsigned __int16 Start;
+	unsigned __int16 Columns; // divided by 8
+	unsigned __int16 Rows;
+} hGL3;
+
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
 	unsigned __int8 max_ccode = 0;
@@ -101,7 +108,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		unsigned is256 = 0, is200l = 0;
+		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0;
 		size_t rows = 400;
 		size_t color = 17;
 
@@ -124,26 +131,173 @@ int wmain(int argc, wchar_t **argv)
 
 		fseek(pFi, 0, SEEK_SET);
 
-		if (hbuf[1] >= 0x10 || hbuf[8] >= 2) {
-			wprintf_s(L"Wrong data exist. %s is not VSP.\n", *argv);
-			continue;
+
+		unsigned __int8 t = 0;
+		for (int i = 0; i < 0x30; i++) {
+			t |= hbuf[i];
 		}
 
-		size_t i = 0xA;
-		do {
-			if (hbuf[i] != 0)
-				break;
-		} while (++i < 0x3A);
-
-		if (hbuf[0x8] == 1 || (i >= 0x20 && i < 0x3A)) {
-			is256 = 1;
+		if (t == 0 && hbuf[0x31] & 0x80) {
+			wprintf_s(L"Palette not found. Assume 200 Line\n");
+			isGM3 = 1;
 		}
-
-		if (hbuf[0x10] == 0x3F) {
-			is200l = 1;
+		else if (t < 0x10 && hbuf[0x31] & 0x80) {
+			isGL3 = 1;
 		}
+		else {
+			if (hbuf[1] >= 0x10 || hbuf[8] >= 2) {
+				wprintf_s(L"Wrong data exist. %s is not VSP and variants.\n", *argv);
+				continue;
+			}
 
-		if (is256) {
+			size_t i = 0xA;
+			do {
+				if (hbuf[i] != 0)
+					break;
+			} while (++i < 0x3A);
+
+			if (hbuf[0x8] == 1 || (i >= 0x20 && i < 0x3A)) {
+				is256 = 1;
+			}
+
+			if (hbuf[0x10] == 0x3F) {
+				is200l = 1;
+			}
+		}
+		if (isGL3 || isGM3) {
+			if (isGM3) {
+				rows = 201;
+			}
+			color = 16;
+
+			size_t rcount = fread_s(&hGL3, sizeof(hGL3), sizeof(hGL3), 1, pFi);
+			if (rcount != 1) {
+				wprintf_s(L"File read error %s.\n", *argv);
+				fclose(pFi);
+				exit(-2);
+			}
+
+			size_t gl3_len = fs.st_size - sizeof(hGL3);
+			unsigned __int8 *gl3_data = malloc(gl3_len);
+			if (gl3_data == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				fclose(pFi);
+				exit(-2);
+			}
+
+			rcount = fread_s(gl3_data, gl3_len, 1, gl3_len, pFi);
+			if (rcount != gl3_len) {
+				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				free(gl3_data);
+				fclose(pFi);
+				exit(-2);
+			}
+			fclose(pFi);
+
+			size_t gl3_start = hGL3.Start & 0x7FFF;
+			size_t gl3_start_x = gl3_start % 80 * 8;
+			size_t gl3_start_y = gl3_start / 80;
+			size_t gl3_len_decoded = hGL3.Rows * hGL3.Columns * PLANE;
+			unsigned __int8 *gl3_data_decoded = malloc(gl3_len_decoded);
+			if (gl3_data_decoded == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				free(gl3_data);
+				exit(-2);
+			}
+			wprintf_s(L"Start %zu/%zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
+			size_t count = gl3_len, cp_len, cur_plane;
+			unsigned __int8 *src = gl3_data, *dst = gl3_data_decoded, *cp_src;
+			while (count-- && (dst - gl3_data_decoded) < gl3_len_decoded) {
+				switch (*src) {
+				case 0x00:
+					cp_len = *(src + 1) & 0x7F;
+					if (*(src + 1) & 0x80) {
+						cp_src = dst - hGL3.Columns * PLANE * 2 + 1;
+						memset(dst, *cp_src, cp_len);
+						dst += cp_len;
+						src += 2;
+						count--;
+					}
+					else {
+						memset(dst, *(src + 2), cp_len);
+						dst += cp_len;
+						src += 3;
+						count -= 2;
+					}
+					break;
+				case 0x01:
+				case 0x02:
+				case 0x03:
+				case 0x04:
+				case 0x05:
+				case 0x06:
+				case 0x07:
+					cp_len = *src;
+					memset(dst, *(src + 1), cp_len);
+					src += 2;
+					dst += cp_len;
+					count--;
+					break;
+				case 0x08:
+				case 0x09:
+				case 0x0A:
+				case 0x0B:
+				case 0x0C:
+				case 0x0D:
+					cp_len = *src - 6;
+					cp_src = dst - hGL3.Columns * PLANE * 2 + 1;
+					memset(dst, *cp_src, cp_len);
+					dst += cp_len;
+					src++;
+					break;
+				case 0x0E:
+					cur_plane = ((dst - gl3_data_decoded) / hGL3.Columns) % PLANE;
+					cp_len = *(src + 1) & 0x7F;
+					cp_src = dst - hGL3.Columns * (cur_plane - 2);
+					memcpy_s(dst, cp_len, cp_src, cp_len);
+					dst += cp_len;
+					src += 2;
+					count--;
+					break;
+				case 0x0F:
+					cur_plane = ((dst - gl3_data_decoded) / hGL3.Columns) % PLANE;
+					cp_len = *(src + 1) & 0x7F;
+					cp_src = dst - hGL3.Columns * ((*(src + 1) & 0x80) ? cur_plane - 1 : cur_plane);
+					memcpy_s(dst, cp_len, cp_src, cp_len);
+					dst += cp_len;
+					src += 2;
+					count--;
+					break;
+
+				default:
+					*dst++ = *src++;
+				}
+			}
+
+			free(gl3_data);
+
+			size_t decode_len = hGL3.Rows * hGL3.Columns * BPP;
+			unsigned __int8 *decode_buffer = malloc(decode_len);
+			if (decode_buffer == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				free(gl3_data_decoded);
+				exit(-2);
+			}
+
+			decode2bpp(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
+			free(gl3_data_decoded);
+
+			memset(screen, 0, sizeof(screen));
+
+
+			for (size_t iy = 0; iy < hGL3.Rows; iy++) {
+				for (size_t ix = 0; ix < hGL3.Columns * 8; ix++) {
+					screen[gl3_start_y + iy][gl3_start_x + ix] = decode_buffer[iy*hGL3.Columns * 8 + ix];
+				}
+			}
+			free(decode_buffer);
+		}
+		else if (is256) {
 			color = 256;
 			size_t rcount = fread_s(&hVSP256, sizeof(hVSP256), sizeof(hVSP256), 1, pFi);
 			if (rcount != 1) {
@@ -194,7 +348,6 @@ int wmain(int argc, wchar_t **argv)
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src;
 
 			while (count-- && (dst - vsp_data_decoded) < vsp_len_decoded) {
-				//			wprintf_s(L"%04X.\n", src - vsp_data + sizeof(hGL3));
 				switch (*src) {
 				case 0xF8:
 				case 0xF9:
@@ -286,7 +439,7 @@ int wmain(int argc, wchar_t **argv)
 			const size_t vsp_len_col = hVSP200l.Column_out - hVSP200l.Column_in;
 			const size_t vsp_len_x = vsp_len_col * 8;
 			const size_t vsp_len_y = hVSP200l.Row_out - hVSP200l.Row_in;
-			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * (PLANE-1);
+			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * (PLANE - 1);
 
 			unsigned __int8 *vsp_data_decoded = malloc(vsp_len_decoded);
 			if (vsp_data_decoded == NULL) {
@@ -304,7 +457,7 @@ int wmain(int argc, wchar_t **argv)
 				switch (*src) {
 				case 0x00:
 					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (PLANE-1);
+					cp_src = dst - vsp_len_y * (PLANE - 1);
 					memcpy_s(dst, cp_len, cp_src, cp_len);
 					dst += cp_len;
 					src += 2;
@@ -327,7 +480,7 @@ int wmain(int argc, wchar_t **argv)
 					count -= 3;
 					break;
 				case 0x03:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE-1);
+					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
 					cp_len = *(src + 1) + 1;
 					cp_src = dst - vsp_len_y * cur_plane;
 					if (negate) {
@@ -344,7 +497,7 @@ int wmain(int argc, wchar_t **argv)
 					negate = 0;
 					break;
 				case 0x04:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE-1);
+					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
 					cp_len = *(src + 1) + 1;
 					cp_src = dst - vsp_len_y * (cur_plane - 1);
 					if (negate) {
@@ -362,7 +515,7 @@ int wmain(int argc, wchar_t **argv)
 					break;
 				case 0x05:
 					wprintf_s(L"No! You must NOT.\n");
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE-1);
+					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
 					cp_len = *(src + 1) + 1;
 					cp_src = dst - vsp_len_y * (cur_plane - 2);
 					if (negate) {
@@ -401,9 +554,9 @@ int wmain(int argc, wchar_t **argv)
 			}
 
 			for (size_t ix = 0; ix < vsp_len_col; ix++) {
-				for (size_t ip = 0; ip < (PLANE-1); ip++) {
+				for (size_t ip = 0; ip < (PLANE - 1); ip++) {
 					for (size_t iy = 0; iy < vsp_len_y; iy++) {
-						vsp_data_decoded2[iy*vsp_len_col*(PLANE-1) + ip * vsp_len_col + ix] = vsp_data_decoded[ix*vsp_len_y*(PLANE-1) + ip * vsp_len_y + iy];
+						vsp_data_decoded2[iy*vsp_len_col*(PLANE - 1) + ip * vsp_len_col + ix] = vsp_data_decoded[ix*vsp_len_y*(PLANE - 1) + ip * vsp_len_y + iy];
 					}
 				}
 			}
@@ -478,7 +631,6 @@ int wmain(int argc, wchar_t **argv)
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src, negate = 0;
 
 			while (count-- && (dst - vsp_data_decoded) < vsp_len_decoded) {
-				//			wprintf_s(L"%04X.\n", src - vsp_data + sizeof(hGL3));
 				switch (*src) {
 				case 0x00:
 					cp_len = *(src + 1) + 1;
@@ -638,7 +790,7 @@ int wmain(int argc, wchar_t **argv)
 				pal[ci].green = hVSP256.Palette[ci][1];
 			}
 		}
-		else if (is200l) {
+		else if (is200l || isGM3) {
 			for (size_t ci = 0; ci < 16; ci++) {
 				pal[ci].blue = Palette[ci][0] * 0x11;
 				pal[ci].red = Palette[ci][1] * 0x11;
@@ -682,12 +834,17 @@ int wmain(int argc, wchar_t **argv)
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 		png_set_PLTE(png_ptr, info_ptr, pal, color);
 
-		if (!is256) {
+		if (isGL3 || isGM3) {
+			png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+			png_set_tRNS(png_ptr, info_ptr, trans, color, NULL);
+		}
+		else if (!is256) {
 			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 00 };
 			png_set_tRNS(png_ptr, info_ptr, trans, color, NULL);
 		}
-		if (is200l) {
+		if (is200l || isGM3) {
 			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
 		}
 		png_write_info(png_ptr, info_ptr);
