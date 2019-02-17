@@ -14,7 +14,7 @@
 
 
 #pragma pack (1)
-struct VSP_header {
+struct VSP256_header {
 	unsigned __int16 Column_in; // divided by 8
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out; // divided by 8

@@ -10,6 +10,7 @@
 
 #define PLANE 4
 #define BPP 8
+#define ROWS 400
 
 #pragma pack (1)
 struct GL3_header {
@@ -44,7 +45,7 @@ unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, si
 }
 #pragma pack()
 
-unsigned __int8 screen[400][640];
+unsigned __int8 screen[ROWS][640];
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -56,6 +57,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
+		size_t rows = ROWS;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -99,7 +101,14 @@ int wmain(int argc, wchar_t **argv)
 			free(gl3_data);
 			exit(-2);
 		}
-		wprintf_s(L"Start %04X %zu/%zu GL3 size %zu => %zu.\n", hGL3.Start & 0x8000, gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
+		wprintf_s(L"Start %zu/%zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
+
+		unsigned __int64 *t = &hGL3.Palette;
+		if (0LL == (t[0] | t[1] | t[2] | t[3] | t[4] | t[5])) {
+			wprintf_s(L"Palette not found. Assume 200 Line\n");
+			rows = 201;
+
+		}
 
 		size_t count = gl3_len, cp_len, cur_plane;
 		unsigned __int8 *src = gl3_data, *dst = gl3_data_decoded, *cp_src;
@@ -211,11 +220,24 @@ int wmain(int argc, wchar_t **argv)
 		png_structp png_ptr;
 		png_infop info_ptr;
 		png_color pal[16];
+		unsigned __int8 Palette[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
+										  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
+										  { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
+										  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
 
-		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = hGL3.Palette[ci][0] * 0x11;
-			pal[ci].red = hGL3.Palette[ci][1] * 0x11;
-			pal[ci].green = hGL3.Palette[ci][2] * 0x11;
+		if (rows == 201) {
+			for (size_t ci = 0; ci < 16; ci++) {
+				pal[ci].blue = Palette[ci][0] * 0x11;
+				pal[ci].red = Palette[ci][1] * 0x11;
+				pal[ci].green = Palette[ci][2] * 0x11;
+			}
+		}
+		else {
+			for (size_t ci = 0; ci < 16; ci++) {
+				pal[ci].blue = hGL3.Palette[ci][0] * 0x11;
+				pal[ci].red = hGL3.Palette[ci][1] * 0x11;
+				pal[ci].green = hGL3.Palette[ci][2] * 0x11;
+			}
 		}
 
 		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
@@ -231,23 +253,27 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		unsigned char **image;
-		image = (png_bytepp)malloc(400 * sizeof(png_bytep));
+		image = (png_bytepp)malloc(rows * sizeof(png_bytep));
 		if (image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			fclose(pFo);
 			exit(-2);
 		}
-		for (size_t j = 0; j < 400; j++)
+		for (size_t j = 0; j < rows; j++)
 			image[j] = (png_bytep)&screen[j];
 
 		png_init_io(png_ptr, pFo);
-		png_set_IHDR(png_ptr, info_ptr, 640, 400,
+		png_set_IHDR(png_ptr, info_ptr, 640, rows,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 		png_set_PLTE(png_ptr, info_ptr, pal, 16);
 		png_byte trans[16] = { 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 		png_set_tRNS(png_ptr, info_ptr, trans, 16, NULL);
+
+		if (rows == 201) {
+			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
+		}
 
 		png_write_info(png_ptr, info_ptr);
 		png_write_image(png_ptr, image);
