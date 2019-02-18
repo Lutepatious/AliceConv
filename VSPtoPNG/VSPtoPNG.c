@@ -170,6 +170,10 @@ int wmain(int argc, wchar_t **argv)
 				is256 = 1;
 			}
 
+			unsigned __int16 *p = hbuf;
+			if (*p > 0x50)
+				is256 = 1;
+
 			if (hbuf[0x10] == 0x3F) {
 				is200l = 1;
 			}
