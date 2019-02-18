@@ -765,6 +765,7 @@ int wmain(int argc, wchar_t **argv)
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
 			memcpy_s(&canvas[iy*(iInfo.start_x + iInfo.len_x)], iInfo.len_x, &iInfo.image[iy*iInfo.len_x], iInfo.len_x);
 		}
+		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -776,8 +777,8 @@ int wmain(int argc, wchar_t **argv)
 
 		ecode = _wfopen_s(&pFo, path, L"wb");
 		if (ecode) {
+			free(canvas);
 			wprintf_s(L"File open error %s.\n", *argv);
-			free(iInfo.image);
 			exit(ecode);
 		}
 
@@ -802,12 +803,14 @@ int wmain(int argc, wchar_t **argv)
 
 		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 		if (png_ptr == NULL) {
+			free(canvas);
 			fclose(pFo);
 			return;
 		}
 		info_ptr = png_create_info_struct(png_ptr);
 		if (info_ptr == NULL) {
 			png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+			free(canvas);
 			fclose(pFo);
 			return;
 		}
@@ -816,7 +819,7 @@ int wmain(int argc, wchar_t **argv)
 		image = (png_bytepp)malloc((iInfo.start_y + iInfo.len_y) * sizeof(png_bytep));
 		if (image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
-			free(iInfo.image);
+			free(canvas);
 			fclose(pFo);
 			exit(-2);
 		}
@@ -844,8 +847,8 @@ int wmain(int argc, wchar_t **argv)
 		png_write_end(png_ptr, info_ptr);
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 
-		free(iInfo.image);
 		free(image);
+		free(canvas);
 		fclose(pFo);
 	}
 }
