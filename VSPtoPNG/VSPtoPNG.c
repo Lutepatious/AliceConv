@@ -19,7 +19,7 @@ struct VSP_header {
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out; // divided by 8
 	unsigned __int16 Row_out;
-	unsigned __int16 Unknown;
+	unsigned __int8 Unknown[2];
 	unsigned __int8 Palette[16][3];
 } hVSP;
 
@@ -28,7 +28,7 @@ struct VSP256_header {
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out;
 	unsigned __int16 Row_out;
-	unsigned __int16 Unknown[12];
+	unsigned __int8 Unknown[24];
 	unsigned __int8 Palette[256][3];
 } hVSP256;
 
@@ -37,7 +37,7 @@ struct VSP200l_header {
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out; // divided by 8
 	unsigned __int16 Row_out;
-	unsigned __int16 Unknown[9];
+	unsigned __int8 Unknown[18];
 } hVSP200l;
 
 struct GL3_header {
@@ -155,7 +155,7 @@ int wmain(int argc, wchar_t **argv)
 			isGL3 = 1;
 		}
 		else {
-			if (hbuf[1] >= 0x10 || hbuf[8] >= 2) {
+			if (hbuf[1] >= 3 || hbuf[5] >= 3 || hbuf[3] >= 2 || hbuf[7] >= 2 || hbuf[8] >= 2) {
 				wprintf_s(L"Wrong data exist. %s is not VSP and variants.\n", *argv);
 				continue;
 			}
@@ -166,7 +166,7 @@ int wmain(int argc, wchar_t **argv)
 					break;
 			} while (++i < 0x3A);
 
-			if (hbuf[0x8] == 1 || (i >= 0x20 && i < 0x3A)) {
+			if (hbuf[8] == 1 || (i >= 0x20 && i < 0x37)) {
 				is256 = 1;
 			}
 
@@ -347,7 +347,7 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 
-			wprintf_s(L"%zu/%zu - %zu/%zu VSP256 size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, vsp_len, vsp_len_decoded);
+			wprintf_s(L"%3zu/%3zu - %3zu/%3zu VSP256 %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP256.Unknown[0], hVSP256.Unknown[1], vsp_len, vsp_len_decoded);
 
 			size_t count = vsp_len, cp_len;
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src;
@@ -450,7 +450,7 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 
-			wprintf_s(L"%zu/%zu - %zu/%zu VSP200l size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, vsp_len, vsp_len_decoded);
+			wprintf_s(L"%3zu/%3zu - %3zu/3%zu VSP200l %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP200l.Unknown[0], hVSP200l.Unknown[1], vsp_len, vsp_len_decoded);
 
 			size_t count = vsp_len, cp_len, cur_plane;
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src, negate = 0;
@@ -626,7 +626,7 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 
-			wprintf_s(L"%zu/%zu - %zu/%zu VSP size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, vsp_len, vsp_len_decoded);
+			wprintf_s(L"%3zu/%3zu - %3zu/%3zu VSP %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP.Unknown[0], hVSP.Unknown[1], vsp_len, vsp_len_decoded);
 
 			size_t count = vsp_len, cp_len, cur_plane;
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src, negate = 0;
