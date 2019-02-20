@@ -221,7 +221,7 @@ int wmain(int argc, wchar_t **argv)
 				free(gl3_data);
 				exit(-2);
 			}
-			wprintf_s(L"%zu/%zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
+			wprintf_s(L"%3zu/%3zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
 			size_t count = gl3_len, cp_len, cur_plane;
 			unsigned __int8 *src = gl3_data, *dst = gl3_data_decoded, *cp_src;
 			while (count-- && (dst - gl3_data_decoded) < gl3_len_decoded) {
