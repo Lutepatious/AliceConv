@@ -159,6 +159,14 @@ int wmain(int argc, wchar_t **argv)
 				wprintf_s(L"Wrong data exist. %s is not VSP and variants.\n", *argv);
 				continue;
 			}
+			t = 0;
+			for (int i = 0; i < 0x10; i++) {
+				t |= hbuf[i];
+			}
+			if (t == 0) {
+				wprintf_s(L"Wrong data exist. %s is not VSP and variants.\n", *argv);
+				continue;
+			}
 
 			size_t i = 0xA;
 			do {
@@ -591,6 +599,22 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 
+			const size_t vsp_in_col = hVSP.Column_in;
+			const size_t vsp_in_x = vsp_in_col * 8;
+			const size_t vsp_in_y = hVSP.Row_in;
+			const size_t vsp_out_col = hVSP.Column_out;
+			const size_t vsp_out_x = vsp_out_col * 8;
+			const size_t vsp_out_y = hVSP.Row_out;
+			const size_t vsp_len_col = hVSP.Column_out - hVSP.Column_in;
+			const size_t vsp_len_x = vsp_len_col * 8;
+			const size_t vsp_len_y = hVSP.Row_out - hVSP.Row_in;
+			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * PLANE;
+
+			if (vsp_len_decoded == 4) {
+				wprintf_s(L"Too short. Skip!\n");
+				continue;
+			}
+
 			size_t vsp_len = fs.st_size - sizeof(hVSP);
 			unsigned __int8 *vsp_data = malloc(vsp_len);
 			if (vsp_data == NULL) {
@@ -607,17 +631,6 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 			fclose(pFi);
-
-			const size_t vsp_in_col = hVSP.Column_in;
-			const size_t vsp_in_x = vsp_in_col * 8;
-			const size_t vsp_in_y = hVSP.Row_in;
-			const size_t vsp_out_col = hVSP.Column_out;
-			const size_t vsp_out_x = vsp_out_col * 8;
-			const size_t vsp_out_y = hVSP.Row_out;
-			const size_t vsp_len_col = hVSP.Column_out - hVSP.Column_in;
-			const size_t vsp_len_x = vsp_len_col * 8;
-			const size_t vsp_len_y = hVSP.Row_out - hVSP.Row_in;
-			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * PLANE;
 
 			unsigned __int8 *vsp_data_decoded = malloc(vsp_len_decoded);
 			if (vsp_data_decoded == NULL) {
@@ -759,15 +772,32 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.Palette = hVSP.Palette;
 		}
 
+		size_t canvas_x = (iInfo.start_x + iInfo.len_x) > 640 ? (iInfo.start_x + iInfo.len_x) : 640;
+		size_t canvas_y = 400;
+		unsigned __int8 t_color = 0x10;
+
+		if (is200l || isGM3 || isGL3 || is256)
+			t_color = 0;
+
+
+		if (is200l)
+			canvas_y = 200;
+		else if (isGM3)
+			canvas_y = 201;
+
+		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
+
 		unsigned __int8 *canvas;
-		canvas = calloc(iInfo.start_y + iInfo.len_y, iInfo.start_x + iInfo.len_x);
+		canvas = malloc(canvas_y*canvas_x);
 		if (canvas == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			free(iInfo.image);
 			exit(-2);
 		}
+
+		memset(canvas, t_color, canvas_y*canvas_x);
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-			memcpy_s(&canvas[iy*(iInfo.start_x + iInfo.len_x)], iInfo.len_x, &iInfo.image[iy*iInfo.len_x], iInfo.len_x);
+			memcpy_s(&canvas[(iInfo.start_y + iy)*canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy*iInfo.len_x], iInfo.len_x);
 		}
 		free(iInfo.image);
 
@@ -788,7 +818,7 @@ int wmain(int argc, wchar_t **argv)
 
 		png_structp png_ptr;
 		png_infop info_ptr;
-		png_color pal[256];
+		png_color pal[256] = { {0,0,0} };
 
 		if (is256) {
 			for (size_t ci = 0; ci < 256; ci++) {
@@ -820,32 +850,38 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		unsigned __int8 **image;
-		image = (png_bytepp)malloc((iInfo.start_y + iInfo.len_y) * sizeof(png_bytep));
+		image = (png_bytepp)malloc(canvas_y * sizeof(png_bytep));
 		if (image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			free(canvas);
 			fclose(pFo);
 			exit(-2);
 		}
-		for (size_t j = 0; j < (iInfo.start_y + iInfo.len_y); j++)
-			image[j] = (png_bytep)&canvas[j * (iInfo.start_x + iInfo.len_x)];
+		for (size_t j = 0; j < canvas_y; j++)
+			image[j] = (png_bytep)&canvas[j * canvas_x];
 
 		png_init_io(png_ptr, pFo);
-		png_set_IHDR(png_ptr, info_ptr, iInfo.start_x + iInfo.len_x, iInfo.start_y + iInfo.len_y,
+		png_set_IHDR(png_ptr, info_ptr, canvas_x, canvas_y,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
-		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
 
-#if 0
-		png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+		if (is200l || isGL3 || isGM3) {
+			png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-		png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
-#endif
-
-		if (is200l || isGM3) {
-			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
+			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
+		else if (t_color == 0x10) {
+			iInfo.colors = 17;
+			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
+		}
+
+		if (is200l || isGM3)
+			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
+
+		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
+//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
 		png_write_info(png_ptr, info_ptr);
 		png_write_image(png_ptr, image);
 		png_write_end(png_ptr, info_ptr);
