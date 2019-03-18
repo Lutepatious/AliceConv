@@ -10,7 +10,8 @@
 
 #define PLANE 3
 #define BPP 8
-#define ROW 201
+#define ROW 200
+#define COLORS 9
 
 #pragma pack (1)
 struct GL_header {
@@ -91,11 +92,7 @@ int wmain(int argc, wchar_t **argv)
 		fclose(pFi);
 
 
-#if 0
-		size_t gl_start = hGL.Start & 0x3FFF;
-#else
-		size_t gl_start = 0;
-#endif
+		size_t gl_start = _byteswap_ushort(hGL.Start) & 0x3FFF;
 		size_t gl_start_x = gl_start % 80 * 8;
 		size_t gl_start_y = gl_start / 80;
 		size_t gl_len_decoded = hGL.Rows * hGL.Columns * PLANE;
@@ -105,7 +102,7 @@ int wmain(int argc, wchar_t **argv)
 			free(gl_data);
 			exit(-2);
 		}
-		wprintf_s(L"Start %zu/%zu %zu*%zu GM3 size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
+		wprintf_s(L"Start %zu/%zu %zu*%zu GL size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
 
 		size_t count = gl_len, cp_len, cur_plane;
 		unsigned __int8 *src = gl_data, *dst = gl_data_decoded, *cp_src;
@@ -183,7 +180,7 @@ int wmain(int argc, wchar_t **argv)
 		decode2bpp(decode_buffer, gl_data_decoded, hGL.Columns, hGL.Rows);
 		free(gl_data_decoded);
 
-		memset(screen, 0, sizeof(screen));
+		memset(screen, 0x8, sizeof(screen));
 
 		for (size_t iy = 0; iy < hGL.Rows; iy++) {
 			for (size_t ix = 0; ix < hGL.Columns * 8; ix++) {
@@ -208,14 +205,13 @@ int wmain(int argc, wchar_t **argv)
 
 		png_structp png_ptr;
 		png_infop info_ptr;
-		png_color pal[16];
+		png_color pal[COLORS];
 
-		unsigned __int8 Palette[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
+		unsigned __int8 Palette[COLORS][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
 										  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
-										  { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
-										  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
+										  { 0x0, 0x0, 0x0 } };
 
-		for (size_t ci = 0; ci < 16; ci++) {
+		for (size_t ci = 0; ci < COLORS; ci++) {
 			pal[ci].blue = Palette[ci][0] * 0x11;
 			pal[ci].red = Palette[ci][1] * 0x11;
 			pal[ci].green = Palette[ci][2] * 0x11;
@@ -247,13 +243,11 @@ int wmain(int argc, wchar_t **argv)
 		png_set_IHDR(png_ptr, info_ptr, 640, ROW,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		png_set_PLTE(png_ptr, info_ptr, pal, 16);
+		png_set_PLTE(png_ptr, info_ptr, pal, COLORS);
 
-#if 0
-		png_byte trans[16] = { 0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-		png_set_tRNS(png_ptr, info_ptr, trans, 16, NULL);
-#endif
+		png_byte trans[COLORS] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0 };
+		png_set_tRNS(png_ptr, info_ptr, trans, COLORS, NULL);
+
 		png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
 
 		png_write_info(png_ptr, info_ptr);

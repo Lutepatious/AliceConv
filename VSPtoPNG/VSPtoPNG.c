@@ -776,8 +776,10 @@ int wmain(int argc, wchar_t **argv)
 		size_t canvas_y = 400;
 		unsigned __int8 t_color = 0x10;
 
-		if (is200l || isGM3 || isGL3 || is256)
+		if (isGM3 || isGL3 || is256)
 			t_color = 0;
+		else if (is200l)
+			t_color = 8;
 
 
 		if (is200l)
@@ -865,9 +867,14 @@ int wmain(int argc, wchar_t **argv)
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-		if (is200l || isGL3 || isGM3) {
+		if (isGL3 || isGM3) {
 			png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
+		}
+		else if (is200l) {
+			png_byte trans[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+								   0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
 		else if (t_color == 0x10) {
