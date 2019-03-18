@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "png.h"
+#include "zlib.h"
 
 #define PLANE 3
 #define BPP 8
@@ -14,11 +15,21 @@
 #define COLORS 9
 
 #pragma pack (1)
+struct GL_Palette {
+	unsigned __int16 C0 : 3;
+	unsigned __int16 C1 : 3;
+	unsigned __int16 u0 : 2;
+	unsigned __int16 C2 : 3;
+	unsigned __int16 u1 : 3;
+	unsigned __int16 u2 : 2;
+};
+
 struct GL_header {
 	unsigned __int16 Start;
 	unsigned __int8 Columns; // divided by 8
 	unsigned __int8 Rows;
-	unsigned __int16 Unknown[10];
+	unsigned __int16 Unknown[2];
+	struct GL_Palette Palette[8];
 } hGL;
 
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
@@ -207,16 +218,13 @@ int wmain(int argc, wchar_t **argv)
 		png_infop info_ptr;
 		png_color pal[COLORS];
 
-		unsigned __int8 Palette[COLORS][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
-										  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
-										  { 0x0, 0x0, 0x0 } };
-
-		for (size_t ci = 0; ci < COLORS; ci++) {
-			pal[ci].blue = Palette[ci][0] * 0x11;
-			pal[ci].red = Palette[ci][1] * 0x11;
-			pal[ci].green = Palette[ci][2] * 0x11;
+		for (size_t ci = 0; ci < 8; ci++) {
+			pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | (hGL.Palette[ci].C0 & 1);
+			pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | (hGL.Palette[ci].C1 & 1);
+			pal[ci].green = (hGL.Palette[ci].C2 * 0x24) | (hGL.Palette[ci].C2 & 1);
 		}
-
+		pal[8].blue = pal[8].red = pal[8].green = 0;
+			
 		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 		if (png_ptr == NULL) {
 			fclose(pFo);
@@ -240,6 +248,7 @@ int wmain(int argc, wchar_t **argv)
 			image[j] = (png_bytep)&screen[j];
 
 		png_init_io(png_ptr, pFo);
+		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 		png_set_IHDR(png_ptr, info_ptr, 640, ROW,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);

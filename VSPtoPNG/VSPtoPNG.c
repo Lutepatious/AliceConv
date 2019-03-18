@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "png.h"
+#include "zlib.h"
 
 #define PLANE 4
 #define BPP 8
@@ -14,6 +15,15 @@
 
 
 #pragma pack (1)
+struct GL_Palette {
+	unsigned __int16 C0 : 3;
+	unsigned __int16 C1 : 3;
+	unsigned __int16 u0 : 2;
+	unsigned __int16 C2 : 3;
+	unsigned __int16 u1 : 3;
+	unsigned __int16 u2 : 2;
+};
+
 struct VSP_header {
 	unsigned __int16 Column_in; // divided by 8
 	unsigned __int16 Row_in;
@@ -37,7 +47,8 @@ struct VSP200l_header {
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out; // divided by 8
 	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[18];
+	unsigned __int8 Unknown[2];
+	struct GL_Palette Palette[8];
 } hVSP200l;
 
 struct GL3_header {
@@ -46,6 +57,14 @@ struct GL3_header {
 	unsigned __int16 Columns; // divided by 8
 	unsigned __int16 Rows;
 } hGL3;
+
+struct GL_header {
+	unsigned __int16 Start;
+	unsigned __int8 Columns; // divided by 8
+	unsigned __int8 Rows;
+	unsigned __int16 Unknown[2];
+	struct GL_Palette Palette[8];
+} hGL;
 
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
@@ -121,7 +140,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0;
+		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0, isGL = 0;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
@@ -153,6 +172,9 @@ int wmain(int argc, wchar_t **argv)
 		}
 		else if (t < 0x10 && hbuf[0x31] & 0x80) {
 			isGL3 = 1;
+		}
+		else if ((hbuf[0] & 0xC0) == 0xC0) {
+			isGL = 1;
 		}
 		else {
 			if (hbuf[1] >= 3 || hbuf[5] >= 3 || hbuf[3] >= 2 || hbuf[7] >= 2 || hbuf[8] >= 2) {
@@ -315,6 +337,125 @@ int wmain(int argc, wchar_t **argv)
 			else
 				iInfo.Palette = hGL3.Palette;
 		}
+		else if (isGL) {
+			size_t rcount = fread_s(&hGL, sizeof(hGL), sizeof(hGL), 1, pFi);
+			if (rcount != 1) {
+				wprintf_s(L"File read error %s.\n", *argv);
+				fclose(pFi);
+				exit(-2);
+			}
+
+			size_t gl_len = fs.st_size - sizeof(hGL);
+			unsigned __int8 *gl_data = malloc(gl_len);
+			if (gl_data == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				fclose(pFi);
+				exit(-2);
+			}
+
+			rcount = fread_s(gl_data, gl_len, 1, gl_len, pFi);
+			if (rcount != gl_len) {
+				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				free(gl_data);
+				fclose(pFi);
+				exit(-2);
+			}
+			fclose(pFi);
+
+
+			size_t gl_start = _byteswap_ushort(hGL.Start) & 0x3FFF;
+			size_t gl_start_x = gl_start % 80 * 8;
+			size_t gl_start_y = gl_start / 80;
+			size_t gl_len_decoded = hGL.Rows * hGL.Columns * (PLANE - 1);
+			unsigned __int8 *gl_data_decoded = malloc(gl_len_decoded);
+			if (gl_data_decoded == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				free(gl_data);
+				exit(-2);
+			}
+			wprintf_s(L"Start %zu/%zu %zu*%zu GL size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
+
+			size_t count = gl_len, cp_len, cur_plane;
+			unsigned __int8 *src = gl_data, *dst = gl_data_decoded, *cp_src;
+			while (count-- && (dst - gl_data_decoded) < gl_len_decoded) {
+				switch (*src) {
+				case 0x00:
+					cp_len = *(src + 1) & 0x7F;
+					if (*(src + 1) & 0x80) {
+						cp_src = dst - hGL.Columns * (PLANE - 1) * 4 + 1;
+						memset(dst, *cp_src, cp_len);
+						dst += cp_len;
+						src += 2;
+						count--;
+					}
+					else {
+						memset(dst, *(src + 2), cp_len);
+						dst += cp_len;
+						src += 3;
+						count -= 2;
+					}
+					break;
+				case 0x01:
+				case 0x02:
+				case 0x03:
+				case 0x04:
+				case 0x05:
+				case 0x06:
+				case 0x07:
+					cp_len = *src;
+					memset(dst, *(src + 1), cp_len);
+					src += 2;
+					dst += cp_len;
+					count--;
+					break;
+				case 0x08:
+				case 0x09:
+				case 0x0A:
+				case 0x0B:
+				case 0x0C:
+				case 0x0D:
+				case 0x0E:
+					cp_len = *src - 6;
+					cp_src = dst - hGL.Columns * (PLANE - 1) * 4 + 1;
+					memset(dst, *cp_src, cp_len);
+					dst += cp_len;
+					src++;
+					break;
+				case 0x0F:
+					cur_plane = ((dst - gl_data_decoded) / hGL.Columns) % (PLANE - 1);
+					cp_len = *(src + 1) & 0x7F;
+					cp_src = dst - hGL.Columns * ((*(src + 1) & 0x80) ? cur_plane - 1 : cur_plane);
+					memcpy_s(dst, cp_len, cp_src, cp_len);
+					dst += cp_len;
+					src += 2;
+					count--;
+					break;
+
+				default:
+					*dst++ = *src++;
+				}
+			}
+
+			free(gl_data);
+
+			size_t decode_len = hGL.Rows * hGL.Columns * BPP;
+			unsigned __int8 *decode_buffer = malloc(decode_len);
+			if (decode_buffer == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				free(gl_data_decoded);
+				exit(-2);
+			}
+
+			decode2bpp_3(decode_buffer, gl_data_decoded, hGL.Columns, hGL.Rows);
+			free(gl_data_decoded);
+
+			iInfo.image = decode_buffer;
+			iInfo.start_x = gl_start_x;
+			iInfo.start_y = gl_start_y;
+			iInfo.len_x = hGL.Columns * 8;
+			iInfo.len_y = hGL.Rows;
+			iInfo.colors = 16;
+		}
 		else if (is256) {
 			size_t rcount = fread_s(&hVSP256, sizeof(hVSP256), sizeof(hVSP256), 1, pFi);
 			if (rcount != 1) {
@@ -458,7 +599,7 @@ int wmain(int argc, wchar_t **argv)
 				exit(-2);
 			}
 
-			wprintf_s(L"%3zu/%3zu - %3zu/3%zu VSP200l %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP200l.Unknown[0], hVSP200l.Unknown[1], vsp_len, vsp_len_decoded);
+			wprintf_s(L"%3zu/%3zu - %3zu/%3zu VSP200l %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP200l.Unknown[0], hVSP200l.Unknown[1], vsp_len, vsp_len_decoded);
 
 			size_t count = vsp_len, cp_len, cur_plane;
 			unsigned __int8 *src = vsp_data, *dst = vsp_data_decoded, *cp_src, negate = 0;
@@ -589,7 +730,6 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.len_x = vsp_len_x;
 			iInfo.len_y = vsp_len_y;
 			iInfo.colors = 16;
-			iInfo.Palette = Palette_200l;
 		}
 		else {
 			rcount = fread_s(&hVSP, sizeof(hVSP), sizeof(hVSP), 1, pFi);
@@ -778,11 +918,11 @@ int wmain(int argc, wchar_t **argv)
 
 		if (isGM3 || isGL3 || is256)
 			t_color = 0;
-		else if (is200l)
+		else if (is200l || isGL)
 			t_color = 8;
 
 
-		if (is200l)
+		if (is200l || isGL)
 			canvas_y = 200;
 		else if (isGM3)
 			canvas_y = 201;
@@ -829,6 +969,22 @@ int wmain(int argc, wchar_t **argv)
 				pal[ci].green = (*iInfo.Palette)[ci][1];
 			}
 		}
+		else if (is200l) {
+			for (size_t ci = 0; ci < 8; ci++) {
+				pal[ci].blue = (hVSP200l.Palette[ci].C0 * 0x24) | (hVSP200l.Palette[ci].C0 & 1);
+				pal[ci].red = (hVSP200l.Palette[ci].C1 * 0x24) | (hVSP200l.Palette[ci].C1 & 1);
+				pal[ci].green = (hVSP200l.Palette[ci].C2 * 0x24) | (hVSP200l.Palette[ci].C2 & 1);
+			}
+			pal[8].blue = pal[8].red = pal[8].green = 0;
+		}
+		else if (isGL) {
+			for (size_t ci = 0; ci < 8; ci++) {
+				pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | (hGL.Palette[ci].C0 & 1);
+				pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | (hGL.Palette[ci].C1 & 1);
+				pal[ci].green = (hGL.Palette[ci].C2 * 0x24) | (hGL.Palette[ci].C2 & 1);
+			}
+			pal[8].blue = pal[8].red = pal[8].green = 0;
+		}
 		else {
 			for (size_t ci = 0; ci < 16; ci++) {
 				pal[ci].blue = (*iInfo.Palette)[ci][0] * 0x11;
@@ -863,6 +1019,7 @@ int wmain(int argc, wchar_t **argv)
 			image[j] = (png_bytep)&canvas[j * canvas_x];
 
 		png_init_io(png_ptr, pFo);
+		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 		png_set_IHDR(png_ptr, info_ptr, canvas_x, canvas_y,
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
@@ -872,7 +1029,7 @@ int wmain(int argc, wchar_t **argv)
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
-		else if (is200l) {
+		else if (is200l || isGL) {
 			png_byte trans[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
@@ -884,11 +1041,11 @@ int wmain(int argc, wchar_t **argv)
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
 
-		if (is200l || isGM3)
+		if (is200l || isGM3 || isGL)
 			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
 
 		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
-//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
+		//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
 		png_write_info(png_ptr, info_ptr);
 		png_write_image(png_ptr, image);
 		png_write_end(png_ptr, info_ptr);
