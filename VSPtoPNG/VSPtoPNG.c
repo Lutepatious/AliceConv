@@ -173,7 +173,7 @@ int wmain(int argc, wchar_t **argv)
 		else if (t < 0x10 && hbuf[0x31] & 0x80) {
 			isGL3 = 1;
 		}
-		else if ((hbuf[0] & 0xC0) == 0xC0) {
+		else if ((hbuf[0] & 0xC0) == 0xC0 && hbuf[3] >= 2) {
 			isGL = 1;
 		}
 		else {
