@@ -1,0 +1,86 @@
+アリスソフトコンバータ集について
+
+概要
+このソフトウェア群はアリスソフトの旧作(System3時代まで)のデータを変換するための物です。
+標準的だった.DAT形式のアーカイブファイルからデータを切り出し、変換する機能があります。
+
+警告
+動作無保証です。これらのツールを利用する前に元データのバックアップを取ることを強く要求します。
+このソフトウェア群は作者が自分の用を足すために作成した物であり、エラーチェックなどは不完全です。
+一部のコードはライブラリのサンプルなどからコピペしただけの部分が有ります(関数の意味ぐらいはチェックしてますが)。
+よって作者の環境に依存する部分が有るかも知れません。
+ソースコードは公開されています。気になる方はソースを参照して自分で修正、コンパイルするか、利用しないでください。
+
+作者
+kitohまたはlutepatiousのハンドルで活動していました。
+https://github.com/Lutepatious/
+に公開できるソースが上げられています。
+
+利用した処理系、ライブラリ
+Visual Studio 2017
+libpng
+zlib (libpngに必要)
+
+制作動機
+x64時代になりDOS時代のソフトを動かしにくくなった。
+長いファイル名に慣れすぎてDOS時代の流儀は嫌になった。
+そろそろ歳なので今までの整理に入った.
+
+内容物
+DATSplitter.exe		アリスソフトの.DAT形式アーカイブからファイルを切り出す。
+PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
+TownsPCMtoWave.exe	FM TOWNS版闘神都市IIとAliceの館3のAMUS.TWの後半やASND.DAT、館CDや館CDIIに含まれるFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換
+WaveCorrector.exe	Only You 世紀末のジュリエット達のAWAV.DATに含まれるMicrosoft WAVE形式のファイルを補正。
+VSPtoPNG.exe		GL3,VSP,VSP256色,VSP200line,GM3,PC88の各形式のファイルをPNGに変換。
+
+詳細
+DATSplitter.exe
+
+コマンドラインで
+path>DATSplitter DAT形式ファイル
+とすると含まれるファイルを
+リンク番号(3桁)+ドライブ名(DAT形式ファイルの先頭一文字)+DATファイル内の順番(3桁)+.DAT
+の(7文字).DATを(DATファイル名の先頭以外文字列)のディレクトリに切り出します。
+アリスソフトアーカイブスの88版Ranceから取り出したDATファイルにも有効でした。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+PC98PCMtoWave.exe
+
+コマンドラインで
+path>PC98PCMtoWave ファイル
+とすると4bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+TownsPCMtoWave.exe
+
+コマンドラインで
+path>TownsPCMtoWave ファイル
+とするとFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+WaveCorrector.exe
+
+コマンドラインで
+path>WaveCorrector ファイル
+とするとヘッダをチェックし、それに合わせてファイルを修正します。
+元のファイルに上書きするのでバックアップは必須です。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+VSPtoPNG.exe
+
+コマンドラインで
+path>VSPtoPNG ファイル
+とするとファイルの先頭をチェックし、ファイル形式を自動判定した上でグラフィックスファイルをPNG形式に変換します。
+現在の所、
+GL3 初期のアリスソフトのファイル形式でRanceからALICEの館CD迄のPC-9801/FM TOWNSと多数のX68000版
+GM3 GL3の亜種でALICEの館CDに含まれるIntruder専用の形式
+VSP Rance III以降のPC-9801/FM TOWNS/X68000版の多くで使われた形式
+VSP200line PC-8801版Rance IIとPC-9801移植版Little Vampireで使われた形式
+VSP256色 Super D.P.S以降の256色対応ゲームで使われた形式
+PC-8801版 PC-8801版のRance II以外で使われた形式
+を自動判定して変換します。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+なおMSX版や一部のX68000版(Rance II,闘神都市など)はファイルフォーマットが判らないので未対応です。
