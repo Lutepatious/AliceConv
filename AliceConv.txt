@@ -3,6 +3,7 @@
 ŠT—v
 ‚±‚Ìƒ\ƒtƒgƒEƒFƒAŒQ‚ÍƒAƒŠƒXƒ\ƒtƒg‚Ì‹Œì(System3Žž‘ã‚Ü‚Å)‚Ìƒf[ƒ^‚ð•ÏŠ·‚·‚é‚½‚ß‚Ì•¨‚Å‚·B
 •W€“I‚¾‚Á‚½.DATŒ`Ž®‚ÌƒA[ƒJƒCƒuƒtƒ@ƒCƒ‹‚©‚çƒf[ƒ^‚ðØ‚èo‚µA•ÏŠ·‚·‚é‹@”\‚ª‚ ‚è‚Ü‚·B
+ˆê•”ƒ\ƒtƒg‚Í‘Og‚Ìƒ`ƒƒƒ“ƒsƒIƒ“ƒ\ƒtƒg‚Ìƒf[ƒ^‚Å‚à“®ì‚µ‚Ü‚µ‚½B
 
 Œx
 “®ì–³•ÛØ‚Å‚·B‚±‚ê‚ç‚Ìƒc[ƒ‹‚ð—˜—p‚·‚é‘O‚ÉŒ³ƒf[ƒ^‚ÌƒoƒbƒNƒAƒbƒv‚ðŽæ‚é‚±‚Æ‚ð‹­‚­—v‹‚µ‚Ü‚·B
@@ -11,10 +12,21 @@
 ‚æ‚Á‚ÄìŽÒ‚ÌŠÂ‹«‚ÉˆË‘¶‚·‚é•”•ª‚ª—L‚é‚©‚à’m‚ê‚Ü‚¹‚ñB
 ƒ\[ƒXƒR[ƒh‚ÍŒöŠJ‚³‚ê‚Ä‚¢‚Ü‚·B‹C‚É‚È‚é•û‚Íƒ\[ƒX‚ðŽQÆ‚µ‚ÄŽ©•ª‚ÅC³AƒRƒ“ƒpƒCƒ‹‚·‚é‚©A—˜—p‚µ‚È‚¢‚Å‚­‚¾‚³‚¢B
 
+‚±‚Ìƒ\ƒtƒgƒEƒFƒAŒQ‚Í”N—î§ŒÀ‚Ì‚ ‚éŽs”Ìƒ\ƒtƒgƒEƒFƒA‚É‘Î‚µ‚Ä“®ì‚µ‚Ü‚·B
+‚È‚¨AŠY“–‚·‚éƒ\ƒtƒgƒEƒFƒA‚ÌÅV”Å‚Ì”Ì”„‚©‚ç20”NŒo‰ß‚µ‚Ä‚¢‚é‚±‚Æ‚ðŠm”F‚µ‚Ä‚¢‚Ü‚·B
+ŠY“–‚·‚éƒ\ƒtƒgƒEƒFƒA‚Ì–w‚Ç‚ªŒ»Ý”z•zƒtƒŠ[éŒ¾‚Ì‰ºA’˜ìŒ ‚ðˆÛŽ‚µ‚½ˆê’èðŒ‰º‚Å‚Ì–³ž”z•z‚ª”F‚ß‚ç‚ê‚Ä‚¢‚Ü‚·B
+‚±‚ê‚ç‚ÌŽ–‚©‚çA‚±‚Ìƒ\ƒtƒgƒEƒFƒAŒQ‚É‚æ‚è¶¬‚³‚ê‚½‘S‚Ä‚Ìƒf[ƒ^‚ÌÄ”z•z‚ð‹ÖŽ~‚µ‚Ü‚·BŒÂl‚ÅŠy‚µ‚Þ‚½‚ß‚¾‚¯‚É—˜—p‚µ‚Ä‚­‚¾‚³‚¢B
+
+
 ìŽÒ
 kitoh‚Ü‚½‚Ílutepatious‚Ìƒnƒ“ƒhƒ‹‚ÅŠˆ“®‚µ‚Ä‚¢‚Ü‚µ‚½B
 https://github.com/Lutepatious/
 ‚ÉŒöŠJ‚Å‚«‚éƒ\[ƒX‚ªã‚°‚ç‚ê‚Ä‚¢‚Ü‚·B
+
+˜A—æ(ƒ[ƒ‹ƒAƒhƒŒƒX)
+lutepatious@me.com
+lutepatious@kem.biglobe.ne.jp
+‚È‚¨A•sR‚Èƒ[ƒ‹‚ÍŸŽè‚ÉƒtƒBƒ‹ƒ^‚³‚ê‚Ü‚·B
 
 —˜—p‚µ‚½ˆ—ŒnAƒ‰ƒCƒuƒ‰ƒŠ
 Visual Studio 2017
@@ -32,6 +44,10 @@ PC98PCMtoWave.exe	PC-9801”Å“¬_“sŽsII‚ÆAlice‚ÌŠÙ3‚ÌAMUS.DAT‚ÌŒã”¼‚âAMSE.DAT‚ÉŽû˜
 TownsPCMtoWave.exe	FM TOWNS”Å“¬_“sŽsII‚ÆAlice‚ÌŠÙ3‚ÌAMUS.TW‚ÌŒã”¼‚âASND.DATAŠÙCD‚âŠÙCDII‚ÉŠÜ‚Ü‚ê‚éFM TOWNS•W€SNDŒ`Ž®8bitPCMƒf[ƒ^‚ðMicrosoft WAVEŒ`Ž®‚É•ÏŠ·
 WaveCorrector.exe	Only You ¢‹I––‚ÌƒWƒ…ƒŠƒGƒbƒg’B‚ÌAWAV.DAT‚ÉŠÜ‚Ü‚ê‚éMicrosoft WAVEŒ`Ž®‚Ìƒtƒ@ƒCƒ‹‚ð•â³B
 VSPtoPNG.exe		GL3,VSP,VSP256F,VSP200line,GM3,PC88‚ÌŠeŒ`Ž®‚Ìƒtƒ@ƒCƒ‹‚ðPNG‚É•ÏŠ·B
+
+Šî–{“I‚È“®ì
+Œ´‘¥‚Æ‚µ‚Äƒtƒ@ƒCƒ‹“à—e‚ð‘S‚Äƒƒ‚ƒŠ‚É“Ç‚Ýž‚ñ‚Å‚©‚çˆ—‚ðs‚¢‚Ü‚·B
+‚»‚Ìˆ×A‘ÎÛƒtƒ@ƒCƒ‹‚Ì2-4”{’ö“x‚Ì‹ó‚«ƒƒ‚ƒŠ‚ª•K{‚Å‚·B
 
 Ú×
 DATSplitter.exe
