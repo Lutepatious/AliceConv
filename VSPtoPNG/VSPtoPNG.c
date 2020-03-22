@@ -130,6 +130,8 @@ struct image_info {
 	unsigned colors;
 } iInfo;
 
+enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200L, VSP256};
+
 int wmain(int argc, wchar_t **argv)
 {
 	FILE *pFi, *pFo;
@@ -141,6 +143,7 @@ int wmain(int argc, wchar_t **argv)
 
 	while (--argc) {
 		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0, isGL = 0;
+		enum fmt_cg g_fmt = NONE;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
