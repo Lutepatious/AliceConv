@@ -13,8 +13,23 @@
 #define BPP 8
 #define ROWS 480
 
+/*
+アリスソフトのCGは複数のフォーマットが確認されている。なお名称は勝手につけている
+
+	1.GLフォーマット　アリスソフト時代はPC-8801でしか確認できないが8/512色の3プレーン用フォーマット (640*200)が基本
+	2.GL3フォーマット 主にPC-9801に用いられた初期のフォーマット。闘神都市やDPS SGが最後 (640*400)が基本 GL3ってのは当時のMS-DOS用のCGローダがGL3.COMだからでN88-BASIC(86)版はGL2だった。
+	3.GL3の派生品 X68000の多色表示やMSX2用にちょっと変更したものがあったのだがデコード方法がわからない。
+	4.GM3フォーマット FM TOWNS版ALICEの館CDに収録されたIntruderの為だけのフォーマット。GL3を200ライン対応にしてパレット情報を省いたもの。(640*201)が基本 Ryu1さんの移植キットのGM3.COMが名前の由来
+	5.VSPフォーマット X68000版闘神都市から採用されたフォーマット(PC-9801だとRanceIII)。 (640*400)が基本
+	6.VSP200lフォーマット 要はVSPの200ライン用でGLフォーマットからの移植変換用 (640*200)が基本
+	7.VSP256色フォーマット ヘッダこそVSPだが中身は別物。パックトピクセル化された256色のためのフォーマット (640*400)が基本だが(640*480)も存在する。
+	8.PMSフォーマット 
+	
+*/
+
 
 #pragma pack (1)
+// PC88系のGLフォーマットのパレット情報
 struct GL_Palette {
 	unsigned __int16 C0 : 3;
 	unsigned __int16 C1 : 3;
@@ -24,6 +39,7 @@ struct GL_Palette {
 	unsigned __int16 u2 : 2;
 };
 
+// VSP 16色フォーマットのヘッダ
 struct VSP_header {
 	unsigned __int16 Column_in; // divided by 8
 	unsigned __int16 Row_in;
@@ -33,6 +49,7 @@ struct VSP_header {
 	unsigned __int8 Palette[16][3];
 } hVSP;
 
+// VSP 256色フォーマットのヘッダ
 struct VSP256_header {
 	unsigned __int16 Column_in;
 	unsigned __int16 Row_in;
@@ -42,6 +59,7 @@ struct VSP256_header {
 	unsigned __int8 Palette[256][3];
 } hVSP256;
 
+// VSP 200ラインフォーマットのヘッダ
 struct VSP200l_header {
 	unsigned __int16 Column_in; // divided by 8
 	unsigned __int16 Row_in;
@@ -51,6 +69,7 @@ struct VSP200l_header {
 	struct GL_Palette Palette[8];
 } hVSP200l;
 
+// GL2/GL3 フォーマットのヘッダ
 struct GL3_header {
 	unsigned __int8 Palette[16][3];
 	unsigned __int16 Start;
@@ -58,6 +77,7 @@ struct GL3_header {
 	unsigned __int16 Rows;
 } hGL3;
 
+// PC88系のGLフォーマットのヘッダ
 struct GL_header {
 	unsigned __int16 Start;
 	unsigned __int8 Columns; // divided by 8
@@ -66,6 +86,7 @@ struct GL_header {
 	struct GL_Palette Palette[8];
 } hGL;
 
+// デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
 	unsigned __int8 max_ccode = 0;
@@ -90,6 +111,7 @@ unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, si
 	return max_ccode + 1;
 }
 
+// デコードされたプレーンデータをパックトピクセルに変換(3プレーン版)
 unsigned __int8 decode2bpp_3(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
 	unsigned __int8 max_ccode = 0;
@@ -115,6 +137,7 @@ unsigned __int8 decode2bpp_3(unsigned __int64 *dst, const unsigned __int8 *src, 
 }
 #pragma pack()
 
+// GM3フォーマットのためのパレット情報
 unsigned __int8 Palette_200l[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
 										{ 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
 										{ 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
@@ -122,7 +145,7 @@ unsigned __int8 Palette_200l[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 
 
 struct image_info {
 	unsigned __int8 *image;
-	unsigned __int8(*Palette)[256][3];
+	unsigned __int8 (*Palette)[256][3];
 	size_t start_x;
 	size_t start_y;
 	size_t len_x;
@@ -165,19 +188,25 @@ int wmain(int argc, wchar_t **argv)
 		fseek(pFi, 0, SEEK_SET);
 
 		unsigned __int8 t = 0;
+
+		// 最初の48バイトが0で埋め尽くされているか?
 		for (int i = 0; i < 0x30; i++) {
 			t |= hbuf[i];
 		}
 
+		// 最初の48バイトが0で埋め尽くされている! しかしGL系フォーマットならGM3だ!
 		if (t == 0 && hbuf[0x31] & 0x80) {
 			wprintf_s(L"Palette not found. Assume 200 Line\n");
 			isGM3 = 1;
+			g_fmt = GM3;
 		}
 		else if (t < 0x10 && hbuf[0x31] & 0x80) {
 			isGL3 = 1;
+			g_fmt = GL3;
 		}
 		else if ((hbuf[0] & 0xC0) == 0xC0 && hbuf[3] >= 2) {
 			isGL = 1;
+			g_fmt = GL;
 		}
 		else {
 			if (hbuf[1] >= 3 || hbuf[5] >= 3 || hbuf[3] >= 2 || hbuf[7] >= 2 || hbuf[8] >= 2) {
@@ -201,12 +230,14 @@ int wmain(int argc, wchar_t **argv)
 
 			if (hbuf[8] == 1 || (i >= 0x20 && i < 0x37)) {
 				is256 = 1;
+				g_fmt = VSP256;
 			}
 
 			unsigned __int16 *p = hbuf;
-			if (*p > 0x50)
+			if (*p > 0x50) {
 				is256 = 1;
-
+				g_fmt = VSP256;
+			}
 			if (!is256 && (hbuf[0xA] >= 0x10 || hbuf[0xC] >= 0x10 || hbuf[0xE] >= 0x10 || hbuf[0x10] >= 0x10 ||
 				hbuf[0x12] >= 0x10 || hbuf[0x14] >= 0x10 || hbuf[0x16] >= 0x10 || hbuf[0x18] >= 0x10)) {
 				is200l = 1;
