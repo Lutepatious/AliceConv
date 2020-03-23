@@ -16,14 +16,15 @@
 /*
 アリスソフトのCGは複数のフォーマットが確認されている。なお名称は勝手につけている
 
-	1.GLフォーマット　アリスソフト時代はPC-8801でしか確認できないが8/512色の3プレーン用フォーマット (640*200)が基本
-	2.GL3フォーマット 主にPC-9801に用いられた初期のフォーマット。闘神都市やDPS SGが最後 (640*400)が基本 GL3ってのは当時のMS-DOS用のCGローダがGL3.COMだからでN88-BASIC(86)版はGL2だった。
-	3.GL3の派生品 X68000の多色表示やMSX2用にちょっと変更したものがあったのだがデコード方法がわからない。
+	1.GLフォーマット	アリスソフト時代はPC-8801でしか確認できないが8/512色の3プレーン用フォーマット (640*200)が基本
+	2.GL3フォーマット	主にPC-9801に用いられた初期のフォーマット。闘神都市やDPS SGが最後 (640*400)が基本 GL3ってのは当時のMS-DOS用のCGローダがGL3.COMだからでN88-BASIC(86)版はGL2だった。
+	3.GL3の派生品	X68000の多色表示やMSX2用にちょっと変更したものがあったのだがデコード方法がわからない。
 	4.GM3フォーマット FM TOWNS版ALICEの館CDに収録されたIntruderの為だけのフォーマット。GL3を200ライン対応にしてパレット情報を省いたもの。(640*201)が基本 Ryu1さんの移植キットのGM3.COMが名前の由来
 	5.VSPフォーマット X68000版闘神都市から採用されたフォーマット(PC-9801だとRanceIII)。 (640*400)が基本
 	6.VSP200lフォーマット 要はVSPの200ライン用でGLフォーマットからの移植変換用 (640*200)が基本
 	7.VSP256色フォーマット ヘッダこそVSPだが中身は別物。パックトピクセル化された256色のためのフォーマット (640*400)が基本だが(640*480)も存在する。
-	8.PMSフォーマット 
+	8.PMSフォーマット 鬼畜王から本採用されたフォーマットで256色か65536色
+	9.QNTフォーマット 24ビットカラー用フォーマット
 	
 */
 
@@ -143,6 +144,7 @@ unsigned __int8 Palette_200l[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 
 										{ 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
 										{ 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
 
+// イメージ情報保管用構造体
 struct image_info {
 	unsigned __int8 *image;
 	unsigned __int8 (*Palette)[256][3];
@@ -153,7 +155,7 @@ struct image_info {
 	unsigned colors;
 } iInfo;
 
-enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200L, VSP256};
+enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT};
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -165,7 +167,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0, isGL = 0;
+		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0;
 		enum fmt_cg g_fmt = NONE;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
@@ -200,19 +202,23 @@ int wmain(int argc, wchar_t **argv)
 			isGM3 = 1;
 			g_fmt = GM3;
 		}
+		// GL3フォーマット
 		else if (t < 0x10 && hbuf[0x31] & 0x80) {
 			isGL3 = 1;
 			g_fmt = GL3;
 		}
+		// GLフォーマット
 		else if ((hbuf[0] & 0xC0) == 0xC0 && hbuf[3] >= 2) {
-			isGL = 1;
 			g_fmt = GL;
 		}
+		// とりあえずVSPだと仮定する
 		else {
+			// ヘッダ部分がVSPならあり得ない値ならエラーメッセージを出して次行きましょう
 			if (hbuf[1] >= 3 || hbuf[5] >= 3 || hbuf[3] >= 2 || hbuf[7] >= 2 || hbuf[8] >= 2) {
 				wprintf_s(L"Wrong data exist. %s is not VSP and variants.\n", *argv);
 				continue;
 			}
+			// 最初の16バイトが0で埋め尽くされている! これはVSPでは無い!
 			t = 0;
 			for (int i = 0; i < 0x10; i++) {
 				t |= hbuf[i];
@@ -222,25 +228,34 @@ int wmain(int argc, wchar_t **argv)
 				continue;
 			}
 
+			// VSP16と仮定してパレットエリアが0で埋め尽くされているか調べる。
 			size_t i = 0xA;
 			do {
 				if (hbuf[i] != 0)
 					break;
 			} while (++i < 0x3A);
 
+			// VSP256かどうかの判定 VSP256フラグが立っているか? カラーパレットがVSP256のものか?
 			if (hbuf[8] == 1 || (i >= 0x20 && i < 0x37)) {
 				is256 = 1;
 				g_fmt = VSP256;
 			}
 
+			// VSP256かどうかの判定 画像の起点データがVSP16の範囲外か?
 			unsigned __int16 *p = hbuf;
 			if (*p > 0x50) {
 				is256 = 1;
 				g_fmt = VSP256;
 			}
+
+			// VSP200lかどうかの判定 VSP16でありえないパレット情報か?
 			if (!is256 && (hbuf[0xA] >= 0x10 || hbuf[0xC] >= 0x10 || hbuf[0xE] >= 0x10 || hbuf[0x10] >= 0x10 ||
 				hbuf[0x12] >= 0x10 || hbuf[0x14] >= 0x10 || hbuf[0x16] >= 0x10 || hbuf[0x18] >= 0x10)) {
 				is200l = 1;
+				g_fmt = VSP200l;
+			}
+			else {
+				g_fmt = VSP;
 			}
 		}
 		if (isGL3 || isGM3) {
@@ -372,7 +387,7 @@ int wmain(int argc, wchar_t **argv)
 			else
 				iInfo.Palette = hGL3.Palette;
 		}
-		else if (isGL) {
+		else if (g_fmt == GL) {
 			size_t rcount = fread_s(&hGL, sizeof(hGL), sizeof(hGL), 1, pFi);
 			if (rcount != 1) {
 				wprintf_s(L"File read error %s.\n", *argv);
@@ -953,11 +968,11 @@ int wmain(int argc, wchar_t **argv)
 
 		if (isGM3 || isGL3 || is256)
 			t_color = 0;
-		else if (is200l || isGL)
+		else if (is200l || (g_fmt == GL))
 			t_color = 8;
 
 
-		if (is200l || isGL)
+		if (is200l || (g_fmt == GL))
 			canvas_y = 200;
 		else if (isGM3)
 			canvas_y = 201;
@@ -1012,7 +1027,7 @@ int wmain(int argc, wchar_t **argv)
 			}
 			pal[8].blue = pal[8].red = pal[8].green = 0;
 		}
-		else if (isGL) {
+		else if ((g_fmt == GL)) {
 			for (size_t ci = 0; ci < 8; ci++) {
 				pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | ((hGL.Palette[ci].C0 & 4) ? 1 : 0);
 				pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | ((hGL.Palette[ci].C1 & 4) ? 1 : 0);
@@ -1064,7 +1079,7 @@ int wmain(int argc, wchar_t **argv)
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
-		else if (is200l || isGL) {
+		else if (is200l || (g_fmt == GL)) {
 			png_byte trans[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
@@ -1076,7 +1091,7 @@ int wmain(int argc, wchar_t **argv)
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
 
-		if (is200l || isGM3 || isGL)
+		if (is200l || isGM3 || (g_fmt == GL))
 			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
 
 		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
