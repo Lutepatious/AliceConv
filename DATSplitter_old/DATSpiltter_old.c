@@ -39,7 +39,7 @@ int wmain(int argc, wchar_t **argv)
 
 		size_t rcount = fread_s(buffer + 0x100, fs.st_size, 1, fs.st_size, pFi);
 		if (rcount != fs.st_size) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			fclose(pFi);
 			exit(-2);
 		}
@@ -54,7 +54,7 @@ int wmain(int argc, wchar_t **argv)
 			wchar_t drive[_MAX_DRIVE];
 
 			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
-			size_t F_Addr = 0x100L * *(Addr + i);
+			size_t F_Addr = 0x100LL * *(Addr + i);
 			if (F_Addr < fs.st_size) {
 				size_t wsize = 0x100L * (size_t)(*(Addr + i + 1) - *(Addr + i));
 				if (wsize) {
@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t **argv)
 					}
 					swprintf_s(newfname, _MAX_FNAME, L"%s%03d", fname, i + 1);
 					_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-					wprintf_s(L"Entry %03u: %06X %10zu bytes, name %s.\n", i, F_Addr, wsize, path);
+					wprintf_s(L"Entry %03u: %06zX %10zu bytes, name %s.\n", i, F_Addr, wsize, path);
 
 					ecode = _wfopen_s(&pFo, path, L"wb");
 					if (ecode) {

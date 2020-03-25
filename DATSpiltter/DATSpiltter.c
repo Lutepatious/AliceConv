@@ -44,7 +44,7 @@ int wmain(int argc, wchar_t **argv)
 
 		size_t rcount = fread_s(buffer+0x100, fs.st_size, 1, fs.st_size, pFi);
 		if (rcount != fs.st_size) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			fclose(pFi);
 			exit(-2);
 		}
@@ -53,13 +53,13 @@ int wmain(int argc, wchar_t **argv)
 		Addr = buffer + 0x100;
 		unsigned __int16 i = 0;
 		while (*(Addr + i)) {
-			if (0x100L * *(Addr + i) < fs.st_size) {
+			if (0x100LL * *(Addr + i) < fs.st_size) {
 				wprintf_s(L"Entry %03u: %06X.\n", i, 0x100L * *(Addr + i));
 			}
 			i++;
 		}
 
-		linkmap = buffer + 0x100L * *Addr;
+		linkmap = buffer + 0x100LL * *Addr;
 		i = 0;
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -86,7 +86,7 @@ int wmain(int argc, wchar_t **argv)
 					}
 					swprintf_s(newfname, _MAX_FNAME, L"%03d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
 					_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-					wprintf_s(L"Out size %5d, name %s\n", wsize, path);
+					wprintf_s(L"Out size %5zd, name %s\n", wsize, path);
 
 
 					ecode = _wfopen_s(&pFo, path, L"wb");
@@ -96,7 +96,7 @@ int wmain(int argc, wchar_t **argv)
 						exit(ecode);
 					}
 
-					rcount = fwrite(buffer + 0x100L * *(Addr + (linkmap + i)->FileNo), 1, wsize, pFo);
+					rcount = fwrite(buffer + 0x100LL * *(Addr + (linkmap + i)->FileNo), 1, wsize, pFo);
 					if (rcount != wsize) {
 						wprintf_s(L"File write error %s.\n", *argv);
 						fclose(pFo);

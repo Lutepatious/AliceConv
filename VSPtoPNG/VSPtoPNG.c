@@ -276,7 +276,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(gl3_data, gl3_len, 1, gl3_len, pFi);
 			if (rcount != gl3_len) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				free(gl3_data);
 				fclose(pFi);
 				exit(-2);
@@ -405,7 +405,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(gl_data, gl_len, 1, gl_len, pFi);
 			if (rcount != gl_len) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				free(gl_data);
 				fclose(pFi);
 				exit(-2);
@@ -423,7 +423,7 @@ int wmain(int argc, wchar_t **argv)
 				free(gl_data);
 				exit(-2);
 			}
-			wprintf_s(L"Start %zu/%zu %zu*%zu GL size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
+			wprintf_s(L"Start %zu/%zu %u*%u GL size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
 
 			size_t count = gl_len, cp_len, cur_plane;
 			unsigned __int8 *src = gl_data, *dst = gl_data_decoded, *cp_src;
@@ -524,7 +524,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(vsp_data, vsp_len, 1, vsp_len, pFi);
 			if (rcount != vsp_len) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				free(vsp_data);
 				fclose(pFi);
 				exit(-2);
@@ -624,7 +624,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(vsp_data, vsp_len, 1, vsp_len, pFi);
 			if (rcount != vsp_len) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				free(vsp_data);
 				fclose(pFi);
 				exit(-2);
@@ -815,7 +815,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(vsp_data, vsp_len, 1, vsp_len, pFi);
 			if (rcount != vsp_len) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				free(vsp_data);
 				fclose(pFi);
 				exit(-2);

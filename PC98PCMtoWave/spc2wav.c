@@ -96,7 +96,7 @@ int wmain(int argc, wchar_t **argv)
 
 			rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
 			if (rcount != rsize) {
-				wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			}
 			fclose(pFi);
 
@@ -121,7 +121,7 @@ int wmain(int argc, wchar_t **argv)
 
 				rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
 				if (rcount != rsize) {
-					wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+					wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				}
 				fclose(pFi);
 
@@ -139,7 +139,7 @@ int wmain(int argc, wchar_t **argv)
 				SampleRate = 8000;
 				rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
 				if (rcount != rsize) {
-					wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+					wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 				}
 				fclose(pFi);
 			}

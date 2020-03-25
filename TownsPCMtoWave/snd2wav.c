@@ -82,7 +82,7 @@ int wmain(int argc, wchar_t **argv)
 
 		rcount = fread_s(buffer, tsndH.Size, 1, tsndH.Size, pFi);
 		if (rcount != tsndH.Size) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			free(buffer);
 			fclose(pFi);
 			exit(-2);

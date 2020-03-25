@@ -67,11 +67,11 @@ int wmain(int argc, wchar_t **argv)
 			exit(-2);
 		}
 
-		if (fs.st_size > waveH.ChunkSize + 8) {
+		if (fs.st_size > waveH.ChunkSize + 8LL) {
 			wprintf_s(L"The file %s too long. %ld bytes.\n", *argv, waveH.ChunkSize + 8);
 		}
 
-		if (fs.st_size < waveH.ChunkSize + 8) {
+		if (fs.st_size < waveH.ChunkSize + 8LL) {
 			wprintf_s(L"The file %s too short. %ld bytes.\n", *argv, waveH.ChunkSize + 8);
 		}
 
@@ -119,12 +119,12 @@ int wmain(int argc, wchar_t **argv)
 		wprintf_s(L"Data size %ld.\n", waveC2.Subchunk2Size);
 		if (fs.st_size != sizeof(waveH) + sizeof(waveC1) + sizeof (waveC2) + waveC2.Subchunk2Size) {
 			change = 1;
-			wprintf_s(L"The file %s not match. %ld bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
+			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
 		if (waveH.ChunkSize != 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size) {
 			change = 1;
-			wprintf_s(L"The file %s not match. %ld bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
+			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
 		buffer = malloc(waveC2.Subchunk2Size);
@@ -135,7 +135,7 @@ int wmain(int argc, wchar_t **argv)
 
 		rcount = fread_s(buffer, waveC2.Subchunk2Size, 1, waveC2.Subchunk2Size, pFi);
 		if (rcount != waveC2.Subchunk2Size) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 		}
 		fclose(pFi);
 
@@ -146,7 +146,7 @@ int wmain(int argc, wchar_t **argv)
 			}
 		}
 		if (rcount != waveC2.Subchunk2Size) {
-			wprintf_s(L"The file %s needs truncate %d to %d.\n", *argv, waveC2.Subchunk2Size, rcount);
+			wprintf_s(L"The file %s needs truncate %d to %zd.\n", *argv, waveC2.Subchunk2Size, rcount);
 			change = 1;
 			waveC2.Subchunk2Size = rcount;
 		}
