@@ -167,7 +167,6 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		unsigned is256 = 0, is200l = 0, isGL3 = 0, isGM3 = 0;
 		enum fmt_cg g_fmt = NONE;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
@@ -199,12 +198,10 @@ int wmain(int argc, wchar_t **argv)
 		// 最初の48バイトが0で埋め尽くされている! しかしGL系フォーマットならGM3だ!
 		if (t == 0 && hbuf[0x31] & 0x80) {
 			wprintf_s(L"Palette not found. Assume 200 Line\n");
-			isGM3 = 1;
 			g_fmt = GM3;
 		}
 		// GL3フォーマット
 		else if (t < 0x10 && hbuf[0x31] & 0x80) {
-			isGL3 = 1;
 			g_fmt = GL3;
 		}
 		// GLフォーマット
@@ -237,28 +234,26 @@ int wmain(int argc, wchar_t **argv)
 
 			// VSP256かどうかの判定 VSP256フラグが立っているか? カラーパレットがVSP256のものか?
 			if (hbuf[8] == 1 || (i >= 0x20 && i < 0x37)) {
-				is256 = 1;
 				g_fmt = VSP256;
 			}
 
 			// VSP256かどうかの判定 画像の起点データがVSP16の範囲外か?
 			unsigned __int16 *p = hbuf;
 			if (*p > 0x50) {
-				is256 = 1;
 				g_fmt = VSP256;
 			}
-
-			// VSP200lかどうかの判定 VSP16でありえないパレット情報か?
-			if (!is256 && (hbuf[0xA] >= 0x10 || hbuf[0xC] >= 0x10 || hbuf[0xE] >= 0x10 || hbuf[0x10] >= 0x10 ||
-				hbuf[0x12] >= 0x10 || hbuf[0x14] >= 0x10 || hbuf[0x16] >= 0x10 || hbuf[0x18] >= 0x10)) {
-				is200l = 1;
-				g_fmt = VSP200l;
-			}
-			else {
-				g_fmt = VSP;
+			if (g_fmt != VSP256) {
+				// VSP200lかどうかの判定 VSP16でありえないパレット情報か?
+				if (hbuf[0xA] >= 0x10 || hbuf[0xC] >= 0x10 || hbuf[0xE] >= 0x10 || hbuf[0x10] >= 0x10 ||
+					hbuf[0x12] >= 0x10 || hbuf[0x14] >= 0x10 || hbuf[0x16] >= 0x10 || hbuf[0x18] >= 0x10) {
+					g_fmt = VSP200l;
+				}
+				else {
+					g_fmt = VSP;
+				}
 			}
 		}
-		if (isGL3 || isGM3) {
+		if ((g_fmt == GL3) || (g_fmt == GM3)) {
 			size_t rcount = fread_s(&hGL3, sizeof(hGL3), sizeof(hGL3), 1, pFi);
 			if (rcount != 1) {
 				wprintf_s(L"File read error %s.\n", *argv);
@@ -382,7 +377,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.len_x = hGL3.Columns * 8;
 			iInfo.len_y = hGL3.Rows;
 			iInfo.colors = 16;
-			if (isGM3)
+			if (g_fmt == GM3)
 				iInfo.Palette = Palette_200l;
 			else
 				iInfo.Palette = hGL3.Palette;
@@ -506,7 +501,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.len_y = hGL.Rows;
 			iInfo.colors = 16;
 		}
-		else if (is256) {
+		else if (g_fmt == VSP256) {
 			size_t rcount = fread_s(&hVSP256, sizeof(hVSP256), sizeof(hVSP256), 1, pFi);
 			if (rcount != 1) {
 				wprintf_s(L"File read error %s.\n", *argv);
@@ -606,7 +601,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.colors = 256;
 			iInfo.Palette = hVSP256.Palette;
 		}
-		else if (is200l) {
+		else if (g_fmt == VSP200l) {
 			rcount = fread_s(&hVSP200l, sizeof(hVSP200l), sizeof(hVSP200l), 1, pFi);
 			if (rcount != 1) {
 				wprintf_s(L"File read error %s.\n", *argv);
@@ -781,7 +776,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.len_y = vsp_len_y;
 			iInfo.colors = 16;
 		}
-		else {
+		else if (g_fmt == VSP) {
 			rcount = fread_s(&hVSP, sizeof(hVSP), sizeof(hVSP), 1, pFi);
 			if (rcount != 1) {
 				wprintf_s(L"File read error %s.\n", *argv);
@@ -966,15 +961,15 @@ int wmain(int argc, wchar_t **argv)
 		size_t canvas_y = 400;
 		unsigned __int8 t_color = 0x10;
 
-		if (isGM3 || isGL3 || is256)
+		if ((g_fmt == GM3) || (g_fmt == GL3) || (g_fmt == VSP256))
 			t_color = 0;
-		else if (is200l || (g_fmt == GL))
+		else if ((g_fmt == VSP200l) || (g_fmt == GL))
 			t_color = 8;
 
 
-		if (is200l || (g_fmt == GL))
+		if ((g_fmt == VSP200l) || (g_fmt == GL))
 			canvas_y = 200;
-		else if (isGM3)
+		else if (g_fmt == GM3)
 			canvas_y = 201;
 
 		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
@@ -1012,14 +1007,14 @@ int wmain(int argc, wchar_t **argv)
 		png_infop info_ptr;
 		png_color pal[256] = { {0,0,0} };
 
-		if (is256) {
+		if (g_fmt == VSP256) {
 			for (size_t ci = 0; ci < 256; ci++) {
 				pal[ci].blue = (*iInfo.Palette)[ci][2];
 				pal[ci].red = (*iInfo.Palette)[ci][0];
 				pal[ci].green = (*iInfo.Palette)[ci][1];
 			}
 		}
-		else if (is200l) {
+		else if (g_fmt == VSP200l) {
 			for (size_t ci = 0; ci < 8; ci++) {
 				pal[ci].blue = (hVSP200l.Palette[ci].C0 * 0x24) | ((hVSP200l.Palette[ci].C0 & 4) ? 1 : 0);
 				pal[ci].red = (hVSP200l.Palette[ci].C1 * 0x24) | ((hVSP200l.Palette[ci].C1 & 4) ? 1 : 0);
@@ -1074,12 +1069,12 @@ int wmain(int argc, wchar_t **argv)
 			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
 			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
-		if (isGL3 || isGM3) {
+		if ((g_fmt == GL3) || (g_fmt == GM3)) {
 			png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
-		else if (is200l || (g_fmt == GL)) {
+		else if ((g_fmt == VSP200l) || (g_fmt == GL)) {
 			png_byte trans[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
@@ -1091,7 +1086,7 @@ int wmain(int argc, wchar_t **argv)
 			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
 		}
 
-		if (is200l || isGM3 || (g_fmt == GL))
+		if ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL))
 			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
 
 		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);

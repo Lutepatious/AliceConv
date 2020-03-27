@@ -19,7 +19,7 @@ struct FILE_DIR {
 #define CYLS 82
 #define HDRS 2
 #define SECS 22
-#define LEN 256
+#define LEN 256LL
 
 
 #define STEP (LEN*SECS/2)
@@ -35,7 +35,7 @@ int wmain(int argc, wchar_t **argv)
 
 	while (--argc) {
 		unsigned __int8 *buffer;
-		unsigned __int16 *Addr;
+		size_t Addr;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -55,7 +55,7 @@ int wmain(int argc, wchar_t **argv)
 
 		size_t rcount = fread_s(buffer + 6 * LEN, fs.st_size, 1, fs.st_size, pFi);
 		if (rcount != fs.st_size) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			fclose(pFi);
 			exit(-2);
 		}
@@ -63,16 +63,66 @@ int wmain(int argc, wchar_t **argv)
 
 		dirs = buffer + STEP * 2;
 
-		for (size_t i = 0; i < STEP / 0x10;i++) {
+		for (size_t i = 0; i < (STEP / 0x10);i++) {
 			if ((dirs + i)->FileName[0] == 0x00 || (dirs + i)->FileName[0] == 0xFF) {
 				break;
 			}
-			printf_s("File %c%c%c%c%c%c.%c%c%c Locate %3d * 17\n"
-				, (dirs + i)->FileName[0], (dirs + i)->FileName[1], (dirs + i)->FileName[2], (dirs + i)->FileName[3], (dirs + i)->FileName[4], (dirs + i)->FileName[5]
-				, (dirs + i)->FileExt[0], (dirs + i)->FileExt[1], (dirs + i)->FileExt[2], (dirs + i)->Addr);
+
+			unsigned char fname[_MAX_FNAME] = "\0", ext[_MAX_EXT] = "\0", path[_MAX_PATH];
+
+			memcpy_s(fname, _MAX_FNAME, (dirs + i)->FileName, 6);
+			memcpy_s(ext, _MAX_EXT, (dirs + i)->FileExt, 3);
+			for (size_t k = 0; k < _MAX_FNAME; k++) {
+				if (fname[_MAX_FNAME - 1 - k] == ' ') {
+					fname[_MAX_FNAME - 1 - k] = '\0';
+				}
+			}
+			for (size_t k = 0; k < _MAX_EXT; k++) {
+				if (ext[_MAX_EXT - 1 - k] == ' ') {
+					ext[_MAX_EXT - 1 - k] = '\0';
+				}
+			}
+			_makepath_s(path, _MAX_PATH, NULL, NULL, fname, ext);
+
+			size_t len = 0;
+			size_t j = 0;
+			do {
+				Addr = (dirs + i)->Addr * STEP + LEN * ++j;
+			} while (*((unsigned __int64*)&buffer[Addr]) != 0xE5E5E5E5E5E5E5E5LL);
+			len = j * LEN;
+
+			if ((dirs + i + 1)->Addr < (dirs + i)->Addr) {
+				size_t len2 = STEP;
+				if (len2 < len) {
+					len = len2;
+				}
+			}
+			else if ((dirs + i + 1)->Addr != 0xFF) {
+				size_t len2 = ((dirs + i + 1)->Addr - (dirs + i)->Addr) * STEP;
+				if (len2 < len) {
+					len = len2;
+				}
+			}
+			printf_s("File %10s Locate %3d * 17, Len %8zu\n", path, (dirs + i)->Addr, len);
+
+			errno_t ecode = fopen_s(&pFo, path, "wb");
+			if (ecode) {
+				printf_s("File open error %s.\n", path);
+				exit(ecode);
+			}
+
+			Addr = (dirs + i)->Addr * STEP;
+			size_t rcount = fwrite(buffer + Addr, 1, len, pFo);
+			if (rcount != len) {
+				printf_s("File write error %s %zd.\n", path, rcount);
+				fclose(pFo);
+				exit(-2);
+			}
+
+			fclose(pFo);
 		}
 
 
-	free(buffer);
+		free(buffer);
 	}
 }
