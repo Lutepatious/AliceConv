@@ -18,5 +18,8 @@
     <ClCompile Include="imagesplitter_88.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="imagesplitter_88.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
