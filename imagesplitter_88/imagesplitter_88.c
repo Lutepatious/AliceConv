@@ -30,9 +30,9 @@ struct FILE_DIR {
 #define FAT3_SECTOR ((DIR_TRACK+2)*SECS/2-1)
 
 
-int wmain(int argc, wchar_t **argv)
+int wmain(int argc, wchar_t** argv)
 {
-	FILE *pFi, *pFo;
+	FILE* pFi, * pFo;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file\n", *argv);
@@ -40,7 +40,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		unsigned __int8 *buffer;
+		unsigned __int8* buffer;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t **argv)
 		dirs = buffer + DIR_TRACK * STEP;
 		printf_s("Directory Track %3u, Track Length %5zu\n", DIR_TRACK, STEP);
 
-		for (size_t i = 0; i < (STEP / 0x10);i++) {
+		for (size_t i = 0; i < (STEP / 0x10); i++) {
 			if ((dirs + i)->FileName[0] == 0x00 || (dirs + i)->FileName[0] == 0xFF) {
 				break;
 			}
@@ -103,6 +103,9 @@ int wmain(int argc, wchar_t **argv)
 			}
 
 			do {
+				if ((*pFAT1)[Track] != (*pFAT2)[Track] || (*pFAT1)[Track] != (*pFAT3)[Track]) {
+					printf_s("FAT mismatch %3d %3d %3d\n", (*pFAT1)[Track], (*pFAT2)[Track], (*pFAT3)[Track]);
+				}
 				NextTrack = (*pFAT1)[Track];
 				if (NextTrack >= 0xC0) {
 					size_t remain = NextTrack - 0xC0;
@@ -112,7 +115,6 @@ int wmain(int argc, wchar_t **argv)
 						fclose(pFo);
 						exit(-2);
 					}
-					printf_s("Remain  %3d %3d %3d\n", (*pFAT1)[Track] - 0xC0, (*pFAT2)[Track] - 0xC0, (*pFAT3)[Track] - 0xC0);
 				}
 				else {
 					size_t rcount = fwrite(buffer + Track * STEP, STEP, 1, pFo);
@@ -121,7 +123,6 @@ int wmain(int argc, wchar_t **argv)
 						fclose(pFo);
 						exit(-2);
 					}
-					printf_s("Next Track %3d %3d %3d\n", (*pFAT1)[Track], (*pFAT2)[Track], (*pFAT3)[Track]);
 				}
 				Track = NextTrack;
 			} while (Track < 0xC0);

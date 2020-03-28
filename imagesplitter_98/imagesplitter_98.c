@@ -102,6 +102,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 			do {
+				if ((*pFAT1)[Track] != (*pFAT2)[Track] || (*pFAT1)[Track] != (*pFAT3)[Track]) {
+					printf_s("FAT mismatch %3d %3d %3d\n", (*pFAT1)[Track], (*pFAT2)[Track], (*pFAT3)[Track]);
+				}
 				NextTrack = (*pFAT1)[Track];
 				if (NextTrack >= 0xC0) {
 					size_t remain = NextTrack - 0xC0;
@@ -111,7 +114,6 @@ int wmain(int argc, wchar_t** argv)
 						fclose(pFo);
 						exit(-2);
 					}
-					printf_s("Remain  %3d %3d %3d\n", (*pFAT1)[Track] - 0xC0, (*pFAT2)[Track] - 0xC0, (*pFAT3)[Track] - 0xC0);
 				}
 				else {
 					size_t rcount = fwrite(buffer + Track * STEP, STEP, 1, pFo);
@@ -120,13 +122,12 @@ int wmain(int argc, wchar_t** argv)
 						fclose(pFo);
 						exit(-2);
 					}
-					printf_s("Next Track %3d %3d %3d\n", (*pFAT1)[Track], (*pFAT2)[Track], (*pFAT3)[Track]);
 				}
 				Track = NextTrack;
-				} while (Track < 0xC0);
+			} while (Track < 0xC0);
 
-				fclose(pFo);
-			}
-		free(buffer);
+			fclose(pFo);
 		}
+		free(buffer);
 	}
+}
