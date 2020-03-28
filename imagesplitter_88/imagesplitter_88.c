@@ -11,7 +11,7 @@ struct FILE_DIR {
 	unsigned __int8 FileName[6];
 	unsigned __int8 FileExt[3];
 	unsigned __int8 Attrib;
-	unsigned __int8 Addr;
+	unsigned __int8 Track;
 	unsigned __int8 Unk[5];
 } *dirs;
 #pragma pack ()
@@ -24,6 +24,12 @@ struct FILE_DIR {
 
 #define STEP (LEN*SECS/2)
 
+#define DIR_TRACK 2
+#define FAT1_SECTOR ((DIR_TRACK+2)*SECS/2-3)
+#define FAT2_SECTOR ((DIR_TRACK+2)*SECS/2-2)
+#define FAT3_SECTOR ((DIR_TRACK+2)*SECS/2-1)
+
+
 int wmain(int argc, wchar_t **argv)
 {
 	FILE *pFi, *pFo;
@@ -35,7 +41,6 @@ int wmain(int argc, wchar_t **argv)
 
 	while (--argc) {
 		unsigned __int8 *buffer;
-		size_t Addr;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -61,7 +66,8 @@ int wmain(int argc, wchar_t **argv)
 		}
 		fclose(pFi);
 
-		dirs = buffer + STEP * 2;
+		dirs = buffer + DIR_TRACK * STEP;
+		printf_s("Directory Track %3u, Track Length %5zu\n", DIR_TRACK, STEP);
 
 		for (size_t i = 0; i < (STEP / 0x10);i++) {
 			if ((dirs + i)->FileName[0] == 0x00 || (dirs + i)->FileName[0] == 0xFF) {
@@ -84,40 +90,41 @@ int wmain(int argc, wchar_t **argv)
 			}
 			_makepath_s(path, _MAX_PATH, NULL, NULL, fname, ext);
 
-			size_t len = 0;
-			size_t j = 0;
-			do {
-				Addr = (dirs + i)->Addr * STEP + LEN * ++j;
-			} while (*((unsigned __int64*)&buffer[Addr]) != 0xE5E5E5E5E5E5E5E5LL);
-			len = j * LEN;
+			printf_s("File %10s Locate %3d\n", path, (dirs + i)->Track);
 
-			if ((dirs + i + 1)->Addr < (dirs + i)->Addr) {
-				size_t len2 = STEP;
-				if (len2 < len) {
-					len = len2;
-				}
-			}
-			else if ((dirs + i + 1)->Addr != 0xFF) {
-				size_t len2 = ((dirs + i + 1)->Addr - (dirs + i)->Addr) * STEP;
-				if (len2 < len) {
-					len = len2;
-				}
-			}
-			printf_s("File %10s Locate %3d * 17, Len %8zu\n", path, (dirs + i)->Addr, len);
-
+			unsigned __int8 Track = (dirs + i)->Track, NextTrack;
+			unsigned __int8(*pFAT1)[256] = buffer + (FAT1_SECTOR * LEN);
+			unsigned __int8(*pFAT2)[256] = buffer + (FAT2_SECTOR * LEN);
+			unsigned __int8(*pFAT3)[256] = buffer + (FAT3_SECTOR * LEN);
 			errno_t ecode = fopen_s(&pFo, path, "wb");
 			if (ecode) {
 				printf_s("File open error %s.\n", path);
 				exit(ecode);
 			}
 
-			Addr = (dirs + i)->Addr * STEP;
-			size_t rcount = fwrite(buffer + Addr, 1, len, pFo);
-			if (rcount != len) {
-				printf_s("File write error %s %zd.\n", path, rcount);
-				fclose(pFo);
-				exit(-2);
-			}
+			do {
+				NextTrack = (*pFAT1)[Track];
+				if (NextTrack >= 0xC0) {
+					size_t remain = NextTrack - 0xC0;
+					size_t rcount = fwrite(buffer + Track * STEP, LEN, remain, pFo);
+					if (rcount != remain) {
+						printf_s("File write error %s %zd.\n", path, rcount);
+						fclose(pFo);
+						exit(-2);
+					}
+					printf_s("Remain  %3d %3d %3d\n", (*pFAT1)[Track] - 0xC0, (*pFAT2)[Track] - 0xC0, (*pFAT3)[Track] - 0xC0);
+				}
+				else {
+					size_t rcount = fwrite(buffer + Track * STEP, STEP, 1, pFo);
+					if (rcount != 1) {
+						printf_s("File write error %s %zd.\n", path, rcount);
+						fclose(pFo);
+						exit(-2);
+					}
+					printf_s("Next Track %3d %3d %3d\n", (*pFAT1)[Track], (*pFAT2)[Track], (*pFAT3)[Track]);
+				}
+				Track = NextTrack;
+			} while (Track < 0xC0);
 
 			fclose(pFo);
 		}
