@@ -16,18 +16,42 @@ struct FILE_DIR {
 } *dirs;
 #pragma pack ()
 
-#define CYLS 77
-#define HDRS 2
-#define SECS 26
-#define LEN 256LL
+#define CYLS_88 82 // real 41
+#define HDRS_88 2
+#define SECS_88 11 // real 22
+#define LEN_88 256LL
+#define DIR_TRACK_88 2
 
-#define STEP (LEN*SECS)
+#define CYLS_98 77
+#define HDRS_98 2
+#define SECS_98 26
+#define LEN_98 256LL
+#define DIR_TRACK_98 70
 
-#define DIR_TRACK 70
-#define FAT1_SECTOR ((DIR_TRACK+1)*SECS-3)
-#define FAT2_SECTOR ((DIR_TRACK+1)*SECS-2)
-#define FAT3_SECTOR ((DIR_TRACK+1)*SECS-1)
-#define OFFSET (SECS * LEN / 2)
+#define CYLS_LV 80 // real 40
+#define HDRS_LV 2
+#define SECS_LV 10 // real 20
+#define LEN_LV 256LL
+#define DIR_TRACK_LV 2
+
+struct N88_params {
+	unsigned __int8 Cylinders;
+	unsigned __int8 Heads;
+	unsigned __int8 Sectors;
+	unsigned __int8 Directory_Track;
+	unsigned __int16 FAT_Sector[3];
+	size_t Sector_Length;
+	size_t Track_Length;
+	size_t Load_Offset;
+} N88[3] = { {CYLS_88, HDRS_88, SECS_88, DIR_TRACK_88, { (DIR_TRACK_88 + 2) * SECS_88 - 3, (DIR_TRACK_88 + 2) * SECS_88 - 2, (DIR_TRACK_88 + 2) * SECS_88 - 1}
+			, LEN_88, LEN_88 * SECS_88, 6 * LEN_88}
+			,{CYLS_98, HDRS_98, SECS_98, DIR_TRACK_98, { (DIR_TRACK_98 + 1) * SECS_98 - 3, (DIR_TRACK_98 + 1) * SECS_98 - 2, (DIR_TRACK_98 + 1) * SECS_98 - 1}
+			, LEN_98, LEN_98 * SECS_98, SECS_98* LEN_98 / 2}
+			,{CYLS_LV, HDRS_LV, SECS_LV, DIR_TRACK_LV, { (DIR_TRACK_LV + 2) * SECS_LV - 3, (DIR_TRACK_LV + 2) * SECS_LV - 2, (DIR_TRACK_LV + 2) * SECS_LV - 1}
+			, LEN_LV, LEN_LV * SECS_LV, 0} };
+
+enum f_type { F88 = 0 , F98, FLV };
+
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -50,14 +74,29 @@ int wmain(int argc, wchar_t** argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		buffer = calloc(CYLS * HDRS * STEP, 1);
+		enum f_type Format;
+		if (fs.st_size == 1021696LL) {
+			Format = F98;
+		} else if (fs.st_size == 449024LL) {
+			Format = F88;
+		}
+		else if (fs.st_size == 409600LL) {
+			Format = FLV;
+		}
+		else {
+			wprintf_s(L"File format unknown %s.\n", *argv);
+			fclose(pFi);
+			continue;
+		}
+
+		buffer = calloc(N88[Format].Cylinders * N88[Format].Heads * N88[Format].Track_Length, 1);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
 			exit(-2);
 		}
 
-		size_t rcount = fread_s(buffer + OFFSET, fs.st_size, 1, fs.st_size, pFi);
+		size_t rcount = fread_s(buffer + N88[Format].Load_Offset, fs.st_size, 1, fs.st_size, pFi);
 		if (rcount != fs.st_size) {
 			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			fclose(pFi);
@@ -65,10 +104,10 @@ int wmain(int argc, wchar_t** argv)
 		}
 		fclose(pFi);
 
-		dirs = buffer + DIR_TRACK * STEP;
-		printf_s("Directory Track %3u, Track Length %5zu\n", DIR_TRACK, STEP);
+		dirs = buffer + N88[Format].Directory_Track * N88[Format].Track_Length;
+		printf_s("Directory Track %3u, Track Length %5zu\n", N88[Format].Directory_Track, N88[Format].Track_Length);
 
-		for (size_t i = 0; i < (STEP / 0x10); i++) {
+		for (size_t i = 0; i < (N88[Format].Track_Length / 0x10); i++) {
 			if ((dirs + i)->FileName[0] == 0x00 || (dirs + i)->FileName[0] == 0xFF) {
 				break;
 			}
@@ -92,9 +131,9 @@ int wmain(int argc, wchar_t** argv)
 			printf_s("File %10s Track %3u\n", path, (dirs + i)->Track);
 
 			unsigned __int8 Track = (dirs + i)->Track, NextTrack;
-			unsigned __int8(*pFAT1)[256] = buffer + (FAT1_SECTOR * LEN);
-			unsigned __int8(*pFAT2)[256] = buffer + (FAT2_SECTOR * LEN);
-			unsigned __int8(*pFAT3)[256] = buffer + (FAT3_SECTOR * LEN);
+			unsigned __int8(*pFAT1)[256] = buffer + (N88[Format].FAT_Sector[0] * N88[Format].Sector_Length);
+			unsigned __int8(*pFAT2)[256] = buffer + (N88[Format].FAT_Sector[1] * N88[Format].Sector_Length);
+			unsigned __int8(*pFAT3)[256] = buffer + (N88[Format].FAT_Sector[2] * N88[Format].Sector_Length);
 			errno_t ecode = fopen_s(&pFo, path, "wb");
 			if (ecode) {
 				printf_s("File open error %s.\n", path);
@@ -108,7 +147,7 @@ int wmain(int argc, wchar_t** argv)
 				NextTrack = (*pFAT1)[Track];
 				if (NextTrack >= 0xC0) {
 					size_t remain = NextTrack - 0xC0;
-					size_t rcount = fwrite(buffer + Track * STEP, LEN, remain, pFo);
+					size_t rcount = fwrite(buffer + Track * N88[Format].Track_Length, N88[Format].Sector_Length, remain, pFo);
 					if (rcount != remain) {
 						printf_s("File write error %s %zd.\n", path, rcount);
 						fclose(pFo);
@@ -116,7 +155,7 @@ int wmain(int argc, wchar_t** argv)
 					}
 				}
 				else {
-					size_t rcount = fwrite(buffer + Track * STEP, STEP, 1, pFo);
+					size_t rcount = fwrite(buffer + Track * N88[Format].Track_Length, N88[Format].Track_Length, 1, pFo);
 					if (rcount != 1) {
 						printf_s("File write error %s %zd.\n", path, rcount);
 						fclose(pFo);

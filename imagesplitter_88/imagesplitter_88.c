@@ -16,19 +16,18 @@ struct FILE_DIR {
 } *dirs;
 #pragma pack ()
 
-#define CYLS 82
+#define CYLS 82 // real 41
 #define HDRS 2
-#define SECS 22
+#define SECS 11 // real 22
 #define LEN 256LL
 
-
-#define STEP (LEN*SECS/2)
+#define STEP (LEN*SECS)
 
 #define DIR_TRACK 2
-#define FAT1_SECTOR ((DIR_TRACK+2)*SECS/2-3)
-#define FAT2_SECTOR ((DIR_TRACK+2)*SECS/2-2)
-#define FAT3_SECTOR ((DIR_TRACK+2)*SECS/2-1)
-
+#define FAT1_SECTOR ((DIR_TRACK+2)*SECS-3)
+#define FAT2_SECTOR ((DIR_TRACK+2)*SECS-2)
+#define FAT3_SECTOR ((DIR_TRACK+2)*SECS-1)
+#define OFFSET (6 * LEN)
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -51,14 +50,14 @@ int wmain(int argc, wchar_t** argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		buffer = calloc(fs.st_size + 6 * LEN, 1);
+		buffer = calloc(CYLS * HDRS * STEP, 1);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
 			exit(-2);
 		}
 
-		size_t rcount = fread_s(buffer + 6 * LEN, fs.st_size, 1, fs.st_size, pFi);
+		size_t rcount = fread_s(buffer + OFFSET, fs.st_size, 1, fs.st_size, pFi);
 		if (rcount != fs.st_size) {
 			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			fclose(pFi);
@@ -90,7 +89,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			_makepath_s(path, _MAX_PATH, NULL, NULL, fname, ext);
 
-			printf_s("File %10s Locate %3d\n", path, (dirs + i)->Track);
+			printf_s("File %10s Track %3u\n", path, (dirs + i)->Track);
 
 			unsigned __int8 Track = (dirs + i)->Track, NextTrack;
 			unsigned __int8(*pFAT1)[256] = buffer + (FAT1_SECTOR * LEN);
@@ -129,8 +128,6 @@ int wmain(int argc, wchar_t** argv)
 
 			fclose(pFo);
 		}
-
-
 		free(buffer);
 	}
 }
