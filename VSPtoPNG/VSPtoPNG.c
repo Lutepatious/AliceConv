@@ -87,6 +87,25 @@ struct GL_header {
 	struct GL_Palette Palette[8];
 } hGL;
 
+
+// MSXのフォーマットのパレット情報
+struct MSX_Palette {
+	unsigned __int16 C0 : 4;
+	unsigned __int16 C1 : 4;
+	unsigned __int16 C2 : 4;
+	unsigned __int16 u0 : 4;
+};
+
+// MSXのフォーマットのヘッダ
+struct MSX_header {
+	unsigned __int16 Start;
+	unsigned __int8 Columns; // divided by 2
+	unsigned __int8 Rows;
+	unsigned __int16 Unknown[6];
+	struct MSX_Palette Palette[8];
+} hMSX;
+
+
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
@@ -155,7 +174,7 @@ struct image_info {
 	unsigned colors;
 } iInfo;
 
-enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT};
+enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX};
 
 int wmain(int argc, wchar_t **argv)
 {
