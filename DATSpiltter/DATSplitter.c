@@ -100,7 +100,7 @@ int wmain(int argc, wchar_t** argv)
 			if (_wstat64(path, &dpath) && errno == ENOENT)
 			{
 				_wmkdir(path);
-				wprintf_s(L"Out path %s created\n", path);
+				wprintf_s(L"Out path %s created.\n", path);
 			}
 			while ((linkmap + i)->ArchiveID != 0x1A) {
 				if (arc_ID == (linkmap + i)->ArchiveID) {
@@ -109,7 +109,7 @@ int wmain(int argc, wchar_t** argv)
 					if (wsize) {
 						swprintf_s(newfname, _MAX_FNAME, L"%03d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
 						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-						wprintf_s(L"Out size %5zd, name %s\n", wsize, path);
+						wprintf_s(L"Out size %5zd, name %s.\n", wsize, path);
 
 						ecode = _wfopen_s(&pFo, path, L"wb");
 						if (ecode) {
@@ -140,7 +140,7 @@ int wmain(int argc, wchar_t** argv)
 			struct __stat64 dpath;
 			if (_wstat64(path, &dpath) && errno == ENOENT) {
 				_wmkdir(path);
-				wprintf_s(L"Out path %s created\n", path);
+				wprintf_s(L"Out path %s created.\n", path);
 			}
 			while (*(Addr + i)) {
 				size_t F_Addr = 0x100LL * *(Addr + i);
