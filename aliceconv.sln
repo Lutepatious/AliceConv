@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "N88Splitter", "N88Splitter\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSXtoPNG", "MSXtoPNG\MSXtoPNG.vcxproj", "{394C7402-29D3-4120-9855-376F9A6BC1BB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSXtoPNG_NoPal", "MSXtoPNG_NoPal\MSXtoPNG_NoPal.vcxproj", "{F656510E-3327-4412-BEC5-B4E9BC00515E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -90,6 +92,14 @@ Global
 		{394C7402-29D3-4120-9855-376F9A6BC1BB}.Release|x64.Build.0 = Release|x64
 		{394C7402-29D3-4120-9855-376F9A6BC1BB}.Release|x86.ActiveCfg = Release|Win32
 		{394C7402-29D3-4120-9855-376F9A6BC1BB}.Release|x86.Build.0 = Release|Win32
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Debug|x64.ActiveCfg = Debug|x64
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Debug|x64.Build.0 = Debug|x64
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Debug|x86.ActiveCfg = Debug|Win32
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Debug|x86.Build.0 = Debug|Win32
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Release|x64.ActiveCfg = Release|x64
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Release|x64.Build.0 = Release|x64
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Release|x86.ActiveCfg = Release|Win32
+		{F656510E-3327-4412-BEC5-B4E9BC00515E}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

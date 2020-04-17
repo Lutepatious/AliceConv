@@ -1106,7 +1106,7 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		if ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL))
-			png_set_pHYs(png_ptr, info_ptr, 2, 1, PNG_RESOLUTION_UNKNOWN);
+			png_set_pHYs(png_ptr, info_ptr, 2540, 1270, PNG_RESOLUTION_METER);
 
 		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
 		//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
