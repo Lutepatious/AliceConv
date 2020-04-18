@@ -1018,7 +1018,7 @@ int wmain(int argc, wchar_t **argv)
 		ecode = _wfopen_s(&pFo, path, L"wb");
 		if (ecode) {
 			free(canvas);
-			wprintf_s(L"File open error %s.\n", *argv);
+			wprintf_s(L"File open error %s.\n", path);
 			exit(ecode);
 		}
 

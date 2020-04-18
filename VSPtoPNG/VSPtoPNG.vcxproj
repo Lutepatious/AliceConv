@@ -81,6 +81,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng</AdditionalIncludeDirectories>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\libpng\projects\vstudio\Release Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -97,6 +98,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng</AdditionalIncludeDirectories>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\libpng\projects\vstudio\x64\Release Library;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -115,6 +117,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng</AdditionalIncludeDirectories>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -135,6 +138,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng</AdditionalIncludeDirectories>
+      <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
