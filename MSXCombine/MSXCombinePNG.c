@@ -19,10 +19,11 @@ struct fPNG {
 	png_bytepp image;
 	png_colorp Pal;
 	png_bytep Trans;
-	size_t Rows;
-	size_t Cols;
+	png_uint_32 Rows;
+	png_uint_32 Cols;
 	int nPal;
 	int nTrans;
+	int depth;
 };
 
 struct fPNG* png_open(wchar_t* infile)
@@ -93,7 +94,7 @@ struct fPNG* png_open(wchar_t* infile)
 	pimg->Cols = png_get_image_width(png_ptr, info_ptr);
 	pimg->Rows = png_get_image_height(png_ptr, info_ptr);
 	pimg->image = png_get_rows(png_ptr, info_ptr);
-
+	pimg->depth = png_get_bit_depth(png_ptr, info_ptr);
 	png_get_PLTE(png_ptr, info_ptr, &pimg->Pal, &pimg->nPal);
 	png_get_tRNS(png_ptr, info_ptr, &pimg->Trans, &pimg->nTrans, NULL);
 
@@ -104,6 +105,7 @@ void png_close(struct fPNG* pimg)
 {
 	png_destroy_read_struct(&pimg->ppng, &pimg->pinfo, (png_infopp)NULL);
 	fclose(pimg->pFi);
+	free(pimg);
 }
 
 struct fPNGw {
@@ -111,14 +113,14 @@ struct fPNGw {
 	png_bytepp image;
 	png_colorp Pal;
 	png_bytep Trans;
-	size_t Rows;
-	size_t Cols;
+	png_uint_32 Rows;
+	png_uint_32 Cols;
 	int nPal;
 	int nTrans;
 	int depth;
 };
 
-struct fPNGw* png_create(struct fPNGw *pngw)
+void* png_create(struct fPNGw* pngw)
 {
 	FILE* pFo;
 	errno_t ecode = _wfopen_s(&pFo, pngw->outfile, L"wb");
@@ -143,15 +145,19 @@ struct fPNGw* png_create(struct fPNGw *pngw)
 	png_init_io(png_ptr, pFo);
 	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 	png_set_IHDR(png_ptr, info_ptr, pngw->Cols, pngw->Rows, pngw->depth, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-	png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
-	png_set_pHYs(png_ptr, info_ptr, 2540, 1270, PNG_RESOLUTION_METER);
-	png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
+	png_set_tRNS(png_ptr, info_ptr, pngw->Trans, pngw->nTrans, NULL);
+	png_set_PLTE(png_ptr, info_ptr, pngw->Pal, pngw->nPal);
+	png_write_info(png_ptr, info_ptr);
+	png_write_image(png_ptr, pngw->image);
+	png_write_end(png_ptr, info_ptr);
+	png_destroy_write_struct(&png_ptr, &info_ptr);
+	fclose(pFo);
+
+	return pngw;
 }
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFo;
-
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
@@ -223,14 +229,12 @@ int wmain(int argc, wchar_t** argv)
 		//		wprintf_s(L"%s: %3zu %3zu %3d %3d.\n", path_odd, pimg_odd->Cols, pimg_odd->Rows, pimg_odd->nPal, pimg_odd->nTrans);
 		//		wprintf_s(L"%s: %3zu %3zu %3d %3d.\n", path_even, pimg_even->Cols, pimg_even->Rows, pimg_even->nPal, pimg_even->nTrans);
 
-		if (pimg_odd->Cols != pimg_even->Cols || pimg_odd->Rows != pimg_even->Rows || pimg_odd->nPal != pimg_even->nPal || pimg_odd->nTrans != pimg_even->nTrans) {
+		int c_mismatch = 0;
+		if (pimg_odd->Cols != pimg_even->Cols || pimg_odd->Rows != pimg_even->Rows || pimg_odd->nPal != pimg_even->nPal || pimg_odd->nTrans != pimg_even->nTrans || pimg_odd->depth != pimg_even->depth) {
 			wprintf_s(L"Basic image infomations do not match.\n");
-			png_close(pimg_odd);
-			png_close(pimg_even);
-			continue;
+			c_mismatch = 1;
 		}
 
-		int c_mismatch = 0;
 		for (size_t i = 0; i < pimg_odd->nPal; i++) {
 			if ((pimg_odd->Pal)[i].blue != (pimg_even->Pal)[i].blue || (pimg_odd->Pal)[i].red != (pimg_even->Pal)[i].red || (pimg_odd->Pal)[i].green != (pimg_even->Pal)[i].green) {
 				wprintf_s(L"Palettes do not match.\n");
@@ -252,8 +256,28 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
+		struct fPNGw imgw;
+		imgw.outfile = path;
+		imgw.depth = pimg_odd->depth;
+		imgw.image = malloc(sizeof(png_bytep) * pimg_odd->Rows * 2);
+		imgw.Cols = pimg_odd->Cols;
+		imgw.Rows = pimg_odd->Rows * 2;
+		imgw.Pal = pimg_odd->Pal;
+		imgw.Trans = pimg_odd->Trans;
+		imgw.nPal = pimg_odd->nPal;
+		imgw.nTrans = pimg_odd->nTrans;
+
+		for (size_t i = 0 ; i < pimg_odd->Rows ; i++) {
+			*(imgw.image + i * 2) = *(pimg_odd->image + i);
+			*(imgw.image + i * 2 + 1) = *(pimg_even->image + i);
+		}
+		void *res = png_create(&imgw);
+
+		free(imgw.image);
 		png_close(pimg_odd);
 		png_close(pimg_even);
-
+		if (res == NULL) {
+			wprintf_s(L"File %s create/write error\n", path);
+		}
 	}
 }
