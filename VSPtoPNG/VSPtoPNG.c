@@ -6,8 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "png.h"
-#include "zlib.h"
+#include "../aclib/pngio.h"
 
 #define PLANE 4
 #define BPP 8
@@ -178,7 +177,7 @@ enum fmt_cg {NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX};
 
 int wmain(int argc, wchar_t **argv)
 {
-	FILE *pFi, *pFo;
+	FILE *pFi;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -1015,16 +1014,10 @@ int wmain(int argc, wchar_t **argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		ecode = _wfopen_s(&pFo, path, L"wb");
-		if (ecode) {
-			free(canvas);
-			wprintf_s(L"File open error %s.\n", path);
-			exit(ecode);
-		}
-
-		png_structp png_ptr;
-		png_infop info_ptr;
 		png_color pal[256] = { {0,0,0} };
+		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		trans[t_color] = 0;
 
 		if (g_fmt == VSP256) {
 			for (size_t ci = 0; ci < 256; ci++) {
@@ -1057,66 +1050,36 @@ int wmain(int argc, wchar_t **argv)
 			}
 		}
 
-		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-		if (png_ptr == NULL) {
-			free(canvas);
-			fclose(pFo);
-			return;
-		}
-		info_ptr = png_create_info_struct(png_ptr);
-		if (info_ptr == NULL) {
-			png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-			free(canvas);
-			fclose(pFo);
-			return;
+		if (t_color == 0x10) {
+			iInfo.colors = 17;
 		}
 
-		unsigned __int8 **image;
-		image = (png_bytepp)malloc(canvas_y * sizeof(png_bytep));
-		if (image == NULL) {
+		struct fPNGw imgw;
+		imgw.outfile = path;
+		imgw.depth = 8;
+		imgw.Cols = canvas_x;
+		imgw.Rows = canvas_y;
+		imgw.Pal = pal;
+		imgw.Trans = trans;
+		imgw.nPal = iInfo.colors;
+		imgw.nTrans = iInfo.colors;
+		imgw.pXY = ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL)) ? 2 : 1;
+
+		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			free(canvas);
-			fclose(pFo);
 			exit(-2);
 		}
 		for (size_t j = 0; j < canvas_y; j++)
-			image[j] = (png_bytep)&canvas[j * canvas_x];
+			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
 
-		png_init_io(png_ptr, pFo);
-		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-		png_set_IHDR(png_ptr, info_ptr, canvas_x, canvas_y,
-			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
-			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-		if ((g_fmt == GL3) || (g_fmt == GM3)) {
-			png_byte trans[16] = { 0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
-		}
-		else if ((g_fmt == VSP200l) || (g_fmt == GL)) {
-			png_byte trans[16] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-								   0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
-		}
-		else if (t_color == 0x10) {
-			iInfo.colors = 17;
-			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-			png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
+		void* res = png_create(&imgw);
+		if (res == NULL) {
+			wprintf_s(L"File %s create/write error\n", path);
 		}
 
-		if ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL))
-			png_set_pHYs(png_ptr, info_ptr, 2540, 1270, PNG_RESOLUTION_METER);
-
-		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
-		//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
-		png_write_info(png_ptr, info_ptr);
-		png_write_image(png_ptr, image);
-		png_write_end(png_ptr, info_ptr);
-		png_destroy_write_struct(&png_ptr, &info_ptr);
-
-		free(image);
+		free(imgw.image);
 		free(canvas);
-		fclose(pFo);
 	}
 }

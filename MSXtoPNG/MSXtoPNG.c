@@ -6,8 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "png.h"
-#include "zlib.h"
+#include "../aclib/pngio.h"
 
 #define PLANE 4
 #define BPP 8
@@ -47,7 +46,7 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX };
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi, * pFo;
+	FILE* pFi;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -113,7 +112,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		wprintf_s(L"%s: %3zu/%3zu %3zd/%3d MSX size %zu => %zu.\n", *argv, msx_start_x, msx_start_y, msx_len_x * 2, hMSX.Rows, msx_len, msx_len_decoded);
 		size_t count = msx_len, cp_len;
-		unsigned __int8* src = msx_data, * dst = msx_data_decoded, * cp_src;
+		unsigned __int8* src = msx_data, * dst = msx_data_decoded;
 		while (count-- && (dst - msx_data_decoded) < msx_len_decoded) {
 			switch (*src) {
 			case 0x00:
@@ -193,16 +192,7 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		ecode = _wfopen_s(&pFo, path, L"wb");
-		if (ecode) {
-			free(canvas);
-			wprintf_s(L"File open error %s.\n", path);
-			exit(ecode);
-		}
-
-		png_structp png_ptr;
-		png_infop info_ptr;
-		png_color pal[256] = { {0,0,0} };
+		png_color pal[17] = { {0,0,0} };
 
 		for (size_t ci = 0; ci < 16; ci++) {
 			pal[ci].blue = (hMSX.Palette[ci].C0 * 0x24) | ((hMSX.Palette[ci].C0 & 4) ? 1 : 0);
@@ -211,50 +201,35 @@ int wmain(int argc, wchar_t** argv)
 		}
 		pal[16].blue = pal[16].red = pal[16].green = 0;
 
-		png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-		if (png_ptr == NULL) {
-			free(canvas);
-			fclose(pFo);
-			return;
-		}
-		info_ptr = png_create_info_struct(png_ptr);
-		if (info_ptr == NULL) {
-			png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-			free(canvas);
-			fclose(pFo);
-			return;
-		}
+		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
 
-		unsigned __int8** image;
-		image = (png_bytepp)malloc(canvas_y * sizeof(png_bytep));
-		if (image == NULL) {
+		struct fPNGw imgw;
+		imgw.outfile = path;
+		imgw.depth = 8;
+		imgw.Cols = canvas_x;
+		imgw.Rows = canvas_y;
+		imgw.Pal = pal;
+		imgw.Trans = trans;
+		imgw.nPal = 17;
+		imgw.nTrans = 17;
+		imgw.pXY = 2;
+
+		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
 			free(canvas);
-			fclose(pFo);
 			exit(-2);
 		}
 		for (size_t j = 0; j < canvas_y; j++)
-			image[j] = (png_bytep)&canvas[j * canvas_x];
+			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
 
-		png_init_io(png_ptr, pFo);
-		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-		png_set_IHDR(png_ptr, info_ptr, canvas_x, canvas_y,
-			BPP, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE,
-			PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		iInfo.colors = 17;
-		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-		png_set_tRNS(png_ptr, info_ptr, trans, iInfo.colors, NULL);
-		png_set_pHYs(png_ptr, info_ptr, 2540, 1270, PNG_RESOLUTION_METER);
-		png_set_PLTE(png_ptr, info_ptr, pal, iInfo.colors);
-		//		png_set_oFFs(png_ptr, info_ptr, iInfo.start_x, iInfo.start_y, PNG_OFFSET_PIXEL);
-		png_write_info(png_ptr, info_ptr);
-		png_write_image(png_ptr, image);
-		png_write_end(png_ptr, info_ptr);
-		png_destroy_write_struct(&png_ptr, &info_ptr);
+		void* res = png_create(&imgw);
+		if (res == NULL) {
+			wprintf_s(L"File %s create/write error\n", path);
+		}
 
-		free(image);
+		free(imgw.image);
 		free(canvas);
-		fclose(pFo);
 	}
 }
