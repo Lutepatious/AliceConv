@@ -1,6 +1,3 @@
-// MSXtoPNG Intruder専用版
-// COLPALET.DATからパレット情報を切り出しておくこと
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
@@ -11,7 +8,6 @@
 
 #include "../aclib/pngio.h"
 
-#define PLANE 4
 #define BPP 8
 #define ROWS 480
 #define MSX_ROWS 212
@@ -23,13 +19,16 @@ struct MSX_Palette {
 	unsigned __int16 C1 : 4;
 	unsigned __int16 C2 : 4;
 	unsigned __int16 u0 : 4;
-} Pal[16];
+};
 
 // MSXのフォーマットのヘッダ
-struct MSXo_header {
-	unsigned __int8 Columns; // divided by 2
-	unsigned __int8 Rows;
-} hMSXo;
+struct MSXVSP_header {
+	unsigned __int16 Column_start; // divided by 2
+	unsigned __int16 Row_start;
+	unsigned __int16 Columns; // divided by 2
+	unsigned __int16 Rows;
+	struct MSX_Palette Palette[16];
+} hMSXVSP;
 
 // イメージ情報保管用構造体
 struct image_info {
@@ -46,7 +45,7 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX };
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi, * pFi_pal;
+	FILE* pFi;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -75,14 +74,14 @@ int wmain(int argc, wchar_t** argv)
 
 		fseek(pFi, 0, SEEK_SET);
 
-		rcount = fread_s(&hMSXo, sizeof(hMSXo), sizeof(hMSXo), 1, pFi);
+		rcount = fread_s(&hMSXVSP, sizeof(hMSXVSP), sizeof(hMSXVSP), 1, pFi);
 		if (rcount != 1) {
 			wprintf_s(L"File read error %s.\n", *argv);
 			fclose(pFi);
 			exit(-2);
 		}
 
-		size_t msx_len = fs.st_size - sizeof(hMSXo);
+		size_t msx_len = fs.st_size - sizeof(hMSXVSP);
 		unsigned __int8* msx_data = malloc(msx_len);
 		if (msx_data == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
@@ -99,41 +98,65 @@ int wmain(int argc, wchar_t** argv)
 		}
 		fclose(pFi);
 
-		size_t msx_start = 0;
-		size_t msx_start_x = msx_start % 256 * 2;
-		size_t msx_start_y = msx_start / 256;
-		size_t msx_len_x = hMSXo.Columns ? hMSXo.Columns : 256;
-		size_t msx_len_decoded = hMSXo.Rows * msx_len_x;
-		unsigned __int8* msx_data_decoded = malloc(msx_len_decoded);
+		const size_t msxvsp_in_col = hMSXVSP.Column_start;
+		const size_t msxvsp_in_x = msxvsp_in_col * 2;
+		const size_t msxvsp_in_y = hMSXVSP.Row_start;
+		const size_t msxvsp_len_col = hMSXVSP.Columns;
+		const size_t msxvsp_len_x = msxvsp_len_col * 2;
+		const size_t msxvsp_len_y = hMSXVSP.Rows * 2;
+		const size_t msxvsp_out_col = msxvsp_in_col + msxvsp_len_col;
+		const size_t msxvsp_out_x = msxvsp_out_col * 2;
+		const size_t msxvsp_out_y = hMSXVSP.Row_start + msxvsp_len_y;
+		const size_t msxvsp_len_decoded = msxvsp_len_y * msxvsp_len_col;
+
+		wprintf_s(L"File %s:%3zu/%3zu - %3zu/%3zu VSP size %zu => %zu.\n", *argv, msxvsp_in_x, msxvsp_in_y, msxvsp_out_x, msxvsp_out_y, msx_len, msxvsp_len_decoded);
+		unsigned __int8* msx_data_decoded = calloc(msxvsp_len_decoded, sizeof(unsigned __int8));
 		if (msx_data_decoded == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			free(msx_data);
 			exit(-2);
 		}
-		wprintf_s(L"%s: %3zu/%3zu %3zd/%3d MSX size %zu => %zu.\n", *argv, msx_start_x, msx_start_y, msx_len_x * 2, hMSXo.Rows, msx_len, msx_len_decoded);
-		size_t count = msx_len, cp_len;
-		unsigned __int8* src = msx_data, * dst = msx_data_decoded, * cp_src, prev = ~*src;
 
-		while (count-- && (dst - msx_data_decoded) < msx_len_decoded) {
-			if (*src == prev) {
-//				wprintf_s(L"%06zX: %02X %02X.\n", src - msx_data + 2L, *src, *(src + 1));
-				cp_src = src;
-				cp_len = *(src + 1) + 1;
-				memset(dst, *cp_src, cp_len);
-				src += 2;
+		__int64 count = msx_len;
+		size_t cp_len;
+		unsigned __int8* src = msx_data, * dst = msx_data_decoded;
+		while (count-- > 0 && (dst - msx_data_decoded) < msxvsp_len_decoded) {
+			switch (*src) {
+//			wprintf_s(L"%06zX: %02X %02X %02X.\n", src - msx_data, *src, *(src + 1), *(src + 2));
+			case 0x00:
+			case 0x01:
+				cp_len = *(src + 1);
+				if (cp_len == 0) {
+					break;
+				}
+				memcpy_s(dst, cp_len, dst - msxvsp_len_col, cp_len);
 				dst += cp_len;
-				count --;
-			}
-			else {
-				prev = *src;
+				src += 2;
+				count--;
+				break;
+			case 0x02:
+				cp_len = *(src + 1);
+				memset(dst, *(src + 2), cp_len);
+				dst += cp_len;
+				src += 3;
+				count -= 2;
+				break;
+			case 0x03:
+				src++;
+				*dst++ = *src++;
+				break;
+			default:
 				*dst++ = *src++;
 			}
-
 		}
+
 		free(msx_data);
 
+		size_t decoded_len = dst - msx_data_decoded;
+		wprintf_s(L"File %s: len %zu/%zu.\n", *argv, decoded_len, msxvsp_len_decoded);
 
-		size_t decode_len = hMSXo.Rows * msx_len_x * 2;
+
+		size_t decode_len = msxvsp_len_y * msxvsp_len_x;
 		unsigned __int8* decode_buffer = malloc(decode_len);
 		if (decode_buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
@@ -141,21 +164,21 @@ int wmain(int argc, wchar_t** argv)
 			exit(-2);
 		}
 
-		for (size_t i = 0; i < msx_len_decoded; i++) {
+		for (size_t i = 0; i < msxvsp_len_decoded; i++) {
 			decode_buffer[i * 2] = (msx_data_decoded[i] & 0xF0) >> 4;
 			decode_buffer[i * 2 + 1] = msx_data_decoded[i] & 0xF;
 		}
 
 		free(msx_data_decoded);
 		iInfo.image = decode_buffer;
-		iInfo.start_x = msx_start_x;
-		iInfo.start_y = msx_start_y;
-		iInfo.len_x = msx_len_x * 2;
-		iInfo.len_y = hMSXo.Rows;
+		iInfo.start_x = msxvsp_in_x;
+		iInfo.start_y = msxvsp_in_y;
+		iInfo.len_x = msxvsp_len_x;
+		iInfo.len_y = msxvsp_len_y;
 		iInfo.colors = 16;
 
 		size_t canvas_x = 512;
-		size_t canvas_y = 212;
+		size_t canvas_y = 424;
 		unsigned __int8 t_color = 0x10;
 
 		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
@@ -169,41 +192,32 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		memset(canvas, t_color, canvas_y * canvas_x);
+#if 0
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
 			memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
 		}
+#else
+		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
+			memcpy_s(&canvas[iy * canvas_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
+		}
+
+#endif
 		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
 		wchar_t dir[_MAX_DIR];
 		wchar_t drive[_MAX_DRIVE];
-		wchar_t palpath[_MAX_PATH];
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
-		_wmakepath_s(palpath, _MAX_PATH, drive, dir, fname, L".pal");
 
 		png_color pal[17] = { {0,0,0} };
 
-		ecode = _wfopen_s(&pFi_pal, palpath, L"rb");
-		if (ecode) {
-			wprintf_s(L"File open error %s.\n", palpath);
-			exit(ecode);
-		}
-
-		rcount = fread_s(Pal, sizeof(Pal), sizeof(Pal), 1, pFi_pal);
-		if (rcount != 1) {
-			wprintf_s(L"File read error %s.\n", palpath);
-			fclose(pFi_pal);
-			exit(-2);
-		}
-		fclose(pFi_pal);
-
 		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
-			pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
-			pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
+			pal[ci].blue = (hMSXVSP.Palette[ci].C0 * 0x24) | ((hMSXVSP.Palette[ci].C0 & 4) ? 1 : 0);
+			pal[ci].red = (hMSXVSP.Palette[ci].C1 * 0x24) | ((hMSXVSP.Palette[ci].C1 & 4) ? 1 : 0);
+			pal[ci].green = (hMSXVSP.Palette[ci].C2 * 0x24) | ((hMSXVSP.Palette[ci].C2 & 4) ? 1 : 0);
 		}
 		pal[16].blue = pal[16].red = pal[16].green = 0;
 
