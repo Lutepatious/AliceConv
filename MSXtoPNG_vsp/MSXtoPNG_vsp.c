@@ -100,14 +100,14 @@ int wmain(int argc, wchar_t** argv)
 
 		const size_t msxvsp_in_col = hMSXVSP.Column_start;
 		const size_t msxvsp_in_x = msxvsp_in_col * 2;
-		const size_t msxvsp_in_y = hMSXVSP.Row_start;
+		size_t msxvsp_in_y = hMSXVSP.Row_start;
 		const size_t msxvsp_len_col = hMSXVSP.Columns;
 		const size_t msxvsp_len_x = msxvsp_len_col * 2;
-		const size_t msxvsp_len_y = hMSXVSP.Rows * 2;
+		size_t msxvsp_len_y = hMSXVSP.Rows;
 		const size_t msxvsp_out_col = msxvsp_in_col + msxvsp_len_col;
 		const size_t msxvsp_out_x = msxvsp_out_col * 2;
-		const size_t msxvsp_out_y = hMSXVSP.Row_start + msxvsp_len_y;
-		const size_t msxvsp_len_decoded = msxvsp_len_y * msxvsp_len_col;
+		size_t msxvsp_out_y = hMSXVSP.Row_start + msxvsp_len_y;
+		size_t msxvsp_len_decoded = msxvsp_len_y * msxvsp_len_col * 2;
 
 		wprintf_s(L"File %s:%3zu/%3zu - %3zu/%3zu VSP size %zu => %zu.\n", *argv, msxvsp_in_x, msxvsp_in_y, msxvsp_out_x, msxvsp_out_y, msx_len, msxvsp_len_decoded);
 		unsigned __int8* msx_data_decoded = calloc(msxvsp_len_decoded, sizeof(unsigned __int8));
@@ -124,11 +124,17 @@ int wmain(int argc, wchar_t** argv)
 			switch (*src) {
 //			wprintf_s(L"%06zX: %02X %02X %02X.\n", src - msx_data, *src, *(src + 1), *(src + 2));
 			case 0x00:
-			case 0x01:
 				cp_len = *(src + 1);
 				if (cp_len == 0) {
 					break;
 				}
+				memcpy_s(dst, cp_len, dst - msxvsp_len_col * 2, cp_len);
+				dst += cp_len;
+				src += 2;
+				count--;
+				break;
+			case 0x01:
+				cp_len = *(src + 1);
 				memcpy_s(dst, cp_len, dst - msxvsp_len_col, cp_len);
 				dst += cp_len;
 				src += 2;
@@ -152,9 +158,23 @@ int wmain(int argc, wchar_t** argv)
 
 		free(msx_data);
 
-		size_t decoded_len = dst - msx_data_decoded;
-		wprintf_s(L"File %s: len %zu/%zu.\n", *argv, decoded_len, msxvsp_len_decoded);
+		int ratio_XY = msxvsp_len_decoded / (dst - msx_data_decoded);
 
+		if (ratio_XY == 1) {
+			unsigned __int8* msx_data_deinterlaced = malloc(msxvsp_len_decoded);
+			for (size_t y = 0; y < msxvsp_len_y; y++) {
+				memcpy_s(msx_data_deinterlaced + msxvsp_len_col * y * 2, msxvsp_len_col, msx_data_decoded + msxvsp_len_col * y, msxvsp_len_col);
+				memcpy_s(msx_data_deinterlaced + msxvsp_len_col * (y * 2 + 1), msxvsp_len_col, msx_data_decoded + msxvsp_len_col * (msxvsp_len_y + y), msxvsp_len_col);
+			}
+			free(msx_data_decoded);
+			msx_data_decoded = msx_data_deinterlaced;
+			msxvsp_in_y *= 2;
+			msxvsp_len_y *= 2;
+			msxvsp_out_y *= 2;
+		}
+		else {
+			msxvsp_len_decoded /= 2;
+		}
 
 		size_t decode_len = msxvsp_len_y * msxvsp_len_x;
 		unsigned __int8* decode_buffer = malloc(decode_len);
@@ -178,7 +198,7 @@ int wmain(int argc, wchar_t** argv)
 		iInfo.colors = 16;
 
 		size_t canvas_x = 512;
-		size_t canvas_y = 424;
+		size_t canvas_y = (ratio_XY == 1) ? 424 : 212;
 		unsigned __int8 t_color = 0x10;
 
 		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
@@ -192,16 +212,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		memset(canvas, t_color, canvas_y * canvas_x);
-#if 0
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
 			memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
 		}
-#else
-		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-			memcpy_s(&canvas[iy * canvas_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
-		}
-
-#endif
 		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
@@ -233,7 +246,7 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Trans = trans;
 		imgw.nPal = 17;
 		imgw.nTrans = 17;
-		imgw.pXY = 2;
+		imgw.pXY = 1;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));
 		if (imgw.image == NULL) {
