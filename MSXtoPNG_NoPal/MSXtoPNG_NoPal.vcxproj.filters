@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MSXtoPNG_Int.c">
+    <ClCompile Include="MSXtoPNG_Intruder.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

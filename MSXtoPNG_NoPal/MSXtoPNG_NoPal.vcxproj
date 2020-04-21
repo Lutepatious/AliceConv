@@ -23,7 +23,7 @@
     <ProjectGuid>{F656510E-3327-4412-BEC5-B4E9BC00515E}</ProjectGuid>
     <RootNamespace>MSXtoPNGNoPal</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>MSXtoPNG_Int</ProjectName>
+    <ProjectName>MSXtoPNG_Intruder</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -159,7 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="MSXtoPNG_Int.c" />
+    <ClCompile Include="MSXtoPNG_Intruder.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aclib\aclib.vcxproj">
