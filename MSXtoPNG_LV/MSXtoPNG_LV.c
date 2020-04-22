@@ -19,9 +19,7 @@ struct MSX_Palette {
 	unsigned __int16 C1 : 4;
 	unsigned __int16 C2 : 4;
 	unsigned __int16 u0 : 4;
-} Pal[16] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
-				{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 },
-				{ 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+} Pal[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
 				{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
 
 // MSXのフォーマットのヘッダ
@@ -137,7 +135,7 @@ int wmain(int argc, wchar_t** argv)
 				prev = ~*src;
 			}
 			else if (*src == 0x88) {
-				dst += (msx_len_x - ((dst - msx_data_decoded) % msx_len_x)) % msx_len_x;
+//				dst += (msx_len_x - ((dst - msx_data_decoded) % msx_len_x)) % msx_len_x;
 				prev = *src;
 				src++;
 				rows_real++;
@@ -176,11 +174,11 @@ int wmain(int argc, wchar_t** argv)
 		iInfo.start_y = 0;
 		iInfo.len_x = msx_len_x * 2;
 		iInfo.len_y = msx_len_y;
-		iInfo.colors = 16;
+		iInfo.colors = 8;
 
 		size_t canvas_x = iInfo.len_x;
 		size_t canvas_y = iInfo.len_y;
-		unsigned __int8 t_color = 0x10;
+		unsigned __int8 t_color = 8;
 
 		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
 
@@ -213,17 +211,16 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		png_color pal[17] = { {0,0,0} };
+		png_color pal[9] = { {0,0,0} };
 
-		for (size_t ci = 0; ci < 16; ci++) {
+		for (size_t ci = 0; ci < iInfo.colors; ci++) {
 			pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
 			pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
 			pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
 		}
-		pal[16].blue = pal[16].red = pal[16].green = 0;
+		pal[8].blue = pal[8].red = pal[8].green = 0;
 
-		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+		png_byte trans[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
 
 		struct fPNGw imgw;
 		imgw.outfile = path;
@@ -232,8 +229,8 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Rows = canvas_y;
 		imgw.Pal = pal;
 		imgw.Trans = trans;
-		imgw.nPal = 17;
-		imgw.nTrans = 17;
+		imgw.nPal = 9;
+		imgw.nTrans = 9;
 		imgw.pXY = 2;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));
