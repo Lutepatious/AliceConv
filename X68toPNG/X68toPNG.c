@@ -6,7 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "png.h"
+#include "../aclib/pngio.h"
 
 #define BPP 8
 #define ROWS 400
