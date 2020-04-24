@@ -26,6 +26,7 @@ struct MSX_Palette {
 				{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 },
 				{ 0x4, 0x7, 0x6 }, { 0x6, 0x7, 0x6 }, { 0x4, 0x4, 0x4 }, { 0x6, 0x6, 0x6 },
 				{ 0x0, 0x0, 0x5 }, { 0x1, 0x7, 0x4 }, { 0x7, 0x5, 0x7 }, { 0x2, 0x0, 0x4 } };
+
 // MSXのフォーマットのヘッダ
 struct MSXo_header {
 	unsigned __int8 Columns; // divided by 2
@@ -48,16 +49,30 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX };
 int wmain(int argc, wchar_t** argv)
 {
 	FILE* pFi;
+	struct MSX_Palette HPal[3][16];
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
 	}
+	errno_t ecode = _wfopen_s(&pFi, L"palette", L"rb");
+	if (ecode) {
+		wprintf_s(L"File open error\n");
+		exit(ecode);
+	}
+
+	size_t rcount = fread_s(HPal, sizeof(HPal), sizeof(HPal), 1, pFi);
+	if (rcount != 1) {
+		wprintf_s(L"File read error\n");
+		fclose(pFi);
+		exit(-2);
+	}
+	fclose(pFi);
 
 	while (--argc) {
 		enum fmt_cg g_fmt = NONE;
 
-		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
+		ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
@@ -222,50 +237,56 @@ int wmain(int argc, wchar_t** argv)
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
+		wchar_t fname_w[_MAX_FNAME];
 		wchar_t dir[_MAX_DIR];
 		wchar_t drive[_MAX_DRIVE];
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
-		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		png_color pal[17] = { {0,0,0} };
+		for (size_t p = 0; p < 3; p++) {
+			swprintf_s(fname_w, _MAX_FNAME, L"%s_%01zu", fname, 2 - p);
 
-		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
-			pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
-			pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
+			_wmakepath_s(path, _MAX_PATH, drive, dir, fname_w, L".png");
+
+			png_color pal[17] = { {0,0,0} };
+
+			for (size_t ci = 0; ci < 16; ci++) {
+				pal[ci].blue = (HPal[p][ci].C0 * 0x24) | ((HPal[p][ci].C0 & 4) ? 1 : 0);
+				pal[ci].red = (HPal[p][ci].C1 * 0x24) | ((HPal[p][ci].C1 & 4) ? 1 : 0);
+				pal[ci].green = (HPal[p][ci].C2 * 0x24) | ((HPal[p][ci].C2 & 4) ? 1 : 0);
+			}
+			pal[16].blue = pal[16].red = pal[16].green = 0;
+
+			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+
+			struct fPNGw imgw;
+			imgw.outfile = path;
+			imgw.depth = 8;
+			imgw.Cols = canvas_x;
+			imgw.Rows = canvas_y;
+			imgw.Pal = pal;
+			imgw.Trans = trans;
+			imgw.nPal = 17;
+			imgw.nTrans = 17;
+			imgw.pXY = 2;
+
+			imgw.image = malloc(canvas_y * sizeof(png_bytep));
+			if (imgw.image == NULL) {
+				fprintf_s(stderr, "Memory allocation error.\n");
+				free(canvas);
+				exit(-2);
+			}
+			for (size_t j = 0; j < canvas_y; j++)
+				imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
+
+			void* res = png_create(&imgw);
+			if (res == NULL) {
+				wprintf_s(L"File %s create/write error\n", path);
+			}
+
+			free(imgw.image);
 		}
-		pal[16].blue = pal[16].red = pal[16].green = 0;
-
-		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-
-		struct fPNGw imgw;
-		imgw.outfile = path;
-		imgw.depth = 8;
-		imgw.Cols = canvas_x;
-		imgw.Rows = canvas_y;
-		imgw.Pal = pal;
-		imgw.Trans = trans;
-		imgw.nPal = 17;
-		imgw.nTrans = 17;
-		imgw.pXY = 2;
-
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
-		if (imgw.image == NULL) {
-			fprintf_s(stderr, "Memory allocation error.\n");
-			free(canvas);
-			exit(-2);
-		}
-		for (size_t j = 0; j < canvas_y; j++)
-			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
-
-		void* res = png_create(&imgw);
-		if (res == NULL) {
-			wprintf_s(L"File %s create/write error\n", path);
-		}
-
-		free(imgw.image);
 		free(canvas);
 	}
 }

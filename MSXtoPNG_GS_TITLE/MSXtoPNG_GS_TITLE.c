@@ -48,7 +48,7 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX };
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi;
+	FILE* pFi, *pFo;
 
 	enum fmt_cg g_fmt = NONE;
 
@@ -96,7 +96,20 @@ int wmain(int argc, wchar_t** argv)
 	fclose(pFi);
 
 	// Palette Out 0xF800 to 0xF860
+	ecode = _wfopen_s(&pFo, L"palette", L"wb");
+	if (ecode) {
+		wprintf_s(L"File open error\n");
+		exit(ecode);
+	}
 
+	rcount = fwrite(msx_data+0xF800LL, 1, 0x60, pFo);
+	if (rcount != 0x60) {
+		wprintf_s(L"File read error %zd.\n", rcount);
+		free(msx_data);
+		fclose(pFo);
+		exit(-2);
+	}
+	fclose(pFo);
 
 	size_t msx_start = 0;
 	size_t msx_start_x = msx_start % 256 * 2;
