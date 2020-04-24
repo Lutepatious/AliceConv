@@ -45,6 +45,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSXtoPNG_LV", "MSXtoPNG_LV\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSXtoPNG_LP", "MSXtoPNG_LP\MSXtoPNG_LP.vcxproj", "{7F17335E-6D23-44A1-9A86-3726EE3F55E2}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MSXtoPNG_GS", "MSXtoPNG_GS\MSXtoPNG_GS.vcxproj", "{407708AD-A48C-437C-A353-C945C1218FFA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -172,6 +174,14 @@ Global
 		{7F17335E-6D23-44A1-9A86-3726EE3F55E2}.Release|x64.Build.0 = Release|x64
 		{7F17335E-6D23-44A1-9A86-3726EE3F55E2}.Release|x86.ActiveCfg = Release|Win32
 		{7F17335E-6D23-44A1-9A86-3726EE3F55E2}.Release|x86.Build.0 = Release|Win32
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Debug|x64.ActiveCfg = Debug|x64
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Debug|x64.Build.0 = Debug|x64
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Debug|x86.ActiveCfg = Debug|Win32
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Debug|x86.Build.0 = Debug|Win32
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Release|x64.ActiveCfg = Release|x64
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Release|x64.Build.0 = Release|x64
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Release|x86.ActiveCfg = Release|Win32
+		{407708AD-A48C-437C-A353-C945C1218FFA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
