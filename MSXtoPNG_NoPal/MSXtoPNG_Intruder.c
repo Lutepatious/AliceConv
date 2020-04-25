@@ -201,9 +201,9 @@ int wmain(int argc, wchar_t** argv)
 		fclose(pFi_pal);
 
 		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
-			pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
-			pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
+			pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
+			pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
+			pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
 		}
 		pal[16].blue = pal[16].red = pal[16].green = 0;
 

@@ -49,7 +49,7 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, MSX };
 int wmain(int argc, wchar_t** argv)
 {
 	FILE* pFi;
-	struct MSX_Palette HPal[3][16];
+	struct MSX_Palette HPal[6][8];
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -243,17 +243,21 @@ int wmain(int argc, wchar_t** argv)
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 
-		for (size_t p = 0; p < 3; p++) {
-			swprintf_s(fname_w, _MAX_FNAME, L"%s_%01zu", fname, 2 - p);
-
+		for (size_t p = 0; p < 6; p++) {
+			swprintf_s(fname_w, _MAX_FNAME, L"%s_%01zu", fname, 5 - p);
 			_wmakepath_s(path, _MAX_PATH, drive, dir, fname_w, L".png");
-
 			png_color pal[17] = { {0,0,0} };
 
-			for (size_t ci = 0; ci < 16; ci++) {
-				pal[ci].blue = (HPal[p][ci].C0 * 0x24) | ((HPal[p][ci].C0 & 4) ? 1 : 0);
-				pal[ci].red = (HPal[p][ci].C1 * 0x24) | ((HPal[p][ci].C1 & 4) ? 1 : 0);
-				pal[ci].green = (HPal[p][ci].C2 * 0x24) | ((HPal[p][ci].C2 & 4) ? 1 : 0);
+			for (size_t ci = 0; ci < 8; ci++) {
+				pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
+				pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
+				pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
+			}
+
+			for (size_t ci = 0; ci < 8; ci++) {
+				pal[ci + 8].blue = (HPal[p][ci].C0 * 0x24) | (HPal[p][ci].C0 >> 1);
+				pal[ci + 8].red = (HPal[p][ci].C1 * 0x24) | (HPal[p][ci].C1 >> 1);
+				pal[ci + 8].green = (HPal[p][ci].C2 * 0x24) | (HPal[p][ci].C2 >> 1);
 			}
 			pal[16].blue = pal[16].red = pal[16].green = 0;
 

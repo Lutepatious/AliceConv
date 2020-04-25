@@ -185,9 +185,9 @@ int wmain(int argc, wchar_t** argv)
 	png_color pal[8] = { {0,0,0} };
 
 	for (size_t ci = 0; ci < 8; ci++) {
-		pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
-		pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
-		pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
+		pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
+		pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
+		pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
 	}
 	png_byte trans[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 

@@ -1028,17 +1028,17 @@ int wmain(int argc, wchar_t **argv)
 		}
 		else if (g_fmt == VSP200l) {
 			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (hVSP200l.Palette[ci].C0 * 0x24) | ((hVSP200l.Palette[ci].C0 & 4) ? 1 : 0);
-				pal[ci].red = (hVSP200l.Palette[ci].C1 * 0x24) | ((hVSP200l.Palette[ci].C1 & 4) ? 1 : 0);
-				pal[ci].green = (hVSP200l.Palette[ci].C2 * 0x24) | ((hVSP200l.Palette[ci].C2 & 4) ? 1 : 0);
+				pal[ci].blue = (hVSP200l.Palette[ci].C0 * 0x24) | (hVSP200l.Palette[ci].C0 >> 1);
+				pal[ci].red = (hVSP200l.Palette[ci].C1 * 0x24) | (hVSP200l.Palette[ci].C1 >> 1);
+				pal[ci].green = (hVSP200l.Palette[ci].C2 * 0x24) | (hVSP200l.Palette[ci].C2 >> 1);
 			}
 			pal[8].blue = pal[8].red = pal[8].green = 0;
 		}
 		else if ((g_fmt == GL)) {
 			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | ((hGL.Palette[ci].C0 & 4) ? 1 : 0);
-				pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | ((hGL.Palette[ci].C1 & 4) ? 1 : 0);
-				pal[ci].green = (hGL.Palette[ci].C2 * 0x24) | ((hGL.Palette[ci].C2 & 4) ? 1 : 0);
+				pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | (hGL.Palette[ci].C0 >> 1);
+				pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | (hGL.Palette[ci].C1 >> 1);
+				pal[ci].green = (hGL.Palette[ci].C2 * 0x24) | (hGL.Palette[ci].C2 >> 1);
 			}
 			pal[8].blue = pal[8].red = pal[8].green = 0;
 		}

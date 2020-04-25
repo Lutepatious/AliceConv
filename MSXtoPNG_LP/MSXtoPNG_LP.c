@@ -200,9 +200,9 @@ int wmain(int argc, wchar_t** argv)
 		png_color pal[9] = { {0,0,0} };
 
 		for (size_t ci = 0; ci < iInfo.colors; ci++) {
-			pal[ci].blue = (Pal[ci].C0 * 0x24) | ((Pal[ci].C0 & 4) ? 1 : 0);
-			pal[ci].red = (Pal[ci].C1 * 0x24) | ((Pal[ci].C1 & 4) ? 1 : 0);
-			pal[ci].green = (Pal[ci].C2 * 0x24) | ((Pal[ci].C2 & 4) ? 1 : 0);
+			pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
+			pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
+			pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
 		}
 		pal[8].blue = pal[8].red = pal[8].green = 0;
 
