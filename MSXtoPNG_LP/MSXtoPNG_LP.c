@@ -63,16 +63,6 @@ int wmain(int argc, wchar_t** argv)
 		struct __stat64 fs;
 		_fstat64(_fileno(pFi), &fs);
 
-		unsigned __int8 hbuf[0x40];
-		size_t rcount = fread_s(hbuf, sizeof(hbuf), sizeof(hbuf), 1, pFi);
-		if (rcount != 1) {
-			wprintf_s(L"File read error %s.\n", *argv);
-			fclose(pFi);
-			exit(-2);
-		}
-
-		fseek(pFi, 0, SEEK_SET);
-
 		size_t msx_len = fs.st_size;
 		unsigned __int8* msx_data = malloc(msx_len);
 		if (msx_data == NULL) {
@@ -81,7 +71,7 @@ int wmain(int argc, wchar_t** argv)
 			exit(-2);
 		}
 
-		rcount = fread_s(msx_data, msx_len, 1, msx_len, pFi);
+		size_t rcount = fread_s(msx_data, msx_len, 1, msx_len, pFi);
 		if (rcount != msx_len) {
 			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			free(msx_data);
@@ -106,6 +96,9 @@ int wmain(int argc, wchar_t** argv)
 
 		while (count-- > 0 && (dst - msx_data_decoded) < msx_len_decoded) {
 			if ((src - msx_data) % 0x100 == 0) {
+				if (*src == 1 && *(src + 1) == 1 && *(src + 2) == 1 && *(src + 3) == 1) {
+					break;
+				}
 				repeat = 0;
 				prev = ~*src;
 			}
@@ -113,23 +106,14 @@ int wmain(int argc, wchar_t** argv)
 				break;
 			}
 			else if (repeat) {
-				if (prev == 0x01 && *src == 0x01) {
-					break;
-				}
 				repeat = 0;
-				cp_len = *src - 2;
+				cp_len = *src - 2; // range -2 to 253. Minus cancells previous data. 
 				if (cp_len > 0) {
 					memset(dst, prev, cp_len);
 				}
-				src++;
 				dst += cp_len;
-				prev = ~*src;
-			}
-			else if (*src == 0x88) {
-				//				dst += (msx_len_x - ((dst - msx_data_decoded) % msx_len_x)) % msx_len_x;
-				prev = *src;
 				src++;
-				rows_real++;
+				prev = ~*src;
 			}
 			else if (*src == prev) {
 				repeat = 1;
@@ -142,9 +126,26 @@ int wmain(int argc, wchar_t** argv)
 				*dst++ = *src++;
 			}
 		}
-		//		wprintf_s(L"Length %6zd -> %6zd. y = %3zd.\n", src - msx_data, dst - msx_data_decoded, rows_real);
 		free(msx_data);
 
+		size_t lines = (dst - msx_data_decoded) / 0x100;
+		size_t x_offset = 0;
+		if (lines < 150) {
+			msx_len_y = 140;
+			if (*(unsigned __int32*)msx_data_decoded == 0x00L) {
+				x_offset = 8;
+			}
+		}
+		else if (lines < 190) {
+			msx_len_y = 180;
+		}
+		else if (lines < 200) {
+			msx_len_y = 192;
+		}
+		else {
+			msx_len_y = 200;
+		}
+		msx_len_decoded = msx_len_y * msx_len_x;
 
 		size_t decode_len = msx_len_y * msx_len_x * 2;
 		unsigned __int8* decode_buffer = malloc(decode_len);
@@ -167,7 +168,7 @@ int wmain(int argc, wchar_t** argv)
 		iInfo.len_y = msx_len_y;
 		iInfo.colors = 8;
 
-		size_t canvas_x = iInfo.len_x;
+		size_t canvas_x = (msx_len_y == 140) ? 352 : iInfo.len_x;
 		size_t canvas_y = iInfo.len_y;
 		unsigned __int8 t_color = 8;
 
@@ -183,15 +184,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		memset(canvas, t_color, canvas_y * canvas_x);
-#if 0
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-			memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
+			memcpy_s(&canvas[iy * canvas_x], canvas_x, &iInfo.image[iy * iInfo.len_x + x_offset], canvas_x);
 		}
-#else
-		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-			memcpy_s(&canvas[iy * canvas_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
-		}
-#endif
 		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
