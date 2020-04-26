@@ -87,24 +87,6 @@ struct GL_header {
 } hGL;
 
 
-// MSXのフォーマットのパレット情報
-struct MSX_Palette {
-	unsigned __int16 C0 : 4;
-	unsigned __int16 C1 : 4;
-	unsigned __int16 C2 : 4;
-	unsigned __int16 u0 : 4;
-};
-
-// MSXのフォーマットのヘッダ
-struct MSX_header {
-	unsigned __int16 Start;
-	unsigned __int8 Columns; // divided by 2
-	unsigned __int8 Rows;
-	unsigned __int16 Unknown[6];
-	struct MSX_Palette Palette[8];
-} hMSX;
-
-
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
 unsigned __int8 decode2bpp(unsigned __int64 *dst, const unsigned __int8 *src, size_t col, size_t row)
 {
@@ -517,7 +499,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.start_y = gl_start_y;
 			iInfo.len_x = hGL.Columns * 8;
 			iInfo.len_y = hGL.Rows;
-			iInfo.colors = 16;
+			iInfo.colors = 8;
 		}
 		else if (g_fmt == VSP256) {
 			size_t rcount = fread_s(&hVSP256, sizeof(hVSP256), sizeof(hVSP256), 1, pFi);
@@ -792,7 +774,7 @@ int wmain(int argc, wchar_t **argv)
 			iInfo.start_y = vsp_in_y;
 			iInfo.len_x = vsp_len_x;
 			iInfo.len_y = vsp_len_y;
-			iInfo.colors = 16;
+			iInfo.colors = 8;
 		}
 		else if (g_fmt == VSP) {
 			rcount = fread_s(&hVSP, sizeof(hVSP), sizeof(hVSP), 1, pFi);
@@ -1021,33 +1003,26 @@ int wmain(int argc, wchar_t **argv)
 
 		if (g_fmt == VSP256) {
 			for (size_t ci = 0; ci < 256; ci++) {
-				pal[ci].blue = (*iInfo.Palette)[ci][2];
-				pal[ci].red = (*iInfo.Palette)[ci][0];
-				pal[ci].green = (*iInfo.Palette)[ci][1];
+				color_256to256(&pal[ci], (*iInfo.Palette)[ci][2], (*iInfo.Palette)[ci][0], (*iInfo.Palette)[ci][1]);
 			}
 		}
 		else if (g_fmt == VSP200l) {
-			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (hVSP200l.Palette[ci].C0 * 0x24) | (hVSP200l.Palette[ci].C0 >> 1);
-				pal[ci].red = (hVSP200l.Palette[ci].C1 * 0x24) | (hVSP200l.Palette[ci].C1 >> 1);
-				pal[ci].green = (hVSP200l.Palette[ci].C2 * 0x24) | (hVSP200l.Palette[ci].C2 >> 1);
+			for (size_t ci = 0; ci < iInfo.colors; ci++) {
+				color_8to256(&pal[ci], hVSP200l.Palette[ci].C0, hVSP200l.Palette[ci].C1, hVSP200l.Palette[ci].C2);
 			}
-			pal[8].blue = pal[8].red = pal[8].green = 0;
+			color_8to256(&pal[iInfo.colors], 0, 0, 0);
 		}
 		else if ((g_fmt == GL)) {
-			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (hGL.Palette[ci].C0 * 0x24) | (hGL.Palette[ci].C0 >> 1);
-				pal[ci].red = (hGL.Palette[ci].C1 * 0x24) | (hGL.Palette[ci].C1 >> 1);
-				pal[ci].green = (hGL.Palette[ci].C2 * 0x24) | (hGL.Palette[ci].C2 >> 1);
+			for (size_t ci = 0; ci < iInfo.colors; ci++) {
+				color_8to256(&pal[ci], hGL.Palette[ci].C0, hGL.Palette[ci].C1, hGL.Palette[ci].C2);
 			}
-			pal[8].blue = pal[8].red = pal[8].green = 0;
+			color_8to256(&pal[iInfo.colors], 0, 0, 0);
 		}
 		else {
-			for (size_t ci = 0; ci < 16; ci++) {
-				pal[ci].blue = (*iInfo.Palette)[ci][0] * 0x11;
-				pal[ci].red = (*iInfo.Palette)[ci][1] * 0x11;
-				pal[ci].green = (*iInfo.Palette)[ci][2] * 0x11;
+			for (size_t ci = 0; ci < iInfo.colors; ci++) {
+				color_16to256(&pal[ci], (*iInfo.Palette)[ci][0], (*iInfo.Palette)[ci][1], (*iInfo.Palette)[ci][2]);
 			}
+			color_16to256(&pal[iInfo.colors], 0, 0, 0);
 		}
 
 		if (t_color == 0x10) {

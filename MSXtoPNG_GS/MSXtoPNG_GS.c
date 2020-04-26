@@ -249,15 +249,15 @@ int wmain(int argc, wchar_t** argv)
 			png_color pal[17] = { {0,0,0} };
 
 			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
-				pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
-				pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
+				pal[ci].blue = (Pal[ci].C0 * 73) >> 1;
+				pal[ci].red = (Pal[ci].C1 * 73) >> 1;
+				pal[ci].green = (Pal[ci].C2 * 73) >> 1;
 			}
 
 			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci + 8].blue = (HPal[p][ci].C0 * 0x24) | (HPal[p][ci].C0 >> 1);
-				pal[ci + 8].red = (HPal[p][ci].C1 * 0x24) | (HPal[p][ci].C1 >> 1);
-				pal[ci + 8].green = (HPal[p][ci].C2 * 0x24) | (HPal[p][ci].C2 >> 1);
+				pal[ci + 8].blue = (HPal[p][ci].C0 * 73) >> 1;
+				pal[ci + 8].red = (HPal[p][ci].C1 * 73) >> 1;
+				pal[ci + 8].green = (HPal[p][ci].C2 * 73) >> 1;
 			}
 			pal[16].blue = pal[16].red = pal[16].green = 0;
 

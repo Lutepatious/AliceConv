@@ -63,17 +63,7 @@ int wmain(int argc, wchar_t** argv)
 		struct __stat64 fs;
 		_fstat64(_fileno(pFi), &fs);
 
-		unsigned __int8 hbuf[0x40];
-		size_t rcount = fread_s(hbuf, sizeof(hbuf), sizeof(hbuf), 1, pFi);
-		if (rcount != 1) {
-			wprintf_s(L"File read error %s.\n", *argv);
-			fclose(pFi);
-			exit(-2);
-		}
-
-		fseek(pFi, 0, SEEK_SET);
-
-		rcount = fread_s(&hMSXo, sizeof(hMSXo), sizeof(hMSXo), 1, pFi);
+		size_t rcount = fread_s(&hMSXo, sizeof(hMSXo), sizeof(hMSXo), 1, pFi);
 		if (rcount != 1) {
 			wprintf_s(L"File read error %s.\n", *argv);
 			fclose(pFi);
@@ -107,7 +97,7 @@ int wmain(int argc, wchar_t** argv)
 			free(msx_data);
 			exit(-2);
 		}
-		wprintf_s(L"%s: %3I64u/%3zd MSX size %zu => %zu.\n", *argv, msx_len_x,  msx_len_y, msx_len, msx_len_decoded);
+		wprintf_s(L"%s: %3I64u/%3zd MSX size %zu => %zu.\n", *argv, msx_len_x, msx_len_y, msx_len, msx_len_decoded);
 		__int64 count = msx_len, cp_len;
 		size_t rows_real = 0;
 		unsigned __int8* src = msx_data, * dst = msx_data_decoded, * cp_src, prev = ~*src, repeat = 0;
@@ -135,7 +125,7 @@ int wmain(int argc, wchar_t** argv)
 				prev = ~*src;
 			}
 			else if (*src == 0x88) {
-//				dst += (msx_len_x - ((dst - msx_data_decoded) % msx_len_x)) % msx_len_x;
+				//				dst += (msx_len_x - ((dst - msx_data_decoded) % msx_len_x)) % msx_len_x;
 				prev = *src;
 				src++;
 				rows_real++;
@@ -151,7 +141,7 @@ int wmain(int argc, wchar_t** argv)
 				*dst++ = *src++;
 			}
 		}
-//		wprintf_s(L"Length %6zd -> %6zd. y = %3zd.\n", src - msx_data, dst - msx_data_decoded, rows_real);
+		//		wprintf_s(L"Length %6zd -> %6zd. y = %3zd.\n", src - msx_data, dst - msx_data_decoded, rows_real);
 		free(msx_data);
 
 
@@ -192,15 +182,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		memset(canvas, t_color, canvas_y * canvas_x);
-#if 0
-		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-			memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
-		}
-#else
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
 			memcpy_s(&canvas[iy * canvas_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
 		}
-#endif
 		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
@@ -214,11 +198,10 @@ int wmain(int argc, wchar_t** argv)
 		png_color pal[9] = { {0,0,0} };
 
 		for (size_t ci = 0; ci < iInfo.colors; ci++) {
-			pal[ci].blue = (Pal[ci].C0 * 0x24) | (Pal[ci].C0 >> 1);
-			pal[ci].red = (Pal[ci].C1 * 0x24) | (Pal[ci].C1 >> 1);
-			pal[ci].green = (Pal[ci].C2 * 0x24) | (Pal[ci].C2 >> 1);
+			color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
 		}
-		pal[8].blue = pal[8].red = pal[8].green = 0;
+		color_8to256(&pal[iInfo.colors], 0, 0, 0);
+
 
 		png_byte trans[9] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
 
@@ -229,8 +212,8 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Rows = canvas_y;
 		imgw.Pal = pal;
 		imgw.Trans = trans;
-		imgw.nPal = 9;
-		imgw.nTrans = 9;
+		imgw.nPal = iInfo.colors + 1;
+		imgw.nTrans = iInfo.colors + 1;
 		imgw.pXY = 2;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));

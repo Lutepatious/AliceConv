@@ -96,6 +96,7 @@
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <IntelJCCErratum>true</IntelJCCErratum>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,6 +119,7 @@
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <IntelJCCErratum>true</IntelJCCErratum>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -138,6 +140,7 @@
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <IntelJCCErratum>true</IntelJCCErratum>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,6 +163,7 @@
       <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\zlib;C:\Users\kitoh\source\repos\libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <IntelJCCErratum>true</IntelJCCErratum>
       <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

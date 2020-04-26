@@ -217,12 +217,10 @@ int wmain(int argc, wchar_t** argv)
 
 		png_color pal[17] = { {0,0,0} };
 
-		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = (hMSXVSP.Palette[ci].C0 * 0x24) | (hMSXVSP.Palette[ci].C0 >> 1);
-			pal[ci].red = (hMSXVSP.Palette[ci].C1 * 0x24) | (hMSXVSP.Palette[ci].C1 >> 1);
-			pal[ci].green = (hMSXVSP.Palette[ci].C2 * 0x24) | (hMSXVSP.Palette[ci].C2 >> 1);
+		for (size_t ci = 0; ci < iInfo.colors; ci++) {
+			color_8to256(&pal[ci], hMSXVSP.Palette[ci].C0, hMSXVSP.Palette[ci].C1, hMSXVSP.Palette[ci].C2);
 		}
-		pal[16].blue = pal[16].red = pal[16].green = 0;
+		color_8to256(&pal[iInfo.colors], 0, 0, 0);
 
 		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
@@ -234,8 +232,8 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Rows = canvas_y;
 		imgw.Pal = pal;
 		imgw.Trans = trans;
-		imgw.nPal = 17;
-		imgw.nTrans = 17;
+		imgw.nPal = iInfo.colors + 1;
+		imgw.nTrans = iInfo.colors + 1;
 		imgw.pXY = 1;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));

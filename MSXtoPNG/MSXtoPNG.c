@@ -104,7 +104,7 @@ int wmain(int argc, wchar_t** argv)
 		size_t msx_start_y = msx_start / 256;
 		size_t msx_len_x = hMSX.Columns ? hMSX.Columns : 256;
 		size_t msx_len_decoded = hMSX.Rows * msx_len_x;
-		unsigned __int8* msx_data_decoded = malloc(msx_len_decoded);
+		unsigned __int8* msx_data_decoded = calloc(msx_len_decoded, 1);
 		if (msx_data_decoded == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			free(msx_data);
@@ -116,7 +116,7 @@ int wmain(int argc, wchar_t** argv)
 		while (count-- && (dst - msx_data_decoded) < msx_len_decoded) {
 			switch (*src) {
 			case 0x00:
-				cp_len = *(src + 1)? *(src + 1) : 256;
+				cp_len = *(src + 1) ? *(src + 1) : 256;
 				memset(dst, *(src + 2), cp_len);
 				dst += cp_len;
 				src += 3;
@@ -141,7 +141,6 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		free(msx_data);
-
 
 		size_t decode_len = hMSX.Rows * msx_len_x * 2;
 		unsigned __int8* decode_buffer = malloc(decode_len);
@@ -194,12 +193,10 @@ int wmain(int argc, wchar_t** argv)
 
 		png_color pal[17] = { {0,0,0} };
 
-		for (size_t ci = 0; ci < 16; ci++) {
-			pal[ci].blue = (hMSX.Palette[ci].C0 * 0x24) | (hMSX.Palette[ci].C0 >> 1);
-			pal[ci].red = (hMSX.Palette[ci].C1 * 0x24) | (hMSX.Palette[ci].C1 >> 1);
-			pal[ci].green = (hMSX.Palette[ci].C2 * 0x24) | (hMSX.Palette[ci].C2 >> 1);
+		for (size_t ci = 0; ci < iInfo.colors; ci++) {
+			color_8to256(&pal[ci], hMSX.Palette[ci].C0, hMSX.Palette[ci].C1, hMSX.Palette[ci].C2);
 		}
-		pal[16].blue = pal[16].red = pal[16].green = 0;
+		color_8to256(&pal[iInfo.colors], 0, 0, 0);
 
 		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
@@ -211,8 +208,8 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Rows = canvas_y;
 		imgw.Pal = pal;
 		imgw.Trans = trans;
-		imgw.nPal = 17;
-		imgw.nTrans = 17;
+		imgw.nPal = iInfo.colors + 1;
+		imgw.nTrans = iInfo.colors + 1;
 		imgw.pXY = 2;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));
