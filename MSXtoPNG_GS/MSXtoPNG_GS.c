@@ -249,18 +249,13 @@ int wmain(int argc, wchar_t** argv)
 			_wmakepath_s(path, _MAX_PATH, drive, dir, fname_w, L".png");
 			png_color pal[17] = { {0,0,0} };
 
-			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci].blue = (Pal[ci].C0 * 73) >> 1;
-				pal[ci].red = (Pal[ci].C1 * 73) >> 1;
-				pal[ci].green = (Pal[ci].C2 * 73) >> 1;
+			for (size_t ci = 0; ci < iInfo.colors / 2; ci++) {
+				color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
 			}
-
-			for (size_t ci = 0; ci < 8; ci++) {
-				pal[ci + 8].blue = (HPal[p][ci].C0 * 73) >> 1;
-				pal[ci + 8].red = (HPal[p][ci].C1 * 73) >> 1;
-				pal[ci + 8].green = (HPal[p][ci].C2 * 73) >> 1;
+			for (size_t ci = 0; ci < iInfo.colors / 2; ci++) {
+				color_8to256(&pal[ci + iInfo.colors / 2], HPal[p][ci].C0, HPal[p][ci].C1, HPal[p][ci].C2);
 			}
-			pal[16].blue = pal[16].red = pal[16].green = 0;
+			color_8to256(&pal[iInfo.colors], 0, 0, 0);
 
 			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
@@ -272,8 +267,8 @@ int wmain(int argc, wchar_t** argv)
 			imgw.Rows = canvas_y;
 			imgw.Pal = pal;
 			imgw.Trans = trans;
-			imgw.nPal = 17;
-			imgw.nTrans = 17;
+			imgw.nPal = iInfo.colors + 1;
+			imgw.nTrans = iInfo.colors + 1;
 			imgw.pXY = 2;
 
 			imgw.image = malloc(canvas_y * sizeof(png_bytep));

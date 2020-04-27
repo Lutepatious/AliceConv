@@ -25,11 +25,10 @@ https://github.com/Lutepatious/
 
 ˜A—æ(ƒ[ƒ‹ƒAƒhƒŒƒX)
 lutepatious@me.com
-lutepatious@kem.biglobe.ne.jp
 ‚È‚¨A•sR‚Èƒ[ƒ‹‚ÍŸŽè‚ÉƒtƒBƒ‹ƒ^‚³‚ê‚Ü‚·B
 
 —˜—p‚µ‚½ˆ—ŒnAƒ‰ƒCƒuƒ‰ƒŠ
-Visual Studio 2017
+Visual Studio 2019
 libpng
 zlib (libpng‚É•K—v)
 
@@ -44,6 +43,8 @@ PC98PCMtoWave.exe	PC-9801”Å“¬_“sŽsII‚ÆAlice‚ÌŠÙ3‚ÌAMUS.DAT‚ÌŒã”¼‚âAMSE.DAT‚ÉŽû˜
 TownsPCMtoWave.exe	FM TOWNS”Å“¬_“sŽsII‚ÆAlice‚ÌŠÙ3‚ÌAMUS.TW‚ÌŒã”¼‚âASND.DATAŠÙCD‚âŠÙCDII‚ÉŠÜ‚Ü‚ê‚éFM TOWNS•W€SNDŒ`Ž®8bitPCMƒf[ƒ^‚ðMicrosoft WAVEŒ`Ž®‚É•ÏŠ·
 WaveCorrector.exe	Only You ¢‹I––‚ÌƒWƒ…ƒŠƒGƒbƒg’B‚ÌAWAV.DAT‚ÉŠÜ‚Ü‚ê‚éMicrosoft WAVEŒ`Ž®‚Ìƒtƒ@ƒCƒ‹‚ð•â³B
 VSPtoPNG.exe		GL3,VSP,VSP256F,VSP200line,GM3,PC88‚ÌŠeŒ`Ž®‚Ìƒtƒ@ƒCƒ‹‚ðPNG‚É•ÏŠ·B
+MSXtoPNG.exeƒVƒŠ[ƒY	MSX2”Å‚ÌCGƒtƒ@ƒCƒ‹‚ðPNG‚É•ÏŠ·B
+
 
 Šî–{“I‚È“®ì
 Œ´‘¥‚Æ‚µ‚Äƒtƒ@ƒCƒ‹“à—e‚ð‘S‚Äƒƒ‚ƒŠ‚É“Ç‚Ýž‚ñ‚Å‚©‚çˆ—‚ðs‚¢‚Ü‚·B
@@ -100,7 +101,7 @@ PC-8801”Å PC-8801”Å‚ÌRance IIˆÈŠO‚ÅŽg‚í‚ê‚½Œ`Ž®
 ‚ðŽ©“®”»’è‚µ‚Ä•ÏŠ·‚µ‚Ü‚·B
 wsetargv.obj‚ðƒŠƒ“ƒN‚µ‚Ä‚ ‚é‚Ì‚ÅƒƒCƒ‹ƒhƒJ[ƒh‚ªŽg‚¦‚Ü‚·Bƒtƒ@ƒCƒ‹•¡”Žw’è‰ÂB
 
-‚È‚¨MSX”Å‚âˆê•”‚ÌX68000”Å(Rance II,“¬_“sŽs‚È‚Ç)‚Íƒtƒ@ƒCƒ‹ƒtƒH[ƒ}ƒbƒg‚ª”»‚ç‚È‚¢‚Ì‚Å–¢‘Î‰ž‚Å‚·B
+‚È‚¨ˆê•”‚ÌX68000”Å(Rance II,“¬_“sŽs‚È‚Ç)‚Íƒtƒ@ƒCƒ‹ƒtƒH[ƒ}ƒbƒg‚ª”»‚ç‚È‚¢‚Ì‚Å–¢‘Î‰ž‚Å‚·B
 
 ‘å‚Ü‚©‚ÈŒ`Ž®‚Ì–ÚˆÀ‚Í
 RanceAIntruderAƒNƒŒƒZƒ“ƒgƒ€[ƒ“‚ª‚Ÿ‚éA‚ ‚Ô‚È‚¢“V‹ç“`àAD.P.SAƒAƒŠƒX‚ÌŠÙARance IIAD.P.S SGA“¬_“sŽsAƒAƒŠƒX‚ÌŠÙCD‚ÍGL3‚©‚»‚Ì”h¶
@@ -111,12 +112,30 @@ Super D.P.SˆÈ~‚Ì256F‘Î‰žƒQ[ƒ€‚Ì‚¤‚¿A256F‚Ì•¨‚ÉŒÀ‚èVSP256
 ‚Å‚·B
 
 ƒtƒ@ƒCƒ‹ƒwƒbƒ_‚©‚ç‰æ‘œ‚Ìƒ[ƒhˆÊ’u‚É‡‚í‚¹‚Ä‰æ‘œ‚ð“WŠJ‚µAŒ³ƒf[ƒ^‚Ì‚È‚¢ŒÂŠ‚Í“§‰ßˆ—‚Æ‚µ‚Ä‚¢‚Ü‚·B
-’A‚µAGL3‚Æ256F”Å‚ÉŠÖ‚µ‚Ä‚Í‚Æ‚è‚ ‚¦‚¸ƒpƒŒƒbƒg0‚ð“§‰ß‚Æ‚µ‚Ä‚¢‚Ü‚·B8F”Å‚âVSP‚Í“§‰ßF‚ðV‹K‚Éì‚Á‚Ä‚¢‚Ü‚·B
+“§‰ßF‚Ì”»•Ê•û–@‚ª•s–¾‚È‚Ì‚Å•sŠ®‘S‚Å‚·B
 
 FM TOWNS”ÅIntruder‚ÌGM3‚É‚ÍƒpƒŒƒbƒgî•ñ‚ª‚ ‚è‚Ü‚¹‚ñB‚»‚Ìˆ×Ryu1Žì¬‚ÌˆÚAƒLƒbƒg‚ÌGM3.COM‚ÉŠÜ‚Ü‚ê‚éƒpƒŒƒbƒgî•ñ‚ðŽg—p‚µ‚Ä‚¢‚Ü‚·B
 PC-9801”ÅRance IV‚Ìˆê•”‰æ‘œ‚É‚ÍƒpƒŒƒbƒgî•ñ‚ª‚ ‚è‚Ü‚¹‚ñ(‚¨‚»‚ç‚­’¼‘O‚ÉŽg‚¤‰æ‘œ‚ÌƒpƒŒƒbƒg‚ð—˜—p‚·‚é‚ç‚µ‚¢)B
 FM TOWNS”Å‚Ì“¯‚¶‰æ‘œ‚É‚ÍƒpƒŒƒbƒgî•ñ‚ª‚ ‚é‚Ì‚Å‚»‚¿‚ç‚ð—˜—p‚·‚éŽè‚ª‚ ‚è‚Ü‚·B
 •\Ž¦’†‚ÉƒpƒŒƒbƒg‚ð‚¢‚¶‚éƒ^ƒCƒv‚Ì‰æ‘œ‚à‚ ‚è‚Ü‚·B’PF‚Å‰½‚ào‚È‚¢‚ÆŽv‚¤‘O‚É‰æ‘œ•ÒWƒ\ƒtƒg‚ÅƒpƒŒƒbƒg‚ð‚¢‚¶‚Á‚Ä‚Ý‚Ü‚µ‚å‚¤B
+
+
+MSXtoPNG.exe
+‘å‚Ü‚©‚ÉŒ¾‚Á‚ÄVSPtoPNG.exe‚ÌMSX2”Å—p‚Å‚·B
+ŒÂ•Ê‚Ìƒ^ƒCƒgƒ‹–¼‚ª‚Â‚¢‚Ä‚¢‚é‚à‚Ì‚Í‚»‚Ìƒ^ƒCƒgƒ‹ê—p‚Å‚·
+
+MSXtoPNG_Intruder.exe‚Ì‚ÝƒpƒŒƒbƒgî•ñƒtƒ@ƒCƒ‹‚ª•K—v‚Å‚·B
+AƒfƒBƒXƒN‚ÌCOLPALET.DAT‚ð32ƒoƒCƒg‚¸‚Â‚É•ªŠ„‚µAÅ‰‚Ìƒtƒ@ƒCƒ‹‚ð000‚Æ‚µ‚Ä‡”Ô‚É001.pal,002.pal‚Æ‚µ
+DATSplitter‚©‚çØ‚èo‚µ‚½001????.DAT,002????.DAT‚ÆŠg’£ŽqˆÈŠO‚Ìƒtƒ@ƒCƒ‹–¼‚ðˆê’v‚³‚¹‚ê‚ÎƒpƒŒƒbƒgî•ñƒtƒ@ƒCƒ‹‚ªo—ˆã‚ª‚è‚Ü‚·B
+
+MSXtoPNG_GS.exe‚ÆMSXtoPNG_GS_TITLE.exe‚ÍŠw‰€í‹LŒü‚¯‚ÌŠJ”­’†‚Ì‚à‚Ì‚Å‚·B
+MSXtoPNG_GS_TITLE.exe‚Åƒ^ƒCƒgƒ‹‰æ–Ê‚ÌCG‚ÆƒpƒŒƒbƒgî•ñƒtƒ@ƒCƒ‹‚ªØ‚èo‚³‚ê‚Ü‚·B
+MSXtoPNG_GS.exe‚Í‚±‚ÌƒpƒŒƒbƒgî•ñ‚ðŽg‚Á‚Ä“®ì‚µ‚Ü‚·B
+ì’†‚Å‚ÌƒpƒŒƒbƒg‚Ìˆµ‚¢‚ª‚æ‚­‚í‚©‚Á‚Ä‚¢‚È‚¢‚Ì‚Å‹l‚Ü‚Á‚Ä‚¢‚Ü‚·B
+
+MSXCombinePNG.exe
+MSX”ÅDPS SG‚Ì˜A”Ôƒtƒ@ƒCƒ‹(Šï”-‹ô”‡)‚ð‡¬‚µAƒCƒ“ƒ^[ƒŒ[ƒXƒ‚[ƒh‚Å‚ÌCG‚ðÄŒ»‚µ‚Ü‚·B
+
 
 ‹S’{‰¤ƒ‰ƒ“ƒX‚È‚ÇSystem 3.5ˆÈ~‚ÌƒQ[ƒ€‚É‘Î‰ž‚·‚é‹C‚Í‚ ‚è‚Ü‚¹‚ñB
 ƒtƒ@ƒCƒ‹ƒtƒH[ƒ}ƒbƒg‚ª‚í‚©‚è‚Ü‚¹‚ñ‚µAŠù‘¶‚Ìƒc[ƒ‹‚ª“®‚©‚È‚¢‚í‚¯‚Å‚à‚È‚¢‚Ì‚ÅB

@@ -122,7 +122,7 @@ int wmain(int argc, wchar_t** argv)
 		free(msx_data);
 		exit(-2);
 	}
-	wprintf_s(L"%s: %3zd/%3zd MSX size %zu => %zu.\n", *argv,  msx_len_x * 2, msx_len_y, msx_len, msx_len_decoded);
+	wprintf_s(L"%3zd/%3zd MSX size %zu => %zu.\n",  msx_len_x * 2, msx_len_y, msx_len, msx_len_decoded);
 	__int64 count = msx_len_decoded;
 	size_t cp_len;
 	unsigned __int8* src = msx_data, * dst = msx_data_decoded, prev = ~*src, repeat = 0, reset = 1;
@@ -183,10 +183,8 @@ int wmain(int argc, wchar_t** argv)
 
 	png_color pal[8] = { {0,0,0} };
 
-	for (size_t ci = 0; ci < 8; ci++) {
-		pal[ci].blue = (Pal[ci].C0 * 73) >> 1;
-		pal[ci].red = (Pal[ci].C1 * 73) >> 1;
-		pal[ci].green = (Pal[ci].C2 * 73) >> 1;
+	for (size_t ci = 0; ci < iInfo.colors; ci++) {
+		color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
 	}
 	png_byte trans[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
