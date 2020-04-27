@@ -133,13 +133,13 @@ void* png_create(struct fPNGw* pngw)
 
 #define STEP_3_8(x) ((double) (x) * 255.0L / 7.0L + 0.5L) 
 
-static inline png_uint_16 d3tod8(png_uint_16 a)
+static inline png_byte d3tod8(png_byte a)
 {
-	const static png_uint_16 table[8] = { 0, STEP_3_8(1), STEP_3_8(2), STEP_3_8(3), STEP_3_8(4), STEP_3_8(5), STEP_3_8(6), 255 };
+	const static png_byte table[8] = { 0, STEP_3_8(1), STEP_3_8(2), STEP_3_8(3), STEP_3_8(4), STEP_3_8(5), STEP_3_8(6), 255 };
 	return table[a];
 }
 
-void color_8to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
+void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
 	pcolor->blue = d3tod8(blue);
 	pcolor->red = d3tod8(red);
@@ -148,21 +148,21 @@ void color_8to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint
 
 #define STEP_4_8(y) ((double) (y) * 255.0L / 15.0L + 0.5L) 
 
-static inline png_uint_16 d4tod8(png_uint_16 a)
+static inline png_byte d4tod8(png_byte a)
 {
-	const static png_uint_16 table[16] = { 0, STEP_4_8(1), STEP_4_8(2), STEP_4_8(3), STEP_4_8(4), STEP_4_8(5), STEP_4_8(6), STEP_4_8(7),
+	const static png_byte table[16] = { 0, STEP_4_8(1), STEP_4_8(2), STEP_4_8(3), STEP_4_8(4), STEP_4_8(5), STEP_4_8(6), STEP_4_8(7),
 											STEP_4_8(8), STEP_4_8(9), STEP_4_8(10), STEP_4_8(11), STEP_4_8(12), STEP_4_8(13), STEP_4_8(14), 255 };
 	return table[a];
 }
 
-void color_16to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
+void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
 	pcolor->blue = d4tod8(blue);
 	pcolor->red = d4tod8(red);
 	pcolor->green = d4tod8(green);
 }
 
-void color_256to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
+void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
 	pcolor->blue = blue;
 	pcolor->red = red;

@@ -1028,6 +1028,9 @@ int wmain(int argc, wchar_t **argv)
 		if (t_color == 0x10) {
 			iInfo.colors = 17;
 		}
+		if (t_color == 8) {
+			iInfo.colors = 9;
+		}
 
 		struct fPNGw imgw;
 		imgw.outfile = path;

@@ -13,7 +13,7 @@
 #define ROWS 480
 #define MSX_ROWS 212
 
-
+#pragma pack(1)
 // MSXのフォーマットのパレット情報
 struct MSX_Palette {
 	unsigned __int16 C0 : 4;
@@ -30,6 +30,7 @@ struct MSX_header {
 	unsigned __int16 Unknown[6];
 	struct MSX_Palette Palette[16];
 } hMSX;
+#pragma pack()
 
 // イメージ情報保管用構造体
 struct image_info {

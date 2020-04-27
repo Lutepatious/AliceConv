@@ -12,7 +12,7 @@
 
 #define MSX_ROWS 212
 
-
+#pragma pack(1)
 // MSXのフォーマットのパレット情報
 struct MSX_Palette {
 	unsigned __int16 C0 : 4;
@@ -28,6 +28,7 @@ struct MSXo_header {
 	unsigned __int8 NegCols; // ~(Cols - 1)
 	unsigned __int8 Rows;
 } hMSXo;
+#pragma pack()
 
 // イメージ情報保管用構造体
 struct image_info {
