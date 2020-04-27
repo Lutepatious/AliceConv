@@ -13,9 +13,17 @@
 #define PLANE 4
 
 #pragma pack (1)
+
+struct X68_palette {
+	unsigned __int8 C0;
+	unsigned __int8 C1;
+	unsigned __int8 C2;
+};
+
+
 struct GLX_header {
 	unsigned __int16 Sig;
-	unsigned __int8 Palette[16][3];
+	struct X68_palette Pal[16];
 	unsigned __int16 Column_start; // divided by 2
 	unsigned __int16 Row_start;
 	unsigned __int16 Column_len; // divided by 2
@@ -28,7 +36,7 @@ unsigned __int8 screen[ROWS][640];
 
 int wmain(int argc, wchar_t **argv)
 {
-	FILE *pFi, *pFo;
+	FILE *pFi;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -63,7 +71,7 @@ int wmain(int argc, wchar_t **argv)
 
 		rcount = fread_s(glx_data, glx_len, 1, glx_len, pFi);
 		if (rcount != glx_len) {
-			wprintf_s(L"File read error %s %d.\n", *argv, rcount);
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
 			free(glx_data);
 			fclose(pFi);
 			exit(-2);
