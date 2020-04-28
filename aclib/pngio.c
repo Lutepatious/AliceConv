@@ -162,6 +162,26 @@ void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte gree
 	pcolor->green = d4tod8(green);
 }
 
+
+#define STEP_5_8(y) ((double) (y) * 255.0L / 31.0L + 0.5L) 
+
+static inline png_byte d5tod8(png_byte a)
+{
+	const static png_byte table[32] = { 0, STEP_5_8(1), STEP_5_8(2), STEP_5_8(3), STEP_5_8(4), STEP_5_8(5), STEP_5_8(6), STEP_5_8(7),
+										STEP_5_8(8), STEP_5_8(9), STEP_5_8(10), STEP_5_8(11), STEP_5_8(12), STEP_5_8(13), STEP_5_8(14), STEP_5_8(15),
+										STEP_5_8(16), STEP_5_8(17), STEP_5_8(18), STEP_5_8(19), STEP_5_8(20), STEP_5_8(21),	STEP_5_8(22), STEP_5_8(23),
+										STEP_5_8(24), STEP_5_8(25), STEP_5_8(26), STEP_5_8(27), STEP_5_8(28), STEP_5_8(29),	STEP_5_8(30), 255 };
+	return table[a];
+}
+
+void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
+{
+	pcolor->blue = d5tod8(blue);
+	pcolor->red = d5tod8(red);
+	pcolor->green = d5tod8(green);
+}
+
+
 void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
 	pcolor->blue = blue;

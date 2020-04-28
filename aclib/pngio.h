@@ -33,4 +33,5 @@ extern void png_close(struct fPNG* pimg);
 extern void* png_create(struct fPNGw* pngw);
 extern void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
 extern void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
+extern void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
 extern void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
