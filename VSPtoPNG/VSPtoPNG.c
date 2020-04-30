@@ -108,6 +108,15 @@ struct X68T_header {
 	unsigned __int16 Rows;
 } hX68T;
 
+// X68のランス3オプションセット あぶない文化祭前夜で使われている256色フォーマットのヘッダ 但しビッグエンディアンなのでバイトスワップを忘れずに
+struct X68V_header {
+	unsigned __int16 U0;
+	unsigned __int16 U1;
+	unsigned __int16 Cols;
+	unsigned __int16 Rows;
+	unsigned __int16 Pal[0x100]; // Palette No. 0x00 to 0xFE 最後の1個は無視するように
+} hX68V;
+
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
 unsigned __int8 decode2bpp(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
 {
@@ -233,6 +242,10 @@ int wmain(int argc, wchar_t** argv)
 		else if (*(unsigned __int64*)hbuf == 0x11000000LL) {
 			g_fmt = X68T;
 		}
+		// X68版あぶない文化祭前夜か?
+		else if (*(unsigned __int64*)hbuf == 0xF000900110002000LL) {
+			g_fmt = X68V;
+		}
 		// とりあえずVSPだと仮定する
 		else {
 			// ヘッダ部分がVSPならあり得ない値ならエラーメッセージを出して次行きましょう
@@ -278,7 +291,6 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 		}
-
 
 		if ((g_fmt == GL3) || (g_fmt == GM3)) {
 			size_t rcount = fread_s(&hGL3, sizeof(hGL3), sizeof(hGL3), 1, pFi);
@@ -1058,10 +1070,86 @@ int wmain(int argc, wchar_t** argv)
 			iInfo.colors = 256;
 
 		}
-	
+		else if (g_fmt == X68V) {
+			size_t rcount = fread_s(&hX68V, sizeof(hX68V), sizeof(hX68V), 1, pFi);
+			if (rcount != 1) {
+				wprintf_s(L"File read error %s.\n", *argv);
+				fclose(pFi);
+				exit(-2);
+			}
+			size_t x68_len = fs.st_size - sizeof(hX68V);
+
+
+			unsigned __int8* x68_data = malloc(x68_len);
+			if (x68_data == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				fclose(pFi);
+				exit(-2);
+			}
+
+			rcount = fread_s(x68_data, x68_len, 1, x68_len, pFi);
+			if (rcount != x68_len) {
+				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
+				free(x68_data);
+				fclose(pFi);
+				exit(-2);
+			}
+			fclose(pFi);
+
+			size_t x68_in_x = 96;
+			size_t x68_in_y = 56;
+			size_t x68_len_x = _byteswap_ushort(hX68V.Cols);
+			size_t x68_len_y = _byteswap_ushort(hX68V.Rows);
+			size_t x68_len_decoded = x68_len_x * x68_len_y;
+			unsigned __int8* x68_data_decoded = malloc(x68_len_decoded);
+			if (x68_data_decoded == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				free(x68_data);
+				exit(-2);
+			}
+			wprintf_s(L"%3zu/%3zu - %3zu/%3zu X68_256V size %zu => %zu.\n", x68_in_x, x68_in_y, x68_in_x + x68_len_x, x68_in_y + x68_len_y, x68_len, x68_len_decoded);
+
+			size_t count = x68_len, cp_len;
+
+			unsigned __int8* src = x68_data, * dst = x68_data_decoded, prev = ~*src, repeat = 0;
+			while (count-- > 0 && (dst - x68_data_decoded) < x68_len_decoded) {
+				if (repeat) {
+					repeat = 0;
+					cp_len = *src - 2; // range -2 to 253. Minus cancells previous data. 
+					if (cp_len > 0) {
+						memset(dst, prev, cp_len);
+					}
+					dst += cp_len;
+					src++;
+					prev = ~*src;
+				}
+				else if (*src == prev) {
+					repeat = 1;
+					prev = *src;
+					*dst++ = *src++;
+				}
+				else {
+					repeat = 0;
+					prev = *src;
+					*dst++ = *src++;
+				}
+			}
+			//		wprintf_s(L"%06I64X: %6I64d %6I64u\n", src - x68_data + sizeof(hX68V), count, dst - x68_data_decoded);
+
+
+			free(x68_data);
+
+			iInfo.image = x68_data_decoded;
+			iInfo.start_x = x68_in_x;
+			iInfo.start_y = x68_in_y;
+			iInfo.len_x = x68_len_x;
+			iInfo.len_y = x68_len_y;
+			iInfo.colors = 256;
+		}
+
 		size_t canvas_x, canvas_y;
 
-		if (g_fmt == X68T) {
+		if ((g_fmt == X68T)|| (g_fmt == X68V)) {
 			canvas_x = canvas_y = X68_LEN;
 		}
 		else {
@@ -1071,7 +1159,7 @@ int wmain(int argc, wchar_t** argv)
 
 		unsigned __int8 t_color = 0x10;
 
-		if ((g_fmt == GM3) || (g_fmt == GL3) || (g_fmt == VSP256) || (g_fmt == X68T))
+		if ((g_fmt == GM3) || (g_fmt == GL3) || (g_fmt == VSP256) || (g_fmt == X68T) || (g_fmt == X68V))
 			t_color = 0;
 		else if ((g_fmt == VSP200l) || (g_fmt == GL))
 			t_color = 8;
@@ -1106,9 +1194,11 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		png_color pal[256] = { {0,0,0} };
-		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+		png_color pal[256];
+		png_byte trans[256];
+
+		memset(pal, 0, sizeof(pal));
+		memset(trans, 0xFF, sizeof(trans));
 		trans[t_color] = 0;
 
 		if (g_fmt == VSP256) {
@@ -1136,6 +1226,16 @@ int wmain(int argc, wchar_t** argv)
 			for (size_t ci = 0; ci < 192; ci++) {
 				P.Pin = _byteswap_ushort(hX68T.Pal[ci]);
 				color_32to256(&pal[ci + 0x40], P.Pal.B, P.Pal.R, P.Pal.G);
+			}
+		}
+		else if ((g_fmt == X68V)) {
+			union X68Pal_conv {
+				struct X68_Palette Pal;
+				unsigned __int16 Pin;
+			} P;
+			for (size_t ci = 0; ci < iInfo.colors; ci++) {
+				P.Pin = _byteswap_ushort(hX68V.Pal[ci]);
+				color_32to256(&pal[ci], P.Pal.B, P.Pal.R, P.Pal.G);
 			}
 		}
 		else {
