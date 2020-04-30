@@ -120,7 +120,7 @@ void* png_create(struct fPNGw* pngw)
 	if (pngw->nPal != 256) {
 		png_set_tRNS(png_ptr, info_ptr, pngw->Trans, pngw->nTrans, NULL);
 	}
-	png_set_pHYs(png_ptr, info_ptr, DEFAULT_PpM, pngw->pXY == 2 ? DEFAULT_PpM / 2 : DEFAULT_PpM, PNG_RESOLUTION_METER);
+	png_set_pHYs(png_ptr, info_ptr, pngw->pXY == 3 ? DEFAULT_PpM * 4 / 5 : DEFAULT_PpM, pngw->pXY == 2 ? DEFAULT_PpM / 2 : DEFAULT_PpM, PNG_RESOLUTION_METER);
 	png_set_PLTE(png_ptr, info_ptr, pngw->Pal, pngw->nPal);
 	png_write_info(png_ptr, info_ptr);
 	png_write_image(png_ptr, pngw->image);
