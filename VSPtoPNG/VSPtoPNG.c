@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "../aclib/pngio.h"
+#include "../aclib/accore.h"
 
 #define PLANE 4LL
 #define BPP 8
@@ -190,7 +191,7 @@ unsigned __int8 Palette_200l[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 
 										{ 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
 
 // イメージ情報保管用構造体
-struct image_info {
+struct image_info2 {
 	unsigned __int8* image;
 	unsigned __int8(*Palette)[256][3];
 	size_t start_x;
@@ -205,6 +206,7 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, X68R, X
 int wmain(int argc, wchar_t** argv)
 {
 	FILE* pFi;
+	struct image_info* pI = NULL;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -219,9 +221,6 @@ int wmain(int argc, wchar_t** argv)
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
 		}
-
-		struct __stat64 fs;
-		_fstat64(_fileno(pFi), &fs);
 
 		unsigned __int8 hbuf[0x40];
 		size_t rcount = fread_s(hbuf, sizeof(hbuf), sizeof(hbuf), 1, pFi);
@@ -311,253 +310,26 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
+		struct __stat64 fs;
+		_fstat64(_fileno(pFi), &fs);
+
 		if ((g_fmt == GL3) || (g_fmt == GM3)) {
-			size_t rcount = fread_s(&hGL3, sizeof(hGL3), sizeof(hGL3), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-
-			size_t gl3_len = fs.st_size - sizeof(hGL3);
-			unsigned __int8* gl3_data = malloc(gl3_len);
-			if (gl3_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(gl3_data, gl3_len, 1, gl3_len, pFi);
-			if (rcount != gl3_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(gl3_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-			size_t gl3_start = hGL3.Start & 0x7FFF;
-			size_t gl3_start_x = gl3_start % 80 * 8;
-			size_t gl3_start_y = gl3_start / 80;
-			size_t gl3_len_decoded = hGL3.Rows * hGL3.Columns * PLANE;
-			unsigned __int8* gl3_data_decoded = malloc(gl3_len_decoded);
-			if (gl3_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(gl3_data);
-				exit(-2);
-			}
-			wprintf_s(L"%3zu/%3zu GL3 size %zu => %zu.\n", gl3_start_x, gl3_start_y, gl3_len, gl3_len_decoded);
-			size_t count = gl3_len, cp_len, cur_plane;
-			unsigned __int8* src = gl3_data, * dst = gl3_data_decoded, * cp_src;
-			while (count-- && (dst - gl3_data_decoded) < gl3_len_decoded) {
-				switch (*src) {
-				case 0x00:
-					cp_len = *(src + 1) & 0x7F;
-					if (*(src + 1) & 0x80) {
-						cp_src = dst - hGL3.Columns * PLANE * 2 + 1;
-						memset(dst, *cp_src, cp_len);
-						dst += cp_len;
-						src += 2;
-						count--;
-					}
-					else {
-						memset(dst, *(src + 2), cp_len);
-						dst += cp_len;
-						src += 3;
-						count -= 2;
-					}
-					break;
-				case 0x01:
-				case 0x02:
-				case 0x03:
-				case 0x04:
-				case 0x05:
-				case 0x06:
-				case 0x07:
-					cp_len = *src;
-					memset(dst, *(src + 1), cp_len);
-					src += 2;
-					dst += cp_len;
-					count--;
-					break;
-				case 0x08:
-				case 0x09:
-				case 0x0A:
-				case 0x0B:
-				case 0x0C:
-				case 0x0D:
-					cp_len = *src - 6;
-					cp_src = dst - hGL3.Columns * PLANE * 2 + 1;
-					memset(dst, *cp_src, cp_len);
-					dst += cp_len;
-					src++;
-					break;
-				case 0x0E:
-					cur_plane = ((dst - gl3_data_decoded) / hGL3.Columns) % PLANE;
-					cp_len = *(src + 1) & 0x7F;
-					cp_src = dst - hGL3.Columns * (cur_plane - 2);
-					memcpy_s(dst, cp_len, cp_src, cp_len);
-					dst += cp_len;
-					src += 2;
-					count--;
-					break;
-				case 0x0F:
-					cur_plane = ((dst - gl3_data_decoded) / hGL3.Columns) % PLANE;
-					cp_len = *(src + 1) & 0x7F;
-					cp_src = dst - hGL3.Columns * ((*(src + 1) & 0x80) ? cur_plane - 1 : cur_plane);
-					memcpy_s(dst, cp_len, cp_src, cp_len);
-					dst += cp_len;
-					src += 2;
-					count--;
-					break;
-
-				default:
-					*dst++ = *src++;
-				}
-			}
-
-			free(gl3_data);
-
-			size_t decode_len = hGL3.Rows * hGL3.Columns * BPP;
-			unsigned __int8* decode_buffer = malloc(decode_len);
-			if (decode_buffer == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(gl3_data_decoded);
-				exit(-2);
-			}
-
-			decode2bpp(decode_buffer, gl3_data_decoded, hGL3.Columns, hGL3.Rows);
-			free(gl3_data_decoded);
-
-			iInfo.image = decode_buffer;
-			iInfo.start_x = gl3_start_x;
-			iInfo.start_y = gl3_start_y;
-			iInfo.len_x = hGL3.Columns * 8;
-			iInfo.len_y = hGL3.Rows;
-			iInfo.colors = 16;
-			if (g_fmt == GM3)
-				iInfo.Palette = Palette_200l;
-			else
-				iInfo.Palette = hGL3.Palette;
+			pI = decode_GL3(pFi, (g_fmt == GM3) ? 1 : 0);
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu GL3\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 		else if (g_fmt == GL) {
-			size_t rcount = fread_s(&hGL, sizeof(hGL), sizeof(hGL), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-
-			size_t gl_len = fs.st_size - sizeof(hGL);
-			unsigned __int8* gl_data = malloc(gl_len);
-			if (gl_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(gl_data, gl_len, 1, gl_len, pFi);
-			if (rcount != gl_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(gl_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-
-			size_t gl_start = _byteswap_ushort(hGL.Start) & 0x3FFF;
-			size_t gl_start_x = gl_start % 80 * 8;
-			size_t gl_start_y = gl_start / 80;
-			size_t gl_len_decoded = hGL.Rows * hGL.Columns * (PLANE - 1);
-			unsigned __int8* gl_data_decoded = malloc(gl_len_decoded);
-			if (gl_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(gl_data);
-				exit(-2);
-			}
-			wprintf_s(L"Start %zu/%zu %u*%u GL size %zu => %zu.\n", gl_start_x, gl_start_y, hGL.Columns * 8, hGL.Rows, gl_len, gl_len_decoded);
-
-			size_t count = gl_len, cp_len, cur_plane;
-			unsigned __int8* src = gl_data, * dst = gl_data_decoded, * cp_src;
-			while (count-- && (dst - gl_data_decoded) < gl_len_decoded) {
-				switch (*src) {
-				case 0x00:
-					cp_len = *(src + 1) & 0x7F;
-					if (*(src + 1) & 0x80) {
-						cp_src = dst - hGL.Columns * (PLANE - 1) * 4 + 1;
-						memset(dst, *cp_src, cp_len);
-						dst += cp_len;
-						src += 2;
-						count--;
-					}
-					else {
-						memset(dst, *(src + 2), cp_len);
-						dst += cp_len;
-						src += 3;
-						count -= 2;
-					}
-					break;
-				case 0x01:
-				case 0x02:
-				case 0x03:
-				case 0x04:
-				case 0x05:
-				case 0x06:
-				case 0x07:
-					cp_len = *src;
-					memset(dst, *(src + 1), cp_len);
-					src += 2;
-					dst += cp_len;
-					count--;
-					break;
-				case 0x08:
-				case 0x09:
-				case 0x0A:
-				case 0x0B:
-				case 0x0C:
-				case 0x0D:
-				case 0x0E:
-					cp_len = *src - 6;
-					cp_src = dst - hGL.Columns * (PLANE - 1) * 4 + 1;
-					memset(dst, *cp_src, cp_len);
-					dst += cp_len;
-					src++;
-					break;
-				case 0x0F:
-					cur_plane = ((dst - gl_data_decoded) / hGL.Columns) % (PLANE - 1);
-					cp_len = *(src + 1) & 0x7F;
-					cp_src = dst - hGL.Columns * ((*(src + 1) & 0x80) ? cur_plane - 1 : cur_plane);
-					memcpy_s(dst, cp_len, cp_src, cp_len);
-					dst += cp_len;
-					src += 2;
-					count--;
-					break;
-
-				default:
-					*dst++ = *src++;
-				}
-			}
-
-			free(gl_data);
-
-			size_t decode_len = hGL.Rows * hGL.Columns * BPP;
-			unsigned __int8* decode_buffer = malloc(decode_len);
-			if (decode_buffer == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(gl_data_decoded);
-				exit(-2);
-			}
-
-			decode2bpp_3(decode_buffer, gl_data_decoded, hGL.Columns, hGL.Rows);
-			free(gl_data_decoded);
-
-			iInfo.image = decode_buffer;
-			iInfo.start_x = gl_start_x;
-			iInfo.start_y = gl_start_y;
-			iInfo.len_x = hGL.Columns * 8;
-			iInfo.len_y = hGL.Rows;
-			iInfo.colors = 8;
+			pI = decode_GL(pFi);
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu GL\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 		else if (g_fmt == VSP256) {
 			size_t rcount = fread_s(&hVSP256, sizeof(hVSP256), sizeof(hVSP256), 1, pFi);
@@ -1256,7 +1028,6 @@ int wmain(int argc, wchar_t** argv)
 			iInfo.colors = 16;
 		}
 
-
 		size_t canvas_x, canvas_y;
 
 		if ((g_fmt == X68T) || (g_fmt == X68V)) {
@@ -1324,11 +1095,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			color_8to256(&pal[iInfo.colors], 0, 0, 0);
 		}
-		else if ((g_fmt == GL)) {
-			for (size_t ci = 0; ci < iInfo.colors; ci++) {
-				color_8to256(&pal[ci], hGL.Palette[ci].C0, hGL.Palette[ci].C1, hGL.Palette[ci].C2);
-			}
-			color_8to256(&pal[iInfo.colors], 0, 0, 0);
+		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3)) {
 		}
 		else if ((g_fmt == X68R)) {
 			for (size_t ci = 0; ci < iInfo.colors; ci++) {
@@ -1375,10 +1142,19 @@ int wmain(int argc, wchar_t** argv)
 		imgw.depth = 8;
 		imgw.Cols = canvas_x;
 		imgw.Rows = canvas_y;
-		imgw.Pal = pal;
-		imgw.Trans = trans;
-		imgw.nPal = iInfo.colors;
-		imgw.nTrans = iInfo.colors;
+
+		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3)) {
+			imgw.Pal = pI->Pal8;
+			imgw.Trans = pI->Trans;
+			imgw.nPal = pI->colors;
+			imgw.nTrans = pI->colors;
+		}
+		else {
+			imgw.Pal = pal;
+			imgw.Trans = trans;
+			imgw.nPal = iInfo.colors;
+			imgw.nTrans = iInfo.colors;
+		}
 		imgw.pXY = ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL)) ? 2 : (g_fmt == X68T) ? 3 : 1;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));
