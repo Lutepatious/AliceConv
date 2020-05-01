@@ -150,9 +150,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="accore.c" />
     <ClCompile Include="pngio.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="accore.h" />
     <ClInclude Include="pngio.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

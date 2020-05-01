@@ -18,9 +18,15 @@
     <ClCompile Include="pngio.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="accore.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pngio.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="accore.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

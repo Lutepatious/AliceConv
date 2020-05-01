@@ -117,7 +117,7 @@ void* png_create(struct fPNGw* pngw)
 	png_init_io(png_ptr, pFo);
 	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 	png_set_IHDR(png_ptr, info_ptr, pngw->Cols, pngw->Rows, pngw->depth, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-	if (pngw->nPal != 256) {
+	if (pngw->Trans != NULL) {
 		png_set_tRNS(png_ptr, info_ptr, pngw->Trans, pngw->nTrans, NULL);
 	}
 	png_set_pHYs(png_ptr, info_ptr, pngw->pXY == 3 ? DEFAULT_PpM * 4 / 5 : DEFAULT_PpM, pngw->pXY == 2 ? DEFAULT_PpM / 2 : DEFAULT_PpM, PNG_RESOLUTION_METER);
