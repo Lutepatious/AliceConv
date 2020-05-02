@@ -46,11 +46,12 @@ struct image_info* decode_X68V(FILE* pFi)
 	}
 	fclose(pFi);
 
-	size_t in_x = 96;
-	size_t in_y = 56;
-	size_t len_x = _byteswap_ushort(data->ColsBE);
-	size_t len_y = _byteswap_ushort(data->RowsBE);
-	size_t len_decoded = len_x * len_y;
+	// スタートアドレスの決め方が不明なので決め打ちにした。
+	const size_t in_x = 96;
+	const size_t in_y = 56;
+	const size_t len_x = _byteswap_ushort(data->ColsBE);
+	const size_t len_y = _byteswap_ushort(data->RowsBE);
+	const size_t len_decoded = len_x * len_y;
 	unsigned __int8* data_decoded = malloc(len_decoded);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
