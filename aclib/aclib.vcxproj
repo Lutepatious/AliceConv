@@ -151,10 +151,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="accore.c" />
+    <ClCompile Include="GL.c" />
+    <ClCompile Include="GL3.c" />
     <ClCompile Include="pngio.c" />
+    <ClCompile Include="X68R.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="accore.h" />
+    <ClInclude Include="acinternal.h" />
     <ClInclude Include="pngio.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

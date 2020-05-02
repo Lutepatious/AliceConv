@@ -11,3 +11,4 @@ struct image_info {
 
 struct image_info* decode_GL(FILE* pFi);
 struct image_info* decode_GL3(FILE* pFi, int isGM3);
+struct image_info* decode_X68R(FILE* pFi);

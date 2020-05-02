@@ -938,94 +938,13 @@ int wmain(int argc, wchar_t** argv)
 			iInfo.colors = 256;
 		}
 		else if (g_fmt == X68R) {
-			size_t rcount = fread_s(&hX68R, sizeof(hX68R), sizeof(hX68R), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-
-			size_t x68_len = fs.st_size - sizeof(hX68R);
-			unsigned __int8* x68_data = malloc(x68_len);
-			if (x68_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(x68_data, x68_len, 1, x68_len, pFi);
-			if (rcount != x68_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(x68_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-			size_t x68_in_col = hX68R.Column_start;
-			size_t x68_in_x = x68_in_col * 2L;
-			size_t x68_in_y = hX68R.Row_start;
-			size_t x68_len_col = hX68R.Column_len;
-			size_t x68_len_x = x68_len_col * 2L;
-			size_t x68_len_y = hX68R.Row_len;
-			size_t x68_len_decoded = x68_len_col * x68_len_y;
-			unsigned __int8* x68_data_decoded = malloc(x68_len_decoded);
-			if (x68_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(x68_data);
-				exit(-2);
-			}
-			wprintf_s(L"%3zu/%3zu - %3zu/%3zu X68R size %zu => %zu.\n", x68_in_x, x68_in_y, x68_in_x + x68_len_x, x68_in_y + x68_len_y, x68_len, x68_len_decoded);
-
-			size_t count = x68_len, cp_len;
-
-			unsigned __int8* src = x68_data, * dst = x68_data_decoded;
-			while (count-- && (dst - x68_data_decoded) < x68_len_decoded) {
-				//			wprintf_s(L"%04X.\n", src - x68_data + sizeof(hx68));
-				switch (*src) {
-				case 0xFE:
-					cp_len = *(src + 1);
-					for (size_t len = 0; len < cp_len; len++) {
-						memcpy_s(dst, 2, src + 2, 2);
-						dst += 2;
-					}
-					src += 4;
-					count -= 3;
-					break;
-				case 0xFF:
-					cp_len = *(src + 1);
-					memset(dst, *(src + 2), cp_len);
-					dst += cp_len;
-					src += 3;
-					count -= 2;
-					break;
-				default:
-					*dst++ = *src++;
-				}
-			}
-
-			free(x68_data);
-
-			size_t decode_len = x68_len_decoded * 2;
-			unsigned __int8* decode_buffer = malloc(decode_len);
-			if (decode_buffer == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(x68_data_decoded);
-				exit(-2);
-			}
-
-			for (size_t i = 0; i < x68_len_decoded; i++) {
-				decode_buffer[i * 2] = x68_data_decoded[i] & 0xF;
-				decode_buffer[i * 2 + 1] = (x68_data_decoded[i] & 0xF0) >> 4;
-			}
-
-			free(x68_data_decoded);
-			iInfo.image = decode_buffer;
-			iInfo.start_x = x68_in_x;
-			iInfo.start_y = x68_in_y;
-			iInfo.len_x = x68_len_x;
-			iInfo.len_y = x68_len_y;
-			iInfo.colors = 16;
+			pI = decode_X68R(pFi);
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu X68R\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 
 		size_t canvas_x, canvas_y;
@@ -1095,13 +1014,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			color_8to256(&pal[iInfo.colors], 0, 0, 0);
 		}
-		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3)) {
-		}
-		else if ((g_fmt == X68R)) {
-			for (size_t ci = 0; ci < iInfo.colors; ci++) {
-				color_16to256(&pal[ci], hX68R.Pal[ci].B, hX68R.Pal[ci].R, hX68R.Pal[ci].G);
-			}
-			color_16to256(&pal[iInfo.colors], 0, 0, 0);
+		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R)) {
 		}
 		else if ((g_fmt == X68T)) {
 			union X68Pal_conv {
@@ -1143,7 +1056,7 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Cols = canvas_x;
 		imgw.Rows = canvas_y;
 
-		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3)) {
+		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R)) {
 			imgw.Pal = pI->Pal8;
 			imgw.Trans = pI->Trans;
 			imgw.nPal = pI->colors;
