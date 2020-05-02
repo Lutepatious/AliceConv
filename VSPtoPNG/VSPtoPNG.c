@@ -48,17 +48,6 @@ struct X68_Palette {
 	unsigned __int16 R : 5;
 	unsigned __int16 G : 5;
 };
-
-// VSP 16色フォーマットのヘッダ
-struct VSP_header {
-	unsigned __int16 Column_in; // divided by 8
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out; // divided by 8
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[2];
-	unsigned __int8 Palette[16][3];
-} hVSP;
-
 // VSP 256色フォーマットのヘッダ
 struct VSP256_header {
 	unsigned __int16 Column_in;
@@ -68,33 +57,6 @@ struct VSP256_header {
 	unsigned __int8 Unknown[24];
 	unsigned __int8 Palette[256][3];
 } hVSP256;
-
-// VSP 200ラインフォーマットのヘッダ
-struct VSP200l_header {
-	unsigned __int16 Column_in; // divided by 8
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out; // divided by 8
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[2];
-	struct GL_Palette Palette[8];
-} hVSP200l;
-
-// GL2/GL3 フォーマットのヘッダ
-struct GL3_header {
-	unsigned __int8 Palette[16][3];
-	unsigned __int16 Start;
-	unsigned __int16 Columns; // divided by 8
-	unsigned __int16 Rows;
-} hGL3;
-
-// PC88系のGLフォーマットのヘッダ
-struct GL_header {
-	unsigned __int16 Start;
-	unsigned __int8 Columns; // divided by 8
-	unsigned __int8 Rows;
-	unsigned __int16 Unknown[2];
-	struct GL_Palette Palette[8];
-} hGL;
 
 // X68の闘神都市の一部で使われている256色フォーマットのヘッダ 但しビッグエンディアンなのでバイトスワップを忘れずに
 struct X68T_header {
@@ -117,78 +79,6 @@ struct X68V_header {
 	unsigned __int16 Rows;
 	unsigned __int16 Pal[0x100]; // Palette No. 0x00 to 0xFE 最後の1個は無視するように
 } hX68V;
-
-// X68のRanceIIで使われている16色フォーマットのヘッダ 実態はパックトピクセル版のGL
-struct X68R_header {
-	unsigned __int16 Sig;
-	struct {
-		unsigned __int8 R;
-		unsigned __int8 G;
-		unsigned __int8 B;
-	} Pal[16];
-	unsigned __int16 Column_start; // divided by 2
-	unsigned __int16 Row_start;
-	unsigned __int16 Column_len; // divided by 2
-	unsigned __int16 Row_len;
-	unsigned __int16 U0;
-} hX68R;
-
-// デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
-unsigned __int8 decode2bpp(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
-{
-	unsigned __int8 max_ccode = 0;
-	for (size_t y = 0; y < row; y++) {
-		for (size_t x2 = 0; x2 < col; x2++) {
-			union {
-				__int64 a;
-				__int8 a8[8];
-			} u;
-			for (size_t x = 0; x < 8; x++) {
-				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0) | ((*(src + col * 3) & (1 << x)) ? 8 : 0);
-				if (max_ccode < u.a8[x]) {
-					max_ccode = u.a8[x];
-				}
-			}
-			(*dst) = _byteswap_uint64(u.a);
-			src++;
-			dst++;
-		}
-		src += col * (PLANE - 1);
-	}
-	return max_ccode + 1;
-}
-
-// デコードされたプレーンデータをパックトピクセルに変換(3プレーン版)
-unsigned __int8 decode2bpp_3(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
-{
-	unsigned __int8 max_ccode = 0;
-	for (size_t y = 0; y < row; y++) {
-		for (size_t x2 = 0; x2 < col; x2++) {
-			union {
-				__int64 a;
-				__int8 a8[8];
-			} u;
-			for (size_t x = 0; x < 8; x++) {
-				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0);
-				if (max_ccode < u.a8[x]) {
-					max_ccode = u.a8[x];
-				}
-			}
-			(*dst) = _byteswap_uint64(u.a);
-			src++;
-			dst++;
-		}
-		src += col * (PLANE - 2);
-	}
-	return max_ccode + 1;
-}
-#pragma pack()
-
-// GM3フォーマットのためのパレット情報
-unsigned __int8 Palette_200l[16][3] = { { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
-										{ 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
-										{ 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
-										{ 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
 
 // イメージ情報保管用構造体
 struct image_info2 {
@@ -462,79 +352,16 @@ int wmain(int argc, wchar_t** argv)
 			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu VSP\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 		else if (g_fmt == X68T) {
-			size_t rcount = fread_s(&hX68T, sizeof(hX68T), sizeof(hX68T), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
+			pI = decode_X68T(pFi);
+			if (pI == NULL) {
+				continue;
 			}
-			size_t x68_len = fs.st_size - sizeof(hX68T);
-
-			unsigned __int8* x68_data = malloc(x68_len);
-			if (x68_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(x68_data, x68_len, 1, x68_len, pFi);
-			if (rcount != x68_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(x68_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-			size_t x68_in_x = (_byteswap_ushort(hX68T.Start / 2) % X68_LEN);
-			size_t x68_in_y = (_byteswap_ushort(hX68T.Start / 2) / X68_LEN);
-			size_t x68_len_x = _byteswap_ushort(hX68T.Cols);
-			size_t x68_len_y = _byteswap_ushort(hX68T.Rows);
-			size_t x68_len_decoded = x68_len_x * x68_len_y;
-			unsigned __int8* x68_data_decoded = malloc(x68_len_decoded);
-			if (x68_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(x68_data);
-				exit(-2);
-			}
-			wprintf_s(L"%3zu/%3zu - %3zu/%3zu X68_256T size %zu => %zu.\n", x68_in_x, x68_in_y, x68_in_x + x68_len_x, x68_in_y + x68_len_y, x68_len, x68_len_decoded);
-			size_t count = x68_len, cp_len;
-
-			unsigned __int8* src = x68_data, * dst = x68_data_decoded, prev = *src;
-			while (count-- && (dst - x68_data_decoded) < x68_len_decoded) {
-				if (*(unsigned __int32*)src == 0xFFFFFFFFUL) {
-					break;
-				}
-				switch (*src) {
-				case 0x00:
-					cp_len = *(src + 2);
-					memset(dst, *(src + 1), cp_len);
-					dst += cp_len;
-					src += 3;
-					count -= 2;
-					break;
-				case 0x01:
-					cp_len = *(src + 3);
-					for (size_t len = 0; len < cp_len; len++) {
-						memcpy_s(dst, 2, src + 1, 2);
-						dst += 2;
-					}
-					src += 4;
-					count -= 3;
-					break;
-				default:
-					*dst++ = *src++;
-				}
-			}
-			free(x68_data);
-
-			iInfo.image = x68_data_decoded;
-			iInfo.start_x = x68_in_x;
-			iInfo.start_y = x68_in_y;
-			iInfo.len_x = x68_len_x;
-			iInfo.len_y = x68_len_y;
-			iInfo.colors = 256;
-
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu X68T\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 		else if (g_fmt == X68V) {
 			size_t rcount = fread_s(&hX68V, sizeof(hX68V), sizeof(hX68V), 1, pFi);
@@ -686,17 +513,7 @@ int wmain(int argc, wchar_t** argv)
 				color_256to256(&pal[ci], (*iInfo.Palette)[ci][2], (*iInfo.Palette)[ci][0], (*iInfo.Palette)[ci][1]);
 			}
 		}
-		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP)) {
-		}
-		else if ((g_fmt == X68T)) {
-			union X68Pal_conv {
-				struct X68_Palette Pal;
-				unsigned __int16 Pin;
-			} P;
-			for (size_t ci = 0; ci < 192; ci++) {
-				P.Pin = _byteswap_ushort(hX68T.Pal[ci]);
-				color_32to256(&pal[ci + 0x40], P.Pal.B, P.Pal.R, P.Pal.G);
-			}
+		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP) || (g_fmt == X68T)) {
 		}
 		else if ((g_fmt == X68V)) {
 			union X68Pal_conv {
@@ -728,7 +545,7 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Cols = canvas_x;
 		imgw.Rows = canvas_y;
 
-		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP)) {
+		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP) || (g_fmt == X68T)) {
 			imgw.Pal = pI->Pal8;
 			imgw.Trans = pI->Trans;
 			imgw.nPal = pI->colors;

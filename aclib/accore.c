@@ -13,20 +13,6 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 
-// X68の闘神都市の一部で使われている256色フォーマット 但し要素はビッグエンディアンなのでバイトスワップを忘れずに
-static struct X68T {
-	unsigned __int32 Sig;
-	unsigned __int32 U0;
-	unsigned __int16 U1;
-	unsigned __int16 U2;
-	unsigned __int16 Pal5BE[0xC0]; // Palette No. 0x40 to 0xFF
-	unsigned __int16 U3;
-	unsigned __int16 StartBE;
-	unsigned __int16 ColsBE;
-	unsigned __int16 RowsBE;
-	unsigned __int8 body[];
-};
-
 // X68のランス3オプションセット あぶない文化祭前夜で使われている256色フォーマット 但し要素はビッグエンディアンなのでバイトスワップを忘れずに
 static struct X68V {
 	unsigned __int16 U0;
