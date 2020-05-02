@@ -315,6 +315,9 @@ int wmain(int argc, wchar_t** argv)
 
 		if ((g_fmt == GL3) || (g_fmt == GM3)) {
 			pI = decode_GL3(pFi, (g_fmt == GM3) ? 1 : 0);
+			if (pI == NULL) {
+				continue;
+			}
 			iInfo.image = pI->image;
 			iInfo.start_x = pI->start_x;
 			iInfo.start_y = pI->start_y;
@@ -324,6 +327,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 		else if (g_fmt == GL) {
 			pI = decode_GL(pFi);
+			if (pI == NULL) {
+				continue;
+			}
 			iInfo.image = pI->image;
 			iInfo.start_x = pI->start_x;
 			iInfo.start_y = pI->start_y;
@@ -432,359 +438,28 @@ int wmain(int argc, wchar_t** argv)
 			iInfo.Palette = hVSP256.Palette;
 		}
 		else if (g_fmt == VSP200l) {
-			rcount = fread_s(&hVSP200l, sizeof(hVSP200l), sizeof(hVSP200l), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-
-			size_t vsp_len = fs.st_size - sizeof(hVSP200l);
-			unsigned __int8* vsp_data = malloc(vsp_len);
-			if (vsp_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(vsp_data, vsp_len, 1, vsp_len, pFi);
-			if (rcount != vsp_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(vsp_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-			const size_t vsp_in_col = hVSP200l.Column_in;
-			const size_t vsp_in_x = vsp_in_col * 8;
-			const size_t vsp_in_y = hVSP200l.Row_in;
-			const size_t vsp_out_col = hVSP200l.Column_out;
-			const size_t vsp_out_x = vsp_out_col * 8;
-			const size_t vsp_out_y = hVSP200l.Row_out;
-			const size_t vsp_len_col = hVSP200l.Column_out - hVSP200l.Column_in;
-			const size_t vsp_len_x = vsp_len_col * 8;
-			const size_t vsp_len_y = hVSP200l.Row_out - hVSP200l.Row_in;
-			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * (PLANE - 1);
-
-			unsigned __int8* vsp_data_decoded = malloc(vsp_len_decoded);
-			if (vsp_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data);
-				exit(-2);
-			}
-
-			wprintf_s(L"%3zu/%3zu - %3zu/%3zu VSP200l %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP200l.Unknown[0], hVSP200l.Unknown[1], vsp_len, vsp_len_decoded);
-
-			size_t count = vsp_len, cp_len, cur_plane;
-			unsigned __int8* src = vsp_data, * dst = vsp_data_decoded, * cp_src, negate = 0;
-
-			while (count-- && (dst - vsp_data_decoded) < vsp_len_decoded) {
-				switch (*src) {
-				case 0x00:
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (PLANE - 1);
-					memcpy_s(dst, cp_len, cp_src, cp_len);
-					dst += cp_len;
-					src += 2;
-					count--;
-					break;
-				case 0x01:
-					cp_len = *(src + 1) + 1;
-					memset(dst, *(src + 2), cp_len);
-					dst += cp_len;
-					src += 3;
-					count -= 2;
-					break;
-				case 0x02:
-					cp_len = *(src + 1) + 1;
-					for (size_t len = 0; len < cp_len; len++) {
-						memcpy_s(dst, 2, src + 2, 2);
-						dst += 2;
-					}
-					src += 4;
-					count -= 3;
-					break;
-				case 0x03:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * cur_plane;
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x04:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (cur_plane - 1);
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x05:
-					wprintf_s(L"No! You must NOT.\n");
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % (PLANE - 1);
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (cur_plane - 2);
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x06:
-					src++;
-					negate = 1;
-					break;
-				case 0x07:
-					src++;
-					*dst++ = *src++;
-					break;
-				default:
-					*dst++ = *src++;
-				}
-			}
-
-			free(vsp_data);
-
-			unsigned __int8* vsp_data_decoded2 = malloc(vsp_len_decoded);
-			if (vsp_data_decoded2 == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data);
-				exit(-2);
-			}
-
-			for (size_t ix = 0; ix < vsp_len_col; ix++) {
-				for (size_t ip = 0; ip < (PLANE - 1); ip++) {
-					for (size_t iy = 0; iy < vsp_len_y; iy++) {
-						vsp_data_decoded2[iy * vsp_len_col * (PLANE - 1) + ip * vsp_len_col + ix] = vsp_data_decoded[ix * vsp_len_y * (PLANE - 1) + ip * vsp_len_y + iy];
-					}
-				}
-			}
-			free(vsp_data_decoded);
-
-			size_t decode_len = vsp_len_y * vsp_len_col * BPP;
-			unsigned __int8* decode_buffer = malloc(decode_len);
-			if (decode_buffer == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data_decoded2);
-				exit(-2);
-			}
-
-			decode2bpp_3(decode_buffer, vsp_data_decoded2, vsp_len_col, vsp_len_y);
-			free(vsp_data_decoded2);
-
-			iInfo.image = decode_buffer;
-			iInfo.start_x = vsp_in_x;
-			iInfo.start_y = vsp_in_y;
-			iInfo.len_x = vsp_len_x;
-			iInfo.len_y = vsp_len_y;
-			iInfo.colors = 8;
-		}
-		else if (g_fmt == VSP) {
-			rcount = fread_s(&hVSP, sizeof(hVSP), sizeof(hVSP), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-
-			const size_t vsp_in_col = hVSP.Column_in;
-			const size_t vsp_in_x = vsp_in_col * 8;
-			const size_t vsp_in_y = hVSP.Row_in;
-			const size_t vsp_out_col = hVSP.Column_out;
-			const size_t vsp_out_x = vsp_out_col * 8;
-			const size_t vsp_out_y = hVSP.Row_out;
-			const size_t vsp_len_col = hVSP.Column_out - hVSP.Column_in;
-			const size_t vsp_len_x = vsp_len_col * 8;
-			const size_t vsp_len_y = hVSP.Row_out - hVSP.Row_in;
-			const size_t vsp_len_decoded = vsp_len_y * vsp_len_col * PLANE;
-
-			if (vsp_len_decoded == 4) {
-				wprintf_s(L"Too short. Skip!\n");
+			pI = decode_VSP200l(pFi);
+			if (pI == NULL) {
 				continue;
 			}
-
-			size_t vsp_len = fs.st_size - sizeof(hVSP);
-			unsigned __int8* vsp_data = malloc(vsp_len);
-			if (vsp_data == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu VSP200l\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
+		}
+		else if (g_fmt == VSP) {
+			pI = decode_VSP(pFi);
+			if (pI == NULL) {
+				continue;
 			}
-
-			rcount = fread_s(vsp_data, vsp_len, 1, vsp_len, pFi);
-			if (rcount != vsp_len) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				free(vsp_data);
-				fclose(pFi);
-				exit(-2);
-			}
-			fclose(pFi);
-
-			unsigned __int8* vsp_data_decoded = malloc(vsp_len_decoded);
-			if (vsp_data_decoded == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data);
-				exit(-2);
-			}
-
-			wprintf_s(L"%3zu/%3zu - %3zu/%3zu VSP %d:%d size %zu => %zu.\n", vsp_in_x, vsp_in_y, vsp_out_x, vsp_out_y, hVSP.Unknown[0], hVSP.Unknown[1], vsp_len, vsp_len_decoded);
-
-			size_t count = vsp_len, cp_len, cur_plane;
-			unsigned __int8* src = vsp_data, * dst = vsp_data_decoded, * cp_src, negate = 0;
-
-			while (count-- && (dst - vsp_data_decoded) < vsp_len_decoded) {
-				switch (*src) {
-				case 0x00:
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * PLANE;
-					memcpy_s(dst, cp_len, cp_src, cp_len);
-					dst += cp_len;
-					src += 2;
-					count--;
-					break;
-				case 0x01:
-					cp_len = *(src + 1) + 1;
-					memset(dst, *(src + 2), cp_len);
-					dst += cp_len;
-					src += 3;
-					count -= 2;
-					break;
-				case 0x02:
-					cp_len = *(src + 1) + 1;
-					for (size_t len = 0; len < cp_len; len++) {
-						memcpy_s(dst, 2, src + 2, 2);
-						dst += 2;
-					}
-					src += 4;
-					count -= 3;
-					break;
-				case 0x03:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % PLANE;
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * cur_plane;
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x04:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % PLANE;
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (cur_plane - 1);
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x05:
-					cur_plane = ((dst - vsp_data_decoded) / vsp_len_y) % PLANE;
-					cp_len = *(src + 1) + 1;
-					cp_src = dst - vsp_len_y * (cur_plane - 2);
-					if (negate) {
-						for (size_t len = 0; len < cp_len; len++) {
-							*dst++ = ~*cp_src++;
-						}
-					}
-					else {
-						memcpy_s(dst, cp_len, cp_src, cp_len);
-						dst += cp_len;
-					}
-					src += 2;
-					count--;
-					negate = 0;
-					break;
-				case 0x06:
-					src++;
-					negate = 1;
-					break;
-				case 0x07:
-					src++;
-					*dst++ = *src++;
-					break;
-				default:
-					*dst++ = *src++;
-				}
-			}
-
-			free(vsp_data);
-
-			unsigned __int8* vsp_data_decoded2 = malloc(vsp_len_decoded);
-			if (vsp_data_decoded2 == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data);
-				exit(-2);
-			}
-
-			for (size_t ix = 0; ix < vsp_len_col; ix++) {
-				for (size_t ip = 0; ip < PLANE; ip++) {
-					for (size_t iy = 0; iy < vsp_len_y; iy++) {
-						vsp_data_decoded2[iy * vsp_len_col * PLANE + ip * vsp_len_col + ix] = vsp_data_decoded[ix * vsp_len_y * PLANE + ip * vsp_len_y + iy];
-					}
-				}
-			}
-			free(vsp_data_decoded);
-
-			size_t decode_len = vsp_len_y * vsp_len_col * BPP;
-			unsigned __int8* decode_buffer = malloc(decode_len);
-			if (decode_buffer == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				free(vsp_data_decoded2);
-				exit(-2);
-			}
-
-			decode2bpp(decode_buffer, vsp_data_decoded2, vsp_len_col, vsp_len_y);
-			free(vsp_data_decoded2);
-
-			iInfo.image = decode_buffer;
-			iInfo.start_x = vsp_in_x;
-			iInfo.start_y = vsp_in_y;
-			iInfo.len_x = vsp_len_x;
-			iInfo.len_y = vsp_len_y;
-			iInfo.colors = 16;
-			iInfo.Palette = hVSP.Palette;
+			iInfo.image = pI->image;
+			iInfo.start_x = pI->start_x;
+			iInfo.start_y = pI->start_y;
+			iInfo.len_x = pI->len_x;
+			iInfo.len_y = pI->len_y;
+			wprintf_s(L"Start %3zu/%3zu %3zu*%3zu VSP\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y);
 		}
 		else if (g_fmt == X68T) {
 			size_t rcount = fread_s(&hX68T, sizeof(hX68T), sizeof(hX68T), 1, pFi);
@@ -939,6 +614,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 		else if (g_fmt == X68R) {
 			pI = decode_X68R(pFi);
+			if (pI == NULL) {
+				continue;
+			}
 			iInfo.image = pI->image;
 			iInfo.start_x = pI->start_x;
 			iInfo.start_y = pI->start_y;
@@ -1008,13 +686,7 @@ int wmain(int argc, wchar_t** argv)
 				color_256to256(&pal[ci], (*iInfo.Palette)[ci][2], (*iInfo.Palette)[ci][0], (*iInfo.Palette)[ci][1]);
 			}
 		}
-		else if (g_fmt == VSP200l) {
-			for (size_t ci = 0; ci < iInfo.colors; ci++) {
-				color_8to256(&pal[ci], hVSP200l.Palette[ci].C0, hVSP200l.Palette[ci].C1, hVSP200l.Palette[ci].C2);
-			}
-			color_8to256(&pal[iInfo.colors], 0, 0, 0);
-		}
-		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R)) {
+		else if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP)) {
 		}
 		else if ((g_fmt == X68T)) {
 			union X68Pal_conv {
@@ -1056,7 +728,7 @@ int wmain(int argc, wchar_t** argv)
 		imgw.Cols = canvas_x;
 		imgw.Rows = canvas_y;
 
-		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R)) {
+		if ((g_fmt == GL) || (g_fmt == GL3) || (g_fmt == GM3) || (g_fmt == X68R) || (g_fmt == VSP200l) || (g_fmt == VSP)) {
 			imgw.Pal = pI->Pal8;
 			imgw.Trans = pI->Trans;
 			imgw.nPal = pI->colors;

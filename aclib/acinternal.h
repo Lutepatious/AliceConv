@@ -20,7 +20,7 @@ static struct X68_Palette5 {
 	unsigned __int16 R : 5;
 	unsigned __int16 G : 5;
 };
-#pragma pack (0)
+#pragma pack ()
 
 #define COLOR8 (8)
 #define COLOR16 (16)

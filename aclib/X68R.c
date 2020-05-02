@@ -53,7 +53,7 @@ struct image_info* decode_X68R(FILE* pFi)
 	fclose(pFi);
 
 	const size_t start_col = data->Column_start;
-	const size_t start_x = start_col * 2L;
+	const size_t start_x = start_col * 2;
 	const size_t start_y = data->Row_start;
 	const size_t len_col = data->Columns;
 	const size_t len_x = len_col * 2;

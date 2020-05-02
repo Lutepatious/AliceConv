@@ -30,6 +30,12 @@
     <ClCompile Include="X68R.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="VSP200l.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="VSP.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pngio.h">

@@ -13,32 +13,6 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 
-// VSP 200ラインフォーマット
-static struct VSP200l {
-	unsigned __int16 Column_in; // divided by 8
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out; // divided by 8
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[2];
-	struct GL_Palette3 Pal3[8];
-	unsigned __int8 body[];
-};
-
-// VSP 16色フォーマット
-static struct VSP {
-	unsigned __int16 Column_in; // divided by 8
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out; // divided by 8
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[2];
-	struct {
-		unsigned __int8 B;
-		unsigned __int8 R;
-		unsigned __int8 G;
-	} Pal4[16];
-	unsigned __int8 body[];
-};
-
 // X68の闘神都市の一部で使われている256色フォーマット 但し要素はビッグエンディアンなのでバイトスワップを忘れずに
 static struct X68T {
 	unsigned __int32 Sig;
