@@ -7,6 +7,7 @@ struct image_info {
 	size_t len_x;
 	size_t len_y;
 	unsigned __int32 colors;
+	wchar_t* sType;
 };
 
 struct image_info* decode_GL(FILE* pFi);
@@ -15,3 +16,5 @@ struct image_info* decode_X68R(FILE* pFi);
 struct image_info* decode_VSP200l(FILE* pFi);
 struct image_info* decode_VSP(FILE* pFi);
 struct image_info* decode_X68T(FILE* pFi);
+struct image_info* decode_X68V(FILE* pFi);
+struct image_info* decode_VSP256(FILE* pFi);

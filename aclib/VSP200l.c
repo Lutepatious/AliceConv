@@ -13,7 +13,7 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // VSP 200ラインフォーマット
-static struct VSP200l {
+struct VSP200l {
 	unsigned __int16 Column_in; // divided by 8
 	unsigned __int16 Row_in;
 	unsigned __int16 Column_out; // divided by 8
@@ -72,7 +72,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 	while (count-- && (dst - data_decoded) < len_decoded) {
 		switch (*src) {
 		case 0x00:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - len_y * planes;
 			memcpy_s(dst, cp_len, cp_src, cp_len);
 			dst += cp_len;
@@ -80,14 +80,14 @@ struct image_info* decode_VSP200l(FILE* pFi)
 			count--;
 			break;
 		case 0x01:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			memset(dst, *(src + 2), cp_len);
 			dst += cp_len;
 			src += 3;
 			count -= 2;
 			break;
 		case 0x02:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			for (size_t len = 0; len < cp_len; len++) {
 				memcpy_s(dst, 2, src + 2, 2);
 				dst += 2;
@@ -97,7 +97,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 			break;
 		case 0x03:
 			cur_plane = ((dst - data_decoded) / len_y) % planes;
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - len_y * cur_plane;
 			if (negate) {
 				for (size_t len = 0; len < cp_len; len++) {
@@ -114,7 +114,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 			break;
 		case 0x04:
 			cur_plane = ((dst - data_decoded) / len_y) % planes;
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - len_y * (cur_plane - 1);
 			if (negate) {
 				for (size_t len = 0; len < cp_len; len++) {
@@ -132,7 +132,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 		case 0x05:
 			wprintf_s(L"No! You must NOT.\n");
 			cur_plane = ((dst - data_decoded) / len_y) % planes;
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - len_y * (cur_plane - 2);
 			if (negate) {
 				for (size_t len = 0; len < cp_len; len++) {
@@ -188,6 +188,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 	free(data_decoded2);
 
 	static struct image_info I;
+	static wchar_t sType[] = L"VSP200l";
 	static png_color Pal8[COLOR8 + 1];
 	static png_byte Trans[COLOR8 + 1];
 
@@ -207,6 +208,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 	I.colors = colours + 1;
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
+	I.sType = sType;
 
 	free(data);
 	return &I;

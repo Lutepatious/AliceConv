@@ -131,7 +131,7 @@ void* png_create(struct fPNGw* pngw)
 	return pngw;
 }
 
-#define STEP_3_8(x) ((double) (x) * 255.0L / 7.0L + 0.5L) 
+#define STEP_3_8(x) (png_byte)((double) (x) * 255.0L / 7.0L + 0.5L) 
 
 static inline png_byte d3tod8(png_byte a)
 {
@@ -146,7 +146,7 @@ void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green
 	pcolor->green = d3tod8(green);
 }
 
-#define STEP_4_8(y) ((double) (y) * 255.0L / 15.0L + 0.5L) 
+#define STEP_4_8(y) (png_byte)((double) (y) * 255.0L / 15.0L + 0.5L) 
 
 static inline png_byte d4tod8(png_byte a)
 {
@@ -163,7 +163,7 @@ void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte gree
 }
 
 
-#define STEP_5_8(y) ((double) (y) * 255.0L / 31.0L + 0.5L) 
+#define STEP_5_8(y) (png_byte)((double) (y) * 255.0L / 31.0L + 0.5L) 
 
 static inline png_byte d5tod8(png_byte a)
 {

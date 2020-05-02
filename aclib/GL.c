@@ -13,7 +13,7 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // GLフォーマット
-static struct GL {
+struct GL {
 	unsigned __int16 Start;
 	unsigned __int8 Columns; // divided by 8
 	unsigned __int8 Rows;
@@ -136,6 +136,7 @@ struct image_info* decode_GL(FILE* pFi)
 	free(data_decoded);
 
 	static struct image_info I;
+	static wchar_t sType[] = L"GL";
 	static png_color Pal8[COLOR8 + 1];
 	static png_byte Trans[COLOR8 + 1];
 
@@ -155,6 +156,7 @@ struct image_info* decode_GL(FILE* pFi)
 	I.colors = colours + 1;
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
+	I.sType = sType;
 
 	free(data);
 	return &I;

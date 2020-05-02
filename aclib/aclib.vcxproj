@@ -156,8 +156,10 @@
     <ClCompile Include="pngio.c" />
     <ClCompile Include="VSP.c" />
     <ClCompile Include="VSP200l.c" />
+    <ClCompile Include="VSP256.c" />
     <ClCompile Include="X68R.c" />
     <ClCompile Include="X68T.c" />
+    <ClCompile Include="X68V.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="accore.h" />

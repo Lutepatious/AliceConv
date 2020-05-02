@@ -13,7 +13,7 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // GL2/GL3 フォーマット
-static struct GL3 {
+struct GL3 {
 	struct {
 		unsigned __int8 B;
 		unsigned __int8 R;
@@ -146,6 +146,8 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 	free(data_decoded);
 
 	static struct image_info I;
+	static wchar_t sType[] = L"GL3";
+	static wchar_t sType_a[] = L"GM3";
 	static png_color Pal8[COLOR16];
 	static png_byte Trans[COLOR16];
 
@@ -178,6 +180,7 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 	I.colors = colours;
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
+	I.sType = (isGM3 == 1) ? sType_a : sType;
 
 	free(data);
 	return &I;

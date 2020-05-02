@@ -12,32 +12,6 @@
 
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
-
-// X68のランス3オプションセット あぶない文化祭前夜で使われている256色フォーマット 但し要素はビッグエンディアンなのでバイトスワップを忘れずに
-static struct X68V {
-	unsigned __int16 U0;
-	unsigned __int16 U1;
-	unsigned __int16 ColsBE;
-	unsigned __int16 RowsBE;
-	unsigned __int16 Pal5BE[0x100]; // Palette No. 0x00 to 0xFE 最後の1個は無効?
-	unsigned __int8 body[];
-};
-
-// VSP 256色フォーマット
-static struct VSP256 {
-	unsigned __int16 Column_in;
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out;
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[24];
-	struct {
-		unsigned __int8 R;
-		unsigned __int8 G;
-		unsigned __int8 B;
-	} Pal8[256];
-	unsigned __int8 body[];
-};
-
 // プレーンデータをパックトピクセルへ変換後にバイトスワップする処理の可読性を上げるための共用体
 static union {
 	__int64 a;
@@ -86,4 +60,3 @@ unsigned __int8 convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* ds
 	}
 	return max_ccode + 1;
 }
-

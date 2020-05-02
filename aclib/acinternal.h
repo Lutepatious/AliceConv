@@ -4,7 +4,7 @@ unsigned __int8 convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* ds
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // PC88系のGLフォーマットのパレット情報
-static struct GL_Palette3 {
+struct GL_Palette3 {
 	unsigned __int16 B : 3;
 	unsigned __int16 R : 3;
 	unsigned __int16 u0 : 2;
@@ -14,7 +14,7 @@ static struct GL_Palette3 {
 };
 
 // X68000フォーマットのパレット情報
-static struct X68_Palette5 {
+struct X68_Palette5 {
 	unsigned __int16 I : 1;
 	unsigned __int16 B : 5;
 	unsigned __int16 R : 5;
