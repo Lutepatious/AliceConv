@@ -20,6 +20,14 @@ struct X68_Palette5 {
 	unsigned __int16 R : 5;
 	unsigned __int16 G : 5;
 };
+
+// MSXフォーマットのパレット情報
+struct MSX_Palette {
+	unsigned __int16 B : 4;
+	unsigned __int16 R : 4;
+	unsigned __int16 G : 4;
+	unsigned __int16 u0 : 4;
+};
 #pragma pack ()
 
 #define COLOR8 (8)
