@@ -209,6 +209,7 @@ struct image_info* decode_VSP200l(FILE* pFi)
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
 	I.sType = sType;
+	I.BGcolor = colours;
 
 	free(data);
 	return &I;

@@ -186,13 +186,14 @@ int wmain(int argc, wchar_t** argv)
 		canvas_y = (pI->start_y + pI->len_y) > canvas_y ? (pI->start_y + pI->len_y) : canvas_y;
 
 		png_bytep canvas;
-		canvas = calloc(canvas_y * canvas_x, sizeof(png_byte));
+		canvas = malloc(canvas_y * canvas_x);
 		if (canvas == NULL) {
 			wprintf_s(L"Memory allocation error. \n");
 			free(pI->image);
 			exit(-2);
 		}
 
+		memset(canvas, pI->BGcolor, canvas_y * canvas_x);
 		for (size_t iy = 0; iy < pI->len_y; iy++) {
 			memcpy_s(&canvas[(pI->start_y + iy) * canvas_x + pI->start_x], pI->len_x, &pI->image[iy * pI->len_x], pI->len_x);
 		}

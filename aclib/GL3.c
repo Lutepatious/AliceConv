@@ -181,6 +181,7 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
 	I.sType = (isGM3 == 1) ? sType_a : sType;
+	I.BGcolor = 0;
 
 	free(data);
 	return &I;

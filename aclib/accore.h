@@ -8,6 +8,7 @@ struct image_info {
 	size_t len_y;
 	unsigned __int32 colors;
 	wchar_t* sType;
+	unsigned __int8 BGcolor;
 };
 
 struct image_info* decode_GL(FILE* pFi);

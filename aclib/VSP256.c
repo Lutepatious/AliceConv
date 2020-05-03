@@ -133,6 +133,7 @@ struct image_info* decode_VSP256(FILE* pFi)
 	I.Pal8 = Pal8;
 	I.Trans = Trans;
 	I.sType = sType;
+	I.BGcolor = 0;
 
 	free(data);
 	return &I;
