@@ -9,6 +9,7 @@
 #include "../aclib/pngio.h"
 #include "../aclib/accore.h"
 
+#define MSX_COLUMNS 512
 #define MSX_ROWS 212
 
 int wmain(int argc, wchar_t** argv)
@@ -34,8 +35,8 @@ int wmain(int argc, wchar_t** argv)
 		}
 		wprintf_s(L"Start %3zu/%3zu %3zu*%3zu %s\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y, pI->sType);
 
-		size_t canvas_x = 512;
-		size_t canvas_y = 424;
+		size_t canvas_x = MSX_COLUMNS;
+		size_t canvas_y = MSX_ROWS * 2;
 		canvas_y = (pI->start_y + pI->len_y) > canvas_y ? (pI->start_y + pI->len_y) : canvas_y;
 
 		png_bytep canvas;

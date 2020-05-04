@@ -154,6 +154,7 @@
     <ClCompile Include="GL.c" />
     <ClCompile Include="GL3.c" />
     <ClCompile Include="MSX_DRS.c" />
+    <ClCompile Include="MSX_TT.c" />
     <ClCompile Include="pngio.c" />
     <ClCompile Include="VSP.c" />
     <ClCompile Include="VSP200l.c" />
