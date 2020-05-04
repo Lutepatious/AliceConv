@@ -21,3 +21,4 @@ struct image_info* decode_X68V(FILE* pFi);
 struct image_info* decode_VSP256(FILE* pFi);
 struct image_info* decode_MSX_DRS(FILE* pFi);
 struct image_info* decode_MSX_TT(FILE* pFi);
+struct image_info* decode_MSX_GL(FILE* pFi);

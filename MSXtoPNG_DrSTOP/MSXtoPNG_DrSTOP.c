@@ -29,7 +29,6 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		struct image_info* pI = decode_MSX_DRS(pFi);
-
 		if (pI == NULL) {
 			continue;
 		}
