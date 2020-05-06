@@ -54,6 +54,12 @@
     <ClCompile Include="MSX_GL.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="MSX_I.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="MSX_LV.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pngio.h">

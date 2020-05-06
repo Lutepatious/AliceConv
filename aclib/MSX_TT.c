@@ -119,7 +119,7 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 		len_decoded /= 2;
 	}
 
-	size_t decode_len = len_y * len_x;
+	size_t decode_len = len_x * len_y;
 	unsigned __int8* decode_buffer = malloc(decode_len);
 	if (decode_buffer == NULL) {
 		wprintf_s(L"Memory allocation error.\n");

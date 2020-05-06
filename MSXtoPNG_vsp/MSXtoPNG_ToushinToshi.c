@@ -35,7 +35,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		wprintf_s(L"Start %3zu/%3zu %3zu*%3zu %s\n", pI->start_x, pI->start_y, pI->len_x, pI->len_y, pI->sType);
 	
-		unsigned pXY = (pI->len_x == 512 && pI->len_y < 212 ) ? 2 : 1;
+		unsigned pXY = (pI->len_x == MSX_COLUMNS && pI->len_y < MSX_ROWS) ? 2 : 1;
 
 		size_t canvas_x = MSX_COLUMNS;
 		size_t canvas_y = (pXY == 2) ? MSX_ROWS : MSX_ROWS * 2;
