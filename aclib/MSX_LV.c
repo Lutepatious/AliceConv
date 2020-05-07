@@ -23,7 +23,7 @@ struct MSX_LV {
 
 struct image_info* decode_MSX_LV(FILE* pFi)
 {
-	const unsigned colours = COLOR16;
+	const unsigned colours = COLOR8;
 	struct __stat64 fs;
 	_fstat64(_fileno(pFi), &fs);
 
@@ -46,7 +46,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	const size_t start_x = 0;
 	const size_t start_y = 0;
-	const size_t len_col = data->Columns ? data->Columns : 256;
+	const size_t len_col= data->NegCols == 0x01 ? 256 : (unsigned __int8)(~(data->NegCols)) + 1LL;
 	const size_t len_x = len_col * 2;
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_col;
@@ -57,10 +57,48 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 		exit(-2);
 	}
 
+	__int64 count = len, cp_len;
+	size_t rows_real = 0;
+	unsigned __int8* src = data->body, * dst = data_decoded, * cp_src, prev = ~*src, repeat = 0;
 
-
-
-
+	while (count-- > 0 && (dst - data_decoded) < len_decoded) {
+		if ((src - data) % 0x100 == 0) {
+			repeat = 0;
+			prev = ~*src;
+		}
+		if (*src == 0xFF && *(src + 1) == 0x1A) {
+			break;
+		}
+		else if (*src == 0xF3 && *(src + 1) == 0xFF) {
+			src += 2;
+			count--;
+		}
+		else if (repeat) {
+			repeat = 0;
+			cp_len = *src - 2;
+			if (cp_len > 0) {
+				memset(dst, prev, cp_len);
+			}
+			src++;
+			dst += cp_len;
+			prev = ~*src;
+		}
+		else if (*src == 0x88) {
+			prev = *src;
+			src++;
+			rows_real++;
+		}
+		else if (*src == prev) {
+			repeat = 1;
+			prev = *src;
+			*dst++ = *src++;
+		}
+		else {
+			repeat = 0;
+			prev = *src;
+			*dst++ = *src++;
+		}
+	}
 
 	size_t decode_len = len_x * len_y;
 	unsigned __int8* decode_buffer = malloc(decode_len);
@@ -77,12 +115,21 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	free(data_decoded);
 
+	struct MSX_Palette Pal[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+						{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
+
 	static struct image_info I;
-	static wchar_t sType[] = L"MSX_I";
-	static png_byte Trans[COLOR16 + 1];
+	static wchar_t sType[] = L"MSX_LV";
+	static png_color Pal8[COLOR8 + 1];
+	static png_byte Trans[COLOR8 + 1];
 
 	memset(Trans, 0xFF, sizeof(Trans));
 	Trans[colours] = 0;
+
+	for (size_t ci = 0; ci < colours; ci++) {
+		color_8to256(&Pal8[ci], Pal[ci].B, Pal[ci].R, Pal[ci].G);
+	}
+	color_8to256(&Pal8[colours], 0, 0, 0);
 
 	I.image = decode_buffer;
 	I.start_x = start_x;
@@ -90,7 +137,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 	I.len_x = len_x;
 	I.len_y = len_y;
 	I.colors = colours + 1;
-	I.Pal8 = NULL;
+	I.Pal8 = Pal8;
 	I.Trans = Trans;
 	I.sType = sType;
 	I.BGcolor = colours;
