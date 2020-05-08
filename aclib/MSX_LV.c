@@ -115,7 +115,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	free(data_decoded);
 
-	struct MSX_Palette Pal[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+	struct MSX_Palette Pal3[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
 						{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
 
 	static struct image_info I;
@@ -127,7 +127,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_8to256(&Pal8[ci], Pal[ci].B, Pal[ci].R, Pal[ci].G);
+		color_8to256(&Pal8[ci], Pal3[ci].B, Pal3[ci].R, Pal3[ci].G);
 	}
 	color_8to256(&Pal8[colours], 0, 0, 0);
 

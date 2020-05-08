@@ -12,7 +12,7 @@
 
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack(1)
-// MSX版Little Vampireのフォーマット
+// MSX版Little Princessのフォーマット
 struct MSX_LP {
 	unsigned __int8 body[];
 };
