@@ -2,12 +2,14 @@ struct image_info {
 	png_bytep image;
 	png_colorp Pal8;
 	png_bytep Trans;
+	wchar_t* sType;
 	size_t start_x;
 	size_t start_y;
 	size_t len_x;
 	size_t len_y;
+	size_t offset_x;
+	size_t offset_y;
 	unsigned __int32 colors;
-	wchar_t* sType;
 	unsigned __int8 BGcolor;
 };
 
@@ -24,3 +26,4 @@ struct image_info* decode_MSX_TT(FILE* pFi);
 struct image_info* decode_MSX_GL(FILE* pFi);
 struct image_info* decode_MSX_I(FILE* pFi);
 struct image_info* decode_MSX_LV(FILE* pFi);
+struct image_info* decode_MSX_LP(FILE* pFi);
