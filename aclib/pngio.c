@@ -181,10 +181,24 @@ void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte gree
 	pcolor->green = d5tod8(green);
 }
 
-
 void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
 	pcolor->blue = blue;
 	pcolor->red = red;
 	pcolor->green = green;
 }
+
+static inline png_byte d16tod8(png_uint_16 a)
+{
+//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
+	png_byte r = (a * 255L + 32895L) >> 16;
+	return  r;
+}
+
+void color_65536to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
+{
+	pcolor->blue = d16tod8(blue);
+	pcolor->red = d16tod8(red);
+	pcolor->green = d16tod8(green);
+}
+

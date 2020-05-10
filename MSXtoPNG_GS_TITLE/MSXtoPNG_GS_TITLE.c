@@ -8,9 +8,6 @@
 
 #include "../aclib/pngio.h"
 
-#define PLANE 4
-#define BPP 8
-#define ROWS 480
 #define MSX_ROWS 212
 
 #pragma pack(1)
@@ -110,42 +107,25 @@ int wmain(int argc, wchar_t** argv)
 	}
 	fclose(pFo);
 
-	size_t msx_start = 0;
-	size_t msx_start_x = msx_start % 256 * 2;
-	size_t msx_start_y = msx_start / 256;
+	size_t msx_start_x = 0;
+	size_t msx_start_y = 0;
 	size_t msx_len_x = 256LL;
 	size_t msx_len_y = 0xD4LL;
 	size_t msx_len_decoded = 0xD400LL;
-	unsigned __int8* msx_data_decoded = malloc(msx_len_decoded);
-	if (msx_data_decoded == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(msx_data);
-		exit(-2);
-	}
-	wprintf_s(L"%3zd/%3zd MSX size %zu => %zu.\n",  msx_len_x * 2, msx_len_y, msx_len, msx_len_decoded);
-	__int64 count = msx_len_decoded;
-	size_t cp_len;
-	unsigned __int8* src = msx_data, * dst = msx_data_decoded, prev = ~*src, repeat = 0, reset = 1;
-
-	while (count-- > 0 && (dst - msx_data_decoded) < msx_len_decoded) {
-		*dst++ = *src++;
-	}
-	free(msx_data);
+	wprintf_s(L"%3zd/%3zd MSX_RAW size %zu => %zu.\n",  msx_len_x * 2, msx_len_y, msx_len, msx_len_decoded);
 
 	size_t decode_len = msx_len_y * msx_len_x * 2;
 	unsigned __int8* decode_buffer = malloc(decode_len);
 	if (decode_buffer == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(msx_data_decoded);
 		exit(-2);
 	}
 
 	for (size_t i = 0; i < msx_len_decoded; i++) {
-		decode_buffer[i * 2] = (msx_data_decoded[i] & 0xF0) >> 4;
-		decode_buffer[i * 2 + 1] = msx_data_decoded[i] & 0xF;
+		decode_buffer[i * 2] = (msx_data[i] & 0xF0) >> 4;
+		decode_buffer[i * 2 + 1] = msx_data[i] & 0xF;
 	}
 
-	free(msx_data_decoded);
 	iInfo.image = decode_buffer;
 	iInfo.start_x = msx_start_x;
 	iInfo.start_y = msx_start_y;
@@ -155,23 +135,8 @@ int wmain(int argc, wchar_t** argv)
 
 	size_t canvas_x = 512;
 	size_t canvas_y = 212;
-	unsigned __int8 t_color = 0x10;
 
-	canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
-
-	unsigned __int8* canvas;
-	canvas = malloc(canvas_y * canvas_x);
-	if (canvas == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(iInfo.image);
-		exit(-2);
-	}
-
-	memset(canvas, t_color, canvas_y * canvas_x);
-	for (size_t iy = 0; iy < iInfo.len_y; iy++) {
-		memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
-	}
-	free(iInfo.image);
+	unsigned __int8* canvas = decode_buffer;
 
 	wchar_t path[_MAX_PATH];
 	wchar_t fname[_MAX_FNAME];
@@ -181,12 +146,30 @@ int wmain(int argc, wchar_t** argv)
 	_wsplitpath_s(L"TITLE", drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 	_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-	png_color pal[8] = { {0,0,0} };
+	png_color pal[128] = { {0,0,0} };
 
 	for (size_t ci = 0; ci < iInfo.colors; ci++) {
 		color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
 	}
-	png_byte trans[8] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	png_byte trans[128] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
+	struct MSX_Palette* hp = msx_data + 0xF800LL;
+
+	for (size_t ci = 0; ci < 0x30; ci++) {
+		color_8to256(&pal[ci + 0x20], hp[ci].C0, hp[ci].C1, hp[ci].C2);
+	}
+
+	unsigned __int8 (*psel)[16] = msx_data + 0xD400LL;
+
+
+
+
+
+
+
+
+
+
+	free(msx_data);
 
 	struct fPNGw imgw;
 	imgw.outfile = path;
@@ -194,9 +177,9 @@ int wmain(int argc, wchar_t** argv)
 	imgw.Cols = canvas_x;
 	imgw.Rows = canvas_y;
 	imgw.Pal = pal;
-	imgw.Trans = trans;
-	imgw.nPal = 8;
-	imgw.nTrans = 8;
+	imgw.Trans = NULL;
+	imgw.nPal = 128;
+	imgw.nTrans = 128;
 	imgw.pXY = 2;
 
 	imgw.image = malloc(canvas_y * sizeof(png_bytep));

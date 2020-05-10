@@ -134,7 +134,7 @@ int wmain(int argc, wchar_t** argv)
 
 		while (count-- > 0 && (dst - msx_data_decoded) < msx_len_decoded) {
 			if (repeat) {
-//				wprintf_s(L"%06zX: %02X %02X.\n", src - msx_data + 2L, prev, *src);
+				//				wprintf_s(L"%06zX: %02X %02X.\n", src - msx_data + 2L, prev, *src);
 				repeat = 0;
 				cp_len = *src;
 				if (cp_len > 0) {
@@ -243,50 +243,42 @@ int wmain(int argc, wchar_t** argv)
 		wchar_t drive[_MAX_DRIVE];
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		for (size_t p = 0; p < 6; p++) {
-			swprintf_s(fname_w, _MAX_FNAME, L"%s_%01zu", fname, 5 - p);
-			_wmakepath_s(path, _MAX_PATH, drive, dir, fname_w, L".png");
-			png_color pal[17] = { {0,0,0} };
+		png_color pal[128] = { {0,0,0} };
 
-			for (size_t ci = 0; ci < iInfo.colors / 2; ci++) {
-				color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
-			}
-			for (size_t ci = 0; ci < iInfo.colors / 2; ci++) {
-				color_8to256(&pal[ci + iInfo.colors / 2], HPal[p][ci].C0, HPal[p][ci].C1, HPal[p][ci].C2);
-			}
-			color_8to256(&pal[iInfo.colors], 0, 0, 0);
-
-			png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
-								   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
-
-			struct fPNGw imgw;
-			imgw.outfile = path;
-			imgw.depth = 8;
-			imgw.Cols = canvas_x;
-			imgw.Rows = canvas_y;
-			imgw.Pal = pal;
-			imgw.Trans = trans;
-			imgw.nPal = iInfo.colors + 1;
-			imgw.nTrans = iInfo.colors + 1;
-			imgw.pXY = 2;
-
-			imgw.image = malloc(canvas_y * sizeof(png_bytep));
-			if (imgw.image == NULL) {
-				fprintf_s(stderr, "Memory allocation error.\n");
-				free(canvas);
-				exit(-2);
-			}
-			for (size_t j = 0; j < canvas_y; j++)
-				imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
-
-			void* res = png_create(&imgw);
-			if (res == NULL) {
-				wprintf_s(L"File %s create/write error\n", path);
-			}
-
-			free(imgw.image);
+		for (size_t ci = 0; ci < iInfo.colors; ci++) {
+			color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
 		}
+		png_byte trans[17] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+							   0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00 };
+
+		struct fPNGw imgw;
+		imgw.outfile = path;
+		imgw.depth = 8;
+		imgw.Cols = canvas_x;
+		imgw.Rows = canvas_y;
+		imgw.Pal = pal;
+		imgw.Trans = trans;
+		imgw.nPal = iInfo.colors + 1;
+		imgw.nTrans = iInfo.colors + 1;
+		imgw.pXY = 2;
+
+		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		if (imgw.image == NULL) {
+			fprintf_s(stderr, "Memory allocation error.\n");
+			free(canvas);
+			exit(-2);
+		}
+		for (size_t j = 0; j < canvas_y; j++)
+			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
+
+		void* res = png_create(&imgw);
+		if (res == NULL) {
+			wprintf_s(L"File %s create/write error\n", path);
+		}
+
+		free(imgw.image);
 		free(canvas);
 	}
 }

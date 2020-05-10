@@ -35,3 +35,4 @@ extern void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byt
 extern void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
 extern void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
 extern void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
+extern void color_65536to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green);
