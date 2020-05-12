@@ -98,7 +98,8 @@
       </UseUnicodeForAssemblerListing>
       <ControlFlowGuard>
       </ControlFlowGuard>
-      <StringPooling>true</StringPooling>
+      <StringPooling>
+      </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
@@ -119,7 +120,8 @@
       </UseUnicodeForAssemblerListing>
       <ControlFlowGuard>
       </ControlFlowGuard>
-      <StringPooling>true</StringPooling>
+      <StringPooling>
+      </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
@@ -138,7 +140,8 @@
       </UseUnicodeForAssemblerListing>
       <ControlFlowGuard>
       </ControlFlowGuard>
-      <StringPooling>true</StringPooling>
+      <StringPooling>
+      </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>
@@ -159,7 +162,8 @@
       </UseUnicodeForAssemblerListing>
       <ControlFlowGuard>
       </ControlFlowGuard>
-      <StringPooling>true</StringPooling>
+      <StringPooling>
+      </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
     </ClCompile>
     <Link>

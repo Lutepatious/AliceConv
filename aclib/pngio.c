@@ -141,9 +141,9 @@ static inline png_byte d3tod8(png_byte a)
 
 void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
-	pcolor->blue = d3tod8(blue);
 	pcolor->red = d3tod8(red);
 	pcolor->green = d3tod8(green);
+	pcolor->blue = d3tod8(blue);
 }
 
 #define STEP_4_8(y) (png_byte)((double) (y) * 255.0L / 15.0L + 0.5L) 
@@ -157,9 +157,9 @@ static inline png_byte d4tod8(png_byte a)
 
 void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
-	pcolor->blue = d4tod8(blue);
 	pcolor->red = d4tod8(red);
 	pcolor->green = d4tod8(green);
+	pcolor->blue = d4tod8(blue);
 }
 
 
@@ -176,16 +176,16 @@ static inline png_byte d5tod8(png_byte a)
 
 void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
-	pcolor->blue = d5tod8(blue);
 	pcolor->red = d5tod8(red);
 	pcolor->green = d5tod8(green);
+	pcolor->blue = d5tod8(blue);
 }
 
 void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
 {
-	pcolor->blue = blue;
 	pcolor->red = red;
 	pcolor->green = green;
+	pcolor->blue = blue;
 }
 
 static inline png_byte d16tod8(png_uint_16 a)
@@ -197,8 +197,8 @@ static inline png_byte d16tod8(png_uint_16 a)
 
 void color_65536to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
 {
-	pcolor->blue = d16tod8(blue);
 	pcolor->red = d16tod8(red);
 	pcolor->green = d16tod8(green);
+	pcolor->blue = d16tod8(blue);
 }
 
