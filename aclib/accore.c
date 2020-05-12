@@ -20,16 +20,12 @@ static union {
 #pragma pack()
 
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
-unsigned __int8 convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
+void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
 {
-	unsigned __int8 max_ccode = 0;
 	for (size_t y = 0; y < row; y++) {
 		for (size_t x2 = 0; x2 < col; x2++) {
 			for (size_t x = 0; x < 8; x++) {
 				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0) | ((*(src + col * 3) & (1 << x)) ? 8 : 0);
-				if (max_ccode < u.a8[x]) {
-					max_ccode = u.a8[x];
-				}
 			}
 			(*dst) = _byteswap_uint64(u.a);
 			src++;
@@ -37,20 +33,15 @@ unsigned __int8 convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* ds
 		}
 		src += col * 3;
 	}
-	return max_ccode + 1;
 }
 
 // デコードされたプレーンデータをパックトピクセルに変換(3プレーン版)
-unsigned __int8 convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
+void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
 {
-	unsigned __int8 max_ccode = 0;
 	for (size_t y = 0; y < row; y++) {
 		for (size_t x2 = 0; x2 < col; x2++) {
 			for (size_t x = 0; x < 8; x++) {
 				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0);
-				if (max_ccode < u.a8[x]) {
-					max_ccode = u.a8[x];
-				}
 			}
 			(*dst) = _byteswap_uint64(u.a);
 			src++;
@@ -58,5 +49,4 @@ unsigned __int8 convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* ds
 		}
 		src += col * 2;
 	}
-	return max_ccode + 1;
 }
