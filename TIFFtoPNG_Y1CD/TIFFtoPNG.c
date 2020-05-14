@@ -6,9 +6,8 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "tiffio.h"
-
 #include "../aclib/pngio.h"
+#include "../aclib/tiffrw.h"
 #include "../aclib/accore.h"
 
 
@@ -21,53 +20,25 @@ struct color8 {
 	unsigned __int8 R : 3;
 	unsigned __int8 G : 3;
 };
-
 #pragma pack()
 
 int wmain(int argc, wchar_t** argv)
 {
 	while (--argc) {
-		TIFF* pTi = TIFFOpenW(*++argv, "r");
-
-		if (pTi == NULL) {
-			wprintf_s(L"File open error. %s\n", *argv);
-			TIFFClose(pTi);
-			exit(-2);
+		struct fTIFF* pimg = tiff_read(*++argv);
+		if (!pimg) {
+			wprintf_s(L"TIFF read error.\n");
+			continue;
 		}
 
-		unsigned __int32 len_x, len_y, Rows_per_Strip;
-		unsigned __int16 Bits_per_Sample, metric;
-		TIFFGetField(pTi, TIFFTAG_IMAGEWIDTH, &len_x);
-		TIFFGetField(pTi, TIFFTAG_IMAGELENGTH, &len_y);
-		TIFFGetFieldDefaulted(pTi, TIFFTAG_ROWSPERSTRIP, &Rows_per_Strip);
-		TIFFGetField(pTi, TIFFTAG_BITSPERSAMPLE, &Bits_per_Sample);
-		TIFFGetField(pTi, TIFFTAG_PHOTOMETRIC, &metric);
-
-		size_t colours = 1LL << Bits_per_Sample;
 		static png_color Pal8[256];
-		if (metric == PHOTOMETRIC_PALETTE) {
-			unsigned __int16* PalR, * PalG, * PalB;
-			TIFFGetField(pTi, TIFFTAG_COLORMAP, &PalR, &PalG, &PalB);
-			unsigned __int32 PalDepth = 8;
-			for (size_t i = 0; i < colours; i++) {
-				if (PalR[i] >= 256 || PalG[i] >= 256 || PalB[i] >= 256) {
-					PalDepth = 16;
-					break;
-				}
-			}
-			if (PalDepth == 16) {
-				for (size_t i = 0; i < colours; i++) {
-					color_65536to256(&Pal8[i], PalB[i], PalR[i], PalG[i]);
-				}
-			}
-			else {
-				for (size_t i = 0; i < colours; i++) {
-					color_256to256(&Pal8[i], PalB[i], PalR[i], PalG[i]);
-				}
+		if (pimg->Format == PHOTOMETRIC_PALETTE) {
+			for (size_t i = 0; i < 256; i++) {
+				color_65536to256(&Pal8[i], pimg->Pal.B[i], pimg->Pal.R[i], pimg->Pal.G[i]);
 			}
 		}
-		else if (metric == PHOTOMETRIC_MINISBLACK) {
-			for (size_t i = 0; i < colours; i++) {
+		else if (pimg->Format == PHOTOMETRIC_MINISBLACK) {
+			for (size_t i = 0; i < 256; i++) {
 				union {
 					unsigned __int8 a;
 					struct color8 c;
@@ -75,27 +46,12 @@ int wmain(int argc, wchar_t** argv)
 				u.a = i;
 				color_256to256(&Pal8[i], table2to8[u.c.B], table3to8[u.c.R], table3to8[u.c.G]);
 			}
-		}
-		size_t canvas_x = len_x;
-		size_t canvas_y = len_y;
 
-		png_bytep canvas = malloc(canvas_y * canvas_x);
-		if (canvas == NULL) {
-			fprintf_s(stderr, "Memory allocation error.\n");
-			exit(-2);
 		}
-
-		for (size_t l = 0; l < len_y; l += Rows_per_Strip) {
-			size_t read_rows = (l + Rows_per_Strip > len_y) ? len_y - l : Rows_per_Strip;
-			if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &canvas[len_x * l], (size_t)len_x * Rows_per_Strip * Bits_per_Sample)) {
-				fprintf_s(stderr, "File read error.\n");
-				TIFFClose(pTi);
-				free(canvas);
-				exit(-2);
-			}
+		else {
+			wprintf_s(L"Unexpected format.\n");
+			continue;
 		}
-
-		TIFFClose(pTi);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -108,22 +64,23 @@ int wmain(int argc, wchar_t** argv)
 		struct fPNGw imgw;
 		imgw.outfile = path;
 		imgw.depth = 8;
-		imgw.Cols = canvas_x;
-		imgw.Rows = canvas_y;
+		imgw.Cols = pimg->Cols;
+		imgw.Rows = pimg->Rows;
 		imgw.Pal = Pal8;
 		imgw.Trans = NULL;
-		imgw.nPal = colours;
+		imgw.nPal = 1LL << pimg->depth;
 		imgw.pXY = 1;
 
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		imgw.image = malloc(imgw.Rows * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
-			free(canvas);
+			free(pimg->image);
+			free(pimg);
 			exit(-2);
 		}
 
-		for (size_t j = 0; j < canvas_y; j++)
-			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
+		for (size_t j = 0; j < imgw.Rows; j++)
+			imgw.image[j] = (png_bytep)&pimg->image[j * imgw.Cols];
 
 		void* res = png_create(&imgw);
 		if (res == NULL) {
@@ -131,6 +88,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		free(imgw.image);
-		free(canvas);
+		free(pimg->image);
+		free(pimg);
 	}
 }
