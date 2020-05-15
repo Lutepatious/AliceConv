@@ -34,6 +34,12 @@ struct fPal8 {
 	png_byte B;
 };
 
+struct fPal8_BRG {
+	png_byte B;
+	png_byte R;
+	png_byte G;
+};
+
 struct fPal16 {
 	png_uint_16 R;
 	png_uint_16 G;

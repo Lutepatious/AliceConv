@@ -64,12 +64,14 @@ struct image_info* decode_VSP(FILE* pFi)
 	const size_t len_y = data->Row_out - data->Row_in;
 	const size_t len_decoded = len_y * len_col * planes;
 
+#if 0
 	if (len_decoded == 4) {
 		free(data);
 		wprintf_s(L"Too short. Skip!\n");
 		return NULL;
 	}
-	unsigned __int8* data_decoded = malloc(len_decoded);
+#endif
+	unsigned __int8* data_decoded = malloc(len_decoded + 512);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		free(data);
@@ -204,11 +206,11 @@ struct image_info* decode_VSP(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		struct fPal8 Pal4;
-		Pal4.R = data->Pal4[ci].R;
-		Pal4.G = data->Pal4[ci].G;
-		Pal4.B = data->Pal4[ci].B;
-		color_16to256(&Pal8[ci], &Pal4);
+		struct fPal8 inPal4;
+		inPal4.R = data->Pal4[ci].R;
+		inPal4.G = data->Pal4[ci].G;
+		inPal4.B = data->Pal4[ci].B;
+		color_16to256(&Pal8[ci], &inPal4);
 	}
 	color_16to256(&Pal8[colours], NULL);
 

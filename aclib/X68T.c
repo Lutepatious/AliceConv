@@ -106,12 +106,11 @@ struct image_info* decode_X68T(FILE* pFi)
 		} P;
 		P.Pin = _byteswap_ushort(data->Pal5BE[ci]);
 
-		struct fPal8 Pal5;
-		Pal5.R = P.Pal5.R;
-		Pal5.G = P.Pal5.G;
-		Pal5.B = P.Pal5.B;
-
-		color_32to256(&Pal8[ci + 0x40], &Pal5);
+		struct fPal8 inPal5;
+		inPal5.R = P.Pal5.R;
+		inPal5.G = P.Pal5.G;
+		inPal5.B = P.Pal5.B;
+		color_32to256(&Pal8[ci + 0x40], &inPal5);
 	}
 
 	I.image = data_decoded;
