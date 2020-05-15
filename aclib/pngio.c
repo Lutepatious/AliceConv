@@ -139,11 +139,18 @@ static inline png_byte d3tod8(png_byte a)
 	return table[a];
 }
 
-void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
+void color_8to256(png_colorp pcolor, struct fPal8 *inpal)
 {
-	pcolor->red = d3tod8(red);
-	pcolor->green = d3tod8(green);
-	pcolor->blue = d3tod8(blue);
+	if (inpal == NULL) {
+		pcolor->red = 0;
+		pcolor->green = 0;
+		pcolor->blue = 0;
+	}
+	else {
+		pcolor->red = d3tod8(inpal->R);
+		pcolor->green = d3tod8(inpal->G);
+		pcolor->blue = d3tod8(inpal->B);
+	}
 }
 
 #define STEP_4_8(y) (png_byte)((double) (y) * 255.0L / 15.0L + 0.5L) 
@@ -155,13 +162,19 @@ static inline png_byte d4tod8(png_byte a)
 	return table[a];
 }
 
-void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
+void color_16to256(png_colorp pcolor, struct fPal8* inpal)
 {
-	pcolor->red = d4tod8(red);
-	pcolor->green = d4tod8(green);
-	pcolor->blue = d4tod8(blue);
+	if (inpal == NULL) {
+		pcolor->red = 0;
+		pcolor->green = 0;
+		pcolor->blue = 0;
+	}
+	else {
+		pcolor->red = d4tod8(inpal->R);
+		pcolor->green = d4tod8(inpal->G);
+		pcolor->blue = d4tod8(inpal->B);
+	}
 }
-
 
 #define STEP_5_8(y) (png_byte)((double) (y) * 255.0L / 31.0L + 0.5L) 
 
@@ -174,20 +187,33 @@ static inline png_byte d5tod8(png_byte a)
 	return table[a];
 }
 
-void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
+void color_32to256(png_colorp pcolor, struct fPal8* inpal)
 {
-	pcolor->red = d5tod8(red);
-	pcolor->green = d5tod8(green);
-	pcolor->blue = d5tod8(blue);
+	if (inpal == NULL) {
+		pcolor->red = 0;
+		pcolor->green = 0;
+		pcolor->blue = 0;
+	}
+	else {
+		pcolor->red = d5tod8(inpal->R);
+		pcolor->green = d5tod8(inpal->G);
+		pcolor->blue = d5tod8(inpal->B);
+	}
 }
 
-void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green)
+void color_256to256(png_colorp pcolor, struct fPal8* inpal)
 {
-	pcolor->red = red;
-	pcolor->green = green;
-	pcolor->blue = blue;
+	if (inpal == NULL) {
+		pcolor->red = 0;
+		pcolor->green = 0;
+		pcolor->blue = 0;
+	}
+	else {
+		pcolor->red = inpal->R;
+		pcolor->green = inpal->G;
+		pcolor->blue = inpal->B;
+	}
 }
-
 static inline png_byte d16tod8(png_uint_16 a)
 {
 //	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
@@ -195,10 +221,16 @@ static inline png_byte d16tod8(png_uint_16 a)
 	return  r;
 }
 
-void color_65536to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green)
+void color_65536to256(png_colorp pcolor, struct fPal16* inpal)
 {
-	pcolor->red = d16tod8(red);
-	pcolor->green = d16tod8(green);
-	pcolor->blue = d16tod8(blue);
+	if (inpal == NULL) {
+		pcolor->red = 0;
+		pcolor->green = 0;
+		pcolor->blue = 0;
+	}
+	else {
+		pcolor->red = d16tod8(inpal->R);
+		pcolor->green = d16tod8(inpal->G);
+		pcolor->blue = d16tod8(inpal->B);
+	}
 }
-

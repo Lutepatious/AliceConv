@@ -69,7 +69,7 @@ struct image_info* decode_MSX_DRS(FILE* pFi)
 	while (count-- && (dst - data_decoded) < len_decoded) {
 		switch (*src) {
 		case 0x00:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			if (cp_len == 0) {
 				break;
 			}
@@ -79,14 +79,14 @@ struct image_info* decode_MSX_DRS(FILE* pFi)
 			count--;
 			break;
 		case 0x01:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			memcpy_s(dst, cp_len, dst - len_col, cp_len);
 			dst += cp_len;
 			src += 2;
 			count--;
 			break;
 		case 0x02:
-			cp_len = *(src + 1) + 1;
+			cp_len = *(src + 1) + 1LL;
 			memset(dst, *(src + 2), cp_len);
 			dst += cp_len;
 			src += 3;
@@ -131,9 +131,13 @@ struct image_info* decode_MSX_DRS(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_8to256(&Pal8[ci], data->Pal3[ci].B, data->Pal3[ci].R, data->Pal3[ci].G);
+		struct fPal8 Pal3;
+		Pal3.R = data->Pal3[ci].R;
+		Pal3.G = data->Pal3[ci].G;
+		Pal3.B = data->Pal3[ci].B;
+		color_8to256(&Pal8[ci], &Pal3);
 	}
-	color_8to256(&Pal8[colours], 0, 0, 0);
+	color_8to256(&Pal8[colours], NULL);
 
 	I.image = decode_buffer;
 	I.start_x = in_x;

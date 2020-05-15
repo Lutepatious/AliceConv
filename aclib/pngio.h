@@ -28,11 +28,23 @@ struct fPNGw {
 	int pXY;
 };
 
+struct fPal8 {
+	png_byte R;
+	png_byte G;
+	png_byte B;
+};
+
+struct fPal16 {
+	png_uint_16 R;
+	png_uint_16 G;
+	png_uint_16 B;
+};
+
 extern struct fPNG* png_open(wchar_t* infile);
 extern void png_close(struct fPNG* pimg);
 extern void* png_create(struct fPNGw* pngw);
-extern void color_8to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
-extern void color_16to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
-extern void color_32to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
-extern void color_256to256(png_colorp pcolor, png_byte blue, png_byte red, png_byte green);
-extern void color_65536to256(png_colorp pcolor, png_uint_16 blue, png_uint_16 red, png_uint_16 green);
+extern void color_8to256(png_colorp pcolor, struct fPal8* inpal);
+extern void color_16to256(png_colorp pcolor, struct fPal8* inpal);
+extern void color_32to256(png_colorp pcolor, struct fPal8* inpal);
+extern void color_256to256(png_colorp pcolor, struct fPal8* inpal);
+extern void color_65536to256(png_colorp pcolor, struct fPal16* inpal);

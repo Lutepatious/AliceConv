@@ -34,7 +34,11 @@ int wmain(int argc, wchar_t** argv)
 		static png_color Pal8[256];
 		if (pimg->Format == PHOTOMETRIC_PALETTE) {
 			for (size_t i = 0; i < 256; i++) {
-				color_65536to256(&Pal8[i], pimg->Pal.B[i], pimg->Pal.R[i], pimg->Pal.G[i]);
+				struct fPal16 Pal16;
+				Pal16.R = pimg->Pal.R[i];
+				Pal16.G = pimg->Pal.G[i];
+				Pal16.B = pimg->Pal.B[i];
+				color_65536to256(&Pal8[i], &Pal16);
 			}
 		}
 		else if (pimg->Format == PHOTOMETRIC_MINISBLACK) {
@@ -44,7 +48,11 @@ int wmain(int argc, wchar_t** argv)
 					struct color8 c;
 				} u;
 				u.a = i;
-				color_256to256(&Pal8[i], table2to8[u.c.B], table3to8[u.c.R], table3to8[u.c.G]);
+				struct fPal8 iPal8;
+				iPal8.R = table3to8[u.c.R];
+				iPal8.G = table3to8[u.c.G];
+				iPal8.B = table2to8[u.c.B];
+				color_256to256(&Pal8[i], &iPal8);
 			}
 
 		}

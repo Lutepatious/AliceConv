@@ -92,13 +92,19 @@ struct image_info* decode_X68V(FILE* pFi)
 
 	memset(Trans, 0xFF, sizeof(Trans));
 
-	union X68Pal_conv {
-		struct X68_Palette5 Pal5;
-		unsigned __int16 Pin;
-	} P;
 	for (size_t ci = 0; ci < colours; ci++) {
+		union X68Pal_conv {
+			struct X68_Palette5 Pal5;
+			unsigned __int16 Pin;
+		} P;
 		P.Pin = _byteswap_ushort(data->Pal5BE[ci]);
-		color_32to256(&Pal8[ci], P.Pal5.B, P.Pal5.R, P.Pal5.G);
+
+		struct fPal8 Pal5;
+		Pal5.R = P.Pal5.R;
+		Pal5.G = P.Pal5.G;
+		Pal5.B = P.Pal5.B;
+
+		color_32to256(&Pal8[ci], &Pal5);
 	}
 
 	I.image = data_decoded;

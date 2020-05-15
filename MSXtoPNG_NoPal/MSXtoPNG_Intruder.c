@@ -94,9 +94,13 @@ int wmain(int argc, wchar_t** argv)
 		static png_color Pal8[COLOR16 + 1];
 
 		for (size_t ci = 0; ci < COLOR16; ci++) {
-			color_8to256(&Pal8[ci], Pal[num][ci].B, Pal[num][ci].R,Pal[num][ci].G);
+			struct fPal8 Pal3;
+			Pal3.R = Pal[num][ci].R;
+			Pal3.G = Pal[num][ci].G;
+			Pal3.B = Pal[num][ci].B;
+			color_8to256(&Pal8[ci], &Pal3);
 		}
-		color_8to256(&Pal8[COLOR16], 0, 0, 0);
+		color_8to256(&Pal8[COLOR16], NULL);
 
 		struct fPNGw imgw;
 		imgw.outfile = path;

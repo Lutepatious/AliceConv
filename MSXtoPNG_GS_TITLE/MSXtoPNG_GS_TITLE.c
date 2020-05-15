@@ -149,13 +149,21 @@ int wmain(int argc, wchar_t** argv)
 	png_color pal[128] = { {0,0,0} };
 
 	for (size_t ci = 0; ci < iInfo.colors; ci++) {
-		color_8to256(&pal[ci], Pal[ci].C0, Pal[ci].C1, Pal[ci].C2);
+		struct fPal8 Pal3;
+		Pal3.R = Pal[ci].C1;
+		Pal3.G = Pal[ci].C2;
+		Pal3.B = Pal[ci].C0;
+		color_8to256(&pal[ci], &Pal3);
 	}
 	png_byte trans[128] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 	struct MSX_Palette* hp = msx_data + 0xF800LL;
 
 	for (size_t ci = 0; ci < 0x30; ci++) {
-		color_8to256(&pal[ci + 0x20], hp[ci].C0, hp[ci].C1, hp[ci].C2);
+		struct fPal8 Pal3;
+		Pal3.R = hp[ci].C1;
+		Pal3.G = hp[ci].C2;
+		Pal3.B = hp[ci].C0;
+		color_8to256(&pal[ci + 0x20], &Pal3);
 	}
 
 	unsigned __int8 (*psel)[16] = msx_data + 0xD400LL;

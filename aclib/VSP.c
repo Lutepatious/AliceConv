@@ -204,9 +204,13 @@ struct image_info* decode_VSP(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_16to256(&Pal8[ci], data->Pal4[ci].B, data->Pal4[ci].R, data->Pal4[ci].G);
+		struct fPal8 Pal4;
+		Pal4.R = data->Pal4[ci].R;
+		Pal4.G = data->Pal4[ci].G;
+		Pal4.B = data->Pal4[ci].B;
+		color_16to256(&Pal8[ci], &Pal4);
 	}
-	color_16to256(&Pal8[colours], 0, 0, 0);
+	color_16to256(&Pal8[colours], NULL);
 
 	I.image = decode_buffer;
 	I.start_x = in_x;

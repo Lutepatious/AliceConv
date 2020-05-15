@@ -59,7 +59,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	__int64 count = len, cp_len;
 	size_t rows_real = 0;
-	unsigned __int8* src = data->body, * dst = data_decoded, * cp_src, prev = ~*src, repeat = 0;
+	unsigned __int8* src = data->body, * dst = data_decoded, prev = ~*src, repeat = 0;
 
 	while (count-- > 0 && (dst - data_decoded) < len_decoded) {
 		if ((src - data) % 0x100 == 0) {
@@ -115,7 +115,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	free(data_decoded);
 
-	struct MSX_Palette Pal3[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+	struct fPal8 Pal3[8] = { { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
 						{ 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
 
 	static struct image_info I;
@@ -127,9 +127,10 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_8to256(&Pal8[ci], Pal3[ci].B, Pal3[ci].R, Pal3[ci].G);
+		color_8to256(&Pal8[ci], &Pal3[ci]);
 	}
-	color_8to256(&Pal8[colours], 0, 0, 0);
+	color_8to256(&Pal8[colours], NULL);
+
 
 	I.image = decode_buffer;
 	I.start_x = start_x;

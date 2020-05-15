@@ -121,7 +121,7 @@ struct image_info* decode_VSP256(FILE* pFi)
 	memset(Trans, 0xFF, sizeof(Trans));
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_256to256(&Pal8[ci], data->Pal8[ci].B, data->Pal8[ci].R, data->Pal8[ci].G);
+		color_256to256(&Pal8[ci], &data->Pal8[ci]);
 	}
 
 	I.image = data_decoded;

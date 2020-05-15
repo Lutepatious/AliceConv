@@ -113,9 +113,13 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_8to256(&Pal8[ci], data->Pal3[ci].B, data->Pal3[ci].R, data->Pal3[ci].G);
+		struct fPal8 Pal3;
+		Pal3.R = data->Pal3[ci].R;
+		Pal3.G = data->Pal3[ci].G;
+		Pal3.B = data->Pal3[ci].B;
+		color_8to256(&Pal8[ci], &Pal3);
 	}
-	color_8to256(&Pal8[colours], 0, 0, 0);
+	color_8to256(&Pal8[colours], NULL);
 
 	I.image = decode_buffer;
 	I.start_x = start_x;
