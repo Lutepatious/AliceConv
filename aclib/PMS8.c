@@ -12,30 +12,34 @@
 
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
-// VSP 256色フォーマット
-struct VSP256 {
-	unsigned __int16 Column_in;
-	unsigned __int16 Row_in;
-	unsigned __int16 Column_out;
-	unsigned __int16 Row_out;
-	unsigned __int8 Unknown[24];
-	struct {
-		unsigned __int8 R;
-		unsigned __int8 G;
-		unsigned __int8 B;
-	} Pal8[256];
-	unsigned __int8 body[];
+struct PMS8 {
+	unsigned __int16 Sig;
+	unsigned __int16 Ver;
+	unsigned __int16 len_hdr;
+	unsigned __int8 depth;
+	unsigned __int8 bits;
+	unsigned __int32 U0;
+	unsigned __int32 U1;
+	unsigned __int32 Column_in;
+	unsigned __int32 Row_in;
+	unsigned __int32 Columns;
+	unsigned __int32 Rows;
+	unsigned __int32 offset_body;
+	unsigned __int32 offset_Pal;
+	unsigned __int32 U2;
+	unsigned __int32 U3;
+	unsigned __int8 data[];
 };
-#pragma pack()
+#pragma pack ()
 
-struct image_info* decode_VSP256(FILE* pFi)
+struct image_info* decode_PMS8(FILE* pFi)
 {
 	const unsigned colours = COLOR256;
 	struct __stat64 fs;
 	_fstat64(_fileno(pFi), &fs);
 
-	const size_t len = fs.st_size - sizeof(struct VSP256);
-	struct VSP256* data = malloc(fs.st_size);
+	const size_t len = fs.st_size - sizeof(struct PMS8);
+	struct PMS8* data = malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -53,11 +57,14 @@ struct image_info* decode_VSP256(FILE* pFi)
 
 	const size_t in_x = data->Column_in;
 	const size_t in_y = data->Row_in;
-	const size_t out_x = data->Column_out + 1LL;
-	const size_t out_y = data->Row_out + 1LL;
-	const size_t len_x = out_x - in_x;
-	const size_t len_y = out_y - in_y;
+	const size_t len_x = data->Columns;
+	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_x;
+
+	wprintf_s(L"%1u %1u unkonwn %08lX %08lX %08lX %08lX\n"
+		, data->Ver, data->bits, data->U0, data->U1, data->U2, data->U3);
+
+
 	unsigned __int8* data_decoded = malloc(len_decoded);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
@@ -66,7 +73,7 @@ struct image_info* decode_VSP256(FILE* pFi)
 	}
 
 	size_t count = len, cp_len;
-	unsigned __int8* src = data->body, * dst = data_decoded, * cp_src;
+	unsigned __int8* src = data->data + data->offset_body - data->len_hdr, * dst = data_decoded, * cp_src;
 	while (count-- && (dst - data_decoded) < len_decoded) {
 		switch (*src) {
 		case 0xF8:
@@ -114,14 +121,15 @@ struct image_info* decode_VSP256(FILE* pFi)
 	}
 
 	static struct image_info I;
-	static wchar_t sType[] = L"VSP256";
+	static wchar_t sType[] = L"PMS8";
 	static png_color Pal8[COLOR256];
 	static png_byte Trans[COLOR256];
 
 	memset(Trans, 0xFF, sizeof(Trans));
 
+	struct fPal8 *inPal8 = data->data + data->offset_Pal - data->len_hdr;
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_256to256(&Pal8[ci], &data->Pal8[ci]);
+		color_256to256(&Pal8[ci], inPal8++);
 	}
 
 	I.image = data_decoded;

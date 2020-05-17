@@ -33,3 +33,4 @@ struct MSX_Palette {
 #define COLOR8 (8)
 #define COLOR16 (16)
 #define COLOR256 (256)
+#define COLOR65536 (65536)

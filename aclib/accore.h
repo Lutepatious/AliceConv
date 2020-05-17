@@ -27,3 +27,5 @@ struct image_info* decode_MSX_GL(FILE* pFi);
 struct image_info* decode_MSX_I(FILE* pFi);
 struct image_info* decode_MSX_LV(FILE* pFi);
 struct image_info* decode_MSX_LP(FILE* pFi);
+struct image_info* decode_PMS8(FILE* pFi);
+struct image_info* decode_PMS16(FILE* pFi);

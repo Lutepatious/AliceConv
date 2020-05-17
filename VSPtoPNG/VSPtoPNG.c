@@ -29,7 +29,7 @@
 
 */
 
-enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS, PMS16, QNT, X68R, X68T, X68V };
+enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V };
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -91,6 +91,14 @@ int wmain(int argc, wchar_t** argv)
 		// X68”ÅRanceII‚©? ŽÀ‘•‚ªŒÅ’è‚³‚ê‚Ä‚¢‚é
 		else if ((*(unsigned __int64*)hbuf == 0x11LL) || (*(unsigned __int64*)hbuf == 0x111LL)) {
 			g_fmt = X68R;
+		}
+		// PMS8‚©?
+		else if ((*(unsigned __int16*)hbuf == 0x4D50) && (hbuf[6] == 8)) {
+			g_fmt = PMS8;
+		}
+		// PMS16‚©?
+		else if ((*(unsigned __int16*)hbuf == 0x4D50) && (hbuf[6] == 16)) {
+			g_fmt = PMS16;
 		}
 		// ‚Æ‚è‚ ‚¦‚¸VSP‚¾‚Æ‰¼’è‚·‚é
 		else {
@@ -162,6 +170,13 @@ int wmain(int argc, wchar_t** argv)
 		else if (g_fmt == X68R) {
 			pI = decode_X68R(pFi);
 		}
+		else if (g_fmt == PMS8) {
+			pI = decode_PMS8(pFi);
+		}
+		else if (g_fmt == PMS16) {
+			pI = decode_PMS16(pFi);
+		}
+
 
 		if (pI == NULL) {
 			continue;
