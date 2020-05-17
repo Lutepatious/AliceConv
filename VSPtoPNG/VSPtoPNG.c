@@ -146,38 +146,43 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		if ((g_fmt == GL3) || (g_fmt == GM3)) {
-			pI = decode_GL3(pFi, (g_fmt == GM3) ? 1 : 0);
-		}
-		else if (g_fmt == GL) {
+		switch (g_fmt) {
+		case GL3:
+			pI = decode_GL3(pFi, 0);
+			break;
+		case GM3:
+			pI = decode_GL3(pFi, 1);
+			break;
+		case GL:
 			pI = decode_GL(pFi);
-		}
-		else if (g_fmt == VSP256) {
+			break;
+		case VSP256:
 			pI = decode_VSP256(pFi);
-		}
-		else if (g_fmt == VSP200l) {
+			break;
+		case VSP200l:
 			pI = decode_VSP200l(pFi);
-		}
-		else if (g_fmt == VSP) {
+			break;
+		case VSP:
 			pI = decode_VSP(pFi);
-		}
-		else if (g_fmt == X68T) {
-			pI = decode_X68T(pFi);
-		}
-		else if (g_fmt == X68V) {
-			pI = decode_X68V(pFi);
-		}
-		else if (g_fmt == X68R) {
+			break;
+		case X68R:
 			pI = decode_X68R(pFi);
-		}
-		else if (g_fmt == PMS8) {
+			break;
+		case X68T:
+			pI = decode_X68T(pFi);
+			break;
+		case X68V:
+			pI = decode_X68V(pFi);
+			break;
+		case PMS8:
 			pI = decode_PMS8(pFi);
-		}
-		else if (g_fmt == PMS16) {
+			break;
+		case PMS16:
 			pI = decode_PMS16(pFi);
+			break;
+		default:
+			pI = NULL;
 		}
-
-
 		if (pI == NULL) {
 			continue;
 		}
@@ -187,6 +192,10 @@ int wmain(int argc, wchar_t** argv)
 
 		if ((g_fmt == X68T) || (g_fmt == X68V)) {
 			canvas_x = canvas_y = X68_LEN;
+		}
+		else if ((g_fmt == PMS8) || (g_fmt == PMS16)) {
+			canvas_x = (pI->start_x + pI->len_x) > 1024 ? (pI->start_x + pI->len_x) : 1024;
+			canvas_y = 768;
 		}
 		else {
 			canvas_x = (pI->start_x + pI->len_x) > 640 ? (pI->start_x + pI->len_x) : 640;
@@ -201,18 +210,34 @@ int wmain(int argc, wchar_t** argv)
 		canvas_y = (pI->start_y + pI->len_y) > canvas_y ? (pI->start_y + pI->len_y) : canvas_y;
 
 		png_bytep canvas;
-		canvas = malloc(canvas_y * canvas_x);
-		if (canvas == NULL) {
-			wprintf_s(L"Memory allocation error. \n");
-			free(pI->image);
-			exit(-2);
-		}
+		if (g_fmt == PMS16) {
+			canvas = calloc(canvas_y * canvas_x, sizeof(png_uint_32));
+			if (canvas == NULL) {
+				wprintf_s(L"Memory allocation error. \n");
+				free(pI->image);
+				exit(-2);
+			}
 
-		memset(canvas, pI->BGcolor, canvas_y * canvas_x);
-		for (size_t iy = 0; iy < pI->len_y; iy++) {
-			memcpy_s(&canvas[(pI->start_y + iy) * canvas_x + pI->start_x], pI->len_x, &pI->image[iy * pI->len_x], pI->len_x);
+			for (size_t iy = 0; iy < pI->len_y; iy++) {
+				memcpy_s(&canvas[((pI->start_y + iy) * canvas_x + pI->start_x) * sizeof(png_uint_32)], pI->len_x * sizeof(png_uint_32),
+					&pI->image[(iy * pI->len_x) * sizeof(png_uint_32)], pI->len_x * sizeof(png_uint_32));
+			}
+			free(pI->image);
 		}
-		free(pI->image);
+		else {
+			canvas = malloc(canvas_y * canvas_x);
+			if (canvas == NULL) {
+				wprintf_s(L"Memory allocation error. \n");
+				free(pI->image);
+				exit(-2);
+			}
+
+			memset(canvas, pI->BGcolor, canvas_y * canvas_x);
+			for (size_t iy = 0; iy < pI->len_y; iy++) {
+				memcpy_s(&canvas[(pI->start_y + iy) * canvas_x + pI->start_x], pI->len_x, &pI->image[iy * pI->len_x], pI->len_x);
+			}
+			free(pI->image);
+		}
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -227,10 +252,10 @@ int wmain(int argc, wchar_t** argv)
 		imgw.depth = 8;
 		imgw.Cols = canvas_x;
 		imgw.Rows = canvas_y;
-		imgw.Pal = pI->Pal8;
-		imgw.Trans = pI->Trans;
+		imgw.Pal = (g_fmt == PMS16) ? NULL : pI->Pal8;
+		imgw.Trans = (g_fmt == PMS16) ? NULL : pI->Trans;
 		imgw.nPal = pI->colors;
-		imgw.nTrans = pI->colors;
+		imgw.nTrans = (g_fmt == PMS16) ? 0 : pI->colors;
 		imgw.pXY = ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL)) ? 2 : (g_fmt == X68T) ? 3 : 1;
 
 		imgw.image = malloc(canvas_y * sizeof(png_bytep));
@@ -239,9 +264,17 @@ int wmain(int argc, wchar_t** argv)
 			free(canvas);
 			exit(-2);
 		}
-		for (size_t j = 0; j < canvas_y; j++)
-			imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
 
+		if (g_fmt == PMS16) {
+			for (size_t j = 0; j < canvas_y; j++) {
+				imgw.image[j] = (png_bytep)&canvas[j * canvas_x * sizeof(png_uint_32)];
+			}
+		}
+		else {
+			for (size_t j = 0; j < canvas_y; j++) {
+				imgw.image[j] = (png_bytep)&canvas[j * canvas_x];
+			}
+		}
 		void* res = png_create(&imgw);
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);

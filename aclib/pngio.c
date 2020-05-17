@@ -116,12 +116,14 @@ void* png_create(struct fPNGw* pngw)
 	}
 	png_init_io(png_ptr, pFo);
 	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-	png_set_IHDR(png_ptr, info_ptr, pngw->Cols, pngw->Rows, pngw->depth, PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-	if (pngw->Trans != NULL) {
+	png_set_IHDR(png_ptr, info_ptr, pngw->Cols, pngw->Rows, pngw->depth, (pngw->nPal > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+	if ((pngw->Trans != NULL) && (pngw->nPal <= 256)) {
 		png_set_tRNS(png_ptr, info_ptr, pngw->Trans, pngw->nTrans, NULL);
 	}
 	png_set_pHYs(png_ptr, info_ptr, pngw->pXY == 3 ? DEFAULT_PpM * 4 / 5 : DEFAULT_PpM, pngw->pXY == 2 ? DEFAULT_PpM / 2 : DEFAULT_PpM, PNG_RESOLUTION_METER);
-	png_set_PLTE(png_ptr, info_ptr, pngw->Pal, pngw->nPal);
+	if (pngw->nPal <= 256) {
+		png_set_PLTE(png_ptr, info_ptr, pngw->Pal, pngw->nPal);
+	}
 	png_write_info(png_ptr, info_ptr);
 	png_write_image(png_ptr, pngw->image);
 	png_write_end(png_ptr, info_ptr);
@@ -131,15 +133,14 @@ void* png_create(struct fPNGw* pngw)
 	return pngw;
 }
 
-#define STEP_3_8(x) (png_byte)((double) (x) * 255.0L / 7.0L + 0.5L) 
-
 static inline png_byte d3tod8(png_byte a)
 {
-	const static png_byte table[8] = { 0, STEP_3_8(1), STEP_3_8(2), STEP_3_8(3), STEP_3_8(4), STEP_3_8(5), STEP_3_8(6), 255 };
-	return table[a];
+	//	png_byte r = (double) (a) * 255.0L / 7.0L + 0.5L;
+	png_byte r = ((unsigned)a * 146 + 1) >> 2;
+	return r;
 }
 
-void color_8to256(png_colorp pcolor, struct fPal8 *inpal)
+void color_8to256(png_colorp pcolor, struct fPal8* inpal)
 {
 	if (inpal == NULL) {
 		pcolor->red = 0;
@@ -153,13 +154,11 @@ void color_8to256(png_colorp pcolor, struct fPal8 *inpal)
 	}
 }
 
-#define STEP_4_8(y) (png_byte)((double) (y) * 255.0L / 15.0L + 0.5L) 
-
 static inline png_byte d4tod8(png_byte a)
 {
-	const static png_byte table[16] = { 0, STEP_4_8(1), STEP_4_8(2), STEP_4_8(3), STEP_4_8(4), STEP_4_8(5), STEP_4_8(6), STEP_4_8(7),
-											STEP_4_8(8), STEP_4_8(9), STEP_4_8(10), STEP_4_8(11), STEP_4_8(12), STEP_4_8(13), STEP_4_8(14), 255 };
-	return table[a];
+	//	png_byte r = (double) (a) * 255.0L / 15.0L + 0.5L;
+	png_byte r = (unsigned)a * 17;
+	return r;
 }
 
 void color_16to256(png_colorp pcolor, struct fPal8* inpal)
@@ -176,15 +175,11 @@ void color_16to256(png_colorp pcolor, struct fPal8* inpal)
 	}
 }
 
-#define STEP_5_8(y) (png_byte)((double) (y) * 255.0L / 31.0L + 0.5L) 
-
 static inline png_byte d5tod8(png_byte a)
 {
-	const static png_byte table[32] = { 0, STEP_5_8(1), STEP_5_8(2), STEP_5_8(3), STEP_5_8(4), STEP_5_8(5), STEP_5_8(6), STEP_5_8(7),
-										STEP_5_8(8), STEP_5_8(9), STEP_5_8(10), STEP_5_8(11), STEP_5_8(12), STEP_5_8(13), STEP_5_8(14), STEP_5_8(15),
-										STEP_5_8(16), STEP_5_8(17), STEP_5_8(18), STEP_5_8(19), STEP_5_8(20), STEP_5_8(21),	STEP_5_8(22), STEP_5_8(23),
-										STEP_5_8(24), STEP_5_8(25), STEP_5_8(26), STEP_5_8(27), STEP_5_8(28), STEP_5_8(29),	STEP_5_8(30), 255 };
-	return table[a];
+	//	png_byte r = (double) (a) * 255.0L / 31.0L + 0.5L;
+	png_byte r = ((unsigned)a * 527 + 23) >> 6;
+	return r;
 }
 
 void color_32to256(png_colorp pcolor, struct fPal8* inpal)
@@ -199,6 +194,13 @@ void color_32to256(png_colorp pcolor, struct fPal8* inpal)
 		pcolor->green = d5tod8(inpal->G);
 		pcolor->blue = d5tod8(inpal->B);
 	}
+}
+
+static inline png_byte d6tod8(png_byte a)
+{
+	//	png_byte r = (double) (a) * 255.0L / 63.0L + 0.5L;
+	png_byte r = ((unsigned)a * 259 + 33) >> 6;
+	return r;
 }
 
 void color_256to256(png_colorp pcolor, struct fPal8* inpal)
@@ -216,8 +218,8 @@ void color_256to256(png_colorp pcolor, struct fPal8* inpal)
 }
 static inline png_byte d16tod8(png_uint_16 a)
 {
-//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
-	png_byte r = (a * 255L + 32895L) >> 16;
+	//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
+	png_byte r = ((unsigned)a * 255L + 32895L) >> 16;
 	return  r;
 }
 

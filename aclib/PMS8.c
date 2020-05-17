@@ -64,7 +64,6 @@ struct image_info* decode_PMS8(FILE* pFi)
 	wprintf_s(L"%1u %1u unkonwn %08lX %08lX %08lX %08lX\n"
 		, data->Ver, data->bits, data->U0, data->U1, data->U2, data->U3);
 
-
 	unsigned __int8* data_decoded = malloc(len_decoded);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
@@ -127,7 +126,7 @@ struct image_info* decode_PMS8(FILE* pFi)
 
 	memset(Trans, 0xFF, sizeof(Trans));
 
-	struct fPal8 *inPal8 = data->data + data->offset_Pal - data->len_hdr;
+	struct fPal8* inPal8 = data->data + data->offset_Pal - data->len_hdr;
 	for (size_t ci = 0; ci < colours; ci++) {
 		color_256to256(&Pal8[ci], inPal8++);
 	}
