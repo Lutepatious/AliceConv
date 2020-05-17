@@ -29,3 +29,5 @@ struct image_info* decode_MSX_LV(FILE* pFi);
 struct image_info* decode_MSX_LP(FILE* pFi);
 struct image_info* decode_PMS8(FILE* pFi);
 struct image_info* decode_PMS16(FILE* pFi);
+void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row);
+void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t length, size_t Col_per_Row);

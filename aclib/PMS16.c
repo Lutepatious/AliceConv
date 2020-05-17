@@ -31,26 +31,6 @@ struct PMS16 {
 	unsigned __int8 data[];
 };
 
-struct COLOR_src_low {
-	unsigned __int8 Rl : 2;
-	unsigned __int8 Gl : 4;
-	unsigned __int8 Bl : 2;
-};
-
-struct COLOR_src_high {
-	unsigned __int8 Rh : 3;
-	unsigned __int8 Gh : 2;
-	unsigned __int8 Bh : 3;
-};
-
-struct COLOR_dest {
-	unsigned __int16 Rl : 2;
-	unsigned __int16 Rh : 3;
-	unsigned __int16 Gl : 4;
-	unsigned __int16 Gh : 2;
-	unsigned __int16 Bl : 2;
-	unsigned __int16 Bh : 3;
-};
 
 struct COLOR16RGB {
 	unsigned __int16 B : 5;
@@ -126,99 +106,7 @@ struct image_info* decode_PMS16(FILE* pFi)
 		exit(-2);
 	}
 
-	size_t count = len, cp_len;
-	unsigned __int8* src = data->data + data->offset_body - data->len_hdr;
-	unsigned __int16* dst = data_decoded, * cp_src;
-
-	while (count-- && (dst - data_decoded) < len_decoded) {
-//		wprintf_s(L"%02X %02X, %zu %8lld ->%8lld\n", *src, *(src + 1), count, src - data->data + data->offset_body - data->len_hdr, dst - data_decoded);
-		switch (*src) {
-		case 0xF8:
-			src++;
-			*dst++ = *(unsigned __int16*)src;
-			src += 2;
-			count--;
-			break;
-		case 0xF9:
-			cp_len = *(src + 1) + 1LL;
-			static union {
-				struct COLOR_src_high h;
-				unsigned __int8 a8;
-			} uh;
-			static union {
-				struct COLOR_src_low l;
-				unsigned __int8 a8;
-			} ul;
-			static union {
-				struct COLOR_dest d;
-				unsigned __int16 a16;
-			} ud;
-
-			src += 2;
-			count -= 2;
-			uh.a8 = *src++;
-			for (size_t len = 0; len < cp_len; len++) {
-				ul.a8 = *src++;
-				ud.d.Rh = uh.h.Rh;
-				ud.d.Rl = ul.l.Rl;
-				ud.d.Gh = uh.h.Gh;
-				ud.d.Gl = ul.l.Gl;
-				ud.d.Bh = uh.h.Bh;
-				ud.d.Bl = ul.l.Bl;
-				*dst++ = ud.a16;
-				count--;
-			}
-			break;
-		case 0xFA:
-			*dst = *(dst - len_x + 1);
-			dst++;
-			src++;
-			break;
-		case 0xFB:
-			*dst = *(dst - len_x - 1);
-			dst++;
-			src++;
-			break;
-		case 0xFC:
-			cp_len = *(src + 1) + 2LL;
-			for (size_t len = 0; len < cp_len; len++) {
-				memcpy_s(dst, 2 * sizeof(unsigned __int16), src + 2, 2 * sizeof(unsigned __int16));
-				dst += 2;
-			}
-			src += 6;
-			count -= 5;
-			break;
-		case 0xFD:
-			cp_len = *(src + 1) + 3LL;
-			for (size_t len = 0; len < cp_len; len++) {
-				memcpy_s(dst, sizeof(unsigned __int16), src + 2, sizeof(unsigned __int16));
-				dst++;
-			}
-			src += 4;
-			count -= 3;
-			break;
-		case 0xFE:
-			cp_len = *(src + 1) + 2LL;
-			cp_src = dst - len_x * 2;
-			memcpy_s(dst, cp_len * sizeof(unsigned __int16), cp_src, cp_len * sizeof(unsigned __int16));
-			dst += cp_len;
-			src += 2;
-			count--;
-			break;
-		case 0xFF:
-			cp_len = *(src + 1) + 2LL;
-			cp_src = dst - len_x;
-			memcpy_s(dst, cp_len * sizeof(unsigned __int16), cp_src, cp_len * sizeof(unsigned __int16));
-			dst += cp_len;
-			src += 2;
-			count--;
-			break;
-		default:
-			*dst++ = *(unsigned __int16*)src;
-			src += 2;
-			count--;
-		}
-	}
+	void decode_d16(unsigned __int16* data_decoded, unsigned __int8* data->data + data->offset_body - data->len_hdr, size_t len_decoded, size_t len_x);
 
 	unsigned __int8* Alpha = malloc(len_decoded);
 	if (Alpha == NULL) {
@@ -229,53 +117,7 @@ struct image_info* decode_PMS16(FILE* pFi)
 	memset(Alpha, 0xFF, len_decoded);
 
 	if (data->offset_Pal != 0) {
-		size_t cp_len;
-		unsigned __int8 *src = data->data + data->offset_Pal - data->len_hdr, *dst = Alpha, *cp_src;
-		while ((dst - Alpha) < len_decoded) {
-			switch (*src) {
-			case 0xF8:
-			case 0xF9:
-			case 0xFA:
-			case 0xFB:
-				src++;
-				*dst++ = *src++;
-				break;
-			case 0xFC:
-				cp_len = *(src + 1) + 3LL;
-				for (size_t len = 0; len < cp_len; len++) {
-					memcpy_s(dst, 2, src + 2, 2);
-					dst += 2;
-				}
-				src += 4;
-				count -= 3;
-				break;
-			case 0xFD:
-				cp_len = *(src + 1) + 4LL;
-				memset(dst, *(src + 2), cp_len);
-				dst += cp_len;
-				src += 3;
-				count -= 2;
-				break;
-			case 0xFE:
-				cp_len = *(src + 1) + 3LL;
-				cp_src = dst - len_x * 2;
-				memcpy_s(dst, cp_len, cp_src, cp_len);
-				dst += cp_len;
-				src += 2;
-				count--;
-				break;
-			case 0xFF:
-				cp_len = *(src + 1) + 3LL;
-				cp_src = dst - len_x;
-				memcpy_s(dst, cp_len, cp_src, cp_len);
-				dst += cp_len;
-				src += 2;
-				count--;
-				break;
-			default:
-				*dst++ = *src++;
-			}
-		}
+		decode_d8(Alpha, data->data + data->offset_Pal - data->len_hdr, len_decoded, len_x);
 	}
 
 	struct COLOR32RGBA* RGBA = malloc(len_decoded * sizeof(struct COLOR32RGBA));

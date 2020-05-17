@@ -71,53 +71,7 @@ struct image_info* decode_PMS8(FILE* pFi)
 		exit(-2);
 	}
 
-	size_t count = len, cp_len;
-	unsigned __int8* src = data->data + data->offset_body - data->len_hdr, * dst = data_decoded, * cp_src;
-	while (count-- && (dst - data_decoded) < len_decoded) {
-		switch (*src) {
-		case 0xF8:
-		case 0xF9:
-		case 0xFA:
-		case 0xFB:
-			src++;
-			*dst++ = *src++;
-			break;
-		case 0xFC:
-			cp_len = *(src + 1) + 3LL;
-			for (size_t len = 0; len < cp_len; len++) {
-				memcpy_s(dst, 2, src + 2, 2);
-				dst += 2;
-			}
-			src += 4;
-			count -= 3;
-			break;
-		case 0xFD:
-			cp_len = *(src + 1) + 4LL;
-			memset(dst, *(src + 2), cp_len);
-			dst += cp_len;
-			src += 3;
-			count -= 2;
-			break;
-		case 0xFE:
-			cp_len = *(src + 1) + 3LL;
-			cp_src = dst - len_x * 2;
-			memcpy_s(dst, cp_len, cp_src, cp_len);
-			dst += cp_len;
-			src += 2;
-			count--;
-			break;
-		case 0xFF:
-			cp_len = *(src + 1) + 3LL;
-			cp_src = dst - len_x;
-			memcpy_s(dst, cp_len, cp_src, cp_len);
-			dst += cp_len;
-			src += 2;
-			count--;
-			break;
-		default:
-			*dst++ = *src++;
-		}
-	}
+	decode_d8(data_decoded, data->data + data->offset_body - data->len_hdr, len_decoded, len_x);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"PMS8";
