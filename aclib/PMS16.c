@@ -97,7 +97,8 @@ struct image_info* decode_PMS16(FILE* pFi)
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_x;
 
-	wprintf_s(L"%1u unkonwn %08lX %08lX %08lX %08lX\n", data->bits, data->U0, data->U1, data->U2, data->U3);
+	wprintf_s(L"%1u %1u unkonwn %08lX %08lX %08lX %08lX\n"
+		, data->Ver, data->bits, data->U0, data->U1, data->U2, data->U3);
 
 	unsigned __int16* data_decoded = malloc(len_decoded * sizeof(unsigned __int16));
 	if (data_decoded == NULL) {
@@ -106,7 +107,7 @@ struct image_info* decode_PMS16(FILE* pFi)
 		exit(-2);
 	}
 
-	void decode_d16(unsigned __int16* data_decoded, unsigned __int8* data->data + data->offset_body - data->len_hdr, size_t len_decoded, size_t len_x);
+	decode_d16(data_decoded, data->data + data->offset_body - data->len_hdr, len_decoded, len_x);
 
 	unsigned __int8* Alpha = malloc(len_decoded);
 	if (Alpha == NULL) {

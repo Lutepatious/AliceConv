@@ -46,16 +46,16 @@ int wmain(int argc, wchar_t** argv)
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
-			wprintf_s(L"File open error %s.\n", *argv);
-			exit(ecode);
+			wprintf_s(L"File open error %s. Skip.\n", *argv);
+			continue;
 		}
 
 		unsigned __int8 hbuf[0x40];
 		size_t rcount = fread_s(hbuf, sizeof(hbuf), sizeof(hbuf), 1, pFi);
 		if (rcount != 1) {
-			wprintf_s(L"File read error %s.\n", *argv);
+			wprintf_s(L"File read error %s. Skip.\n", *argv);
 			fclose(pFi);
-			exit(-2);
+			continue;
 		}
 
 		fseek(pFi, 0, SEEK_SET);
@@ -194,8 +194,8 @@ int wmain(int argc, wchar_t** argv)
 			canvas_x = canvas_y = X68_LEN;
 		}
 		else if ((g_fmt == PMS8) || (g_fmt == PMS16)) {
-			canvas_x = (pI->start_x + pI->len_x) > 1024 ? (pI->start_x + pI->len_x) : 1024;
-			canvas_y = 768;
+			canvas_x = (pI->start_x + pI->len_x) > 800 ? (pI->start_x + pI->len_x) : 800;
+			canvas_y = 600;
 		}
 		else {
 			canvas_x = (pI->start_x + pI->len_x) > 640 ? (pI->start_x + pI->len_x) : 640;
