@@ -32,7 +32,7 @@ struct PMS16 {
 };
 
 
-struct COLOR16RGB {
+struct COLOR16BGR {
 	unsigned __int16 B : 5;
 	unsigned __int16 G : 6;
 	unsigned __int16 R : 5;
@@ -60,7 +60,7 @@ static inline unsigned __int8 d6tod8(unsigned __int8 a)
 	return r;
 }
 
-static inline void direct16_to_direct32(struct COLOR32RGBA *d32, struct COLOR16RGB *d16, unsigned __int8 *alpha)
+static inline void direct16_to_direct32(struct COLOR32RGBA *d32, struct COLOR16BGR *d16, unsigned __int8 *alpha)
 {
 	d32->R = d5tod8(d16->R);
 	d32->G = d6tod8(d16->G);
@@ -130,7 +130,7 @@ struct image_info* decode_PMS16(FILE* pFi)
 
 	for (size_t i = 0; i < len_decoded; i++) {
 		union {
-			struct COLOR16RGB c16;
+			struct COLOR16BGR c16;
 			unsigned __int16 a16;
 		} u;
 		u.a16 = *(data_decoded + i);

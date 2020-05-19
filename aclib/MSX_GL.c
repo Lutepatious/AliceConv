@@ -89,19 +89,7 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 		}
 	}
 
-	size_t decode_len = len_x * len_y;
-	unsigned __int8* decode_buffer = malloc(decode_len);
-	if (decode_buffer == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(data_decoded);
-		exit(-2);
-	}
-
-	for (size_t i = 0; i < len_decoded; i++) {
-		decode_buffer[i * 2] = (data_decoded[i] & 0xF0) >> 4;
-		decode_buffer[i * 2 + 1] = data_decoded[i] & 0xF;
-	}
-
+	unsigned __int8* decode_buffer = convert_4bitpackedpixel_to_8bitpackedpixel_LE(data_decoded, len_decoded);
 	free(data_decoded);
 
 	static struct image_info I;

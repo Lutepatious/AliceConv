@@ -77,8 +77,54 @@ void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const un
 	}
 }
 
+// デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(リトルエンディアン用)
+unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_LE(const unsigned __int8* src, size_t len)
+{
+	unsigned __int8* buffer = malloc(len * 2);
+	if (buffer == NULL) {
+		fwprintf_s(stderr, L"Memory allocation error.\n");
+		free(src);
+		exit(-2);
+	}
+	unsigned __int8* dst = buffer;
+	for (size_t i = 0; i < len; i++) {
+		union {
+			unsigned __int8 a8;
+			struct PackedPixel4 p4;
+		} u;
+		u.a8 = *src++;
+		*dst++ = u.p4.H;
+		*dst++ = u.p4.L;
+	}
+
+	return buffer;
+}
+
+// デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(ビッグエンディアン用)
+unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __int8* src, size_t len)
+{
+	unsigned __int8* buffer = malloc(len * 2);
+	if (buffer == NULL) {
+		fwprintf_s(stderr, L"Memory allocation error.\n");
+		free(src);
+		exit(-2);
+	}
+	unsigned __int8* dst = buffer;
+	for (size_t i = 0; i < len; i++) {
+		union {
+			unsigned __int8 a8;
+			struct PackedPixel4 p4;
+		} u;
+		u.a8 = *src++;
+		*dst++ = u.p4.L;
+		*dst++ = u.p4.H;
+	}
+
+	return buffer;
+}
+
 // VSP256 PMS8 PMS16のアルファchに共通の8bit depthデコーダ
-void decode_d8(unsigned __int8 *destination, unsigned __int8 *source, size_t length, size_t Col_per_Row)
+void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row)
 {
 	size_t cp_len;
 	unsigned __int8* src = source, * dst = destination, * cp_src;
@@ -141,7 +187,7 @@ void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t l
 			break;
 		case 0xF9: // 連続する近似した色を圧縮、1バイト目に長さ、2バイト目が各色上位ビット(B3G2R3)、3バイト目以降が各色下位ビット(B2G4R2)。
 			cp_len = *(src + 1) + 1LL;
-			// 下3つの共用体は処理系によってはエラーになるのでswitch文の外に出した方が良さそうだが可読性を上げるためにここに放置
+			// 下3つの共用体は処理系によってはコンパイル時にエラーになるのでswitch文の外に出した方が良さそうだが可読性を上げるためにここに放置
 			static union {
 				struct COLOR_src_high h;
 				unsigned __int8 a8;
@@ -188,7 +234,7 @@ void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t l
 			break;
 		case 0xFD: // 2,3バイト目の1ピクセルの値を1バイト目で指定した回数繰り返す。
 			cp_len = *(src + 1) + 3LL;
-			wmemset(dst, *(unsigned __int16 *)(src + 2), cp_len);
+			wmemset(dst, *(unsigned __int16*)(src + 2), cp_len);
 			dst += cp_len;
 			src += 4;
 			break;

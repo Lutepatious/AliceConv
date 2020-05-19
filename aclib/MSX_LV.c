@@ -46,7 +46,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	const size_t start_x = 0;
 	const size_t start_y = 0;
-	const size_t len_col= data->NegCols == 0x01 ? 256 : (unsigned __int8)(~(data->NegCols)) + 1LL;
+	const size_t len_col = data->NegCols == 0x01 ? 256 : (unsigned __int8)(~(data->NegCols)) + 1LL;
 	const size_t len_x = len_col * 2;
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_col;
@@ -100,19 +100,7 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 		}
 	}
 
-	size_t decode_len = len_x * len_y;
-	unsigned __int8* decode_buffer = malloc(decode_len);
-	if (decode_buffer == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(data_decoded);
-		exit(-2);
-	}
-
-	for (size_t i = 0; i < len_decoded; i++) {
-		decode_buffer[i * 2] = (data_decoded[i] & 0xF0) >> 4;
-		decode_buffer[i * 2 + 1] = data_decoded[i] & 0xF;
-	}
-
+	unsigned __int8* decode_buffer = convert_4bitpackedpixel_to_8bitpackedpixel_LE(data_decoded, len_decoded);
 	free(data_decoded);
 
 	static struct image_info I;
@@ -125,8 +113,8 @@ struct image_info* decode_MSX_LV(FILE* pFi)
 
 	for (size_t ci = 0; ci < colours; ci++) {
 		static const struct fPal8_BRG Pal3[8] =
-			{ { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
-			  { 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
+		{ { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+		  { 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
 
 		struct fPal8 inPal3;
 		inPal3.R = Pal3[ci].R;

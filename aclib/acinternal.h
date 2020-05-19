@@ -1,6 +1,3 @@
-void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
-void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
-
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // PC88系のGLフォーマットのパレット情報
@@ -28,9 +25,18 @@ struct MSX_Palette {
 	unsigned __int16 G : 4;
 	unsigned __int16 u0 : 4;
 };
-#pragma pack ()
 
+// 4bitパックトピクセルにおける配置
+struct PackedPixel4 {
+	unsigned __int8	L : 4;
+	unsigned __int8 H : 4;
+};
 #define COLOR8 (8)
 #define COLOR16 (16)
 #define COLOR256 (256)
 #define COLOR65536 (65536)
+
+extern void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
+extern void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
+extern unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_LE(const unsigned __int8* src, size_t len);
+extern unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __int8* src, size_t len);

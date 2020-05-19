@@ -12,6 +12,7 @@
 
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
+// PMS 8bit depth (256色インデックスカラー)の構造体 まさかVSP256色とはヘッダ違いなだけとは思いもよらなかった。
 struct PMS8 {
 	unsigned __int16 Sig;
 	unsigned __int16 Ver;
