@@ -31,6 +31,8 @@ struct PackedPixel4 {
 	unsigned __int8	L : 4;
 	unsigned __int8 H : 4;
 };
+#pragma pack ()
+
 #define COLOR8 (8)
 #define COLOR16 (16)
 #define COLOR256 (256)

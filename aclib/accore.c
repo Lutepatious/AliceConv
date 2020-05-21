@@ -123,6 +123,95 @@ unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __
 	return buffer;
 }
 
+void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t planes)
+{
+	size_t cp_len, cur_plane;
+	unsigned __int8* src = source, * dst = destination, * cp_src, negate = 0;
+	while ((dst - destination) < length) {
+		switch (*src) {
+		case 0x00:
+			cp_len = *(src + 1) + 1LL;
+			cp_src = dst - Row_per_Col * planes;
+			memcpy_s(dst, cp_len, cp_src, cp_len);
+			dst += cp_len;
+			src += 2;
+			break;
+		case 0x01:
+			cp_len = *(src + 1) + 1LL;
+			memset(dst, *(src + 2), cp_len);
+			dst += cp_len;
+			src += 3;
+			break;
+		case 0x02:
+			cp_len = *(src + 1) + 1LL;
+			for (size_t len = 0; len < cp_len; len++) {
+				memcpy_s(dst, 2, src + 2, 2);
+				dst += 2;
+			}
+			src += 4;
+			break;
+		case 0x03:
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+			cp_len = *(src + 1) + 1LL;
+			cp_src = dst - Row_per_Col * cur_plane;
+			if (negate) {
+				for (size_t len = 0; len < cp_len; len++) {
+					*dst++ = ~*cp_src++;
+				}
+			}
+			else {
+				memcpy_s(dst, cp_len, cp_src, cp_len);
+				dst += cp_len;
+			}
+			src += 2;
+			negate = 0;
+			break;
+		case 0x04:
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+			cp_len = *(src + 1) + 1LL;
+			cp_src = dst - Row_per_Col * (cur_plane - 1);
+			if (negate) {
+				for (size_t len = 0; len < cp_len; len++) {
+					*dst++ = ~*cp_src++;
+				}
+			}
+			else {
+				memcpy_s(dst, cp_len, cp_src, cp_len);
+				dst += cp_len;
+			}
+			src += 2;
+			negate = 0;
+			break;
+		case 0x05:
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+			cp_len = *(src + 1) + 1LL;
+			cp_src = dst - Row_per_Col * (cur_plane - 2);
+			if (negate) {
+				for (size_t len = 0; len < cp_len; len++) {
+					*dst++ = ~*cp_src++;
+				}
+			}
+			else {
+				memcpy_s(dst, cp_len, cp_src, cp_len);
+				dst += cp_len;
+			}
+			src += 2;
+			negate = 0;
+			break;
+		case 0x06:
+			src++;
+			negate = 1;
+			break;
+		case 0x07:
+			src++;
+			*dst++ = *src++;
+			break;
+		default:
+			*dst++ = *src++;
+		}
+	}
+}
+
 // VSP256 PMS8 PMS16のアルファchに共通の8bit depthデコーダ
 void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row)
 {
@@ -169,7 +258,6 @@ void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t len
 			*dst++ = *src++;
 		}
 	}
-
 }
 
 // PMS16の16bit depthデコーダ 入力が8bit幅で出力が16bit幅であることに注意
