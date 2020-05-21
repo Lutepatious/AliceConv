@@ -82,7 +82,7 @@ path>N88Splitter N88-BASIC形式ディスクイメージ
 
 1. KryofluxのRAW stream形式からはSAMDisk (https://simonowen.com/samdisk/)で一旦D88形式にしてください。
 2. HxCFloppyEmulator software (https://hxc2001.com/download/floppy_drive_emulator/index.html)のHxCFloppyEmulator_soft.zip内の
-HxCFloppyEmulator.exeを起動し、Loadボタンからイメージをロードした後、ExportボタンからIMG file (RAW Sector file format)を選んでセーブしてください。
+HxCFloppyEmulator.exeを起動し、LoadボタンからD88形式イメージをロードした後、ExportボタンからIMG file (RAW Sector file format)を選んでセーブしてください。
 
 3. 得られたディスクイメージを使用します。
 
@@ -127,6 +127,7 @@ GM3 GL3の亜種でALICEの館CDに含まれるIntruder専用の形式
 VSP Rance III以降のPC-9801/FM TOWNS/X68000版の多くで使われた形式
 VSP200line PC-8801版Rance IIとアリスネット配布PC-9801 MS-DOS対応版Little Vampireで使われた形式
 VSP256色 Super D.P.S以降の256色対応ゲームで使われた形式
+PMS 鬼畜王ランス以降で使われた形式 256色（VSP256色とはヘッダ違い)と65536色がある
 X68000版のRance II,闘神都市,あぶない文化祭前夜で個別に使われた形式
 を自動判定して変換します。
 wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
@@ -137,7 +138,7 @@ Rance、Intruder、クレセントムーンがぁる、あぶない天狗伝説、D.P.S、アリスの館、Ra
 Rance II PC88版とアリスネット配布PC-9801 MS-DOS対応版Little VampireはVSP 200line
 Rance III以降の16色版はVSP
 Super D.P.S以降の256色対応ゲームのうち、256色の物に限りVSP256
-
+鬼畜王ランス以降のゲームのうち、旧作の廉価版以外はPMS
 です。
 
 ファイルヘッダから画像のロード位置に合わせて画像を展開し、元データのない個所は透過処理としています。
@@ -174,7 +175,8 @@ MSX版DPS SGの連番ファイル(奇数-偶数順)を合成し、インターレースモードでのCGを再現
 
 TIFFtoPNG_Y1CD.exe
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
-電子の国のアリスやクイズの館、女の子図鑑の一部CGは特殊な色情報を使ったため、
+電子の国のアリスやクイズの館、女の子図鑑の一部CGは特殊な色情報
+(どうも初期のTOWNSにおける特殊フォーマットだったらしい)を使ったため、
 普通のグラフィックビューアではグレイスケールにしか見えませんでした。
 調査の結果、8bitダイレクトカラーと判明したので
 適切なパレットを生成してインデックスカラー化する本プログラムを作成しました。
@@ -182,7 +184,7 @@ FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換す
 これにより、鬼畜王ランスより前のアリスソフトのほぼ全てのCGを変換できるようになりました。
 残るは未入手の88VA版や一部ヒントディスクのCGとALICEの館CDのアイコン、
 X68000版闘神都市のスプライトで実現されたチップキャラやマップといったところです。
-え?PMS?しばらく待ってください(やる気はあります)。
 
 鬼畜王ランスなどSystem 3.5以降のゲームに対応する気はありません。
-ファイルフォーマットがわかりませんし、既存のツールが動かないわけでもないので。
+既存のツールが動かないわけでもないので。
+PMSにも対応できたので一旦プロジェクトを休止します。
