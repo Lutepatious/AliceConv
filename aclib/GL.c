@@ -132,7 +132,7 @@ struct image_info* decode_GL(FILE* pFi)
 		exit(-2);
 	}
 
-	convert_8dot_from_3plane_to_8bitpackedpixel(decode_buffer, data_decoded, len_col, len_y);
+	convert_8dot_plane3_to_index8(decode_buffer, data_decoded, len_col, len_y);
 	free(data_decoded);
 
 	static struct image_info I;

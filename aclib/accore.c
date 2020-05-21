@@ -46,7 +46,7 @@ struct COLOR_dest {
 #pragma pack()
 
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
-void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
+void convert_8dot_plane4_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
 {
 	for (size_t y = 0; y < row; y++) {
 		for (size_t x2 = 0; x2 < col; x2++) {
@@ -62,7 +62,7 @@ void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const un
 }
 
 // デコードされたプレーンデータをパックトピクセルに変換(3プレーン版)
-void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
+void convert_8dot_plane3_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
 {
 	for (size_t y = 0; y < row; y++) {
 		for (size_t x2 = 0; x2 < col; x2++) {
@@ -78,7 +78,7 @@ void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const un
 }
 
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(リトルエンディアン用)
-unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_LE(const unsigned __int8* src, size_t len)
+unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t len)
 {
 	unsigned __int8* buffer = malloc(len * 2);
 	if (buffer == NULL) {
@@ -101,7 +101,7 @@ unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_LE(const unsigned __
 }
 
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(ビッグエンディアン用)
-unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __int8* src, size_t len)
+unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t len)
 {
 	unsigned __int8* buffer = malloc(len * 2);
 	if (buffer == NULL) {
@@ -123,26 +123,35 @@ unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __
 	return buffer;
 }
 
-void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t planes)
+// VSPおよびVSP 200 line用のデコーダ
+// VSP形式はちょっと特殊で一般的な横スキャンではなく1バイトごとの縦スキャン
+void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t Cols, size_t planes)
 {
+	unsigned __int8* buffer = malloc(length + 512);
+	if (buffer == NULL) {
+		wprintf_s(L"Memory allocation error.\n");
+		free(destination);
+		exit(-2);
+	}
+
 	size_t cp_len, cur_plane;
-	unsigned __int8* src = source, * dst = destination, * cp_src, negate = 0;
-	while ((dst - destination) < length) {
+	unsigned __int8* src = source, * dst = buffer, * cp_src, negate = 0;
+	while ((dst - buffer) < length) {
 		switch (*src) {
-		case 0x00:
+		case 0x00: // 1列前の同プレーンのデータを1バイト目で指定した長さだけコピー
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * planes;
 			memcpy_s(dst, cp_len, cp_src, cp_len);
 			dst += cp_len;
 			src += 2;
 			break;
-		case 0x01:
+		case 0x01: // 2バイト目の値を1バイト目で指定した長さ繰り返す
 			cp_len = *(src + 1) + 1LL;
 			memset(dst, *(src + 2), cp_len);
 			dst += cp_len;
 			src += 3;
 			break;
-		case 0x02:
+		case 0x02: // 2-3バイト目の値を1バイト目で指定した長さ繰り返す
 			cp_len = *(src + 1) + 1LL;
 			for (size_t len = 0; len < cp_len; len++) {
 				memcpy_s(dst, 2, src + 2, 2);
@@ -150,8 +159,8 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			}
 			src += 4;
 			break;
-		case 0x03:
-			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+		case 0x03: // 第0プレーン(青)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
+			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * cur_plane;
 			if (negate) {
@@ -166,8 +175,8 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			src += 2;
 			negate = 0;
 			break;
-		case 0x04:
-			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+		case 0x04: // 第1プレーン(赤)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
+			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * (cur_plane - 1);
 			if (negate) {
@@ -182,8 +191,8 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			src += 2;
 			negate = 0;
 			break;
-		case 0x05:
-			cur_plane = ((dst - destination) / Row_per_Col) % planes;
+		case 0x05: // 第3プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに来てはならない。
+			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * (cur_plane - 2);
 			if (negate) {
@@ -198,11 +207,11 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			src += 2;
 			negate = 0;
 			break;
-		case 0x06:
+		case 0x06: // 機能3,4,5でコピーするデータを反転するか指定
 			src++;
 			negate = 1;
 			break;
-		case 0x07:
+		case 0x07: // 何もしない、エスケープ用
 			src++;
 			*dst++ = *src++;
 			break;
@@ -210,9 +219,19 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			*dst++ = *src++;
 		}
 	}
+
+	// 縦スキャンのデータを横スキャンに直す
+	for (size_t ix = 0; ix < Cols; ix++) {
+		for (size_t ip = 0; ip < planes; ip++) {
+			for (size_t iy = 0; iy < Row_per_Col; iy++) {
+				destination[(iy * planes + ip) * Cols + ix] = buffer[(ix * planes + ip) * Row_per_Col + iy];
+			}
+		}
+	}
+	free(buffer);
 }
 
-// VSP256 PMS8 PMS16のアルファchに共通の8bit depthデコーダ
+// VSP256,PMS8,PMS16のアルファchに共通の8bit depthデコーダ
 void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row)
 {
 	size_t cp_len;
@@ -273,7 +292,7 @@ void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t l
 			*dst++ = *(unsigned __int16*)src;
 			src += 2;
 			break;
-		case 0xF9: // 連続する近似した色を圧縮、1バイト目に長さ、2バイト目が各色上位ビット(B3G2R3)、3バイト目以降が各色下位ビット(B2G4R2)。
+		case 0xF9: // 連続する近似した色の圧縮表現、1バイト目に長さ、2バイト目が各色上位ビット(B3G2R3)、3バイト目以降が各色下位ビット(B2G4R2)。
 			cp_len = *(src + 1) + 1LL;
 			// 下3つの共用体は処理系によってはコンパイル時にエラーになるのでswitch文の外に出した方が良さそうだが可読性を上げるためにここに放置
 			static union {

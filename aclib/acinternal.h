@@ -38,7 +38,7 @@ struct PackedPixel4 {
 #define COLOR256 (256)
 #define COLOR65536 (65536)
 
-extern void convert_8dot_from_4plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
-extern void convert_8dot_from_3plane_to_8bitpackedpixel(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
-extern unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_LE(const unsigned __int8* src, size_t len);
-extern unsigned __int8* convert_4bitpackedpixel_to_8bitpackedpixel_BE(const unsigned __int8* src, size_t len);
+extern void convert_8dot_plane4_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
+extern void convert_8dot_plane3_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
+extern unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t len);
+extern unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t len);

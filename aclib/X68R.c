@@ -91,7 +91,7 @@ struct image_info* decode_X68R(FILE* pFi)
 		}
 	}
 
-	unsigned __int8* decode_buffer = convert_4bitpackedpixel_to_8bitpackedpixel_BE(data_decoded, len_decoded);
+	unsigned __int8* decode_buffer = convert_index4_to_index8_BE(data_decoded, len_decoded);
 	free(data_decoded);
 
 	static struct image_info I;

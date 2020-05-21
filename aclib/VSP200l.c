@@ -67,34 +67,18 @@ struct image_info* decode_VSP200l(FILE* pFi)
 		exit(-2);
 	}
 
-	decode_d4_VSP(data_decoded, data->body, len_decoded, len_y, planes);
-
-	unsigned __int8* data_decoded2 = malloc(len_decoded);
-	if (data_decoded2 == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(data);
-		exit(-2);
-	}
-
-	for (size_t ix = 0; ix < len_col; ix++) {
-		for (size_t ip = 0; ip < planes; ip++) {
-			for (size_t iy = 0; iy < len_y; iy++) {
-				data_decoded2[iy * len_col * planes + ip * len_col + ix] = data_decoded[ix * len_y * planes + ip * len_y + iy];
-			}
-		}
-	}
-	free(data_decoded);
+	decode_d4_VSP(data_decoded, data->body, len_decoded, len_y, len_col, planes);
 
 	size_t decode_len = len_x * len_y;
 	unsigned __int8* decode_buffer = malloc(decode_len);
 	if (decode_buffer == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data_decoded2);
+		free(data_decoded);
 		exit(-2);
 	}
 
-	convert_8dot_from_3plane_to_8bitpackedpixel(decode_buffer, data_decoded2, len_col, len_y);
-	free(data_decoded2);
+	convert_8dot_plane3_to_index8(decode_buffer, data_decoded, len_col, len_y);
+	free(data_decoded);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"VSP200l";
