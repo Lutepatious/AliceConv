@@ -5,29 +5,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "../aclib/wave.h"
+
 #pragma pack (1)
-struct WAVE_header {
-	unsigned __int32 ChunkID; // must be 'RIFF' 0x52494646
-	unsigned __int32 ChunkSize;
-	unsigned __int32 Format;  // must be 'WAVE' 0x57415645
-} waveH;
-
-struct WAVE_chunk1 {
-	unsigned __int32 Subchunk1ID; // must be 'fmt ' 0x666d7420
-	unsigned __int32 Subchunk1Size;
-	unsigned __int16 AudioFormat;
-	unsigned __int16 NumChannels;
-	unsigned __int32 SampleRate;
-	unsigned __int32 ByteRate;
-	unsigned __int16 BlockAlign;
-	unsigned __int16 BitsPerSample;
-} waveC1;
-
-struct WAVE_chunk2 {
-	unsigned __int32 Subchunk2ID; // must be 'data' 0x64617461
-	unsigned __int32 Subchunk2Size;
-} waveC2;
-
 struct PM_header {
 	unsigned __int16 ID; // must be 'PM' 0x504D
 	unsigned __int8 Ch;
@@ -45,10 +25,20 @@ struct MP_header {
 	unsigned __int8 unk[8];
 } mpH;
 
+struct PCM4 {
+	unsigned __int8 L : 4;
+	unsigned __int8 H : 4;
+};
+
+
+#pragma pack ()
+
+struct WAVE_header waveH;
+struct WAVE_chunk1 waveC1;
+struct WAVE_chunk2 waveC2;
 unsigned __int8 *inbuf;
 unsigned __int8 *buffer;
 
-#pragma pack ()
 int wmain(int argc, wchar_t **argv)
 {
 	FILE *pFi, *pFo;

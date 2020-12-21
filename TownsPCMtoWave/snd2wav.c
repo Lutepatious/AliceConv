@@ -5,29 +5,9 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
+#include "../aclib/wave.h"
+
 #pragma pack (1)
-struct WAVE_header {
-	unsigned __int32 ChunkID; // must be 'RIFF' 0x52494646
-	unsigned __int32 ChunkSize;
-	unsigned __int32 Format;  // must be 'WAVE' 0x57415645
-} waveH;
-
-struct WAVE_chunk1 {
-	unsigned __int32 Subchunk1ID; // must be 'fmt ' 0x666d7420
-	unsigned __int32 Subchunk1Size;
-	unsigned __int16 AudioFormat;
-	unsigned __int16 NumChannels;
-	unsigned __int32 SampleRate;
-	unsigned __int32 ByteRate;
-	unsigned __int16 BlockAlign;
-	unsigned __int16 BitsPerSample;
-} waveC1;
-
-struct WAVE_chunk2 {
-	unsigned __int32 Subchunk2ID; // must be 'data' 0x64617461
-	unsigned __int32 Subchunk2Size;
-} waveC2;
-
 struct TSND_header {
 	unsigned char Name[8];
 	unsigned __int32 ID;
@@ -40,9 +20,11 @@ struct TSND_header {
 	unsigned __int8 unk2;
 	unsigned __int16 unk3;
 } tsndH;
-
 #pragma pack ()
 
+struct WAVE_header waveH;
+struct WAVE_chunk1 waveC1;
+struct WAVE_chunk2 waveC2;
 unsigned __int8 *buffer;
 
 int wmain(int argc, wchar_t **argv)
@@ -89,6 +71,11 @@ int wmain(int argc, wchar_t **argv)
 		}
 		fclose(pFi);
 
+		// WAVE 8bitは符号なし8bit表現で、TOWNS SNDは符号1bit+7bitで-0と+0に1の差がある表現な上に中心値は-0。
+		// そこでトリッキーな変換を行う
+		// 負数をそのまま使うことで0x80(-0)-0xFF(-127)を0x80(128)-0xFF(255)とする。
+		// 正数は反転し0x00(+0)-0x7F(127)を0x7F(-1)-0x00(-128)にする。
+		// 自分でコード書いて忘れていたので解析する羽目になったからコメント入れた(2020.05.22)
 		for (size_t i = 0; i < rcount; i++) {
 			if (!(buffer[i] & 0x80)) {
 				buffer[i] = ~(buffer[i] | 0x80);
@@ -118,7 +105,7 @@ int wmain(int argc, wchar_t **argv)
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".WAV");
-		wprintf_s(L"Data size %ld, SampleRatio %ld.\n", waveC2.Subchunk2Size, waveC1.SampleRate);
+		wprintf_s(L"Data size %lu, SampleRatio %lu.\n", waveC2.Subchunk2Size, waveC1.SampleRate);
 		wprintf_s(L"Output to %s.\n", path);
 
 		ecode = _wfopen_s(&pFo, path, L"wb");

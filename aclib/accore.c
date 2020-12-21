@@ -191,7 +191,7 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			src += 2;
 			negate = 0;
 			break;
-		case 0x05: // 第3プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに来てはならない。
+		case 0x05: // 第2プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに制御が来てはならない。
 			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * (cur_plane - 2);
@@ -321,12 +321,12 @@ void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t l
 				*dst++ = ud.a16;
 			}
 			break;
-		case 0xFA: // 1行と1ピクセル後の値をコピー
+		case 0xFA: // 1行前の1ピクセル後の値をコピー
 			*dst = *(dst - Col_per_Row + 1);
 			dst++;
 			src++;
 			break;
-		case 0xFB: // 1行と1ピクセル前の値をコピー
+		case 0xFB: // 1行前の1ピクセル前の値をコピー
 			*dst = *(dst - Col_per_Row - 1);
 			dst++;
 			src++;

@@ -191,6 +191,7 @@
     <ClInclude Include="acinternal.h" />
     <ClInclude Include="pngio.h" />
     <ClInclude Include="tiffrw.h" />
+    <ClInclude Include="wave.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\libpng\libpng.vcxproj">
