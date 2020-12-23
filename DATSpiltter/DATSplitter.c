@@ -54,7 +54,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int16 i = 0;
 		size_t lmlen;
 
-		while (*(Addr + i)) {
+		while (*(Addr + i) || i == 0) {
 			if (0x100LL * *(Addr + i) < fs.st_size) {
 				size_t len = 0x100L * ((size_t) * (Addr + i + 1) - (size_t) * (Addr + i));
 				wprintf_s(L"Entry %03u: %06X, %10zd.\n", i, 0x100L * *(Addr + i), len);
@@ -142,10 +142,14 @@ int wmain(int argc, wchar_t** argv)
 				_wmkdir(path);
 				wprintf_s(L"Out path %s created.\n", path);
 			}
-			while (*(Addr + i)) {
+			while (*(Addr + i) || i == 0) {
 				size_t F_Addr = 0x100LL * *(Addr + i);
 				if (F_Addr < fs.st_size) {
-					size_t wsize = 0x100L * (size_t)(*(Addr + i + 1) - *(Addr + i));
+					__int16 wblock = *(Addr + i + 1) - *(Addr + i);
+					if (wblock < 0) {
+						wblock = fs.st_size / 0x100 + 1 - *(Addr + i);
+					}
+					size_t wsize = 0x100L * (size_t)wblock;
 					if (wsize) {
 						swprintf_s(newfname, _MAX_FNAME, L"%s%03d", fname, i + 1);
 						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");

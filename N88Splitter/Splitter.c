@@ -108,7 +108,10 @@ int wmain(int argc, wchar_t** argv)
 		printf_s("Directory Track %3u, Track Length %5zu\n", N88[Format].Directory_Track, N88[Format].Track_Length);
 
 		for (size_t i = 0; i < (N88[Format].Track_Length / 0x10); i++) {
-			if ((dirs + i)->FileName[0] == 0x00 || (dirs + i)->FileName[0] == 0xFF) {
+			if ((dirs + i)->FileName[0] == 0x00) {
+				continue;
+			}
+			if ((dirs + i)->FileName[0] == 0xFF) {
 				break;
 			}
 
