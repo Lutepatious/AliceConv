@@ -64,14 +64,34 @@ struct image_info* decode_VSP(FILE* pFi)
 	const size_t len_y = data->Row_out - data->Row_in;
 	const size_t len_decoded = len_y * len_col * planes;
 
-	unsigned __int8* data_decoded = malloc(len_decoded);
+	unsigned __int8* data_decoded = malloc(len_decoded + 512);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		free(data);
 		exit(-2);
 	}
 
-	decode_d4_VSP(data_decoded, data->body, len_decoded, len_y, len_col, planes);
+	decode_d4_VSP(data_decoded, data->body, len_decoded, len_y, planes);
+
+	// データの並びを[x][plane][y]から[y*x][plane]に変える。
+	const size_t len_dot8 = len_col * len_y;
+	struct plane4_dot8* buffer_dot8 = calloc(len_dot8, sizeof(struct plane4_dot8));
+	if (buffer_dot8 == NULL) {
+		wprintf_s(L"Memory allocation error.\n");
+		free(data_decoded);
+		exit(-2);
+	}
+
+	struct plane4_dot8* buffer_dot8_dest = buffer_dot8;
+	for (size_t iy = 0; iy < len_y; iy++) {
+		for (size_t ix = 0; ix < len_col; ix++) {
+			for (size_t ip = 0; ip < planes; ip++) {
+				buffer_dot8_dest->pix8[ip] = data_decoded[(ix * planes + ip) * len_y + iy];
+			}
+			buffer_dot8_dest++;
+		}
+	}
+	free(data_decoded);
 
 	size_t decode_len = len_x * len_y;
 	unsigned __int8* decode_buffer = malloc(decode_len);
@@ -82,8 +102,8 @@ struct image_info* decode_VSP(FILE* pFi)
 		exit(-2);
 	}
 
-	convert_8dot_plane4_to_index8(decode_buffer, data_decoded, len_col, len_y);
-	free(data_decoded);
+	convert_plane4_dot8_to_index8(decode_buffer, buffer_dot8, len_dot8);
+	free(buffer_dot8);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"VSP";

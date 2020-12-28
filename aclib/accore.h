@@ -31,4 +31,4 @@ extern struct image_info* decode_PMS8(FILE* pFi);
 extern struct image_info* decode_PMS16(FILE* pFi);
 extern void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row);
 extern void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t length, size_t Col_per_Row);
-extern void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t Cols, size_t planes);
+extern void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t planes);

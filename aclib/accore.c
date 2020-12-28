@@ -140,18 +140,11 @@ unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t 
 
 // VSPおよびVSP 200 line用のデコーダ
 // VSP形式はちょっと特殊で一般的な横スキャンではなく1バイト(8ドット)ごとの縦スキャン
-void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t Cols, size_t planes)
+void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t planes)
 {
-	unsigned __int8* buffer = malloc(length + 512);
-	if (buffer == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(destination);
-		exit(-2);
-	}
-
 	size_t cp_len, cur_plane;
-	unsigned __int8* src = source, * dst = buffer, * cp_src, negate = 0;
-	while ((dst - buffer) < length) {
+	unsigned __int8* src = source, * dst = destination, * cp_src, negate = 0;
+	while ((dst - destination) < length) {
 		switch (*src) {
 		case 0x00: // 1列前の同プレーンのデータを1バイト目で指定した長さだけコピー
 			cp_len = *(src + 1) + 1LL;
@@ -175,7 +168,7 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			src += 4;
 			break;
 		case 0x03: // 第0プレーン(青)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
-			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * cur_plane;
 			if (negate) {
@@ -191,7 +184,7 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			negate = 0;
 			break;
 		case 0x04: // 第1プレーン(赤)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
-			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * (cur_plane - 1);
 			if (negate) {
@@ -207,7 +200,7 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 			negate = 0;
 			break;
 		case 0x05: // 第2プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに制御が来てはならない。
-			cur_plane = ((dst - buffer) / Row_per_Col) % planes;
+			cur_plane = ((dst - destination) / Row_per_Col) % planes;
 			cp_len = *(src + 1) + 1LL;
 			cp_src = dst - Row_per_Col * (cur_plane - 2);
 			if (negate) {
@@ -235,15 +228,6 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 		}
 	}
 
-	// 縦スキャンのデータを横スキャンに直す
-	for (size_t ix = 0; ix < Cols; ix++) {
-		for (size_t ip = 0; ip < planes; ip++) {
-			for (size_t iy = 0; iy < Row_per_Col; iy++) {
-				destination[(iy * planes + ip) * Cols + ix] = buffer[(ix * planes + ip) * Row_per_Col + iy];
-			}
-		}
-	}
-	free(buffer);
 }
 
 // VSP256, PMS8, PMS16のアルファch に共通の8bit depthデコーダ
