@@ -46,39 +46,6 @@ struct COLOR_dest {
 #pragma pack()
 
 // デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
-void convert_8dot_plane4_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
-{
-	for (size_t y = 0; y < row; y++) {
-		for (size_t x2 = 0; x2 < col; x2++) {
-			for (size_t x = 0; x < 8; x++) {
-				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0) | ((*(src + col * 3) & (1 << x)) ? 8 : 0);
-			}
-			(*dst) = _byteswap_uint64(u.a);
-			src++;
-			dst++;
-		}
-		src += col * 3;
-	}
-}
-
-// デコードされたプレーンデータをパックトピクセルに変換(3プレーン版)
-void convert_8dot_plane3_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row)
-{
-	for (size_t y = 0; y < row; y++) {
-		for (size_t x2 = 0; x2 < col; x2++) {
-			for (size_t x = 0; x < 8; x++) {
-				u.a8[x] = ((*src & (1 << x)) ? 1 : 0) | ((*(src + col) & (1 << x)) ? 2 : 0) | ((*(src + col * 2) & (1 << x)) ? 4 : 0);
-			}
-			(*dst) = _byteswap_uint64(u.a);
-			src++;
-			dst++;
-		}
-		src += col * 2;
-	}
-}
-
-
-// デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
 void convert_plane4_dot8_to_index8(unsigned __int64* dst, const struct plane4_dot8* src, size_t len)
 {
 	for (size_t p = 0; p < len; p++) {
