@@ -26,6 +26,11 @@ struct MSX_Palette {
 	unsigned __int16 u0 : 4;
 };
 
+
+struct plane4_dot8 {
+	unsigned __int8 pix8[4];
+};
+
 // 4bitパックトピクセルにおける配置
 struct PackedPixel4 {
 	unsigned __int8	L : 4;
@@ -40,5 +45,6 @@ struct PackedPixel4 {
 
 extern void convert_8dot_plane4_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
 extern void convert_8dot_plane3_to_index8(unsigned __int64* dst, const unsigned __int8* src, size_t col, size_t row);
+extern void convert_plane4_dot8_to_index8(unsigned __int64* dst, const struct plane4_dot8* src, size_t len);
 extern unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t len);
 extern unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t len);

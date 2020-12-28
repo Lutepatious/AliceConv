@@ -77,6 +77,21 @@ void convert_8dot_plane3_to_index8(unsigned __int64* dst, const unsigned __int8*
 	}
 }
 
+
+// デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
+void convert_plane4_dot8_to_index8(unsigned __int64* dst, const struct plane4_dot8* src, size_t len)
+{
+	for (size_t p = 0; p < len; p++) {
+		for (size_t x = 0; x < 8; x++) {
+			unsigned __int8 index = 1 << x;
+			u.a8[x] = ((src->pix8[0] & index) ? 1 : 0) | ((src->pix8[1] & index) ? 2 : 0) | ((src->pix8[2] & index) ? 4 : 0) | ((src->pix8[3] & index) ? 8 : 0);
+		}
+		(*dst) = _byteswap_uint64(u.a);
+		src++;
+		dst++;
+	}
+}
+
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(リトルエンディアン用)
 unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t len)
 {
@@ -124,7 +139,7 @@ unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t 
 }
 
 // VSPおよびVSP 200 line用のデコーダ
-// VSP形式はちょっと特殊で一般的な横スキャンではなく1バイトごとの縦スキャン
+// VSP形式はちょっと特殊で一般的な横スキャンではなく1バイト(8ドット)ごとの縦スキャン
 void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t Cols, size_t planes)
 {
 	unsigned __int8* buffer = malloc(length + 512);
@@ -231,7 +246,7 @@ void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t
 	free(buffer);
 }
 
-// VSP256,PMS8,PMS16のアルファchに共通の8bit depthデコーダ
+// VSP256, PMS8, PMS16のアルファch に共通の8bit depthデコーダ
 void decode_d8(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Col_per_Row)
 {
 	size_t cp_len;
