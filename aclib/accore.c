@@ -45,7 +45,7 @@ struct COLOR_dest {
 };
 #pragma pack()
 
-// デコードされたプレーンデータをパックトピクセルに変換(4プレーン版)
+// デコードされたプレーンデータを8ビットパックトピクセルに変換(4プレーン版)
 void convert_plane4_dot8_to_index8(unsigned __int64* dst, const struct plane4_dot8* src, size_t len)
 {
 	for (size_t p = 0; p < len; p++) {
