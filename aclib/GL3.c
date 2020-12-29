@@ -134,34 +134,10 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 		}
 	}
 
-	// データの並びを[y][plane][x]から[y*x][plane]に変える。
-	const size_t len_dot8 = len_col * len_y;
-	struct plane4_dot8* buffer_dot8 = calloc(len_dot8, sizeof(struct plane4_dot8));
-	if (buffer_dot8 == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(data_decoded);
-		exit(-2);
-	}
-
-	struct plane4_dot8* buffer_dot8_dest = buffer_dot8;
-	for (size_t iy = 0; iy < len_y; iy++) {
-		for (size_t ix = 0; ix < len_col; ix++) {
-			for (size_t ip = 0; ip < planes; ip++) {
-				buffer_dot8_dest->pix8[ip] = data_decoded[(iy * planes + ip) * len_col + ix];
-			}
-			buffer_dot8_dest++;
-		}
-	}
+	struct plane4_dot8* buffer_dot8 = convert_YPC_to_YCP(data_decoded, len_y, len_col, planes);
 	free(data_decoded);
 
-	const size_t decode_len = len_x * len_y;
-	unsigned __int8* decode_buffer = malloc(decode_len);
-	if (decode_buffer == NULL) {
-		wprintf_s(L"Memory allocation error.\n");
-		free(buffer_dot8);
-		exit(-2);
-	}
-	convert_plane4_dot8_to_index8(decode_buffer, buffer_dot8, len_dot8);
+	unsigned __int8* decode_buffer = convert_plane4_dot8_to_index8(buffer_dot8, len_y * len_col);
 	free(buffer_dot8);
 
 	static struct image_info I;

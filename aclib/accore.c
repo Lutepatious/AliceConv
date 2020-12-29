@@ -45,18 +45,76 @@ struct COLOR_dest {
 };
 #pragma pack()
 
-// デコードされたプレーンデータを8ビットパックトピクセルに変換(4プレーン版)
-void convert_plane4_dot8_to_index8(unsigned __int64* dst, const struct plane4_dot8* src, size_t len)
+// データの並びを[col][plane][y]から[y][col][plane]に変える。
+struct plane4_dot8* convert_CPY_to_YCP(const unsigned __int8* src, size_t len_y, size_t len_col, size_t planes)
 {
+	struct plane4_dot8* buffer_dot8 = calloc(len_y * len_col, sizeof(struct plane4_dot8));
+	if (buffer_dot8 == NULL) {
+		wprintf_s(L"Memory allocation error.\n");
+		free(src);
+		exit(-2);
+	}
+
+	struct plane4_dot8* buffer_dot8_dest = buffer_dot8;
+	for (size_t iy = 0; iy < len_y; iy++) {
+		for (size_t ix = 0; ix < len_col; ix++) {
+			for (size_t ip = 0; ip < planes; ip++) {
+				buffer_dot8_dest->pix8[ip] = src[(ix * planes + ip) * len_y + iy];
+			}
+			buffer_dot8_dest++;
+		}
+	}
+
+	return buffer_dot8;
+}
+
+// データの並びを[y][plane][col]から[y][col][plane]に変える。
+struct plane4_dot8* convert_YPC_to_YCP(const unsigned __int8* src, size_t len_y, size_t len_col, size_t planes)
+{
+	struct plane4_dot8* buffer_dot8 = calloc(len_y * len_col, sizeof(struct plane4_dot8));
+	if (buffer_dot8 == NULL) {
+		wprintf_s(L"Memory allocation error.\n");
+		free(src);
+		exit(-2);
+	}
+
+	struct plane4_dot8* buffer_dot8_dest = buffer_dot8;
+	for (size_t iy = 0; iy < len_y; iy++) {
+		for (size_t ix = 0; ix < len_col; ix++) {
+			for (size_t ip = 0; ip < planes; ip++) {
+				buffer_dot8_dest->pix8[ip] = src[(iy * planes + ip) * len_col + ix];
+			}
+			buffer_dot8_dest++;
+		}
+	}
+
+	return buffer_dot8;
+}
+
+
+
+
+
+// デコードされたプレーンデータを8ビットパックトピクセルに変換(4プレーン版)
+unsigned __int8* convert_plane4_dot8_to_index8(const struct plane4_dot8* src, size_t len)
+{
+	unsigned __int8* buffer = calloc(len, sizeof(unsigned __int64));
+	if (buffer == NULL) {
+		fwprintf_s(stderr, L"Memory allocation error.\n");
+		free(src);
+		exit(-2);
+	}
+	unsigned __int64* dst = buffer;
 	for (size_t p = 0; p < len; p++) {
 		for (size_t x = 0; x < 8; x++) {
 			unsigned __int8 index = 1 << x;
 			u.a8[x] = ((src->pix8[0] & index) ? 1 : 0) | ((src->pix8[1] & index) ? 2 : 0) | ((src->pix8[2] & index) ? 4 : 0) | ((src->pix8[3] & index) ? 8 : 0);
 		}
-		(*dst) = _byteswap_uint64(u.a);
+		*dst = _byteswap_uint64(u.a);
 		src++;
 		dst++;
 	}
+	return buffer;
 }
 
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(リトルエンディアン用)
@@ -106,7 +164,7 @@ unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t 
 }
 
 // VSPおよびVSP 200 line用のデコーダ
-// VSP形式はちょっと特殊で一般的な横スキャンではなく1バイト(8ドット)ごとの縦スキャン
+// VSP形式はちょっと特殊で一般的な横スキャンではなく横1バイト(8ドット)ごとの縦スキャン
 void decode_d4_VSP(unsigned __int8* destination, unsigned __int8* source, size_t length, size_t Row_per_Col, size_t planes)
 {
 	size_t cp_len, cur_plane;
