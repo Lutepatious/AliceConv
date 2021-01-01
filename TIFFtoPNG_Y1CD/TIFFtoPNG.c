@@ -1,15 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 #include "../aclib/tiffrw.h"
 #include "../aclib/accore.h"
-
 
 const static png_byte table2to8[4] = { 0, 0x7F, 0xBF, 0xFF };
 const static png_byte table3to8[8] = { 0, 0x3F, 0x5F, 0x7F, 0x9F, 0xBF, 0xDF, 0xFF };
@@ -41,6 +39,7 @@ int wmain(int argc, wchar_t** argv)
 				color_65536to256(&Pal8[i], &Pal16);
 			}
 		}
+		// TOWNS TIFFはグレイスケールであるべきデータを8bitダイレクトカラーとして扱うため、対応する色を集めたパレットを作成して8bitインデックスカラーに修正する
 		else if (pimg->Format == PHOTOMETRIC_MINISBLACK) {
 			for (size_t i = 0; i < 256; i++) {
 				union {
@@ -54,7 +53,6 @@ int wmain(int argc, wchar_t** argv)
 				iPal8.B = table2to8[u.c.B];
 				color_256to256(&Pal8[i], &iPal8);
 			}
-
 		}
 		else {
 			wprintf_s(L"Unexpected format.\n");
@@ -79,11 +77,9 @@ int wmain(int argc, wchar_t** argv)
 		imgw.nPal = 1LL << pimg->depth;
 		imgw.pXY = 1;
 
-		imgw.image = malloc(imgw.Rows * sizeof(png_bytep));
+		imgw.image = GC_malloc(imgw.Rows * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
-			free(pimg->image);
-			free(pimg);
 			exit(-2);
 		}
 
@@ -94,9 +90,5 @@ int wmain(int argc, wchar_t** argv)
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);
 		}
-
-		free(imgw.image);
-		free(pimg->image);
-		free(pimg);
 	}
 }

@@ -1,14 +1,13 @@
 // MSXtoPNG Intruder専用版
-// COLPALET.DATからパレット情報を切り出しておくこと
+// COLPALET.DATも取り出してCGファイルと同じディレクトリに置くこと
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 #include "../aclib/accore.h"
 #include "../aclib/acinternal.h"
@@ -44,11 +43,9 @@ int wmain(int argc, wchar_t** argv)
 		size_t canvas_y = MSX_ROWS;
 		canvas_y = (pI->start_y + pI->len_y) > canvas_y ? (pI->start_y + pI->len_y) : canvas_y;
 
-		png_bytep canvas;
-		canvas = malloc(canvas_y * canvas_x);
+		png_bytep canvas = GC_malloc(canvas_y * canvas_x);
 		if (canvas == NULL) {
 			wprintf_s(L"Memory allocation error. \n");
-			free(pI->image);
 			exit(-2);
 		}
 
@@ -56,7 +53,6 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t iy = 0; iy < pI->len_y; iy++) {
 			memcpy_s(&canvas[(pI->start_y + iy) * canvas_x + pI->start_x], pI->len_x, &pI->image[iy * pI->len_x], pI->len_x);
 		}
-		free(pI->image);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -66,7 +62,6 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 		if (wcslen(fname) != 7 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswalpha(fname[3]) || !iswdigit(fname[4]) || !iswdigit(fname[5]) || !iswdigit(fname[6])) {
-			free(canvas);
 			wprintf_s(L"Not suitable filename format %s.\n", *argv);
 			continue;
 		}
@@ -76,7 +71,6 @@ int wmain(int argc, wchar_t** argv)
 
 		ecode = _wfopen_s(&pFi_pal, fnpal, L"rb");
 		if (ecode) {
-			free(canvas);
 			wprintf_s(L"File open error %s.\n", fnpal);
 			exit(ecode);
 		}
@@ -84,7 +78,6 @@ int wmain(int argc, wchar_t** argv)
 
 		size_t rcount = fread_s(Pal, sizeof(Pal), sizeof(Pal), 1, pFi);
 		if (rcount != 1) {
-			free(canvas);
 			wprintf_s(L"File read error %s.\n", fnpal);
 			fclose(pFi_pal);
 			exit(-2);
@@ -113,10 +106,9 @@ int wmain(int argc, wchar_t** argv)
 		imgw.nTrans = pI->colors;
 		imgw.pXY = 2;
 
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		imgw.image = GC_malloc(canvas_y * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error. \n");
-			free(canvas);
 			exit(-2);
 		}
 		for (size_t j = 0; j < canvas_y; j++)
@@ -126,8 +118,5 @@ int wmain(int argc, wchar_t** argv)
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);
 		}
-
-		free(imgw.image);
-		free(canvas);
 	}
 }

@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -34,7 +33,7 @@ struct image_info* decode_X68T(FILE* pFi)
 	_fstat64(_fileno(pFi), &fs);
 
 	const size_t len = fs.st_size - sizeof(struct X68T);
-	struct X68T* data = malloc(fs.st_size);
+	struct X68T* data = GC_malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -44,7 +43,6 @@ struct image_info* decode_X68T(FILE* pFi)
 	const size_t rcount = fread_s(data, fs.st_size, 1, fs.st_size, pFi);
 	if (rcount != fs.st_size) {
 		wprintf_s(L"File read error.\n");
-		free(data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -56,10 +54,9 @@ struct image_info* decode_X68T(FILE* pFi)
 	const size_t len_x = _byteswap_ushort(data->ColsBE);
 	const size_t len_y = _byteswap_ushort(data->RowsBE);
 	const size_t len_decoded = len_x * len_y;
-	unsigned __int8* data_decoded = malloc(len_decoded);
+	unsigned __int8* data_decoded = GC_malloc(len_decoded);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
@@ -124,6 +121,5 @@ struct image_info* decode_X68T(FILE* pFi)
 	I.sType = sType;
 	I.BGcolor = 0;
 
-	free(data);
 	return &I;
 }

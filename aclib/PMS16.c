@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -75,7 +74,7 @@ struct image_info* decode_PMS16(FILE* pFi)
 	_fstat64(_fileno(pFi), &fs);
 
 	const size_t len = fs.st_size - sizeof(struct PMS16);
-	struct PMS16* data = malloc(fs.st_size);
+	struct PMS16* data = GC_malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -85,7 +84,6 @@ struct image_info* decode_PMS16(FILE* pFi)
 	const size_t rcount = fread_s(data, fs.st_size, 1, fs.st_size, pFi);
 	if (rcount != fs.st_size) {
 		wprintf_s(L"File read error.\n");
-		free(data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -96,19 +94,17 @@ struct image_info* decode_PMS16(FILE* pFi)
 	const size_t len_x = data->Columns;
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_x;
-	unsigned __int16* data_decoded = malloc(len_decoded * sizeof(unsigned __int16));
+	unsigned __int16* data_decoded = GC_malloc(len_decoded * sizeof(unsigned __int16));
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
 	decode_d16(data_decoded, data->data + data->offset_body - data->len_hdr, len_decoded, len_x);
 
-	unsigned __int8* Alpha = malloc(len_decoded);
+	unsigned __int8* Alpha = GC_malloc(len_decoded);
 	if (Alpha == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 	memset(Alpha, 0xFF, len_decoded);
@@ -117,10 +113,9 @@ struct image_info* decode_PMS16(FILE* pFi)
 		decode_d8(Alpha, data->data + data->offset_Pal - data->len_hdr, len_decoded, len_x);
 	}
 
-	struct COLOR32RGBA* RGBA = malloc(len_decoded * sizeof(struct COLOR32RGBA));
+	struct COLOR32RGBA* RGBA = GC_malloc(len_decoded * sizeof(struct COLOR32RGBA));
 	if (RGBA == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
@@ -132,9 +127,6 @@ struct image_info* decode_PMS16(FILE* pFi)
 		u.a16 = *(data_decoded + i);
 		direct16_to_direct32(RGBA + i, &u.c16, Alpha + i);
 	}
-
-	free(data_decoded);
-	free(Alpha);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"PMS16";
@@ -148,6 +140,5 @@ struct image_info* decode_PMS16(FILE* pFi)
 	I.colors = colours;
 	I.sType = sType;
 
-	free(data);
 	return &I;
 }

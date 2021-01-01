@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #pragma pack (1)
 struct FILE_DIR {
 	unsigned __int8 FileName[6];
@@ -63,7 +62,6 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	while (--argc) {
-		unsigned __int8* buffer;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -89,7 +87,7 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		buffer = calloc(N88[Format].Cylinders * N88[Format].Heads * N88[Format].Track_Length, 1);
+		unsigned __int8* buffer = GC_malloc((size_t) N88[Format].Cylinders * N88[Format].Heads * N88[Format].Track_Length);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
@@ -130,7 +128,6 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 			_makepath_s(path, _MAX_PATH, NULL, NULL, fname, ext);
-
 			printf_s("File %10s Track %3u\n", path, (dirs + i)->Track);
 
 			unsigned __int8 Track = (dirs + i)->Track, NextTrack;
@@ -170,6 +167,5 @@ int wmain(int argc, wchar_t** argv)
 
 			fclose(pFo);
 		}
-		free(buffer);
 	}
 }

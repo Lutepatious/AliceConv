@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -30,7 +29,7 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	_fstat64(_fileno(pFi), &fs);
 
 	const size_t len = fs.st_size - sizeof(struct MSX_GL);
-	struct MSX_GL* data = malloc(fs.st_size);
+	struct MSX_GL* data = GC_malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -40,7 +39,6 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	const size_t rcount = fread_s(data, fs.st_size, 1, fs.st_size, pFi);
 	if (rcount != fs.st_size) {
 		wprintf_s(L"File read error.\n");
-		free(data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -53,10 +51,9 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	const size_t len_x = len_col * 2;
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_y * len_col;
-	unsigned __int8* data_decoded = calloc(len_decoded, sizeof(unsigned __int8));
+	unsigned __int8* data_decoded = GC_malloc(len_decoded * sizeof(unsigned __int8));
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
@@ -90,7 +87,6 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	}
 
 	unsigned __int8* decode_buffer = convert_index4_to_index8_LE(data_decoded, len_decoded);
-	free(data_decoded);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"MSX_GL";
@@ -120,6 +116,5 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	I.sType = sType;
 	I.BGcolor = colours;
 
-	free(data);
 	return &I;
 }

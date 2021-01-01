@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/wave.h"
 
 #pragma pack (1)
@@ -25,7 +24,6 @@ struct TSND_header {
 struct WAVE_header waveH;
 struct WAVE_chunk1 waveC1;
 struct WAVE_chunk2 waveC2;
-unsigned __int8 *buffer;
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -55,7 +53,7 @@ int wmain(int argc, wchar_t **argv)
 			exit(-2);
 		}
 
-		buffer = malloc(tsndH.Size);
+		unsigned __int8* buffer = GC_malloc(tsndH.Size);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
@@ -65,7 +63,6 @@ int wmain(int argc, wchar_t **argv)
 		rcount = fread_s(buffer, tsndH.Size, 1, tsndH.Size, pFi);
 		if (rcount != tsndH.Size) {
 			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-			free(buffer);
 			fclose(pFi);
 			exit(-2);
 		}
@@ -89,7 +86,7 @@ int wmain(int argc, wchar_t **argv)
 		waveC1.Subchunk1Size = 16;
 		waveC1.AudioFormat = 1;
 		waveC1.NumChannels = 1;
-		waveC1.SampleRate = (2000L * tsndH.tSampleRate / 98 + 1)  >> 1;
+		waveC1.SampleRate = (2000L * tsndH.tSampleRate / 98 + 1)  >> 1; // 0.098Ç≈äÑÇÈÇÃÇ≈ÇÕÇ»Ç≠ÅA2000/98Çä|ÇØÇƒ+1ÇµÇƒ2Ç≈äÑÇÈ
 		waveC1.BitsPerSample = 8;
 		waveC1.ByteRate = waveC1.NumChannels * waveC1.SampleRate * waveC1.BitsPerSample / 8;
 		waveC1.BlockAlign = waveC1.NumChannels * waveC1.BitsPerSample / 8;
@@ -111,7 +108,6 @@ int wmain(int argc, wchar_t **argv)
 		ecode = _wfopen_s(&pFo, path, L"wb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
-			free(buffer);
 			exit(ecode);
 		}
 
@@ -119,33 +115,27 @@ int wmain(int argc, wchar_t **argv)
 		if (rcount != 1) {
 			wprintf_s(L"File write error %s.\n", *argv);
 			fclose(pFo);
-			free(buffer);
 			exit(-2);
 		}
 		rcount = fwrite(&waveC1, sizeof(waveC1), 1, pFo);
 		if (rcount != 1) {
 			wprintf_s(L"File write error %s.\n", *argv);
 			fclose(pFo);
-			free(buffer);
 			exit(-2);
 		}
 		rcount = fwrite(&waveC2, sizeof(waveC2), 1, pFo);
 		if (rcount != 1) {
 			wprintf_s(L"File write error %s.\n", *argv);
 			fclose(pFo);
-			free(buffer);
 			exit(-2);
 		}
 		rcount = fwrite(buffer, 1, waveC2.Subchunk2Size, pFo);
 		if (rcount != waveC2.Subchunk2Size) {
 			wprintf_s(L"File write error %s.\n", *argv);
 			fclose(pFo);
-			free(buffer);
 			exit(-2);
 		}
 		fclose(pFo);
-
-		free(buffer);
 	}
 
 	return 0;

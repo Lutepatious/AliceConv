@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 
 #define DEFAULT_PpM 4000
@@ -65,7 +64,7 @@ struct fPNG* png_open(wchar_t* infile)
 		return NULL;
 	}
 
-	struct fPNG* pimg = malloc(sizeof(struct fPNG));
+	struct fPNG* pimg = GC_malloc(sizeof(struct fPNG));
 	if (pimg == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
@@ -89,7 +88,6 @@ void png_close(struct fPNG* pimg)
 {
 	png_destroy_read_struct(&pimg->ppng, &pimg->pinfo, (png_infopp)NULL);
 	fclose(pimg->pFi);
-	free(pimg);
 }
 
 void* png_create(struct fPNGw* pngw)

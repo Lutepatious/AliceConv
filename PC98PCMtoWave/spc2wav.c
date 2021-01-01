@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/wave.h"
 
 #pragma pack (1)
@@ -29,15 +28,11 @@ struct PCM4 {
 	unsigned __int8 L : 4;
 	unsigned __int8 H : 4;
 };
-
-
 #pragma pack ()
 
 struct WAVE_header waveH;
 struct WAVE_chunk1 waveC1;
 struct WAVE_chunk2 waveC2;
-unsigned __int8 *inbuf;
-unsigned __int8 *buffer;
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -49,6 +44,7 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
+		unsigned __int8* inbuf;
 		unsigned __int32 SampleRate;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
@@ -77,7 +73,7 @@ int wmain(int argc, wchar_t **argv)
 			}
 			size_t rsize = pmH.Size;
 			SampleRate = 100L * pmH.sSampleRate;
-			inbuf = malloc(rsize);
+			inbuf = GC_malloc(rsize);
 			if (inbuf == NULL) {
 				wprintf_s(L"Memory allocation error.\n");
 				fclose(pFi);
@@ -102,7 +98,7 @@ int wmain(int argc, wchar_t **argv)
 				wprintf_s(L"File size %ld. %ld Hz.\n", mpH.Len, mpH.sSampleRate * 100);
 				size_t rsize = mpH.Len - 0x10;
 				SampleRate = 100L * mpH.sSampleRate;
-				inbuf = malloc(rsize);
+				inbuf = GC_malloc(rsize);
 				if (inbuf == NULL) {
 					wprintf_s(L"Memory allocation error.\n");
 					fclose(pFi);
@@ -120,7 +116,7 @@ int wmain(int argc, wchar_t **argv)
 				size_t rsize = fs.st_size;
 				wprintf_s(L"Unknown file type. %s\n", *argv);
 				fseek(pFi, 0, SEEK_SET);
-				inbuf = malloc(rsize);
+				inbuf = GC_malloc(rsize);
 				if (inbuf == NULL) {
 					wprintf_s(L"Memory allocation error.\n");
 					fclose(pFi);
@@ -135,10 +131,9 @@ int wmain(int argc, wchar_t **argv)
 			}
 		}
 
-		buffer = malloc(rcount*2);
+		unsigned __int8* buffer = GC_malloc(rcount*2);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
-			free(inbuf);
 			exit(-2);
 		}
 
@@ -146,8 +141,6 @@ int wmain(int argc, wchar_t **argv)
 			buffer[i*2] = inbuf[i] & 0xF0;
 			buffer[i * 2 + 1] = (inbuf[i] << 4) & 0xF0;
 		}
-
-		free(inbuf);
 
 		size_t len = 0;
 
@@ -185,7 +178,6 @@ int wmain(int argc, wchar_t **argv)
 			ecode = _wfopen_s(&pFo, path, L"wb");
 			if (ecode) {
 				wprintf_s(L"File open error %s.\n", *argv);
-				free(buffer);
 				exit(ecode);
 			}
 
@@ -193,33 +185,27 @@ int wmain(int argc, wchar_t **argv)
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(&waveC1, sizeof(waveC1), 1, pFo);
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(&waveC2, sizeof(waveC2), 1, pFo);
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(buffer, 1, waveC2.Subchunk2Size, pFo);
 			if (rcount != waveC2.Subchunk2Size) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			fclose(pFo);
 		}
-
-		free(buffer);
 	}
 }

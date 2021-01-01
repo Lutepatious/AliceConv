@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 #include "../aclib/accore.h"
 
@@ -130,8 +129,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 			// VSP256かどうかの判定 画像の起点データがVSP16の範囲外か?
-			unsigned __int16* p = hbuf;
-			if (*p > 0x50) {
+			if (*(unsigned __int16*)hbuf > 0x50) {
 				g_fmt = VSP256;
 			}
 			if (g_fmt != VSP256) {
@@ -211,10 +209,9 @@ int wmain(int argc, wchar_t** argv)
 
 		png_bytep canvas;
 		if (g_fmt == PMS16) {
-			canvas = calloc(canvas_y * canvas_x, sizeof(png_uint_32));
+			canvas = GC_malloc(canvas_y * canvas_x * sizeof(png_uint_32));
 			if (canvas == NULL) {
 				wprintf_s(L"Memory allocation error. \n");
-				free(pI->image);
 				exit(-2);
 			}
 
@@ -222,13 +219,11 @@ int wmain(int argc, wchar_t** argv)
 				memcpy_s(&canvas[((pI->start_y + iy) * canvas_x + pI->start_x) * sizeof(png_uint_32)], pI->len_x * sizeof(png_uint_32),
 					&pI->image[(iy * pI->len_x) * sizeof(png_uint_32)], pI->len_x * sizeof(png_uint_32));
 			}
-			free(pI->image);
 		}
 		else {
-			canvas = malloc(canvas_y * canvas_x);
+			canvas = GC_malloc(canvas_y * canvas_x);
 			if (canvas == NULL) {
 				wprintf_s(L"Memory allocation error. \n");
-				free(pI->image);
 				exit(-2);
 			}
 
@@ -236,7 +231,6 @@ int wmain(int argc, wchar_t** argv)
 			for (size_t iy = 0; iy < pI->len_y; iy++) {
 				memcpy_s(&canvas[(pI->start_y + iy) * canvas_x + pI->start_x], pI->len_x, &pI->image[iy * pI->len_x], pI->len_x);
 			}
-			free(pI->image);
 		}
 
 		wchar_t path[_MAX_PATH];
@@ -258,10 +252,9 @@ int wmain(int argc, wchar_t** argv)
 		imgw.nTrans = (g_fmt == PMS16) ? 0 : pI->colors;
 		imgw.pXY = ((g_fmt == VSP200l) || (g_fmt == GM3) || (g_fmt == GL)) ? 2 : (g_fmt == X68T) ? 3 : 1;
 
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		imgw.image = GC_malloc(canvas_y * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error. \n");
-			free(canvas);
 			exit(-2);
 		}
 
@@ -279,8 +272,5 @@ int wmain(int argc, wchar_t** argv)
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);
 		}
-
-		free(imgw.image);
-		free(canvas);
 	}
 }

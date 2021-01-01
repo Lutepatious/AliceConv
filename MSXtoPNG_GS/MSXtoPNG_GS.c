@@ -3,11 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 
 #define PLANE 4
@@ -100,7 +99,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		size_t msx_len = fs.st_size - sizeof(hMSXo);
-		unsigned __int8* msx_data = malloc(msx_len);
+		unsigned __int8* msx_data = GC_malloc(msx_len);
 		if (msx_data == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
@@ -110,7 +109,6 @@ int wmain(int argc, wchar_t** argv)
 		rcount = fread_s(msx_data, msx_len, 1, msx_len, pFi);
 		if (rcount != msx_len) {
 			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-			free(msx_data);
 			fclose(pFi);
 			exit(-2);
 		}
@@ -121,10 +119,9 @@ int wmain(int argc, wchar_t** argv)
 		size_t msx_start_y = msx_start / 256;
 		size_t msx_len_x = hMSXo.Columns ? hMSXo.Columns : 256;
 		size_t msx_len_decoded = hMSXo.Rows * msx_len_x;
-		unsigned __int8* msx_data_decoded = malloc(msx_len_decoded);
+		unsigned __int8* msx_data_decoded = GC_malloc(msx_len_decoded);
 		if (msx_data_decoded == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
-			free(msx_data);
 			exit(-2);
 		}
 		wprintf_s(L"%s: %3zu/%3zu %3zd/%3d MSX size %zu => %zu.\n", *argv, msx_start_x, msx_start_y, msx_len_x * 2, hMSXo.Rows, msx_len, msx_len_decoded);
@@ -193,13 +190,11 @@ int wmain(int argc, wchar_t** argv)
 		if ((dst - msx_data_decoded) != msx_len_decoded) {
 			wprintf_s(L"decode length not match.\n");
 		}
-		free(msx_data);
 
 		size_t decode_len = hMSXo.Rows * msx_len_x * 2;
-		unsigned __int8* decode_buffer = malloc(decode_len);
+		unsigned __int8* decode_buffer = GC_malloc(decode_len);
 		if (decode_buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
-			free(msx_data_decoded);
 			exit(-2);
 		}
 
@@ -208,7 +203,6 @@ int wmain(int argc, wchar_t** argv)
 			decode_buffer[i * 2 + 1] = msx_data_decoded[i] & 0xF;
 		}
 
-		free(msx_data_decoded);
 		iInfo.image = decode_buffer;
 		iInfo.start_x = msx_start_x;
 		iInfo.start_y = msx_start_y;
@@ -222,11 +216,9 @@ int wmain(int argc, wchar_t** argv)
 
 		canvas_y = (iInfo.start_y + iInfo.len_y) > canvas_y ? (iInfo.start_y + iInfo.len_y) : canvas_y;
 
-		unsigned __int8* canvas;
-		canvas = malloc(canvas_y * canvas_x);
+		unsigned __int8* canvas = GC_malloc(canvas_y * canvas_x);
 		if (canvas == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
-			free(iInfo.image);
 			exit(-2);
 		}
 
@@ -234,7 +226,6 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t iy = 0; iy < iInfo.len_y; iy++) {
 			memcpy_s(&canvas[(iInfo.start_y + iy) * canvas_x + iInfo.start_x], iInfo.len_x, &iInfo.image[iy * iInfo.len_x], iInfo.len_x);
 		}
-		free(iInfo.image);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -268,10 +259,9 @@ int wmain(int argc, wchar_t** argv)
 		imgw.nTrans = iInfo.colors + 1;
 		imgw.pXY = 2;
 
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		imgw.image = GC_malloc(canvas_y * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error.\n");
-			free(canvas);
 			exit(-2);
 		}
 		for (size_t j = 0; j < canvas_y; j++)
@@ -282,7 +272,5 @@ int wmain(int argc, wchar_t** argv)
 			wprintf_s(L"File %s create/write error\n", path);
 		}
 
-		free(imgw.image);
-		free(canvas);
 	}
 }

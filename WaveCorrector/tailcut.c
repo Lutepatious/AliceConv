@@ -1,16 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/wave.h"
 
 struct WAVE_header waveH;
 struct WAVE_chunk1 waveC1;
 struct WAVE_chunk2 waveC2;
-unsigned __int8 *buffer;
 
 int wmain(int argc, wchar_t **argv)
 {
@@ -107,7 +105,7 @@ int wmain(int argc, wchar_t **argv)
 			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
-		buffer = malloc(waveC2.Subchunk2Size);
+		unsigned __int8* buffer = GC_malloc(waveC2.Subchunk2Size);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			exit(-2);
@@ -132,12 +130,25 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		if (change) {
+			wchar_t path[_MAX_PATH];
+			wchar_t ext[_MAX_EXT];
+			wchar_t fname[_MAX_FNAME];
+			wchar_t dir[_MAX_DIR];
+			wchar_t drive[_MAX_DRIVE];
+
+			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
+
+			if (wcscat_s(fname, _MAX_FNAME, L"_clean")) {
+				wprintf_s(L"%s: new filename generation error.\n", *argv);
+				exit(1);
+			}
+
+			_wmakepath_s(path, _MAX_PATH, drive, dir, fname, ext);
 			waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
 
-			ecode = _wfopen_s(&pFo, *argv, L"wb");
+			ecode = _wfopen_s(&pFo, path, L"wb");
 			if (ecode) {
 				wprintf_s(L"File open error %s.\n", *argv);
-				free(buffer);
 				exit(ecode);
 			}
 
@@ -145,33 +156,28 @@ int wmain(int argc, wchar_t **argv)
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(&waveC1, sizeof(waveC1), 1, pFo);
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(&waveC2, sizeof(waveC2), 1, pFo);
 			if (rcount != 1) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			rcount = fwrite(buffer, 1, waveC2.Subchunk2Size, pFo);
 			if (rcount != waveC2.Subchunk2Size) {
 				wprintf_s(L"File write error %s.\n", *argv);
 				fclose(pFo);
-				free(buffer);
 				exit(-2);
 			}
 			fclose(pFo);
 		}
-		free(buffer);
 	}
 
 	return 0;

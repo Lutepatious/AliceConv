@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "tiffrw.h"
 
 struct fTIFF* tiff_read(const wchar_t* infile)
@@ -18,7 +17,7 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 		return NULL;
 	}
 
-	struct fTIFF* pimg = calloc(1LL, sizeof(struct fTIFF));
+	struct fTIFF* pimg = GC_malloc(sizeof(struct fTIFF));
 	if (pimg == NULL) {
 		fwprintf_s(stderr, L"Memory allocation error.\n");
 		TIFFClose(pTi);
@@ -34,7 +33,7 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 	TIFFGetFieldDefaulted(pTi, TIFFTAG_ROWSPERSTRIP, &Rows_per_Strip);
 	TIFFGetField(pTi, TIFFTAG_PHOTOMETRIC, &pimg->Format);
 
-	pimg->image = malloc((size_t) pimg->Rows * pimg->Cols * Samples_per_Pixel);
+	pimg->image = GC_malloc((size_t) pimg->Rows * pimg->Cols * Samples_per_Pixel);
 	if (pimg->image == NULL) {
 		fwprintf_s(stderr, L"Memory allocation error.\n");
 		TIFFClose(pTi);
@@ -46,7 +45,6 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 		if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &pimg->image[(size_t) pimg->Cols * Samples_per_Pixel * l], (size_t) pimg->Cols * read_rows * Samples_per_Pixel)) {
 			fwprintf_s(stderr, L"File read error.\n");
 			TIFFClose(pTi);
-			free(pimg->image);
 			return NULL;
 		}
 	}

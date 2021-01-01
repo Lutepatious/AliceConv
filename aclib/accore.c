@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -48,10 +47,9 @@ struct COLOR_dest {
 // データの並びを[col][plane][y]から[y][col][plane]に変える。
 struct plane4_dot8* convert_CPY_to_YCP(const unsigned __int8* src, size_t len_y, size_t len_col, size_t planes)
 {
-	struct plane4_dot8* buffer_dot8 = calloc(len_y * len_col, sizeof(struct plane4_dot8));
+	struct plane4_dot8* buffer_dot8 = GC_malloc(len_y * len_col * sizeof(struct plane4_dot8));
 	if (buffer_dot8 == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(src);
 		exit(-2);
 	}
 
@@ -71,10 +69,9 @@ struct plane4_dot8* convert_CPY_to_YCP(const unsigned __int8* src, size_t len_y,
 // データの並びを[y][plane][col]から[y][col][plane]に変える。
 struct plane4_dot8* convert_YPC_to_YCP(const unsigned __int8* src, size_t len_y, size_t len_col, size_t planes)
 {
-	struct plane4_dot8* buffer_dot8 = calloc(len_y * len_col, sizeof(struct plane4_dot8));
+	struct plane4_dot8* buffer_dot8 = GC_malloc(len_y * len_col * sizeof(struct plane4_dot8));
 	if (buffer_dot8 == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(src);
 		exit(-2);
 	}
 
@@ -91,17 +88,12 @@ struct plane4_dot8* convert_YPC_to_YCP(const unsigned __int8* src, size_t len_y,
 	return buffer_dot8;
 }
 
-
-
-
-
 // デコードされたプレーンデータを8ビットパックトピクセルに変換(4プレーン版)
 unsigned __int8* convert_plane4_dot8_to_index8(const struct plane4_dot8* src, size_t len)
 {
-	unsigned __int8* buffer = calloc(len, sizeof(unsigned __int64));
+	unsigned __int8* buffer = GC_malloc(len * sizeof(unsigned __int64));
 	if (buffer == NULL) {
 		fwprintf_s(stderr, L"Memory allocation error.\n");
-		free(src);
 		exit(-2);
 	}
 	unsigned __int64* dst = buffer;
@@ -120,10 +112,9 @@ unsigned __int8* convert_plane4_dot8_to_index8(const struct plane4_dot8* src, si
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(リトルエンディアン用)
 unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t len)
 {
-	unsigned __int8* buffer = malloc(len * 2);
+	unsigned __int8* buffer = GC_malloc(len * 2);
 	if (buffer == NULL) {
 		fwprintf_s(stderr, L"Memory allocation error.\n");
-		free(src);
 		exit(-2);
 	}
 	unsigned __int8* dst = buffer;
@@ -143,10 +134,9 @@ unsigned __int8* convert_index4_to_index8_LE(const unsigned __int8* src, size_t 
 // デコードされた4ビットパックトピクセルを8ビットパックトピクセルに変換(ビッグエンディアン用)
 unsigned __int8* convert_index4_to_index8_BE(const unsigned __int8* src, size_t len)
 {
-	unsigned __int8* buffer = malloc(len * 2);
+	unsigned __int8* buffer = GC_malloc(len * 2);
 	if (buffer == NULL) {
 		fwprintf_s(stderr, L"Memory allocation error.\n");
-		free(src);
 		exit(-2);
 	}
 	unsigned __int8* dst = buffer;

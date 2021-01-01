@@ -1,13 +1,11 @@
 // MSXtoPNG Little VampireêÍópî≈
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 #include "../aclib/accore.h"
 
@@ -42,12 +40,9 @@ int wmain(int argc, wchar_t** argv)
 
 		canvas_y = (pI->start_y + pI->len_y) > canvas_y ? (pI->start_y + pI->len_y) : canvas_y;
 
-
-		unsigned __int8* canvas;
-		canvas = malloc(canvas_y * canvas_x);
+		png_bytep canvas = GC_malloc(canvas_y * canvas_x);
 		if (canvas == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
-			free(pI->image);
 			exit(-2);
 		}
 
@@ -55,7 +50,6 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t iy = 0; iy < pI->len_y; iy++) {
 			memcpy_s(&canvas[iy * canvas_x], canvas_x, &pI->image[iy * pI->len_x + pI->offset_x], canvas_x);
 		}
-		free(pI->image);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -76,10 +70,9 @@ int wmain(int argc, wchar_t** argv)
 		imgw.nTrans = pI->colors;
 		imgw.pXY = 2;
 
-		imgw.image = malloc(canvas_y * sizeof(png_bytep));
+		imgw.image = GC_malloc(canvas_y * sizeof(png_bytep));
 		if (imgw.image == NULL) {
 			fprintf_s(stderr, "Memory allocation error. \n");
-			free(canvas);
 			exit(-2);
 		}
 		for (size_t j = 0; j < canvas_y; j++)
@@ -89,8 +82,5 @@ int wmain(int argc, wchar_t** argv)
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);
 		}
-
-		free(imgw.image);
-		free(canvas);
 	}
 }

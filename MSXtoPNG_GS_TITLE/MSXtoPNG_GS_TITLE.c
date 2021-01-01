@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "../aclib/pngio.h"
 
 #define MSX_ROWS 212
@@ -75,7 +74,7 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	size_t msx_len = fs.st_size - sizeof(hMSXt);
-	unsigned __int8* msx_data = malloc(msx_len);
+	unsigned __int8* msx_data = GC_malloc(msx_len);
 	if (msx_data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -85,7 +84,6 @@ int wmain(int argc, wchar_t** argv)
 	rcount = fread_s(msx_data, msx_len, 1, msx_len, pFi);
 	if (rcount != msx_len) {
 		wprintf_s(L"File read error %zd.\n", rcount);
-		free(msx_data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -101,7 +99,6 @@ int wmain(int argc, wchar_t** argv)
 	rcount = fwrite(msx_data+0xF800LL, 1, 0x60, pFo);
 	if (rcount != 0x60) {
 		wprintf_s(L"File read error %zd.\n", rcount);
-		free(msx_data);
 		fclose(pFo);
 		exit(-2);
 	}
@@ -115,7 +112,7 @@ int wmain(int argc, wchar_t** argv)
 	wprintf_s(L"%3zd/%3zd MSX_RAW size %zu => %zu.\n",  msx_len_x * 2, msx_len_y, msx_len, msx_len_decoded);
 
 	size_t decode_len = msx_len_y * msx_len_x * 2;
-	unsigned __int8* decode_buffer = malloc(decode_len);
+	unsigned __int8* decode_buffer = GC_malloc(decode_len);
 	if (decode_buffer == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		exit(-2);
@@ -177,7 +174,6 @@ int wmain(int argc, wchar_t** argv)
 
 
 
-	free(msx_data);
 
 	struct fPNGw imgw;
 	imgw.outfile = path;
@@ -190,10 +186,9 @@ int wmain(int argc, wchar_t** argv)
 	imgw.nTrans = 128;
 	imgw.pXY = 2;
 
-	imgw.image = malloc(canvas_y * sizeof(png_bytep));
+	imgw.image = GC_malloc(canvas_y * sizeof(png_bytep));
 	if (imgw.image == NULL) {
 		fprintf_s(stderr, "Memory allocation error.\n");
-		free(canvas);
 		exit(-2);
 	}
 	for (size_t j = 0; j < canvas_y; j++)
@@ -204,6 +199,4 @@ int wmain(int argc, wchar_t** argv)
 		wprintf_s(L"File %s create/write error\n", path);
 	}
 
-	free(imgw.image);
-	free(canvas);
 }

@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -33,7 +32,7 @@ struct image_info* decode_GL(FILE* pFi)
 	_fstat64(_fileno(pFi), &fs);
 
 	const size_t len = fs.st_size - sizeof(struct GL);
-	struct GL* data = malloc(fs.st_size);
+	struct GL* data = GC_malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -43,7 +42,6 @@ struct image_info* decode_GL(FILE* pFi)
 	const size_t rcount = fread_s(data, fs.st_size, 1, fs.st_size, pFi);
 	if (rcount != fs.st_size) {
 		wprintf_s(L"File read error.\n");
-		free(data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -56,10 +54,9 @@ struct image_info* decode_GL(FILE* pFi)
 	const size_t len_x = len_col * 8;
 	const size_t len_y = data->Rows;
 	const size_t len_decoded = len_col * len_y * planes;
-	unsigned __int8* data_decoded = malloc(len_decoded);
+	unsigned __int8* data_decoded = GC_malloc(len_decoded);
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
@@ -125,10 +122,7 @@ struct image_info* decode_GL(FILE* pFi)
 	}
 
 	struct plane4_dot8* buffer_dot8 = convert_YPC_to_YCP(data_decoded, len_y, len_col, planes);
-	free(data_decoded);
-
 	unsigned __int8* decode_buffer = convert_plane4_dot8_to_index8(buffer_dot8, len_y * len_col);
-	free(buffer_dot8);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"GL";
@@ -158,6 +152,5 @@ struct image_info* decode_GL(FILE* pFi)
 	I.sType = sType;
 	I.BGcolor = colours;
 
-	free(data);
 	return &I;
 }

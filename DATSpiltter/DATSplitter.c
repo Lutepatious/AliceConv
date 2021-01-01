@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include "gc.h"
 
 #pragma pack (1)
 struct LINKMAP {
@@ -35,7 +35,7 @@ int wmain(int argc, wchar_t** argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		buffer = calloc(fs.st_size + 0x100, 1);
+		buffer = GC_malloc(fs.st_size + 0x100);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
@@ -114,7 +114,6 @@ int wmain(int argc, wchar_t** argv)
 						ecode = _wfopen_s(&pFo, path, L"wb");
 						if (ecode) {
 							wprintf_s(L"File open error %s.\n", *argv);
-							free(buffer);
 							exit(ecode);
 						}
 
@@ -122,7 +121,6 @@ int wmain(int argc, wchar_t** argv)
 						if (rcount != wsize) {
 							wprintf_s(L"File write error %s.\n", *argv);
 							fclose(pFo);
-							free(buffer);
 							exit(-2);
 						}
 						fclose(pFo);
@@ -158,7 +156,6 @@ int wmain(int argc, wchar_t** argv)
 						ecode = _wfopen_s(&pFo, path, L"wb");
 						if (ecode) {
 							wprintf_s(L"File open error %s.\n", *argv);
-							free(buffer);
 							exit(ecode);
 						}
 
@@ -166,7 +163,6 @@ int wmain(int argc, wchar_t** argv)
 						if (rcount != wsize) {
 							wprintf_s(L"File write error %s.\n", *argv);
 							fclose(pFo);
-							free(buffer);
 							exit(-2);
 						}
 
@@ -177,8 +173,5 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 		}
-
-
-		free(buffer);
 	}
 }

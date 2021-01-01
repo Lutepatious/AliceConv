@@ -1,11 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
-#include <malloc.h>
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
+#include "gc.h"
 #include "pngio.h"
 #include "accore.h"
 #include "acinternal.h"
@@ -30,7 +29,7 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	_fstat64(_fileno(pFi), &fs);
 
 	const size_t len = fs.st_size - sizeof(struct MSX_TT);
-	struct MSX_TT* data = malloc(fs.st_size);
+	struct MSX_TT* data = GC_malloc(fs.st_size);
 	if (data == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		fclose(pFi);
@@ -40,7 +39,6 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	const size_t rcount = fread_s(data, fs.st_size, 1, fs.st_size, pFi);
 	if (rcount != fs.st_size) {
 		wprintf_s(L"File read error.\n");
-		free(data);
 		fclose(pFi);
 		exit(-2);
 	}
@@ -57,10 +55,9 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	size_t out_y = in_y + len_y;
 	size_t len_decoded = len_y * len_col * 2;
 
-	unsigned __int8* data_decoded = calloc(len_decoded, sizeof(unsigned __int8));
+	unsigned __int8* data_decoded = GC_malloc(len_decoded * sizeof(unsigned __int8));
 	if (data_decoded == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
-		free(data);
 		exit(-2);
 	}
 
@@ -104,12 +101,11 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	size_t ratio_XY = len_decoded / (dst - data_decoded);
 
 	if (ratio_XY == 1) {
-		unsigned __int8* data_deinterlaced = malloc(len_decoded);
+		unsigned __int8* data_deinterlaced = GC_malloc(len_decoded);
 		for (size_t y = 0; y < len_y; y++) {
 			memcpy_s(data_deinterlaced + len_col * y * 2, len_col, data_decoded + len_col * y, len_col);
 			memcpy_s(data_deinterlaced + len_col * (y * 2 + 1), len_col, data_decoded + len_col * (len_y + y), len_col);
 		}
-		free(data_decoded);
 		data_decoded = data_deinterlaced;
 		in_y *= 2;
 		len_y *= 2;
@@ -120,7 +116,6 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	}
 
 	unsigned __int8* decode_buffer = convert_index4_to_index8_LE(data_decoded, len_decoded);
-	free(data_decoded);
 
 	static struct image_info I;
 	static wchar_t sType[] = L"MSX_TT";
@@ -150,6 +145,5 @@ struct image_info* decode_MSX_TT(FILE* pFi)
 	I.sType = sType;
 	I.BGcolor = colours;
 
-	free(data);
 	return &I;
 }
