@@ -19,14 +19,14 @@ const wchar_t* fnpal = L"COLPALET.DAT";
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi, * pFi_pal;
-
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
 	}
 
 	while (--argc) {
+		FILE* pFi, * pFi_pal;
+
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);

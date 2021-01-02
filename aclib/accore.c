@@ -12,10 +12,10 @@
 // コンパイラオプションで構造体に隙間ができないよう、pragma packで詰めることを指定
 #pragma pack (1)
 // プレーンデータをパックトピクセルへ変換後にバイトスワップする処理の可読性を上げるための共用体
-static union {
+union i64_i8x8 {
 	__int64 a;
 	__int8 a8[8];
-} u;
+};
 
 // PMS16で近似する色を圧縮表現している部分から復元する為のビットフィールド構造体
 // pragma packをまとめたいのでdecode_d16関数本体から離れたここで定義している
@@ -98,6 +98,7 @@ unsigned __int8* convert_plane4_dot8_to_index8(const struct plane4_dot8* src, si
 	}
 	unsigned __int64* dst = buffer;
 	for (size_t p = 0; p < len; p++) {
+		union i64_i8x8 u;
 		for (size_t x = 0; x < 8; x++) {
 			unsigned __int8 index = 1 << x;
 			u.a8[x] = ((src->pix8[0] & index) ? 1 : 0) | ((src->pix8[1] & index) ? 2 : 0) | ((src->pix8[2] & index) ? 4 : 0) | ((src->pix8[3] & index) ? 8 : 0);

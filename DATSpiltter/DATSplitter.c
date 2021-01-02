@@ -10,20 +10,19 @@
 struct LINKMAP {
 	unsigned __int8 ArchiveID;
 	unsigned __int8 FileNo;
-} *linkmap;
+};
 #pragma pack ()
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi, * pFo;
-
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
 	}
 
 	while (--argc) {
-		unsigned __int8* buffer;
+		FILE* pFi, * pFo;
+
 		unsigned __int16* Addr;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
@@ -35,7 +34,7 @@ int wmain(int argc, wchar_t** argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		buffer = GC_malloc(fs.st_size + 0x100);
+		unsigned __int8* buffer = GC_malloc(fs.st_size + 0x100);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
@@ -65,7 +64,7 @@ int wmain(int argc, wchar_t** argv)
 			i++;
 		}
 
-		linkmap = buffer + 0x100LL * *Addr;
+		struct LINKMAP* linkmap = buffer + 0x100LL * *Addr;
 		i = 0;
 		int have_linkmap = 1;
 		while ((linkmap + i)->ArchiveID != 0x1A) {

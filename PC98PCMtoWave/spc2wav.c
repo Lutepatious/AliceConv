@@ -30,13 +30,8 @@ struct PCM4 {
 };
 #pragma pack ()
 
-struct WAVE_header waveH;
-struct WAVE_chunk1 waveC1;
-struct WAVE_chunk2 waveC2;
-
 int wmain(int argc, wchar_t **argv)
 {
-	FILE *pFi, *pFo;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -44,8 +39,10 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
+		FILE* pFi, * pFo;
 		unsigned __int8* inbuf;
 		unsigned __int32 SampleRate;
+		size_t rsize;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -71,21 +68,8 @@ int wmain(int argc, wchar_t **argv)
 				fclose(pFi);
 				continue;
 			}
-			size_t rsize = pmH.Size;
+			rsize = pmH.Size;
 			SampleRate = 100L * pmH.sSampleRate;
-			inbuf = GC_malloc(rsize);
-			if (inbuf == NULL) {
-				wprintf_s(L"Memory allocation error.\n");
-				fclose(pFi);
-				exit(-2);
-			}
-
-			rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
-			if (rcount != rsize) {
-				wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-			}
-			fclose(pFi);
-
 		} else {
 			fseek(pFi, 0, SEEK_SET);
 			rcount = fread_s(&mpH, sizeof(mpH), sizeof(mpH), 1, pFi);
@@ -96,40 +80,27 @@ int wmain(int argc, wchar_t **argv)
 			}
 			if (mpH.ID == _byteswap_ulong(0x4D506400)) {
 				wprintf_s(L"File size %ld. %ld Hz.\n", mpH.Len, mpH.sSampleRate * 100);
-				size_t rsize = mpH.Len - 0x10;
+				rsize = mpH.Len - 0x10;
 				SampleRate = 100L * mpH.sSampleRate;
-				inbuf = GC_malloc(rsize);
-				if (inbuf == NULL) {
-					wprintf_s(L"Memory allocation error.\n");
-					fclose(pFi);
-					exit(-2);
-				}
-
-				rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
-				if (rcount != rsize) {
-					wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				}
-				fclose(pFi);
-
 			}
 			else {
-				size_t rsize = fs.st_size;
+				rsize = fs.st_size;
 				wprintf_s(L"Unknown file type. %s\n", *argv);
 				fseek(pFi, 0, SEEK_SET);
-				inbuf = GC_malloc(rsize);
-				if (inbuf == NULL) {
-					wprintf_s(L"Memory allocation error.\n");
-					fclose(pFi);
-					exit(-2);
-				}
 				SampleRate = 8000;
-				rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
-				if (rcount != rsize) {
-					wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
-				}
-				fclose(pFi);
 			}
 		}
+		inbuf = GC_malloc(rsize);
+		if (inbuf == NULL) {
+			wprintf_s(L"Memory allocation error.\n");
+			fclose(pFi);
+			exit(-2);
+		}
+		rcount = fread_s(inbuf, rsize, 1, rsize, pFi);
+		if (rcount != rsize) {
+			wprintf_s(L"File read error %s %zd.\n", *argv, rcount);
+		}
+		fclose(pFi);
 
 		unsigned __int8* buffer = GC_malloc(rcount*2);
 		if (buffer == NULL) {
@@ -149,6 +120,10 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		if (len) {
+			struct WAVE_header waveH;
+			struct WAVE_chunk1 waveC1;
+			struct WAVE_chunk2 waveC2;
+
 			waveC2.Subchunk2ID = _byteswap_ulong(0x64617461);
 			waveC2.Subchunk2Size = len;
 

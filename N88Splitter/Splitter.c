@@ -54,14 +54,14 @@ enum f_type { F88 = 0 , F98, FLV };
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi, * pFo;
-
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file\n", *argv);
 		exit(-1);
 	}
 
 	while (--argc) {
+		FILE* pFi, * pFo;
+
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);
