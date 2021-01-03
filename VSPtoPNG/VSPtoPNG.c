@@ -32,15 +32,15 @@ enum fmt_cg { NONE, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, 
 
 int wmain(int argc, wchar_t** argv)
 {
-	FILE* pFi;
-	struct image_info* pI = NULL;
-
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
 	}
 
 	while (--argc) {
+		FILE* pFi;
+		struct image_info* pI = NULL;
+
 		enum fmt_cg g_fmt = NONE;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
