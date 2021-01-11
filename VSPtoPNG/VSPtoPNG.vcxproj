@@ -95,6 +95,10 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\zlib;..\libpng;"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>
+      </OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -113,6 +117,10 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\zlib;..\libpng;"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>
+      </OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,6 +137,10 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\zlib;..\libpng;"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>
+      </OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,6 +159,10 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>..\zlib;..\libpng;"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
+      <EnableParallelCodeGeneration>
+      </EnableParallelCodeGeneration>
+      <OpenMPSupport>
+      </OpenMPSupport>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
