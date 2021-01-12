@@ -310,15 +310,15 @@ void decode_d16(unsigned __int16* destination, unsigned __int8* source, size_t l
 		case 0xF9: // 連続する近似した色の圧縮表現、1バイト目に長さ、2バイト目が各色上位ビット(B3G2R3)、3バイト目以降が各色下位ビット(B2G4R2)。
 			cp_len = *(src + 1) + 1LL;
 			// 下3つの共用体は処理系によってはコンパイル時にエラーになるのでswitch文の外に出した方が良さそうだが可読性を上げるためにここに放置
-			static union {
+			union {
 				struct COLOR_src_high h;
 				unsigned __int8 a8;
 			} uh;
-			static union {
+			union {
 				struct COLOR_src_low l;
 				unsigned __int8 a8;
 			} ul;
-			static union {
+			union {
 				struct COLOR_dest d;
 				unsigned __int16 a16;
 			} ud;

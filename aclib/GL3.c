@@ -134,13 +134,11 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 	struct plane4_dot8* buffer_dot8 = convert_YPC_to_YCP(data_decoded, len_y, len_col, planes);
 	unsigned __int8* decode_buffer = convert_plane4_dot8_to_index8(buffer_dot8, len_y * len_col);
 
-	static struct image_info I;
-	static wchar_t sType[] = L"GL3";
-	static wchar_t sType_a[] = L"GM3";
-	static png_color Pal8[COLOR16];
-	static png_byte Trans[COLOR16];
-
-	memset(Trans, 0xFF, sizeof(Trans));
+	static const wchar_t sType[] = L"GL3";
+	static const wchar_t sType_a[] = L"GM3";
+	png_colorp Pal8 = GC_malloc(sizeof(png_color) * colours);
+	png_bytep Trans = GC_malloc(sizeof(png_byte) * colours);
+	memset(Trans, 0xFF, sizeof(png_byte)* colours);
 	Trans[0] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
@@ -167,16 +165,17 @@ struct image_info* decode_GL3(FILE* pFi, int isGM3)
 		}
 	}
 
-	I.image = decode_buffer;
-	I.start_x = start_x;
-	I.start_y = start_y;
-	I.len_x = len_x;
-	I.len_y = len_y;
-	I.colors = colours;
-	I.Pal8 = Pal8;
-	I.Trans = Trans;
-	I.sType = (isGM3 == 1) ? sType_a : sType;
-	I.BGcolor = 0;
+	struct image_info* pI = GC_malloc(sizeof(struct image_info));
+	pI->image = decode_buffer;
+	pI->start_x = start_x;
+	pI->start_y = start_y;
+	pI->len_x = len_x;
+	pI->len_y = len_y;
+	pI->colors = colours;
+	pI->Pal8 = Pal8;
+	pI->Trans = Trans;
+	pI->sType = (isGM3 == 1) ? sType_a : sType;
+	pI->BGcolor = 0;
 
-	return &I;
+	return pI;
 }

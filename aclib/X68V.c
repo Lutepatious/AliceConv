@@ -82,12 +82,10 @@ struct image_info* decode_X68V(FILE* pFi)
 		}
 	}
 
-	static struct image_info I;
-	static wchar_t sType[] = L"X68V";
-	static png_color Pal8[COLOR256];
-	static png_byte Trans[COLOR256];
-
-	memset(Trans, 0xFF, sizeof(Trans));
+	static const wchar_t sType[] = L"X68V";
+	png_colorp Pal8 = GC_malloc(sizeof(png_color) * colours);
+	png_bytep Trans = GC_malloc(sizeof(png_byte) * colours);
+	memset(Trans, 0xFF, sizeof(png_byte) * colours);
 
 	for (size_t ci = 0; ci < colours; ci++) {
 		union X68Pal_conv {
@@ -103,16 +101,17 @@ struct image_info* decode_X68V(FILE* pFi)
 		color_32to256(&Pal8[ci], &inPal5);
 	}
 
-	I.image = data_decoded;
-	I.start_x = in_x;
-	I.start_y = in_y;
-	I.len_x = len_x;
-	I.len_y = len_y;
-	I.colors = colours;
-	I.Pal8 = Pal8;
-	I.Trans = Trans;
-	I.sType = sType;
-	I.BGcolor = 0;
+	struct image_info* pI = GC_malloc(sizeof(struct image_info));
+	pI->image = data_decoded;
+	pI->start_x = in_x;
+	pI->start_y = in_y;
+	pI->len_x = len_x;
+	pI->len_y = len_y;
+	pI->colors = colours;
+	pI->Pal8 = Pal8;
+	pI->Trans = Trans;
+	pI->sType = sType;
+	pI->BGcolor = 0;
 
-	return &I;
+	return pI;
 }

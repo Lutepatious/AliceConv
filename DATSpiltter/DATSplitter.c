@@ -55,7 +55,13 @@ int wmain(int argc, wchar_t** argv)
 
 		while (*(Addr + i) || i == 0) {
 			if (0x100LL * *(Addr + i) <= fs.st_size) {
-				size_t len = 0x100L * ((size_t) * (Addr + i + 1) - (size_t) * (Addr + i));
+				size_t len;
+				if (*(Addr + i + 1)) {
+					len = 0x100L * ((size_t) * (Addr + i + 1) - (size_t) * (Addr + i));
+				} else {
+					len = fs.st_size - 0x100L * ((size_t) * (Addr + i) - 1);
+				}
+
 				wprintf_s(L"Entry %03u: %06X, %10zd.\n", i, 0x100L * *(Addr + i), len);
 				if (i == 0) {
 					lmlen = len;

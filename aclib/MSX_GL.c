@@ -88,12 +88,10 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 
 	unsigned __int8* decode_buffer = convert_index4_to_index8_LE(data_decoded, len_decoded);
 
-	static struct image_info I;
-	static wchar_t sType[] = L"MSX_GL";
-	static png_color Pal8[COLOR16 + 1];
-	static png_byte Trans[COLOR16 + 1];
-
-	memset(Trans, 0xFF, sizeof(Trans));
+	static const wchar_t sType[] = L"MSX_GL";
+	png_colorp Pal8 = GC_malloc(sizeof(png_color) * (colours + 1));
+	png_bytep Trans = GC_malloc(sizeof(png_byte) * (colours + 1));
+	memset(Trans, 0xFF, sizeof(png_byte) * (colours + 1));
 	Trans[colours] = 0;
 
 	for (size_t ci = 0; ci < colours; ci++) {
@@ -105,16 +103,17 @@ struct image_info* decode_MSX_GL(FILE* pFi)
 	}
 	color_8to256(&Pal8[colours], NULL);
 
-	I.image = decode_buffer;
-	I.start_x = start_x;
-	I.start_y = start_y;
-	I.len_x = len_x;
-	I.len_y = len_y;
-	I.colors = colours + 1;
-	I.Pal8 = Pal8;
-	I.Trans = Trans;
-	I.sType = sType;
-	I.BGcolor = colours;
+	struct image_info* pI = GC_malloc(sizeof(struct image_info));
+	pI->image = decode_buffer;
+	pI->start_x = start_x;
+	pI->start_y = start_y;
+	pI->len_x = len_x;
+	pI->len_y = len_y;
+	pI->colors = colours + 1;
+	pI->Pal8 = Pal8;
+	pI->Trans = Trans;
+	pI->sType = sType;
+	pI->BGcolor = colours;
 
-	return &I;
+	return pI;
 }

@@ -128,17 +128,17 @@ struct image_info* decode_PMS16(FILE* pFi)
 		direct16_to_direct32(RGBA + i, &u.c16, Alpha + i);
 	}
 
-	static struct image_info I;
-	static wchar_t sType[] = L"PMS16";
-	I.image = RGBA;
-	I.start_x = in_x;
-	I.start_y = in_y;
-	I.len_x = len_x;
-	I.len_y = len_y;
-	I.offset_x = 0;
-	I.offset_y = 0;
-	I.colors = colours;
-	I.sType = sType;
+	static const wchar_t sType[] = L"PMS16";
+	struct image_info* pI = GC_malloc(sizeof(struct image_info));
+	pI->image = RGBA;
+	pI->start_x = in_x;
+	pI->start_y = in_y;
+	pI->len_x = len_x;
+	pI->len_y = len_y;
+	pI->offset_x = 0;
+	pI->offset_y = 0;
+	pI->colors = colours;
+	pI->sType = sType;
 
-	return &I;
+	return pI;
 }
