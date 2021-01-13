@@ -70,7 +70,7 @@ struct image_info* decode_VSP256(FILE* pFi)
 	memset(Trans, 0xFF, sizeof(png_byte) * colours);
 
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_256to256(&Pal8[ci], &data->Pal8[ci]);
+		color_256to256(Pal8 + ci, &data->Pal8[ci]);
 	}
 
 	struct image_info* pI = GC_malloc(sizeof(struct image_info));

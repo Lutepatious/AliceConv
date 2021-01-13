@@ -84,9 +84,9 @@ struct image_info* decode_VSP(FILE* pFi)
 		inPal4.R = data->Pal4[ci].R;
 		inPal4.G = data->Pal4[ci].G;
 		inPal4.B = data->Pal4[ci].B;
-		color_16to256(&Pal8[ci], &inPal4);
+		color_16to256(Pal8 + ci, &inPal4);
 	}
-	color_16to256(&Pal8[colours], NULL);
+	color_16to256(Pal8 + colours, NULL);
 
 	struct image_info* pI = GC_malloc(sizeof(struct image_info));
 	pI->image = decode_buffer;

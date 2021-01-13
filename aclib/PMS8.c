@@ -74,7 +74,7 @@ struct image_info* decode_PMS8(FILE* pFi)
 
 	struct fPal8* inPal8 = data->data + data->offset_Pal - data->len_hdr;
 	for (size_t ci = 0; ci < colours; ci++) {
-		color_256to256(&Pal8[ci], inPal8++);
+		color_256to256(Pal8 + ci, inPal8++);
 	}
 
 	struct image_info* pI = GC_malloc(sizeof(struct image_info));

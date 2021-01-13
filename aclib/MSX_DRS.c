@@ -117,9 +117,9 @@ struct image_info* decode_MSX_DRS(FILE* pFi)
 		inPal3.R = data->Pal3[ci].R;
 		inPal3.G = data->Pal3[ci].G;
 		inPal3.B = data->Pal3[ci].B;
-		color_8to256(&Pal8[ci], &inPal3);
+		color_8to256(Pal8 + ci, &inPal3);
 	}
-	color_8to256(&Pal8[colours], NULL);
+	color_8to256(Pal8 + colours, NULL);
 
 	struct image_info* pI = GC_malloc(sizeof(struct image_info));
 	pI->image = decode_buffer;

@@ -22,6 +22,7 @@ struct color8 {
 
 int wmain(int argc, wchar_t** argv)
 {
+	const unsigned colours = 256;
 	while (--argc) {
 		struct fTIFF* pimg = tiff_read(*++argv);
 		if (!pimg) {
@@ -29,19 +30,19 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		static png_color Pal8[256];
+		png_colorp Pal8 = GC_malloc(sizeof(png_color) * colours);
 		if (pimg->Format == PHOTOMETRIC_PALETTE) {
-			for (size_t i = 0; i < 256; i++) {
+			for (size_t i = 0; i < colours; i++) {
 				struct fPal16 Pal16;
 				Pal16.R = pimg->Pal.R[i];
 				Pal16.G = pimg->Pal.G[i];
 				Pal16.B = pimg->Pal.B[i];
-				color_65536to256(&Pal8[i], &Pal16);
+				color_65536to256(Pal8 + i, &Pal16);
 			}
 		}
 		// TOWNS TIFFはグレイスケールであるべきデータを8bitダイレクトカラーとして扱うため、対応する色を集めたパレットを作成して8bitインデックスカラーに修正する
 		else if (pimg->Format == PHOTOMETRIC_MINISBLACK) {
-			for (size_t i = 0; i < 256; i++) {
+			for (size_t i = 0; i < colours; i++) {
 				union {
 					unsigned __int8 a;
 					struct color8 c;
@@ -51,7 +52,7 @@ int wmain(int argc, wchar_t** argv)
 				iPal8.R = table3to8[u.c.R];
 				iPal8.G = table3to8[u.c.G];
 				iPal8.B = table2to8[u.c.B];
-				color_256to256(&Pal8[i], &iPal8);
+				color_256to256(Pal8 + i, &iPal8);
 			}
 		}
 		else {

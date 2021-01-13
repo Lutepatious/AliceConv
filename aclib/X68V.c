@@ -98,7 +98,7 @@ struct image_info* decode_X68V(FILE* pFi)
 		inPal5.R = P.Pal5.R;
 		inPal5.G = P.Pal5.G;
 		inPal5.B = P.Pal5.B;
-		color_32to256(&Pal8[ci], &inPal5);
+		color_32to256(Pal8 + ci, &inPal5);
 	}
 
 	struct image_info* pI = GC_malloc(sizeof(struct image_info));
