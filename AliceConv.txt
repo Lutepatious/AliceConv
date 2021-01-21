@@ -32,6 +32,7 @@ Visual Studio 2019
 libpng
 zlib (libpngに必要)
 libtiff
+Boehm GC
 
 制作動機
 x64時代になりDOS時代のソフトを動かしにくくなった。
