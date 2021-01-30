@@ -74,7 +74,7 @@ int wmain(int argc, wchar_t** argv)
 		i = 0;
 		int have_linkmap = 1;
 		while ((linkmap + i)->ArchiveID != 0x1A) {
-			if ((linkmap + i)->ArchiveID == 0 || (linkmap + i)->ArchiveID > 0x1A || (linkmap + i)->FileNo == 0) {
+			if ((linkmap + i)->ArchiveID > 0x1A) {
 				have_linkmap = 0;
 				break;
 			}
@@ -112,9 +112,9 @@ int wmain(int argc, wchar_t** argv)
 					size_t wsize = 0x100L * ((size_t) * (Addr + (linkmap + i)->FileNo + 1) - (size_t) * (Addr + (linkmap + i)->FileNo));
 
 					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%03d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
+						swprintf_s(newfname, _MAX_FNAME, L"%04d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
 						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-						wprintf_s(L"Out size %5zd, name %s.\n", wsize, path);
+						wprintf_s(L"Out size %6zd, name %s.\n", wsize, path);
 
 						ecode = _wfopen_s(&pFo, path, L"wb");
 						if (ecode) {
