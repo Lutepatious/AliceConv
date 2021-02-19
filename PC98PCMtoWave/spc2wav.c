@@ -25,8 +25,8 @@ struct MP_header {
 } mpH;
 
 struct PCM4 {
-	unsigned __int8 L : 4;
 	unsigned __int8 H : 4;
+	unsigned __int8 L : 4;
 };
 #pragma pack ()
 
@@ -40,7 +40,7 @@ int wmain(int argc, wchar_t **argv)
 
 	while (--argc) {
 		FILE* pFi, * pFo;
-		unsigned __int8* inbuf;
+		struct PCM4* inbuf;
 		unsigned __int32 SampleRate;
 		size_t rsize;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
@@ -53,13 +53,38 @@ int wmain(int argc, wchar_t **argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		size_t rcount = fread_s(&pmH, sizeof(pmH), sizeof(pmH), 1, pFi);
-		if (rcount != 1) {
-			wprintf_s(L"File read error %s.\n", *argv);
+		unsigned __int32 sig;
+		size_t rcount = fread_s(&sig, sizeof(sig), sizeof(sig), 1, pFi);
+		fseek(pFi, 0, SEEK_SET);
+
+		if (sig == 0x01000034) {
+			wprintf_s(L"MAKO2 (OPN) format skip.\n");
 			fclose(pFi);
-			exit(-2);
+			continue;
 		}
-		if (pmH.ID == _byteswap_ushort(0x504D)) {
+		else if (sig == 0x02000044) {
+			wprintf_s(L"MAKO2 (OPNA) format skip.\n");
+			fclose(pFi);
+			continue;
+		}
+		else if (sig == _byteswap_ulong(0x4D506400)) {
+			rcount = fread_s(&mpH, sizeof(mpH), sizeof(mpH), 1, pFi);
+			if (rcount != 1) {
+				wprintf_s(L"File read error %s.\n", *argv);
+				fclose(pFi);
+				exit(-2);
+			}
+			wprintf_s(L"File size %ld. %ld Hz.\n", mpH.Len, mpH.sSampleRate * 100);
+			rsize = mpH.Len - 0x10;
+			SampleRate = 100L * mpH.sSampleRate;
+		}
+		else if ((sig & 0xFFFF) == _byteswap_ushort(0x504D)) {
+			rcount = fread_s(&pmH, sizeof(pmH), sizeof(pmH), 1, pFi);
+			if (rcount != 1) {
+				wprintf_s(L"File read error %s.\n", *argv);
+				fclose(pFi);
+				exit(-2);
+			}
 			wprintf_s(L"File size %ld. %d Ch. %ld Hz. %d bits/sample.\n",
 				pmH.Size, pmH.Ch, pmH.sSampleRate * 100, pmH.BitsPerSample);
 
@@ -70,26 +95,14 @@ int wmain(int argc, wchar_t **argv)
 			}
 			rsize = pmH.Size;
 			SampleRate = 100L * pmH.sSampleRate;
-		} else {
-			fseek(pFi, 0, SEEK_SET);
-			rcount = fread_s(&mpH, sizeof(mpH), sizeof(mpH), 1, pFi);
-			if (rcount != 1) {
-				wprintf_s(L"File read error %s.\n", *argv);
-				fclose(pFi);
-				exit(-2);
-			}
-			if (mpH.ID == _byteswap_ulong(0x4D506400)) {
-				wprintf_s(L"File size %ld. %ld Hz.\n", mpH.Len, mpH.sSampleRate * 100);
-				rsize = mpH.Len - 0x10;
-				SampleRate = 100L * mpH.sSampleRate;
-			}
-			else {
-				rsize = fs.st_size;
-				wprintf_s(L"Unknown file type. %s\n", *argv);
-				fseek(pFi, 0, SEEK_SET);
-				SampleRate = 8000;
-			}
 		}
+		else {
+			rsize = fs.st_size;
+			wprintf_s(L"Unknown file type. %s\n", *argv);
+			fseek(pFi, 0, SEEK_SET);
+			SampleRate = 8000;
+		}
+
 		inbuf = GC_malloc(rsize);
 		if (inbuf == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
@@ -109,8 +122,8 @@ int wmain(int argc, wchar_t **argv)
 		}
 
 		for (size_t i = 0; i < rcount; i++) {
-			buffer[i*2] = inbuf[i] & 0xF0;
-			buffer[i * 2 + 1] = (inbuf[i] << 4) & 0xF0;
+			buffer[i * 2] = inbuf[i].L << 4;
+			buffer[i * 2 + 1] = inbuf[i].H << 4;
 		}
 
 		size_t len = 0;
