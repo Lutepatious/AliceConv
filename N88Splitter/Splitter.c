@@ -63,7 +63,7 @@ int wmain(int argc, wchar_t** argv)
 		FILE* pFi, * pFo;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
-		if (ecode) {
+		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
 		}

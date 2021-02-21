@@ -48,7 +48,7 @@ int wmain(int argc, wchar_t** argv)
 	enum fmt_cg g_fmt = NONE;
 
 	errno_t ecode = _wfopen_s(&pFi, L"TITLE", L"rb");
-	if (ecode) {
+	if (ecode || !pFi) {
 		wprintf_s(L"File open error\n");
 		exit(ecode);
 	}

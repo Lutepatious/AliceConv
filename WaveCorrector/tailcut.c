@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <wchar.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "gc.h"
@@ -22,7 +23,7 @@ int wmain(int argc, wchar_t **argv)
 
 		char change = 0;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
-		if (ecode) {
+		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
 		}
@@ -146,7 +147,7 @@ int wmain(int argc, wchar_t **argv)
 			waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
 
 			ecode = _wfopen_s(&pFo, path, L"wb");
-			if (ecode) {
+			if (ecode || !pFo) {
 				wprintf_s(L"File open error %s.\n", *argv);
 				exit(ecode);
 			}

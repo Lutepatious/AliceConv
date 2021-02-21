@@ -46,7 +46,22 @@ int wmain(int argc, wchar_t **argv)
 		_fstat64(_fileno(pFi), &fs);
 		wprintf_s(L"File size %I64d.\n", fs.st_size);
 
-		size_t rcount = fread_s(&tsndH, sizeof(tsndH), sizeof(tsndH), 1, pFi);
+		unsigned __int64 sig;
+		size_t rcount = fread_s(&sig, sizeof(sig), sizeof(sig), 1, pFi);
+		fseek(pFi, 0, SEEK_SET);
+
+		if ((unsigned __int32)sig == 0x01000034UL) {
+			wprintf_s(L"MAKO2 (OPN) format skip.\n");
+			fclose(pFi);
+			continue;
+		}
+		else if ((unsigned __int32)sig == 0x02000044UL) {
+			wprintf_s(L"MAKO2 (OPNA) format skip.\n");
+			fclose(pFi);
+			continue;
+		}
+
+		rcount = fread_s(&tsndH, sizeof(tsndH), sizeof(tsndH), 1, pFi);
 		if (rcount != 1) {
 			wprintf_s(L"File read error %s.\n", *argv);
 			fclose(pFi);
@@ -106,7 +121,7 @@ int wmain(int argc, wchar_t **argv)
 		wprintf_s(L"Output to %s.\n", path);
 
 		ecode = _wfopen_s(&pFo, path, L"wb");
-		if (ecode) {
+		if (ecode || !pFo) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
 		}

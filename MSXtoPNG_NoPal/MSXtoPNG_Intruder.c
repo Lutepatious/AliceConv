@@ -28,7 +28,7 @@ int wmain(int argc, wchar_t** argv)
 		FILE* pFi, * pFi_pal;
 
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
-		if (ecode) {
+		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
 		}
@@ -70,7 +70,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned long num = wcstoul(path_num, &stopscan, 10);
 
 		ecode = _wfopen_s(&pFi_pal, fnpal, L"rb");
-		if (ecode) {
+		if (ecode || !pFi_pal) {
 			wprintf_s(L"File open error %s.\n", fnpal);
 			exit(ecode);
 		}

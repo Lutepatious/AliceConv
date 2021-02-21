@@ -25,7 +25,7 @@ int wmain(int argc, wchar_t** argv)
 	FILE* pFi;
 
 	errno_t ecode = _wfopen_s(&pFi, L"CG003.DAT", L"rb");
-	if (ecode) {
+	if (ecode || !pFi) {
 		wprintf_s(L"File open error.\n");
 		exit(-2);
 	}

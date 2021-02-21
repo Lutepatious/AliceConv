@@ -117,7 +117,7 @@ int wmain(int argc, wchar_t** argv)
 						wprintf_s(L"Out size %6zd, name %s.\n", wsize, path);
 
 						ecode = _wfopen_s(&pFo, path, L"wb");
-						if (ecode) {
+						if (ecode || !pFo) {
 							wprintf_s(L"File open error %s.\n", *argv);
 							exit(ecode);
 						}
