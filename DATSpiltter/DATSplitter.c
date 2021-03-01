@@ -74,7 +74,7 @@ int wmain(int argc, wchar_t** argv)
 		i = 0;
 		int have_linkmap = 1;
 		while ((linkmap + i)->ArchiveID != 0x1A) {
-			if ((linkmap + i)->ArchiveID > 0x1A) {
+			if ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63) {
 				have_linkmap = 0;
 				break;
 			}

@@ -138,12 +138,12 @@ int wmain(int argc, wchar_t **argv)
 
 			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
 
-			if (wcscat_s(fname, _MAX_FNAME, L"_clean")) {
-				wprintf_s(L"%s: new filename generation error.\n", *argv);
-				exit(1);
-			}
+//			if (wcscat_s(fname, _MAX_FNAME, L"_clean")) {
+//				wprintf_s(L"%s: new filename generation error.\n", *argv);
+//				exit(1);
+//			}
 
-			_wmakepath_s(path, _MAX_PATH, drive, dir, fname, ext);
+			_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".WAV");
 			waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
 
 			ecode = _wfopen_s(&pFo, path, L"wb");
