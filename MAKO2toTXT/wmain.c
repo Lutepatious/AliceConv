@@ -66,6 +66,9 @@ static const unsigned __int16 FNumber[12] = { 0x0269, 0x028E, 0x02B4, 0x02DE, 0x
 
 #define MML_BUFSIZ (4 * 1024 * 1024)
 
+// MAKOではTPQNは48固定らしい
+#define TPQN (48)
+
 struct mako2_mml_decoded {
 	struct mako2_mml_CH_decoded {
 		unsigned __int8 MML[MML_BUFSIZ];
@@ -100,6 +103,43 @@ size_t LCM(size_t a, size_t b)
 	return a * b / L;
 }
 
+struct EVENT {
+	size_t time;
+	size_t Count;
+	unsigned __int8 CH; //
+	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの テンポ=0, 消音=1, 音源初期化=2, 発音=3程度で
+	unsigned __int8 Event; // イベント種本体
+	unsigned __int8 Param; // イベントのパラメータ
+};
+
+int eventsort(const *x, const void* n1, const void* n2)
+{
+	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
+		return 1;
+	}
+	else if (((struct EVENT*)n1)->time < ((struct EVENT*)n2)->time) {
+		return -1;
+	}
+	else {
+		if (((struct EVENT*)n1)->Type > ((struct EVENT*)n2)->Type) {
+			return 1;
+		}
+		else if (((struct EVENT*)n1)->Type < ((struct EVENT*)n2)->Type) {
+			return -1;
+		}
+		else {
+			if (((struct EVENT*)n1)->Count > ((struct EVENT*)n2)->Count) {
+				return 1;
+			}
+			else if (((struct EVENT*)n1)->Count < ((struct EVENT*)n2)->Count) {
+				return -1;
+			}
+			else {
+				return 0;
+			}
+		}
+	}
+}
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -377,15 +417,15 @@ int wmain(int argc, wchar_t** argv)
 
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
 		size_t delta_time_LCM = MMLs_decoded.CHs->Loop_delta;
-		size_t max_len = MMLs_decoded.CHs->len;
+		size_t max_time = MMLs_decoded.CHs->time_total;
 		size_t end_time = 0;
-		size_t loop_start_time = max_len;
+		size_t loop_start_time = max_time;
 
 		// 各ループ時間の最大公約数をとる
 		for (size_t i = 1; i < CHs_real; i++) {
 			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
 			end_time = (end_time < (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM) ? (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM : end_time;
-			max_len = (max_len < (MMLs_decoded.CHs + i)->len) ? (MMLs_decoded.CHs + i)->len : max_len;
+			max_time = (max_time < (MMLs_decoded.CHs + i)->time_total) ? (MMLs_decoded.CHs + i)->time_total : max_time;
 		}
 		end_time = (end_time < MMLs_decoded.CHs->Loop_time + delta_time_LCM) ? MMLs_decoded.CHs->Loop_time + delta_time_LCM : end_time;
 
@@ -393,7 +433,8 @@ int wmain(int argc, wchar_t** argv)
 		// 物によってはループするごとに微妙にずれていって元に戻るものもある(多分バグ)
 		if (delta_time_LCM > 10000000) {
 			wprintf_s(L"loop over 10000000? I believe something wrong or No loop %zu\n", delta_time_LCM);
-			end_time = loop_start_time = max_len;
+			end_time = max_time;
+			loop_start_time = -1LL;
 		}
 		else {
 			loop_start_time = end_time - delta_time_LCM;
@@ -421,5 +462,97 @@ int wmain(int argc, wchar_t** argv)
 #endif
 			}
 		}
+
+		// 得られた展開データからイベント列を作る。
+
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 4 * 1024 * 1024);
+		struct EVENT* dest = pEVENTs;
+		size_t counter = 0;
+		for (size_t i = 0; i < CHs_real; i++) {
+			unsigned __int8* src = (MMLs_decoded.CHs + i)->MML;
+			size_t time = 0;
+
+			while (src - (MMLs_decoded.CHs + i)->MML < (MMLs_decoded.CHs + i)->len) {
+				switch (*src) {
+				case 0x00: //Note On
+				case 0x01:
+				case 0x02:
+				case 0x03:
+				case 0x04:
+				case 0x05:
+				case 0x06:
+				case 0x07:
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					time += *((unsigned __int16*)src)++;
+					dest->time = time;
+					dest->Type = 30;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0x80:
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					time += *((unsigned __int16*)src)++;
+					dest->time = time;
+					dest->Type = 10;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xEC:
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = 0;
+					dest->time = time;
+					dest->Type = 20;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xE0: // Counter
+				case 0xE1:
+				case 0xEB:
+				case 0xF5: // Tone select
+				case 0xF9: // Volume change
+				case 0xFC: // Detune
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					dest->time = time;
+					dest->Type = 20;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xF4: // Tempo
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					dest->time = time;
+					dest->Type = 0;
+					dest->CH = i;
+					dest++;
+					break;
+				default:
+					wprintf_s(L"Why you reached here? %02X", *src);
+					break;
+				}
+			}
+		}
+		dest->time = -1;
+		dest++;
+		qsort_s(pEVENTs, dest - pEVENTs, sizeof(struct EVENT), eventsort, NULL);
+
+		size_t length_real = 0;
+		while ((pEVENTs + length_real)->time <= end_time) {
+			length_real++;
+		}
+		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
+
+#if 0
+		for (size_t i = 0; i < dest - pEVENTs; i++) {
+			wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs+i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param);
+		}
+#endif
 	}
 }
