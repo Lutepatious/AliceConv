@@ -49,6 +49,15 @@ struct mako2_tone {
 
 // MAKO.OCM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っている)
 static const unsigned __int16 FNumber[12] = { 0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D };
+static const unsigned __int16 TP[8][12] = {
+	{ 0x0EED,0x0E17,0x0D4C,0x0C8D,0x0BD9,0x0B2F,0x0A8E,0x09F6,0x0967,0x08E0,0x0860,0x07E8 },
+	{ 0x0776,0x070B,0x06A6,0x0646,0x05EC,0x0597,0x0547,0x04FB,0x04B3,0x0470,0x0430,0x03F4 },
+	{ 0x03BB,0x0385,0x0353,0x0323,0x02F6,0x02CB,0x02A3,0x027D,0x0259,0x0238,0x0218,0x01FA },
+	{ 0x01DD,0x01C2,0x01A9,0x0191,0x017B,0x0165,0x0151,0x013E,0x012C,0x011C,0x010C,0x00FD },
+	{ 0x00EE,0x00E1,0x00D4,0x00C8,0x00BD,0x00B2,0x00A8,0x009F,0x0096,0x008E,0x0086,0x007E },
+	{ 0x0077,0x0070,0x006A,0x0064,0x005E,0x0059,0x0054,0x004F,0x004B,0x0047,0x0043,0x003F },
+	{ 0x003B,0x0038,0x0035,0x0032,0x002F,0x002C,0x002A,0x0027,0x0025,0x0023,0x0021,0x001F },
+	{ 0x001D,0x001C,0x001A,0x0019,0x0017,0x0016,0x0015,0x0013,0x0012,0x0011,0x0010,0x000F } };
 
 
 // 音程表現はとりあえず オクターブ 8bit 音名 8bitとする、VGMへの変換を考慮してMIDI化が前提のSystem3 for Win32とは変える。
@@ -578,9 +587,7 @@ int wmain(int argc, wchar_t** argv)
 
 #if 1
 		for (size_t i = 0; i < length_real; i++) {
-			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xEB || (pEVENTs + i)->Event == 0xEC ||
-				(pEVENTs + i)->Event == 0x00 || (pEVENTs + i)->Event == 0x01 || (pEVENTs + i)->Event == 0x02 || (pEVENTs + i)->Event == 0x03 ||
-				(pEVENTs + i)->Event == 0x04 || (pEVENTs + i)->Event == 0x05 || (pEVENTs + i)->Event == 0x06 || (pEVENTs + i)->Event == 0x07) {
+			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xEB || (pEVENTs + i)->Event == 0xEC || (pEVENTs + i)->Event == 0xFC) {
 				wprintf_s(L"%8zu: %2d: %02X %02X %d\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param, (pEVENTs + i)->loop_start);
 			}
 		}
@@ -596,7 +603,7 @@ int wmain(int argc, wchar_t** argv)
 		enum CHIP chip = NONE;
 		unsigned __int8 vgm_command_chip[] = { 0x00, 0x55, 0x56, 0x54 };
 		unsigned __int8 vgm_command_chip2[] = { 0x00, 0x55, 0x57, 0x54 };
-		unsigned __int8 SSG_out;
+		unsigned __int8 SSG_out = 0xFF;
 		unsigned* Algorithm = GC_malloc(sizeof(unsigned) * CHs_real);
 
 		if (CHs_real == 6) {
@@ -614,7 +621,7 @@ int wmain(int argc, wchar_t** argv)
 				size_t c_VGMT = ((VGM_WAITBASE2X * src->time / Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
-				//				wprintf_s(L"%8zu: %zd\n", src->time, d_VGMT);
+				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				Time_Prev = src->time;
 
@@ -622,6 +629,7 @@ int wmain(int argc, wchar_t** argv)
 					const size_t wait0 = 0xFFFF;
 					const size_t wait1 = 882;
 					const size_t wait2 = 735;
+
 					const size_t wait3 = 16;
 					if (d_VGMT >= wait0) {
 						*vgm_pos++ = 0x61;
@@ -653,8 +661,11 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 			switch (src->Event) {
-			case 0xF4: // Tempo
+			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
+				Time_Prev_VGM = ((Time_Prev_VGM * Tempo << 1) / src->Param + 1) >> 1;
 				Tempo = src->Param;
+				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				break;
 			case 0xF5: // Tone select
 				if (chip == YM2203) {
@@ -793,9 +804,9 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = src->CH;
 					}
 					else if (src->CH < 6) {
-						*vgm_pos++ = vgm_command_chip2[chip];
+						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x28;
-						*vgm_pos++ = src->CH - 3;
+						*vgm_pos++ = (src->CH - 3) | 0x04;
 					}
 					else if (src->CH < 9) {
 						SSG_out |= (1 << (src->CH - 6));
@@ -1030,6 +1041,146 @@ int wmain(int argc, wchar_t** argv)
 			case 0x05:
 			case 0x06:
 			case 0x07:
+				wprintf_s(L"%8zu@%1d: %1X %1X\n", src->time, src->CH, src->Event, src->Param);
+
+				if (chip == YM2203) {
+					if (src->CH < 3) {
+						union {
+							struct {
+								unsigned __int16 FNumber : 11;
+								unsigned __int16 Block : 3;
+								unsigned __int16 dummy : 2;
+							} S;
+							unsigned __int8 B[2];
+						} U;
+
+						U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
+						U.S.Block = src->Event;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA4 + src->CH;
+						*vgm_pos++ = U.B[1];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA0 + src->CH;
+						*vgm_pos++ = U.B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x28;
+						*vgm_pos++ = src->CH | 0xF0;
+					}
+					else if (src->CH < 6) {
+						union {
+							unsigned __int16 W;
+							unsigned __int8 B[2];
+						} U;
+						if (Detune == -4) {
+							U.W += 1;
+						}
+						else if (Detune == -8) {
+							U.W += 2;
+						}
+						else if (Detune == -12) {
+							U.W += 3;
+						}
+
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x01 + (src->CH - 3) * 2;
+						*vgm_pos++ = U.B[1];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x00 + (src->CH - 3) * 2;
+						*vgm_pos++ = U.B[0];
+						SSG_out &= ~(1 << (src->CH - 3));
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x07;
+						*vgm_pos++ = SSG_out;
+					}
+				}
+				else if (chip == YM2608) {
+					if (src->CH < 3) {
+						union {
+							struct {
+								unsigned __int16 FNumber : 11;
+								unsigned __int16 Block : 3;
+								unsigned __int16 dummy : 2;
+							} S;
+							unsigned __int8 B[2];
+						} U;
+
+						U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
+						U.S.Block = src->Event;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA4 + src->CH;
+						*vgm_pos++ = U.B[1];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA0 + src->CH;
+						*vgm_pos++ = U.B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x28;
+						*vgm_pos++ = src->CH | 0xF0;
+					}
+					else if (src->CH < 6) {
+						union {
+							struct {
+								unsigned __int16 FNumber : 11;
+								unsigned __int16 Block : 3;
+								unsigned __int16 dummy : 2;
+							} S;
+							unsigned __int8 B[2];
+						} U;
+
+						U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
+						U.S.Block = src->Event;
+						*vgm_pos++ = vgm_command_chip2[chip];
+						*vgm_pos++ = 0xA4 + src->CH - 3;
+						*vgm_pos++ = U.B[1];
+						*vgm_pos++ = vgm_command_chip2[chip];
+						*vgm_pos++ = 0xA0 + src->CH - 3;
+						*vgm_pos++ = U.B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x28;
+						*vgm_pos++ = (src->CH - 3) | 0xF4;
+					}
+					else if (src->CH < 9) {
+						union {
+							unsigned __int16 W;
+							unsigned __int8 B[2];
+						} U;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x01 + (src->CH - 6) * 2;
+						*vgm_pos++ = U.B[1];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x00 + (src->CH - 6) * 2;
+						*vgm_pos++ = U.B[0];
+						SSG_out &= ~(1 << (src->CH - 6));
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x07;
+						*vgm_pos++ = SSG_out;
+					}
+				}
+				else if (chip == YM2151) {
+					if (src->CH < 8) {
+						unsigned key = src->Event * 12 + src->Param;
+						key -= 3;
+						unsigned oct = key / 12;
+						unsigned pre_kc = key % oct;
+						unsigned kc = (pre_kc << 2) / 3;
+						union {
+							struct {
+								unsigned __int8 kc : 4;
+								unsigned __int8 oct : 3;
+								unsigned __int8 dummy : 1;
+							} S;
+							unsigned __int8 B;
+						} U;
+
+						U.S.kc = kc;
+						U.S.oct = oct;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x28 + src->CH;
+						*vgm_pos++ = U.B;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x08;
+						*vgm_pos++ = src->CH | 0x78;
+					}
+				}
 				break;
 			case 0xE0: // Counter
 			case 0xE1:
