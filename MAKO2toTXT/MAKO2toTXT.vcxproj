@@ -24,6 +24,7 @@
     <ProjectGuid>{9593c6e5-c818-4434-8e79-2510cd5ce5a3}</ProjectGuid>
     <RootNamespace>MAKO2toTXT</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>MAKO2toVGM</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
