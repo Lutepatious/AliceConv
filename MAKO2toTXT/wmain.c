@@ -6,6 +6,10 @@
 #include <sys/types.h>
 #include "gc.h"
 
+#include "stdtype.h"
+#include "stdbool.h"
+#include "VGMFile.h"
+
 #pragma pack (1)
 struct mako2_header {
 	unsigned __int32 chiptune_addr : 24;
@@ -80,15 +84,18 @@ static const unsigned __int16 TP[8][12] = {
 	*dest++ = 0x80; *dest++ = 0; *((unsigned __int16*)dest)++ = time_off; (MMLs_decoded.CHs + i)->time_total += time_off;\
 	if (Octave_current != Octave) {Octave_current = Octave;}
 
-#define MML_BUFSIZ (4 * 1024 * 1024)
+#define MML_BUFSIZ (10 * 1024 * 1024)
 
 // MAKOではTPQNは48固定らしい
 #define TPQN (48)
 #define VGM_CLOCK (44100)
 
-#define VGM_WAITBASE2X ((120*VGM_CLOCK)/TPQN)
+// 108辺りか?
+#define TEMPO_BASE 112
+#define VGM_WAITBASE2X ((TEMPO_BASE*VGM_CLOCK)/TPQN)
 
 enum CHIP { NONE = 0, YM2203, YM2608, YM2151 };
+VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
 
 
 struct mako2_mml_decoded {
@@ -144,6 +151,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 		return -1;
 	}
 	else {
+#if 0
 		if (((struct EVENT*)n1)->Type > ((struct EVENT*)n2)->Type) {
 			return 1;
 		}
@@ -151,6 +159,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 			return -1;
 		}
 		else {
+#endif
 			if (((struct EVENT*)n1)->Count > ((struct EVENT*)n2)->Count) {
 				return 1;
 			}
@@ -160,7 +169,10 @@ int eventsort(const* x, const void* n1, const void* n2)
 			else {
 				return 0;
 			}
+#if 0
 		}
+
+#endif
 	}
 }
 
@@ -221,7 +233,7 @@ int wmain(int argc, wchar_t** argv)
 		size_t ct_len = pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr;
 		size_t VOICEs = ct_len / sizeof(struct mako2_tone);
 		struct mako2_tone* T = inbuf + pM2HDR->chiptune_addr;
-#if 1
+#if 0
 		for (size_t i = 0; i < VOICEs; i++) {
 			wprintf_s(L"Voice %2llu: FB %1d Connect %1d\n", i, (T + i)->H.S.FB, (T + i)->H.S.Connect);
 			for (size_t j = 0; j < 4; j++) {
@@ -261,7 +273,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			size_t Loop_Block = Block_offset & 0xFF;
 
-			wprintf_s(L"CH %2zu: %2zu Blocks retuon to %2zu ", i, Blocks, Loop_Block);
+//			wprintf_s(L"CH %2zu: %2zu Blocks retuon to %2zu ", i, Blocks, Loop_Block);
 
 			unsigned __int16 Octave = 4, Octave_current = 4;
 			unsigned __int16 time_default = 48;
@@ -351,19 +363,23 @@ int wmain(int argc, wchar_t** argv)
 
 					case 0xE4:
 					case 0xFE:
+						wprintf_s(L"%02X\n", *src);
 						src += 4;
 						break;
 					case 0xE5:
 					case 0xF1:
 					case 0xFA:
 					case 0xFD:
+						wprintf_s(L"%02X\n", *src);
 						src += 2;
 						break;
 					case 0xE6:
 					case 0xE7:
+						wprintf_s(L"%02X\n", *src);
 						src += 9;
 						break;
 					case 0xE8:
+						wprintf_s(L"%02X\n", *src);
 						src += 11;
 						break;
 					case 0xE9:
@@ -405,6 +421,7 @@ int wmain(int argc, wchar_t** argv)
 						break;
 					case 0xF6:
 					case 0xFB:
+						wprintf_s(L"%02X\n", *src);
 						src += 3;
 						break;
 					case 0xF7:
@@ -430,7 +447,7 @@ int wmain(int argc, wchar_t** argv)
 			(MMLs_decoded.CHs + i)->Loop_delta = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_time;
 			(MMLs_decoded.CHs + i)->Loop_len = (MMLs_decoded.CHs + i)->len - (MMLs_decoded.CHs + i)->Loop_address;
 
-			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
+//			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
 #if 0
 			for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 				wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
@@ -471,7 +488,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		else {
 			loop_start_time = end_time - delta_time_LCM;
-			wprintf_s(L"Unroll loops %zut - %zut.\n", loop_start_time, end_time);
+//			wprintf_s(L"Unroll loops %zut - %zut.\n", loop_start_time, end_time);
 			for (size_t i = 0; i < CHs_real; i++) {
 				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address;
 				unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->len;
@@ -497,7 +514,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		// 得られた展開データからイベント列を作る。
-		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 4 * 1024 * 1024);
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 12 * 1024 * 1024);
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
 		for (size_t j = 0; j < CHs_real; j++) {
@@ -521,8 +538,8 @@ int wmain(int argc, wchar_t** argv)
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->Param = *src++;
-					time += *((unsigned __int16*)src)++;
 					dest->time = time;
+					time += *((unsigned __int16*)src)++;
 					dest->Type = 30;
 					dest->CH = i;
 					dest++;
@@ -531,8 +548,8 @@ int wmain(int argc, wchar_t** argv)
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->Param = *src++;
-					time += *((unsigned __int16*)src)++;
 					dest->time = time;
+					time += *((unsigned __int16*)src)++;
 					dest->Type = 10;
 					dest->CH = i;
 					dest++;
@@ -583,11 +600,11 @@ int wmain(int argc, wchar_t** argv)
 		while ((pEVENTs + length_real)->time <= end_time) {
 			length_real++;
 		}
-		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
+//		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
 
 #if 1
 		for (size_t i = 0; i < length_real; i++) {
-			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xEB || (pEVENTs + i)->Event == 0xEC || (pEVENTs + i)->Event == 0xFC) {
+			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xEB || (pEVENTs + i)->Event == 0xEC) {
 				wprintf_s(L"%8zu: %2d: %02X %02X %d\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param, (pEVENTs + i)->loop_start);
 			}
 		}
@@ -597,23 +614,30 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8* vgm_out = GC_malloc(100 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
 		int* Detune = GC_malloc(sizeof(int) * CHs_real);
-		size_t Tempo = 120;
+		size_t Tempo = TEMPO_BASE;
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
+		size_t Time_Prev_VGM_abs = 0;
+		size_t Time_Loop_VGM_abs = 0;
 		enum CHIP chip = NONE;
 		unsigned __int8 vgm_command_chip[] = { 0x00, 0x55, 0x56, 0x54 };
 		unsigned __int8 vgm_command_chip2[] = { 0x00, 0x55, 0x57, 0x54 };
 		unsigned __int8 SSG_out = 0xFF;
 		unsigned* Algorithm = GC_malloc(sizeof(unsigned) * CHs_real);
 
+		size_t vgm_header_len = 0xc0;
+
 		if (CHs_real == 6) {
 			chip = YM2203;
+			h_vgm.lngHzYM2203 = 3993600;
 		}
 		else if (CHs_real == 9) {
 			chip = YM2608;
+			h_vgm.lngHzYM2608 = 7987200;
 		}
 		else if (CHs_real == 8) {
 			chip = YM2151;
+			h_vgm.lngHzYM2151 = 4000000;
 		}
 
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) < length_real; src++) {
@@ -623,6 +647,7 @@ int wmain(int argc, wchar_t** argv)
 
 				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
+				Time_Prev_VGM_abs += d_VGMT;
 				Time_Prev = src->time;
 
 				while (d_VGMT) {
@@ -660,12 +685,17 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 
+			if (src->loop_start) {
+				Time_Loop_VGM_abs = Time_Prev_VGM_abs;
+				h_vgm.lngLoopOffset = vgm_header_len + (vgm_pos - vgm_out) - ((UINT8*)&h_vgm.lngLoopOffset - (UINT8*)&h_vgm.fccVGM);
+			}
+
 			switch (src->Event) {
 			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
+//				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				Time_Prev_VGM = ((Time_Prev_VGM * Tempo << 1) / src->Param + 1) >> 1;
 				Tempo = src->Param;
-				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
+//				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				break;
 			case 0xF5: // Tone select
 				if (chip == YM2203) {
@@ -998,7 +1028,7 @@ int wmain(int argc, wchar_t** argv)
 							*vgm_pos++ = 0x70 + src->CH;
 							*vgm_pos++ = ~src->Param;
 							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x70 + src->CH;
+							*vgm_pos++ = 0x78 + src->CH;
 							*vgm_pos++ = ~src->Param;
 							break;
 						case 5:
@@ -1041,8 +1071,6 @@ int wmain(int argc, wchar_t** argv)
 			case 0x05:
 			case 0x06:
 			case 0x07:
-				wprintf_s(L"%8zu@%1d: %1X %1X\n", src->time, src->CH, src->Event, src->Param);
-
 				if (chip == YM2203) {
 					if (src->CH < 3) {
 						union {
@@ -1071,6 +1099,9 @@ int wmain(int argc, wchar_t** argv)
 							unsigned __int16 W;
 							unsigned __int8 B[2];
 						} U;
+
+						U.W = TP[src->Event][src->Param];
+
 						if (Detune == -4) {
 							U.W += 1;
 						}
@@ -1143,6 +1174,19 @@ int wmain(int argc, wchar_t** argv)
 							unsigned __int16 W;
 							unsigned __int8 B[2];
 						} U;
+
+						U.W = TP[src->Event][src->Param];
+
+						if (Detune == -4) {
+							U.W += 1;
+						}
+						else if (Detune == -8) {
+							U.W += 2;
+						}
+						else if (Detune == -12) {
+							U.W += 3;
+						}
+
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x01 + (src->CH - 6) * 2;
 						*vgm_pos++ = U.B[1];
@@ -1160,22 +1204,23 @@ int wmain(int argc, wchar_t** argv)
 						unsigned key = src->Event * 12 + src->Param;
 						key -= 3;
 						unsigned oct = key / 12;
-						unsigned pre_kc = key % oct;
-						unsigned kc = (pre_kc << 2) / 3;
+						unsigned pre_note = key % 12;
+						unsigned note = (pre_note << 2) / 3;
+//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param, oct, note);
 						union {
 							struct {
-								unsigned __int8 kc : 4;
+								unsigned __int8 note : 4;
 								unsigned __int8 oct : 3;
 								unsigned __int8 dummy : 1;
 							} S;
-							unsigned __int8 B;
+							unsigned __int8 KC;
 						} U;
 
-						U.S.kc = kc;
+						U.S.note = note;
 						U.S.oct = oct;
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x28 + src->CH;
-						*vgm_pos++ = U.B;
+						*vgm_pos++ = U.KC;
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x08;
 						*vgm_pos++ = src->CH | 0x78;
@@ -1190,5 +1235,31 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 		}
+		*vgm_pos++ = 0x66;
+		size_t vgm_dlen = vgm_pos - vgm_out;
+
+		h_vgm.lngTotalSamples = Time_Prev_VGM_abs;
+		h_vgm.lngDataOffset = vgm_header_len - ((UINT8*)&h_vgm.lngDataOffset - (UINT8*)&h_vgm.fccVGM);
+		h_vgm.lngEOFOffset = vgm_header_len + vgm_dlen - ((UINT8*)&h_vgm.lngEOFOffset - (UINT8*)&h_vgm.fccVGM);
+
+		if (Time_Loop_VGM_abs) {
+			h_vgm.lngLoopSamples = Time_Prev_VGM_abs - Time_Loop_VGM_abs;
+		}
+
+		wchar_t fn[_MAX_FNAME], fpath[_MAX_PATH];
+
+		_wsplitpath_s(*argv, NULL, 0, NULL, 0, fn, _MAX_FNAME, NULL, 0);
+		_wmakepath_s(fpath, _MAX_PATH, NULL, NULL, fn, L".vgm");
+
+		ecode = _wfopen_s(&pFo, fpath, L"wb");
+		if (ecode || !pFo) {
+			fwprintf_s(stderr, L"%s cannot open\n", fpath);
+			exit(ecode);
+		}
+
+		fwrite(&h_vgm, 1, vgm_header_len, pFo);
+		fwrite(vgm_out, 1, vgm_dlen, pFo);
+
+		fclose(pFo);
 	}
 }

@@ -154,6 +154,11 @@
   <ItemGroup>
     <ClCompile Include="wmain.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdbool.h" />
+    <ClInclude Include="stdtype.h" />
+    <ClInclude Include="VGMFile.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
