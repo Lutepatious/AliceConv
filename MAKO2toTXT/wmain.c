@@ -64,25 +64,6 @@ static const unsigned __int16 TP[8][12] = {
 	{ 0x001D,0x001C,0x001A,0x0019,0x0017,0x0016,0x0015,0x0013,0x0012,0x0011,0x0010,0x000F } };
 
 
-// 音程表現はとりあえず オクターブ 8bit 音名 8bitとする、VGMへの変換を考慮してMIDI化が前提のSystem3 for Win32とは変える。
-#define MAKENOTE() \
-	if (*src == 0xE9) {time_on = time; src++;} \
-	else { \
-		if (gate_time != 256) { \
-			if (time > gate_time) {time_on = time - gate_time;} \
-			else {time_on = 1;} \
-		} else { \
-			if (time == 1) {time_on = 1;} \
-			else if (gate_step == 8) {time_on = time;} \
-			else if (time < 8) {time_on = 1;} \
-			else {time_on = (time >> 3) * gate_step;} \
-		} \
-	} \
-	time_off = time - time_on; \
-	if (!note) {time_off += time_on; time_on = 0;} \
-	if (time_on) {*dest++ = Octave_current; *dest++ = note - 1; *((unsigned __int16*)dest)++ = time_on; (MMLs_decoded.CHs + i)->time_total += time_on;} \
-	*dest++ = 0x80; *dest++ = 0; *((unsigned __int16*)dest)++ = time_off; (MMLs_decoded.CHs + i)->time_total += time_off;\
-	if (Octave_current != Octave) {Octave_current = Octave;}
 
 #define MML_BUFSIZ (10 * 1024 * 1024)
 
@@ -147,7 +128,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 		return -1;
 	}
 	else {
-#if 1
+#if 0
 		if (((struct EVENT*)n1)->Type > ((struct EVENT*)n2)->Type) {
 			return 1;
 		}
@@ -165,7 +146,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 			else {
 				return 0;
 			}
-#if 1
+#if 0
 		}
 
 #endif
@@ -237,8 +218,8 @@ int wmain(int argc, wchar_t** argv)
 				wprintf_s(L" OP %1llu: DT %1d MULTI %2d TL %3d KS %1d AR %2d DR %2d SR %2d SL %2d RR %2d\n"
 					, j, (T + i)->Op[j].S.DT, (T + i)->Op[j].S.MULTI, (T + i)->Op[j].S.TL, (T + i)->Op[j].S.KS
 					, (T + i)->Op[j].S.AR, (T + i)->Op[j].S.DR, (T + i)->Op[j].S.SR, (T + i)->Op[j].S.SL, (T + i)->Op[j].S.RR);
-	}
-}
+			}
+		}
 #endif
 
 		unsigned CHs = (pM2HDR->chiptune_addr - 4) / 4;
@@ -293,6 +274,7 @@ int wmain(int argc, wchar_t** argv)
 
 				// wprintf_s(L"%2zu: ", j);
 				while (*src != 0xFF) {
+					unsigned makenote = 0;
 					// wprintf_s(L"%02X ", *src);
 					switch (*src) {
 					case 0x00:
@@ -310,7 +292,7 @@ int wmain(int argc, wchar_t** argv)
 					case 0x0C:
 						note = *src++;
 						time = *src++;
-						MAKENOTE();
+						makenote++;
 						break;
 
 					case 0x0D:
@@ -328,7 +310,7 @@ int wmain(int argc, wchar_t** argv)
 					case 0x19:
 						note = *src++ - 0x0d;
 						time = *((unsigned __int16*)src)++;
-						MAKENOTE();
+						makenote++;
 						break;
 
 					case 0x80:
@@ -346,7 +328,7 @@ int wmain(int argc, wchar_t** argv)
 					case 0x8C:
 						note = *src++ & 0x7F;
 						time = time_default;
-						MAKENOTE();
+						makenote++;
 						break;
 
 					case 0xE0: // Counter
@@ -436,11 +418,60 @@ int wmain(int argc, wchar_t** argv)
 						src++;
 						break;
 					}
-				}
+					// 音程表現はとりあえず オクターブ 8bit 音名 8bitとする、VGMへの変換を考慮してMIDI化が前提のSystem3 for Win32とは変える。
+					if (makenote) {
+						if (*src == 0xE9) {
+							time_on = time;
+							src++;
+						}
+						else {
+							if (gate_time != 256) {
+								if (time > gate_time) {
+									time_on = time - gate_time;
+								}
+								else {
+									time_on = 1;
+								}
+							}
+							else {
+								if (time == 1) {
+									time_on = 1;
+								}
+								else if (gate_step == 8) {
+									time_on = time;
+								}
+								else if (time < 8) {
+									time_on = 1;
+								}
+								else {
+									time_on = (time >> 3) * gate_step;
+								}
+								}
+							}
+						time_off = time - time_on;
+						if (!note) {
+							time_off += time_on;
+							time_on = 0;
+						}
+						if (time_on) {
+							*dest++ = Octave_current;
+							*dest++ = note - 1;
+							*((unsigned __int16*)dest)++ = time_on;
+							(MMLs_decoded.CHs + i)->time_total += time_on;
+						}
+						*dest++ = 0x80;
+						*dest++ = 0;
+						*((unsigned __int16*)dest)++ = time_off;
+						(MMLs_decoded.CHs + i)->time_total += time_off;
+						if (Octave_current != Octave) {
+							Octave_current = Octave;
+						}
+						}
+					}
 				src++;
 
 				//	wprintf_s(L"\n");
-			}
+				}
 
 			(MMLs_decoded.CHs + i)->len = dest - (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_delta = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_time;
@@ -453,7 +484,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			wprintf_s(L"\n");
 #endif
-		}
+			}
 
 		wprintf_s(L"Unroll Loop.\n");
 
@@ -472,7 +503,7 @@ int wmain(int argc, wchar_t** argv)
 			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
 			if (max_time < (MMLs_decoded.CHs + i)->time_total) {
 				max_time = (MMLs_decoded.CHs + i)->time_total;
-			}
+		}
 			if (end_time < (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM) {
 				end_time = (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM;
 				latest_CH = i;
@@ -519,8 +550,8 @@ int wmain(int argc, wchar_t** argv)
 				}
 				wprintf_s(L"\n");
 #endif
-				}
 			}
+		}
 
 		wprintf_s(L"Make Sequential events\n");
 		// 得られた展開データからイベント列を作る。
@@ -622,7 +653,8 @@ int wmain(int argc, wchar_t** argv)
 		// 108辺りか?
 		size_t master_clock;
 		size_t divider;
-		double tempo_base;
+		size_t Tempo_Default = 120;
+		size_t waitbase = Tempo_Default * VGM_CLOCK / TPQN;
 		enum CHIP chip = NONE;
 
 		// イベント列をvgm化する
@@ -653,12 +685,11 @@ int wmain(int argc, wchar_t** argv)
 			divider = 64;
 		}
 #endif
-		tempo_base = master_clock / (divider * 960);
 
 		unsigned __int8* vgm_out = GC_malloc(100 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
 		unsigned __int8* loop_pos = vgm_pos;
-		size_t Tempo = tempo_base;
+		size_t Tempo = Tempo_Default;
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
 		size_t Time_Prev_VGM_abs = 0;
@@ -840,6 +871,7 @@ int wmain(int argc, wchar_t** argv)
 			*vgm_pos++ = vgm_command_chip[chip];
 			*vgm_pos++ = 0x6F;
 			*vgm_pos++ = 0x7F;
+			*vgm_pos++ = vgm_command_chip[chip];
 			*vgm_pos++ = 0x70;
 			*vgm_pos++ = 0x7F;
 			*vgm_pos++ = vgm_command_chip[chip];
@@ -891,7 +923,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) < length_real; src++) {
 			if (src->time - Time_Prev) {
-				size_t c_VGMT = (tempo_base * VGM_CLOCK * src->time) / (TPQN * Tempo) + 0.5;
+				size_t c_VGMT = (waitbase * src->time / Tempo + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
@@ -942,7 +974,7 @@ int wmain(int argc, wchar_t** argv)
 			switch (src->Event) {
 			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
 //				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
-				Time_Prev_VGM = ((Time_Prev_VGM * Tempo << 1) / src->Param + 1) >> 1;
+				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param + 1) >> 1;
 				Tempo = src->Param;
 				//				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				break;
@@ -1447,4 +1479,4 @@ int wmain(int argc, wchar_t** argv)
 
 		fclose(pFo);
 		}
-}
+	}
