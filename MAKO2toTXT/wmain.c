@@ -492,8 +492,8 @@ int wmain(int argc, wchar_t** argv)
 		size_t delta_time_LCM = MMLs_decoded.CHs->Loop_delta;
 		size_t max_time = MMLs_decoded.CHs->time_total;
 		size_t end_time = 0;
-		size_t loop_start_time = max_time;
-		size_t latest_CH;
+		size_t loop_start_time = MMLs_decoded.CHs->Loop_time;
+		size_t latest_CH = 0;
 
 		// 各ループ時間の最小公倍数をとる
 		for (size_t i = 1; i < CHs_real; i++) {
@@ -504,17 +504,11 @@ int wmain(int argc, wchar_t** argv)
 			if (max_time < (MMLs_decoded.CHs + i)->time_total) {
 				max_time = (MMLs_decoded.CHs + i)->time_total;
 			}
-			if (end_time < (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM) {
-				end_time = (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM;
+			if (loop_start_time < (MMLs_decoded.CHs + i)->Loop_time) {
+				loop_start_time = (MMLs_decoded.CHs + i)->Loop_time;
 				latest_CH = i;
 			}
 		}
-		if (end_time < MMLs_decoded.CHs->Loop_time + delta_time_LCM) {
-			end_time = MMLs_decoded.CHs->Loop_time + delta_time_LCM;
-			latest_CH = 0;
-		}
-		//		wprintf_s(L"LCM %zu.\n", delta_time_LCM);
-
 
 		// 最大公約数が極端に大ならそもそもループはないものとする
 		// 物によってはループするごとに微妙にずれていって元に戻るものもある(多分バグ)
@@ -524,7 +518,7 @@ int wmain(int argc, wchar_t** argv)
 			loop_start_time = -1LL;
 		}
 		else {
-			loop_start_time = end_time - delta_time_LCM;
+			end_time = loop_start_time + delta_time_LCM;
 			//			wprintf_s(L"Unroll loops %zut - %zut.\n", loop_start_time, end_time);
 			for (size_t i = 0; i < CHs_real; i++) {
 				if ((MMLs_decoded.CHs + i)->Loop_delta == 0) {
@@ -652,16 +646,12 @@ int wmain(int argc, wchar_t** argv)
 
 		// 108辺りか?
 		size_t master_clock;
-		size_t divider;
-		size_t Tempo_Default = 120;
-		size_t waitbase = Tempo_Default * VGM_CLOCK / TPQN;
 		enum CHIP chip = NONE;
 
 		// イベント列をvgm化する
 		if (CHs_real <= 6) {
 			chip = YM2203;
 			h_vgm.lngHzYM2203 = master_clock = 3993600;
-			divider = 72;
 			h_vgm.bytAYFlagYM2203 = 0x1;
 			Ex_Vols.Type = 0x86;
 			Ex_Vols.Flags = 0;
@@ -671,7 +661,6 @@ int wmain(int argc, wchar_t** argv)
 		else if (CHs_real <= 9) {
 			chip = YM2608;
 			h_vgm.lngHzYM2608 = master_clock = 7987200;
-			divider = 144;
 			h_vgm.bytAYFlagYM2608 = 0x1;
 			Ex_Vols.Type = 0x87;
 			Ex_Vols.Flags = 0;
@@ -689,7 +678,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8* vgm_out = GC_malloc(100 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
 		unsigned __int8* loop_pos = vgm_pos;
-		size_t Tempo = Tempo_Default;
+		size_t Tempo = 120;
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
 		size_t Time_Prev_VGM_abs = 0;
@@ -936,15 +925,15 @@ int wmain(int argc, wchar_t** argv)
 				size_t c_VGMT;
 				if (chip == YM2203) {
 					NA = 1024 - (((master_clock * 2) / (192 * Tempo)) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 * 9 / (master_clock * 10) + 1) >> 1;
 				}
 				else if (chip == YM2608) {
 					NA = 1024 - (((master_clock * 2) / (384 * Tempo)) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 480 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 480 * VGM_CLOCK * 2 * 9 / (master_clock * 10) + 1) >> 1;
 				}
 				else if (chip == YM2151) {
 					NA = 1024 - (((3 * master_clock * 2) / (512 * Tempo) + 1) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 640 * VGM_CLOCK * 2 / (master_clock * 3) + 1) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 640 * VGM_CLOCK * 2 * 9 / (master_clock * 3 * 10) + 1) >> 1;
 				}
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
@@ -1080,7 +1069,7 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x38 + src->CH;
 						*vgm_pos++ = (T + src->Param)->Op[1].B[0];
-						if (Algorithm[src->CH] < 4) {
+						if (Algorithm[src->CH] < 4 || (chip == YM2203)) {
 							*vgm_pos++ = vgm_command_chip[chip];
 							*vgm_pos++ = 0x48 + src->CH;
 							*vgm_pos++ = (T + src->Param)->Op[1].B[1];
@@ -1100,7 +1089,7 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x34 + src->CH;
 						*vgm_pos++ = (T + src->Param)->Op[2].B[0];
-						if (Algorithm[src->CH] < 5) {
+						if (Algorithm[src->CH] < 5 || (chip == YM2203)) {
 							*vgm_pos++ = vgm_command_chip[chip];
 							*vgm_pos++ = 0x44 + src->CH;
 							*vgm_pos++ = (T + src->Param)->Op[2].B[1];
@@ -1120,6 +1109,11 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x3C + src->CH;
 						*vgm_pos++ = (T + src->Param)->Op[3].B[0];
+						if (chip == YM2203) {
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x4C + src->CH;
+							*vgm_pos++ = (T + src->Param)->Op[3].B[1];
+						}
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x5C + src->CH;
 						*vgm_pos++ = (T + src->Param)->Op[3].B[2];
