@@ -923,7 +923,31 @@ int wmain(int argc, wchar_t** argv)
 		}
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) < length_real; src++) {
 			if (src->time - Time_Prev) {
-				size_t c_VGMT = (waitbase * src->time / Tempo + 1) >> 1;
+				// Tqn = 60 / Tempo
+				// TPQN = 48
+				// Ttick = Tqn / 48
+				// c_VGMT = Ttick * src_time * VGM_CLOCK 
+				//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+				//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+				unsigned NA;
+				size_t c_VGMT;
+				if (chip == YM2203) {
+					NA = 1024 - (master_clock / (96 * Tempo)) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
+				}
+				else if (chip == YM2608) {
+					NA = 1024 - (master_clock / (192 * Tempo)) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 480 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
+				}
+				else if (chip == YM2151) {
+					NA = 1024 - ((3 * master_clock) / (512 * Tempo) + 1) >> 1;
+					c_VGMT = (src->time * (1024 - NA) * 640 * VGM_CLOCK * 2 / (master_clock * 3) + 1) >> 1;
+				}
+
+				c_VGMT = (waitbase * src->time / Tempo + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
@@ -976,6 +1000,32 @@ int wmain(int argc, wchar_t** argv)
 //				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param + 1) >> 1;
 				Tempo = src->Param;
+				unsigned NA;
+				if (chip == YM2203) {
+					NA = 1024 - (master_clock / (96 * src->Param) + 1) >> 1;
+				}
+				else if (chip == YM2608) {
+					NA = 1024 - (master_clock / (192 * src->Param) + 1) >> 1;
+				}
+				else if (chip == YM2151) {
+					NA = 1024 - ((3 * master_clock) / (512 * src->Param) + 1) >> 1;
+				}
+				if ((chip == YM2203) || (chip == YM2608)) {
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x24;
+					*vgm_pos++ = NA >> 2 & 0xFF;
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x25;
+					*vgm_pos++ = NA & 0x03;
+				}
+				else if (chip == YM2151) {
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x10;
+					*vgm_pos++ = NA >> 2 & 0xFF;
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x11;
+					*vgm_pos++ = NA & 0x03;
+				}
 				//				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				break;
 			case 0xFC: // Detune
