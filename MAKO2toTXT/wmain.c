@@ -211,7 +211,7 @@ int wmain(int argc, wchar_t** argv)
 		size_t VOICEs = ct_len / sizeof(struct mako2_tone);
 		struct mako2_tone* T = inbuf + pM2HDR->chiptune_addr;
 
-#if 1
+#if 0
 		for (size_t i = 0; i < VOICEs; i++) {
 			wprintf_s(L"Voice %2llu: FB %1d Connect %1d\n", i, (T + i)->H.S.FB, (T + i)->H.S.Connect);
 			for (size_t j = 0; j < 4; j++) {
@@ -446,8 +446,8 @@ int wmain(int argc, wchar_t** argv)
 								else {
 									time_on = (time >> 3) * gate_step;
 								}
-								}
 							}
+						}
 						time_off = time - time_on;
 						if (!note) {
 							time_off += time_on;
@@ -466,12 +466,12 @@ int wmain(int argc, wchar_t** argv)
 						if (Octave_current != Octave) {
 							Octave_current = Octave;
 						}
-						}
 					}
+				}
 				src++;
 
 				//	wprintf_s(L"\n");
-				}
+			}
 
 			(MMLs_decoded.CHs + i)->len = dest - (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_delta = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_time;
@@ -484,7 +484,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			wprintf_s(L"\n");
 #endif
-			}
+		}
 
 		wprintf_s(L"Unroll Loop.\n");
 
@@ -503,7 +503,7 @@ int wmain(int argc, wchar_t** argv)
 			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
 			if (max_time < (MMLs_decoded.CHs + i)->time_total) {
 				max_time = (MMLs_decoded.CHs + i)->time_total;
-		}
+			}
 			if (end_time < (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM) {
 				end_time = (MMLs_decoded.CHs + i)->Loop_time + delta_time_LCM;
 				latest_CH = i;
@@ -935,19 +935,17 @@ int wmain(int argc, wchar_t** argv)
 				unsigned NA;
 				size_t c_VGMT;
 				if (chip == YM2203) {
-					NA = 1024 - (master_clock / (96 * Tempo)) >> 1;
+					NA = 1024 - (((master_clock * 2) / (192 * Tempo)) >> 1);
 					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
 				}
 				else if (chip == YM2608) {
-					NA = 1024 - (master_clock / (192 * Tempo)) >> 1;
+					NA = 1024 - (((master_clock * 2) / (384 * Tempo)) >> 1);
 					c_VGMT = (src->time * (1024 - NA) * 480 * VGM_CLOCK * 2 / master_clock + 1) >> 1;
 				}
 				else if (chip == YM2151) {
-					NA = 1024 - ((3 * master_clock) / (512 * Tempo) + 1) >> 1;
+					NA = 1024 - (((3 * master_clock * 2) / (512 * Tempo) + 1) >> 1);
 					c_VGMT = (src->time * (1024 - NA) * 640 * VGM_CLOCK * 2 / (master_clock * 3) + 1) >> 1;
 				}
-
-				c_VGMT = (waitbase * src->time / Tempo + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
@@ -1000,20 +998,21 @@ int wmain(int argc, wchar_t** argv)
 //				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param + 1) >> 1;
 				Tempo = src->Param;
-				unsigned NA;
+				size_t NA;
 				if (chip == YM2203) {
-					NA = 1024 - (master_clock / (96 * src->Param) + 1) >> 1;
+					NA = 1024 - (((master_clock * 2) / (192 * src->Param) + 1) >> 1);
 				}
 				else if (chip == YM2608) {
-					NA = 1024 - (master_clock / (192 * src->Param) + 1) >> 1;
+					NA = 1024 - (((master_clock * 2) / (384 * src->Param) + 1) >> 1);
 				}
 				else if (chip == YM2151) {
-					NA = 1024 - ((3 * master_clock) / (512 * src->Param) + 1) >> 1;
+					NA = 1024 - (((3 * master_clock * 2) / (512 * src->Param) + 1) >> 1);
 				}
+				wprintf_s(L"%8zu: Tempo %zd NA %zd\n", src->time, Tempo, NA);
 				if ((chip == YM2203) || (chip == YM2608)) {
 					*vgm_pos++ = vgm_command_chip[chip];
 					*vgm_pos++ = 0x24;
-					*vgm_pos++ = NA >> 2 & 0xFF;
+					*vgm_pos++ = (NA >> 2) & 0xFF;
 					*vgm_pos++ = vgm_command_chip[chip];
 					*vgm_pos++ = 0x25;
 					*vgm_pos++ = NA & 0x03;
@@ -1021,7 +1020,7 @@ int wmain(int argc, wchar_t** argv)
 				else if (chip == YM2151) {
 					*vgm_pos++ = vgm_command_chip[chip];
 					*vgm_pos++ = 0x10;
-					*vgm_pos++ = NA >> 2 & 0xFF;
+					*vgm_pos++ = (NA >> 2) & 0xFF;
 					*vgm_pos++ = vgm_command_chip[chip];
 					*vgm_pos++ = 0x11;
 					*vgm_pos++ = NA & 0x03;
@@ -1528,5 +1527,5 @@ int wmain(int argc, wchar_t** argv)
 		fwrite(vgm_out, 1, vgm_dlen, pFo);
 
 		fclose(pFo);
-		}
 	}
+}
