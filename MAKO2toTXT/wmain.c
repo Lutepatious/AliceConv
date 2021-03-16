@@ -113,10 +113,9 @@ struct EVENT {
 	size_t time;
 	size_t Count;
 	unsigned __int8 CH; //
-	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの テンポ=0, 消音=1, 音源初期化=2, 発音=3程度で
+	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの テンポ=0, 消音=10, 音源初期化=20, 発音=30程度で
 	unsigned __int8 Event; // イベント種本体
 	unsigned __int8 Param; // イベントのパラメータ
-	unsigned __int8 loop_start; // ループ起点か?
 };
 
 int eventsort(const* x, const void* n1, const void* n2)
@@ -128,7 +127,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 		return -1;
 	}
 	else {
-#if 0
+#if 1
 		if (((struct EVENT*)n1)->Type > ((struct EVENT*)n2)->Type) {
 			return 1;
 		}
@@ -146,7 +145,7 @@ int eventsort(const* x, const void* n1, const void* n2)
 			else {
 				return 0;
 			}
-#if 0
+#if 1
 		}
 
 #endif
@@ -530,7 +529,6 @@ int wmain(int argc, wchar_t** argv)
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta);
 
-				times--;
 				//				wprintf_s(L"loop start %zut, Unroll len=%zut loop %zu times.\n", (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta, times);
 				for (size_t j = 0; j < times; j++) {
 					memcpy_s(dest + len * j, len, src, len);
@@ -548,10 +546,13 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		wprintf_s(L"Make Sequential events\n");
+
 		// 得られた展開データからイベント列を作る。
 		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 20 * 1024 * 1024);
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
+		size_t time_loop_start = 0;
+		unsigned loop_enable = 0;
 		for (size_t j = 0; j < CHs_real; j++) {
 			size_t i = CHs_real - j - 1;
 			unsigned __int8* src = (MMLs_decoded.CHs + i)->MML;
@@ -559,7 +560,9 @@ int wmain(int argc, wchar_t** argv)
 
 			while (src - (MMLs_decoded.CHs + i)->MML < (MMLs_decoded.CHs + i)->len) {
 				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address)) && (loop_start_time != -1LL)) {
-					dest->loop_start = 1;
+					time_loop_start = time;
+					loop_enable = 1;
+					wprintf_s(L"%zu: %2d: Loop Start %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
 				}
 				switch (*src) {
 				case 0x00: //Note On
@@ -591,15 +594,31 @@ int wmain(int argc, wchar_t** argv)
 					break;
 				case 0xE0: // Counter
 				case 0xE1: // Velocity
-				case 0xEB: // Panpot
-				case 0xF5: // Tone select
-				case 0xF9: // Volume change
 				case 0xFC: // Detune
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->Param = *src++;
 					dest->time = time;
 					dest->Type = 20;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xF5: // Tone select
+				case 0xF9: // Volume change
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					dest->time = time;
+					dest->Type = 25;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xEB: // Panpot
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = *src++;
+					dest->time = time;
+					dest->Type = 27;
 					dest->CH = i;
 					dest++;
 					break;
@@ -623,7 +642,7 @@ int wmain(int argc, wchar_t** argv)
 		qsort_s(pEVENTs, dest - pEVENTs, sizeof(struct EVENT), eventsort, NULL);
 
 		size_t length_real = 0;
-		while ((pEVENTs + length_real)->time <= end_time) {
+		while ((pEVENTs + length_real)->time < end_time) {
 			length_real++;
 		}
 		//		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
@@ -631,7 +650,7 @@ int wmain(int argc, wchar_t** argv)
 #if 1
 		for (size_t i = 0; i < length_real; i++) {
 			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1) {
-				wprintf_s(L"%8zu: %2d: %02X %02X %d\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param, (pEVENTs + i)->loop_start);
+				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param);
 			}
 		}
 #endif
@@ -910,7 +929,7 @@ int wmain(int argc, wchar_t** argv)
 			*vgm_pos++ = 0x7F;
 
 		}
-		for (struct EVENT* src = pEVENTs; (src - pEVENTs) < length_real; src++) {
+		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
 			if (src->time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
@@ -977,9 +996,14 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 
-			if (src->loop_start) {
+			if ((src - pEVENTs) == length_real) {
+				break;
+			}
+
+			if (loop_enable && src->time == time_loop_start && src->Type) {
 				Time_Loop_VGM_abs = Time_Prev_VGM_abs;
 				loop_pos = vgm_pos;
+				loop_enable = 0;
 			}
 
 			switch (src->Event) {
@@ -1476,6 +1500,12 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 		}
+
+
+
+
+
+
 		*vgm_pos++ = 0x66;
 		size_t vgm_dlen = vgm_pos - vgm_out;
 
