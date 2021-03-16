@@ -645,6 +645,9 @@ int wmain(int argc, wchar_t** argv)
 		while ((pEVENTs + length_real)->time < end_time) {
 			length_real++;
 		}
+		while ((pEVENTs + length_real)->Event == 0x80) {
+			length_real++;
+		}
 		//		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
 
 #if 1
@@ -663,7 +666,6 @@ int wmain(int argc, wchar_t** argv)
 
 		size_t vgm_header_len = sizeof(VGM_HEADER);
 
-		// 108�ӂ肩?
 		size_t master_clock;
 		enum CHIP chip = NONE;
 
@@ -965,8 +967,8 @@ int wmain(int argc, wchar_t** argv)
 					const size_t wait0 = 0xFFFF;
 					const size_t wait1 = 882;
 					const size_t wait2 = 735;
-
 					const size_t wait3 = 16;
+
 					if (d_VGMT >= wait0) {
 						*vgm_pos++ = 0x61;
 						*((unsigned __int16*)vgm_pos)++ = wait0;
@@ -1500,11 +1502,6 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 		}
-
-
-
-
-
 
 		*vgm_pos++ = 0x66;
 		size_t vgm_dlen = vgm_pos - vgm_out;
