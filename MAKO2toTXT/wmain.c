@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <wchar.h>
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "gc.h"
@@ -65,7 +66,7 @@ static const unsigned __int16 TP[8][12] = {
 
 
 
-#define MML_BUFSIZ (10 * 1024 * 1024)
+#define MML_BUFSIZ (16 * 1024 * 1024)
 
 // MAKOではTPQNは48固定らしい
 #define TPQN (48)
@@ -169,7 +170,6 @@ int wmain(int argc, wchar_t** argv)
 
 		struct __stat64 fs;
 		_fstat64(_fileno(pFi), &fs);
-		wprintf_s(L"File %s size %I64d.\n", *argv, fs.st_size);
 
 		unsigned __int8* inbuf = GC_malloc(fs.st_size);
 		if (inbuf == NULL) {
@@ -230,7 +230,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		wprintf_s(L"Format %u %2u/%2u CHs. %2llu Tones.\n", mako2form, CHs_real, CHs, VOICEs);
+		wprintf_s(L"%s: Format %u %2u/%2u CHs. %2llu Tones.\n", *argv, mako2form, CHs_real, CHs, VOICEs);
 
 		// 各MML部のデコード T.T.氏によるsystem32 for Win32のソースをポインタ制御に書き換えたもの。
 		struct mako2_mml_decoded MMLs_decoded;
@@ -252,7 +252,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			size_t Loop_Block = Block_offset & 0xFF;
 
-			//			wprintf_s(L"CH %2zu: %2zu Blocks retuon to %2zu ", i, Blocks, Loop_Block);
+			//			wprintf_s(L"CH %2zu: %2zu Blocks return to %2zu ", i, Blocks, Loop_Block);
 
 			unsigned __int16 Octave = 4, Octave_current = 4;
 			unsigned __int16 time_default = 48;
@@ -374,11 +374,11 @@ int wmain(int argc, wchar_t** argv)
 						src++;
 						break;
 					case 0xEE:
-						Octave_current = ++Octave;
+						Octave_current = Octave = (Octave + 1) & 0x7;
 						src++;
 						break;
 					case 0xEF:
-						Octave_current = --Octave;
+						Octave_current = Octave = (Octave - 1) & 0x7;
 						src++;
 						break;
 					case 0xF0:
@@ -476,8 +476,8 @@ int wmain(int argc, wchar_t** argv)
 			(MMLs_decoded.CHs + i)->Loop_delta = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_time;
 			(MMLs_decoded.CHs + i)->Loop_len = (MMLs_decoded.CHs + i)->len - (MMLs_decoded.CHs + i)->Loop_address;
 
-			//			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
 #if 0
+			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
 			for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 				wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
 			}
@@ -485,7 +485,6 @@ int wmain(int argc, wchar_t** argv)
 #endif
 		}
 
-		wprintf_s(L"Unroll Loop.\n");
 
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
 		size_t delta_time_LCM = MMLs_decoded.CHs->Loop_delta;
@@ -496,30 +495,34 @@ int wmain(int argc, wchar_t** argv)
 
 		// 各ループ時間の最小公倍数をとる
 		for (size_t i = 1; i < CHs_real; i++) {
+			// そもそもループしないチャネルはスキップ
 			if ((MMLs_decoded.CHs + i)->Loop_delta == 0) {
 				continue;
 			}
 			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
+			// ループなしの最長時間割り出し
 			if (max_time < (MMLs_decoded.CHs + i)->time_total) {
 				max_time = (MMLs_decoded.CHs + i)->time_total;
 			}
+			// ループ開始が最後のチャネル割り出し
 			if (loop_start_time < (MMLs_decoded.CHs + i)->Loop_time) {
 				loop_start_time = (MMLs_decoded.CHs + i)->Loop_time;
 				latest_CH = i;
 			}
 		}
 
-		// 最大公約数が極端に大ならそもそもループはないものとする
-		// 物によってはループするごとに微妙にずれていって元に戻るものもある(多分バグ)
-		if (no_loop || delta_time_LCM > 10000000) {
-			wprintf_s(L"No loop or Unbelivable long loop %zu\n", delta_time_LCM);
+		// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
+		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
+		if (no_loop) {
+			wprintf_s(L"Loop：NONE\n");
 			end_time = max_time;
-			loop_start_time = -1LL;
+			loop_start_time = SIZE_MAX;
 		}
 		else {
+			wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
 			end_time = loop_start_time + delta_time_LCM;
-			//			wprintf_s(L"Unroll loops %zut - %zut.\n", loop_start_time, end_time);
 			for (size_t i = 0; i < CHs_real; i++) {
+				// そもそもループしないチャネルはスキップ
 				if ((MMLs_decoded.CHs + i)->Loop_delta == 0) {
 					continue;
 				}
@@ -529,13 +532,11 @@ int wmain(int argc, wchar_t** argv)
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta);
 
-				//				wprintf_s(L"loop start %zut, Unroll len=%zut loop %zu times.\n", (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta, times);
 				for (size_t j = 0; j < times; j++) {
 					memcpy_s(dest + len * j, len, src, len);
 				}
 
 				(MMLs_decoded.CHs + i)->len += len * times;
-				//				wprintf_s(L"MML Length %zu Loop address %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->Loop_address);
 #if 0
 				for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 					wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
@@ -548,7 +549,7 @@ int wmain(int argc, wchar_t** argv)
 		wprintf_s(L"Make Sequential events\n");
 
 		// 得られた展開データからイベント列を作る。
-		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 20 * 1024 * 1024);
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 32 * 1024 * 1024);
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
 		size_t time_loop_start = 0;
@@ -559,10 +560,9 @@ int wmain(int argc, wchar_t** argv)
 			size_t time = 0;
 
 			while (src - (MMLs_decoded.CHs + i)->MML < (MMLs_decoded.CHs + i)->len) {
-				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address)) && (loop_start_time != -1LL)) {
+				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address)) && (loop_start_time != SIZE_MAX)) {
 					time_loop_start = time;
 					loop_enable = 1;
-					wprintf_s(L"%zu: %2d: Loop Start %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
 				}
 				switch (*src) {
 				case 0x00: //Note On
@@ -637,10 +637,14 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 		}
-		dest->time = -1;
+
+		// 出来上がった列の末尾に最大時間のマークをつける
+		dest->time = SIZE_MAX;
 		dest++;
+		// イベント列をソートする
 		qsort_s(pEVENTs, dest - pEVENTs, sizeof(struct EVENT), eventsort, NULL);
 
+		// イベント列の長さを測る、時間になってもNote offが続くなら追加する
 		size_t length_real = 0;
 		while ((pEVENTs + length_real)->time < end_time) {
 			length_real++;
@@ -648,11 +652,10 @@ int wmain(int argc, wchar_t** argv)
 		while ((pEVENTs + length_real)->Event == 0x80) {
 			length_real++;
 		}
-		//		wprintf_s(L"Whole length %zu/%zu\n", length_real, dest - pEVENTs - 1);
 
 #if 1
 		for (size_t i = 0; i < length_real; i++) {
-			if ((pEVENTs + i)->Event == 0xE0 || (pEVENTs + i)->Event == 0xE1) {
+			if ((pEVENTs + i)->Event == 0xE1) {
 				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param);
 			}
 		}
@@ -696,7 +699,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 #endif
 
-		unsigned __int8* vgm_out = GC_malloc(100 * 1024 * 1024);
+		unsigned __int8* vgm_out = GC_malloc(128 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
 		unsigned __int8* loop_pos = vgm_pos;
 		size_t Tempo = 120;
@@ -746,10 +749,12 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
-			if ((src - pEVENTs) == length_real && no_loop) {
+			if (src->time == SIZE_MAX) {
 				break;
 			}
 			if (src->time - Time_Prev) {
+				// テンポからNAを割り出し、そこからテンポを再導出してタイミングを生成
+				// 整数での誤差を再現すす止め
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -759,10 +764,12 @@ int wmain(int argc, wchar_t** argv)
 				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
 				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
 				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+				//
+				// 実際のタイミングにするために9/10倍している。
+
 				unsigned NA;
 				size_t c_VGMT;
 
-				// 実際のタイミングにするために9/10倍している。
 				if (chip == YM2203) {
 					NA = 1024 - (((master_clock * 2) / (192 * Tempo)) >> 1);
 					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 * 9 / (master_clock * 10) + 1) >> 1;
@@ -842,7 +849,7 @@ int wmain(int argc, wchar_t** argv)
 				else if (chip == YM2151) {
 					NA = 1024 - (((3 * master_clock * 2) / (512 * src->Param) + 1) >> 1);
 				}
-				wprintf_s(L"%8zu: Tempo %zd NA %zd\n", src->time, Tempo, NA);
+				// wprintf_s(L"%8zu: Tempo %zd NA %zd\n", src->time, Tempo, NA);
 				if ((chip == YM2203) || (chip == YM2608)) {
 					*vgm_pos++ = vgm_command_chip[chip];
 					*vgm_pos++ = 0x24;
@@ -1345,7 +1352,7 @@ int wmain(int argc, wchar_t** argv)
 		h_vgm.lngExtraOffset = vgm_header_len - ((UINT8*)&h_vgm.lngExtraOffset - (UINT8*)&h_vgm.fccVGM);
 		h_vgm.lngEOFOffset = vgm_data_abs + vgm_dlen - ((UINT8*)&h_vgm.lngEOFOffset - (UINT8*)&h_vgm.fccVGM);
 
-		if (loop_start_time != -1LL) {
+		if (loop_start_time != SIZE_MAX) {
 			h_vgm.lngLoopSamples = Time_Prev_VGM_abs - Time_Loop_VGM_abs;
 			h_vgm.lngLoopOffset = vgm_data_abs + (loop_pos - vgm_out) - ((UINT8*)&h_vgm.lngLoopOffset - (UINT8*)&h_vgm.fccVGM);
 		}
