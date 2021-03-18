@@ -255,9 +255,9 @@ int wmain(int argc, wchar_t** argv)
 			//			wprintf_s(L"CH %2zu: %2zu Blocks return to %2zu ", i, Blocks, Loop_Block);
 
 			unsigned __int16 Octave = 4, Octave_current = 4;
-			unsigned __int16 time_default = 48;
-			unsigned __int16 gate_step = 7, gate_time = 256;
-			unsigned __int16 time, time_on, time_off, note;
+			unsigned __int16 time_default = 48, note;
+			__int16 time, time_on, time_off, gate_step = 7;
+			unsigned __int8 flag_gate = 0, flag_tie = 0;
 			unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_address = (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_time = 0;
@@ -331,8 +331,8 @@ int wmain(int argc, wchar_t** argv)
 						break;
 
 					case 0xE0: // Counter
-					case 0xE1:
-					case 0xEB:
+					case 0xE1: // Velocity
+					case 0xEB: // Panpot
 					case 0xF4: // Tempo
 					case 0xF5: // Tone select
 					case 0xF9: // Volume change
@@ -342,14 +342,13 @@ int wmain(int argc, wchar_t** argv)
 						break;
 
 					case 0xE4:
-					case 0xFE:
+					case 0xFE: // none
 						wprintf_s(L"%02X\n", *src);
 						src += 4;
 						break;
 					case 0xE5:
-					case 0xF1:
-					case 0xFA:
-					case 0xFD:
+					case 0xFA: // none
+					case 0xFD: // none
 						wprintf_s(L"%02X\n", *src);
 						src += 2;
 						break;
@@ -363,10 +362,7 @@ int wmain(int argc, wchar_t** argv)
 						src += 11;
 						break;
 					case 0xE9:
-						src++;
-						break;
-					case 0xEA:
-						gate_time = *++src;
+						flag_tie = 1;
 						src++;
 						break;
 					case 0xEC:
@@ -385,9 +381,18 @@ int wmain(int argc, wchar_t** argv)
 						Octave_current = Octave = *++src;
 						src++;
 						break;
+					case 0xF1:
+						Octave_current = *++src;
+						src++;
+						break;
+					case 0xEA:
+						flag_gate = 1;
+						gate_step = *++src;
+						src++;
+						break;
 					case 0xF2:
+						flag_gate = 0;
 						gate_step = *++src + 1;
-						gate_time = 256;
 						src++;
 						break;
 					case 0xF3:
@@ -400,7 +405,7 @@ int wmain(int argc, wchar_t** argv)
 							src += 2;
 						}
 						break;
-					case 0xF6:
+					case 0xF6: // none
 					case 0xFB:
 						wprintf_s(L"%02X\n", *src);
 						src += 3;
@@ -424,26 +429,27 @@ int wmain(int argc, wchar_t** argv)
 							src++;
 						}
 						else {
-							if (gate_time != 256) {
-								if (time > gate_time) {
-									time_on = time - gate_time;
-								}
-								else {
-									time_on = 1;
-								}
+							if (time == 1) {
+								time_on = 1;
 							}
-							else {
-								if (time == 1) {
-									time_on = 1;
-								}
-								else if (gate_step == 8) {
-									time_on = time;
-								}
-								else if (time < 8) {
-									time_on = 1;
+							else if (!flag_gate) {
+								if (gate_step == 8) {
+									time_on = time - 1;
 								}
 								else {
 									time_on = (time >> 3) * gate_step;
+									if (!time_on) {
+										time_on = 1;
+									}
+									if (time == time_on) {
+										time_on--;
+									}
+								}
+							}
+							else {
+								time_on = time - gate_step;
+								if (time_on < 0) {
+									time_on = 1;
 								}
 							}
 						}
@@ -717,7 +723,7 @@ int wmain(int argc, wchar_t** argv)
 		// ‰Šú‰»
 		if ((chip == YM2203)) {
 			const static unsigned char Init_YM2203[] = {
-				0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0x80,
+				0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
 				0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
 
 			memcpy_s(vgm_pos, sizeof(Init_YM2203), Init_YM2203, sizeof(Init_YM2203));
@@ -725,7 +731,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		else if ((chip == YM2608)) {
 			const static unsigned char Init_YM2608[] = {
-				0x56, 0x00, 'W', 0x56, 0x00, 'A', 0x56, 0x00, 'O', 0x56, 0x27, 0x30, 0x56, 0x07, 0x80,
+				0x56, 0x00, 'W', 0x56, 0x00, 'A', 0x56, 0x00, 'O', 0x56, 0x27, 0x30, 0x56, 0x07, 0xBF,
 				0x56, 0x90, 0x00, 0x56, 0x91, 0x00, 0x56, 0x92, 0x00, 0x56, 0x24, 0x70, 0x56, 0x25, 0x00, 0x56, 0x29, 0x83 };
 
 			memcpy_s(vgm_pos, sizeof(Init_YM2608), Init_YM2608, sizeof(Init_YM2608));
