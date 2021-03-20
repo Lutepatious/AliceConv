@@ -66,7 +66,7 @@ static const unsigned __int16 TP[8][12] = {
 
 
 
-#define MML_BUFSIZ (16 * 1024 * 1024)
+#define MML_BUFSIZ (32 * 1024 * 1024)
 
 // MAKOではTPQNは48固定らしい
 #define TPQN (48)
@@ -536,6 +536,8 @@ int wmain(int argc, wchar_t** argv)
 				}
 
 				(MMLs_decoded.CHs + i)->len += len * times;
+
+				wprintf_s(L"%2zu:%9zu\n", i, (MMLs_decoded.CHs + i)->len);
 #if 0
 				for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 					wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
@@ -548,7 +550,7 @@ int wmain(int argc, wchar_t** argv)
 		wprintf_s(L"Make Sequential events\n");
 
 		// 得られた展開データからイベント列を作る。
-		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 32 * 1024 * 1024);
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 256 * 1024 * 1024);
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
 		size_t time_loop_start = 0;
@@ -707,7 +709,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 #endif
 
-		unsigned __int8* vgm_out = GC_malloc(128 * 1024 * 1024);
+		unsigned __int8* vgm_out = GC_malloc(256 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
 		unsigned __int8* loop_pos = vgm_pos;
 		size_t Tempo = 120;
