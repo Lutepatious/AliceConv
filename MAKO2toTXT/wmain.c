@@ -257,7 +257,7 @@ int wmain(int argc, wchar_t** argv)
 			unsigned __int16 Octave = 4, Octave_current = 4;
 			unsigned __int16 time_default = 48, note;
 			__int16 time, time_on, time_off, gate_step = 7;
-			unsigned __int8 flag_gate = 0, flag_tie = 0;
+			unsigned __int8 flag_gate = 0;
 			unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_address = (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_time = 0;
@@ -361,9 +361,8 @@ int wmain(int argc, wchar_t** argv)
 						wprintf_s(L"%02X\n", *src);
 						src += 11;
 						break;
-					case 0xE9:
-						flag_tie = 1;
-						src++;
+					case 0xE9: // Tie
+						*dest++ = *src++;
 						break;
 					case 0xEC:
 						no_loop = 1;
@@ -392,7 +391,7 @@ int wmain(int argc, wchar_t** argv)
 						break;
 					case 0xF2:
 						flag_gate = 0;
-						gate_step = *++src + 1;
+						gate_step = (short)(*++src) + 1;
 						src++;
 						break;
 					case 0xF3:
@@ -424,33 +423,27 @@ int wmain(int argc, wchar_t** argv)
 					}
 					// 音程表現はとりあえず オクターブ 8bit 音名 8bitとする、VGMへの変換を考慮してMIDI化が前提のSystem3 for Win32とは変える。
 					if (makenote) {
-						if (*src == 0xE9) {
-							time_on = time;
-							src++;
+						if (time == 1) {
+							time_on = 1;
 						}
-						else {
-							if (time == 1) {
-								time_on = 1;
-							}
-							else if (!flag_gate) {
-								if (gate_step == 8) {
-									time_on = time - 1;
-								}
-								else {
-									time_on = (time >> 3) * gate_step;
-									if (!time_on) {
-										time_on = 1;
-									}
-									if (time == time_on) {
-										time_on--;
-									}
-								}
+						else if (!flag_gate) {
+							if (gate_step == 8) {
+								time_on = time - 1;
 							}
 							else {
-								time_on = time - gate_step;
-								if (time_on < 0) {
+								time_on = (time >> 3) * gate_step;
+								if (!time_on) {
 									time_on = 1;
 								}
+								if (time == time_on) {
+									time_on--;
+								}
+							}
+						}
+						else {
+							time_on = time - gate_step;
+							if (time_on < 0) {
+								time_on = 1;
 							}
 						}
 						time_off = time - time_on;
@@ -637,6 +630,15 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
+				case 0xE9: // Tie
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param = 0;
+					dest->time = time;
+					dest->Type = 30;
+					dest->CH = i;
+					dest++;
+					break;
 				default:
 					wprintf_s(L"%zu: %2d: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
 					break;
@@ -718,6 +720,9 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8 SSG_out = 0xBF;
 		int* Detune = GC_malloc(sizeof(int) * CHs_real);
 		unsigned* Algorithm = GC_malloc(sizeof(unsigned) * CHs_real);
+		unsigned __int8* Disable_note_off = GC_malloc(sizeof(unsigned __int8) * CHs_real);
+		unsigned __int8* Disable_note_on = GC_malloc(sizeof(unsigned __int8) * CHs_real);
+
 		unsigned __int8 Panpot_YM2151[8] = { 0xC0, 0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0 };
 
 		// 初期化
@@ -759,8 +764,6 @@ int wmain(int argc, wchar_t** argv)
 				break;
 			}
 			if (src->time - Time_Prev) {
-				// テンポからNAを割り出し、そこからテンポを再導出してタイミングを生成
-				// 整数での誤差を再現すす止め
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -774,20 +777,7 @@ int wmain(int argc, wchar_t** argv)
 				// 実際のタイミングにするために9/10倍している。
 
 				unsigned NA;
-				size_t c_VGMT;
-
-				if (chip == YM2203) {
-					NA = 1024 - (((master_clock * 2) / (192 * Tempo)) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 240 * VGM_CLOCK * 2 * 9 / (master_clock * 10) + 1) >> 1;
-				}
-				else if (chip == YM2608) {
-					NA = 1024 - (((master_clock * 2) / (384 * Tempo)) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 480 * VGM_CLOCK * 2 * 9 / (master_clock * 10) + 1) >> 1;
-				}
-				else if (chip == YM2151) {
-					NA = 1024 - (((3 * master_clock * 2) / (512 * Tempo) + 1) >> 1);
-					c_VGMT = (src->time * (1024 - NA) * 640 * VGM_CLOCK * 2 * 9 / (master_clock * 3 * 10) + 1) >> 1;
-				}
+				size_t c_VGMT = (src->time * 60 * VGM_CLOCK * 2 * 9 / (48 * Tempo * 10) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
@@ -847,13 +837,13 @@ int wmain(int argc, wchar_t** argv)
 				Tempo = src->Param;
 				size_t NA;
 				if (chip == YM2203) {
-					NA = 1024 - (((master_clock * 2) / (192 * src->Param) + 1) >> 1);
+					NA = 1024 - (((master_clock * 2) / (192LL * src->Param) + 1) >> 1);
 				}
 				else if (chip == YM2608) {
-					NA = 1024 - (((master_clock * 2) / (384 * src->Param) + 1) >> 1);
+					NA = 1024 - (((master_clock * 2) / (384LL * src->Param) + 1) >> 1);
 				}
 				else if (chip == YM2151) {
-					NA = 1024 - (((3 * master_clock * 2) / (512 * src->Param) + 1) >> 1);
+					NA = 1024 - (((3 * master_clock * 2) / (512LL * src->Param) + 1) >> 1);
 				}
 				// wprintf_s(L"%8zu: Tempo %zd NA %zd\n", src->time, Tempo, NA);
 				if ((chip == YM2203) || (chip == YM2608)) {
@@ -1103,29 +1093,34 @@ int wmain(int argc, wchar_t** argv)
 				}
 				break;
 			case 0x80: // Note Off
-				if ((chip == YM2203) || (chip == YM2608)) {
-					if (src->CH < 3) {
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x28;
-						*vgm_pos++ = src->CH;
-					}
-					else if (src->CH < 6) {
-						SSG_out |= (1 << (src->CH - 3));
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x07;
-						*vgm_pos++ = SSG_out;
-					}
-					else if (src->CH > 5) {
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x28;
-						*vgm_pos++ = (src->CH - 6) | 0x04;
-					}
+				if (Disable_note_off[src->CH]) {
+					Disable_note_off[src->CH] = 0;
 				}
-				else if (chip == YM2151) {
-					if (src->CH < 8) {
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x08;
-						*vgm_pos++ = src->CH;
+				else {
+					if ((chip == YM2203) || (chip == YM2608)) {
+						if (src->CH < 3) {
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x28;
+							*vgm_pos++ = src->CH;
+						}
+						else if (src->CH < 6) {
+							SSG_out |= (1 << (src->CH - 3));
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x07;
+							*vgm_pos++ = SSG_out;
+						}
+						else if (src->CH > 5) {
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x28;
+							*vgm_pos++ = (src->CH - 6) | 0x04;
+						}
+					}
+					else if (chip == YM2151) {
+						if (src->CH < 8) {
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x08;
+							*vgm_pos++ = src->CH;
+						}
 					}
 				}
 				break;
@@ -1335,6 +1330,9 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = src->CH | 0x78;
 					}
 				}
+				break;
+			case 0xE9: // Tie
+				Disable_note_off[src->CH] = 1;
 				break;
 			case 0xE0: // Counter
 			case 0xE1:
