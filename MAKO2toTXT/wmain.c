@@ -160,9 +160,24 @@ int wmain(int argc, wchar_t** argv)
 		exit(-1);
 	}
 
+	enum CHIP chip = NONE;
+	enum CHIP chip_force = NONE;
 	while (--argc) {
+		if (**++argv == L'-') {
+			if (*(*argv + 1) == L'a') {
+				chip_force = YM2608;
+			}
+			else if (*(*argv + 1) == L'n') {
+				chip_force = YM2203;
+			}
+			else if (*(*argv + 1) == L'x') {
+				chip_force = YM2151;
+			}
+			continue;
+		}
+
 		FILE* pFi, * pFo;
-		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
+		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");
 		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
@@ -332,11 +347,16 @@ int wmain(int argc, wchar_t** argv)
 
 					case 0xE0: // Counter
 					case 0xE1: // Velocity
-					case 0xEB: // Panpot
 					case 0xF4: // Tempo
 					case 0xF5: // Tone select
 					case 0xF9: // Volume change
 					case 0xFC: // Detune
+						*dest++ = *src++;
+						*dest++ = *src++;
+						break;
+
+					case 0xEB: // Panpot
+						chip = YM2608;
 						*dest++ = *src++;
 						*dest++ = *src++;
 						break;
@@ -676,38 +696,54 @@ int wmain(int argc, wchar_t** argv)
 		VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
 		VGMX_CHIP_DATA16 Ex_Vols;
 		unsigned __int8 Ex_Vols_count = 0;
+		unsigned CHs_limit;
 
 		size_t vgm_header_len = sizeof(VGM_HEADER);
-
 		size_t master_clock;
-		enum CHIP chip = NONE;
+		
+		if (chip_force != NONE) {
+			chip = chip_force;
+		}
+		else if (chip == NONE) {
+			if (CHs_real <= 6) {
+				chip = YM2203;
+			}
+			else if (CHs_real <= 9) {
+				chip = YM2608;
+			}
+		}
 
 		// ƒCƒxƒ“ƒg—ñ‚ðvgm‰»‚·‚é
-		if (CHs_real <= 6) {
-			chip = YM2203;
+		if (chip == YM2203) {
+			CHs_limit = 6;
 			h_vgm.lngHzYM2203 = master_clock = 3993600;
 			h_vgm.bytAYFlagYM2203 = 0x1;
 			Ex_Vols.Type = 0x86;
 			Ex_Vols.Flags = 0;
 			Ex_Vols.Data = 0x8099; // 0x8000 | 0x100 * 30/100 
 //			Ex_Vols_count = 1;
+			wprintf_s(L"YM2203 mode.\n");
 		}
-		else if (CHs_real <= 9) {
-			chip = YM2608;
+		else if (chip == YM2608) {
+			CHs_limit = 9;
 			h_vgm.lngHzYM2608 = master_clock = 7987200;
 			h_vgm.bytAYFlagYM2608 = 0x1;
 			Ex_Vols.Type = 0x87;
 			Ex_Vols.Flags = 0;
 			Ex_Vols.Data = 0x8080; // 0x8000 | 0x100 * 25/100 
 //			Ex_Vols_count = 1;
+			wprintf_s(L"YM2608 mode.\n");
 		}
-#if 0
-		else if (CHs_real == 8) {
+		else if (chip == YM2151) {
+			CHs_limit = 8;
 			chip = YM2151;
 			h_vgm.lngHzYM2151 = master_clock = 4000000;
-			divider = 64;
+			wprintf_s(L"YM2151 mode.\n");
 		}
-#endif
+		else {
+			wprintf_s(L"Please select chip by -n, -a, -x options.\n");
+			break;
+		}
 
 		unsigned __int8* vgm_out = GC_malloc(256 * 1024 * 1024);
 		unsigned __int8* vgm_pos = vgm_out;
@@ -764,6 +800,9 @@ int wmain(int argc, wchar_t** argv)
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
 			if (src->time == SIZE_MAX) {
 				break;
+			}
+			if (src->CH >= CHs_limit) {
+				continue;
 			}
 			if (src->time - Time_Prev) {
 				// Tqn = 60 / Tempo
