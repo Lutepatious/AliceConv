@@ -817,7 +817,6 @@ int wmain(int argc, wchar_t** argv)
 				//
 				// 実際のタイミングにするために9/10倍している。
 
-				unsigned NA;
 				size_t c_VGMT = (src->time * 60 * VGM_CLOCK * 2 * 9 / (48 * Tempo * 10) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
@@ -1295,16 +1294,7 @@ int wmain(int argc, wchar_t** argv)
 						} U;
 
 						U.W = TP[src->Event][src->Param];
-
-						if (Detune == -4) {
-							U.W += 1;
-						}
-						else if (Detune == -8) {
-							U.W += 2;
-						}
-						else if (Detune == -12) {
-							U.W += 3;
-						}
+						U.W += (~Detune[src->CH] + 1) >> 2;
 
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x01 + (src->CH - 3) * 2;
