@@ -1256,7 +1256,7 @@ int wmain(int argc, wchar_t** argv)
 					}
 				}
 				break;
-			case 0x00: //Note On
+			case 0x00: // Note On
 			case 0x01:
 			case 0x02:
 			case 0x03:
@@ -1293,8 +1293,7 @@ int wmain(int argc, wchar_t** argv)
 							unsigned __int8 B[2];
 						} U;
 
-						U.W = TP[src->Event][src->Param];
-						U.W += (~Detune[src->CH] + 1) >> 2;
+						U.W = TP[src->Event][src->Param] + (-Detune[src->CH] >> 2);
 
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x01 + (src->CH - 3) * 2;
