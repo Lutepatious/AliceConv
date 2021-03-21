@@ -274,7 +274,7 @@ int wmain(int argc, wchar_t** argv)
 			__int16 time, time_on, time_off, gate_step = 7;
 			unsigned __int8 flag_gate = 0;
 			unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML;
-			(MMLs_decoded.CHs + i)->Loop_address = (MMLs_decoded.CHs + i)->MML;
+			(MMLs_decoded.CHs + i)->Loop_address = 0;
 			(MMLs_decoded.CHs + i)->Loop_time = 0;
 
 			for (size_t j = 0; j < Blocks; j++) {
@@ -662,7 +662,7 @@ int wmain(int argc, wchar_t** argv)
 					dest++;
 					break;
 				default:
-					wprintf_s(L"%zu: %2d: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
+					wprintf_s(L"%zu: %2zu: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
 					break;
 				}
 			}
