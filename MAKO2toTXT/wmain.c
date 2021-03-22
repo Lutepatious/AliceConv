@@ -66,7 +66,7 @@ static const unsigned __int16 TP[8][12] = {
 
 
 
-#define MML_BUFSIZ (32 * 1024 * 1024)
+#define MML_BUFSIZ (32 * 1024)
 
 // MAKOではTPQNは48固定らしい
 #define TPQN (48)
@@ -80,11 +80,13 @@ struct mako2_mml_decoded {
 	struct mako2_mml_CH_decoded {
 		unsigned __int8 MML[MML_BUFSIZ];
 		size_t len;
+		size_t len_unrolled;
 		size_t Loop_address;
 		size_t Loop_len;
 		size_t time_total;
 		size_t Loop_time;
 		size_t Loop_delta;
+		unsigned __int8 Mute_on;
 	} *CHs;
 };
 
@@ -209,9 +211,11 @@ int wmain(int argc, wchar_t** argv)
 			mako2form = pM2HDR->ver;
 		}
 		if (pM2HDR->ver == 2 && pM2HDR->chiptune_addr == 0x44UL) {
+			chip = YM2608;
 			mako2form = pM2HDR->ver;
 		}
 		if (pM2HDR->ver == 3 && pM2HDR->chiptune_addr == 0x44UL) {
+			chip = YM2608;
 			mako2form = pM2HDR->ver;
 		}
 
@@ -254,8 +258,6 @@ int wmain(int argc, wchar_t** argv)
 			wprintf_s(L"Memory allocation error. \n");
 			exit(-2);
 		}
-
-		unsigned no_loop = 0;
 
 		for (size_t i = 0; i < CHs_real; i++) {
 			size_t Blocks = 0;
@@ -385,7 +387,7 @@ int wmain(int argc, wchar_t** argv)
 						*dest++ = *src++;
 						break;
 					case 0xEC:
-						no_loop = 1;
+						(MMLs_decoded.CHs + i)->Mute_on = 1;
 						src++;
 						break;
 					case 0xEE:
@@ -511,11 +513,14 @@ int wmain(int argc, wchar_t** argv)
 		size_t end_time = 0;
 		size_t loop_start_time = MMLs_decoded.CHs->Loop_time;
 		size_t latest_CH = 0;
+		unsigned no_loop = 1;
 
 		// 各ループ時間の最小公倍数をとる
-		for (size_t i = 1; i < CHs_real; i++) {
+		for (size_t i = 0; i < CHs_real; i++) {
+			(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len;
+			no_loop &= (MMLs_decoded.CHs + i)->Mute_on;
 			// そもそもループしないチャネルはスキップ
-			if ((MMLs_decoded.CHs + i)->Loop_delta == 0) {
+			if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta == 0) {
 				continue;
 			}
 			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
@@ -533,7 +538,7 @@ int wmain(int argc, wchar_t** argv)
 		// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
 		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
 		if (no_loop) {
-			wprintf_s(L"Loop：NONE\n");
+			wprintf_s(L"Loop:NONE\n");
 			end_time = max_time;
 			loop_start_time = SIZE_MAX;
 		}
@@ -542,7 +547,7 @@ int wmain(int argc, wchar_t** argv)
 			end_time = loop_start_time + delta_time_LCM;
 			for (size_t i = 0; i < CHs_real; i++) {
 				// そもそもループしないチャネルはスキップ
-				if ((MMLs_decoded.CHs + i)->Loop_delta == 0) {
+				if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta == 0) {
 					continue;
 				}
 				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address;
@@ -551,13 +556,15 @@ int wmain(int argc, wchar_t** argv)
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta);
 
+#if 0
 				for (size_t j = 0; j < times; j++) {
 					memcpy_s(dest + len * j, len, src, len);
 				}
+#endif
 
-				(MMLs_decoded.CHs + i)->len += len * times;
+				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len + len * times;
 
-				wprintf_s(L"%2zu:%9zu\n", i, (MMLs_decoded.CHs + i)->len);
+				wprintf_s(L"%2zu: %9zu -> %9zu\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled);
 #if 0
 				for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 					wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
@@ -577,14 +584,18 @@ int wmain(int argc, wchar_t** argv)
 		unsigned loop_enable = 0;
 		for (size_t j = 0; j < CHs_real; j++) {
 			size_t i = CHs_real - j - 1;
-			unsigned __int8* src = (MMLs_decoded.CHs + i)->MML;
 			size_t time = 0;
-
-			while (src - (MMLs_decoded.CHs + i)->MML < (MMLs_decoded.CHs + i)->len) {
+			size_t len = 0;
+			while (len < (MMLs_decoded.CHs + i)->len_unrolled) {
+				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + len;
 				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address)) && (loop_start_time != SIZE_MAX)) {
 					time_loop_start = time;
 					loop_enable = 1;
 				}
+				while (src >= (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->len) {
+					src -= (MMLs_decoded.CHs + i)->Loop_len;
+				}
+
 				switch (*src) {
 				case 0x00: //Note On
 				case 0x01:
@@ -602,6 +613,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 30;
 					dest->CH = i;
 					dest++;
+					len += 4;
 					break;
 				case 0x80:
 					dest->Count = counter++;
@@ -612,6 +624,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 10;
 					dest->CH = i;
 					dest++;
+					len += 4;
 					break;
 				case 0xE0: // Counter
 				case 0xE1: // Velocity
@@ -623,6 +636,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 20;
 					dest->CH = i;
 					dest++;
+					len += 2;
 					break;
 				case 0xF5: // Tone select
 				case 0xF9: // Volume change
@@ -633,6 +647,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 25;
 					dest->CH = i;
 					dest++;
+					len += 2;
 					break;
 				case 0xEB: // Panpot
 					dest->Count = counter++;
@@ -642,6 +657,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 27;
 					dest->CH = i;
 					dest++;
+					len += 2;
 					break;
 				case 0xF4: // Tempo
 					dest->Count = counter++;
@@ -651,6 +667,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 0;
 					dest->CH = i;
 					dest++;
+					len += 2;
 					break;
 				case 0xE9: // Tie
 					dest->Count = counter++;
@@ -660,6 +677,7 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 30;
 					dest->CH = i;
 					dest++;
+					len++;
 					break;
 				default:
 					wprintf_s(L"%zu: %2zu: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
@@ -756,10 +774,9 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8 vgm_command_chip[] = { 0x00, 0x55, 0x56, 0x54 };
 		unsigned __int8 vgm_command_chip2[] = { 0x00, 0x55, 0x57, 0x54 };
 		unsigned __int8 SSG_out = 0xBF;
-		int* Detune = GC_malloc(sizeof(int) * CHs_real);
-		unsigned* Algorithm = GC_malloc(sizeof(unsigned) * CHs_real);
-		unsigned __int8* Disable_note_off = GC_malloc(sizeof(unsigned __int8) * CHs_real);
-		unsigned __int8* Disable_note_on = GC_malloc(sizeof(unsigned __int8) * CHs_real);
+		int Detune[9] = { 0 };
+		unsigned Algorithm[9] = { 0 };
+		unsigned Disable_note_off[9] = { 0 };
 
 		unsigned __int8 Panpot_YM2151[8] = { 0xC0, 0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0 };
 
