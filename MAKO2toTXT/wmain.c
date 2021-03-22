@@ -517,7 +517,9 @@ int wmain(int argc, wchar_t** argv)
 
 		// 各ループ時間の最小公倍数をとる
 		for (size_t i = 0; i < CHs_real; i++) {
+			// ループ展開後の長さの初期化
 			(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len;
+			// 全チャンネルが非ループかチェック
 			no_loop &= (MMLs_decoded.CHs + i)->Mute_on;
 			// そもそもループしないチャネルはスキップ
 			if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta == 0) {
@@ -537,8 +539,9 @@ int wmain(int argc, wchar_t** argv)
 
 		// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
 		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
+		// 全チャンネルがループしないのならループ処理自体が不要
 		if (no_loop) {
-			wprintf_s(L"Loop:NONE\n");
+			wprintf_s(L"Loop: NONE %zu\n", max_time);
 			end_time = max_time;
 			loop_start_time = SIZE_MAX;
 		}
@@ -555,29 +558,16 @@ int wmain(int argc, wchar_t** argv)
 				size_t len = (MMLs_decoded.CHs + i)->Loop_len;
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta);
-
-#if 0
-				for (size_t j = 0; j < times; j++) {
-					memcpy_s(dest + len * j, len, src, len);
-				}
-#endif
-
 				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len + len * times;
 
 				wprintf_s(L"%2zu: %9zu -> %9zu\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled);
-#if 0
-				for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
-					wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
-				}
-				wprintf_s(L"\n");
-#endif
 			}
 		}
 
 		wprintf_s(L"Make Sequential events\n");
 
 		// 得られた展開データからイベント列を作る。
-		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * 256 * 1024 * 1024);
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * end_time * 2);
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
 		size_t time_loop_start = 0;
@@ -596,6 +586,7 @@ int wmain(int argc, wchar_t** argv)
 					src -= (MMLs_decoded.CHs + i)->Loop_len;
 				}
 
+				unsigned __int8* src_orig = src;
 				switch (*src) {
 				case 0x00: //Note On
 				case 0x01:
@@ -700,6 +691,7 @@ int wmain(int argc, wchar_t** argv)
 		while ((pEVENTs + length_real)->Event == 0x80) {
 			length_real++;
 		}
+		wprintf_s(L"Event Length %8zu\n", length_real);
 
 #if 1
 		for (size_t i = 0; i < length_real; i++) {
@@ -763,7 +755,7 @@ int wmain(int argc, wchar_t** argv)
 			break;
 		}
 
-		unsigned __int8* vgm_out = GC_malloc(256 * 1024 * 1024);
+		unsigned __int8* vgm_out = GC_malloc(end_time * 10);
 		unsigned __int8* vgm_pos = vgm_out;
 		unsigned __int8* loop_pos = vgm_pos;
 		size_t Tempo = 120;
@@ -1431,6 +1423,7 @@ int wmain(int argc, wchar_t** argv)
 			fwrite(PADDING, 1, padsize, pFo);
 		}
 		fwrite(vgm_out, 1, vgm_dlen, pFo);
+		wprintf_s(L"VGM body length %8zu\n", vgm_dlen);
 
 		fclose(pFo);
 	}
