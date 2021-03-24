@@ -23,7 +23,7 @@ struct mako2_tone {
 		struct {
 			unsigned __int8 Connect : 3; // Connection
 			unsigned __int8 FB : 3; // Self-FeedBack
-			unsigned __int8 NU0 : 2; // Not used
+			unsigned __int8 RL : 2; // YM2151 Only
 		} S;
 		unsigned __int8 B;
 	} H;
@@ -249,7 +249,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		wprintf_s(L"%s: Format %u %2u/%2u CHs. %2llu Tones.\n", *argv, mako2form, CHs_real, CHs, VOICEs);
+		wprintf_s(L"%s: %zu bytes Format %u %2u/%2u CHs. %2llu Tones.\n", *argv, fs.st_size, mako2form, CHs_real, CHs, VOICEs);
 
 		// 各MML部のデコード T.T.氏によるsystem32 for Win32のソースをポインタ制御に書き換えたもの。
 		struct mako2_mml_decoded MMLs_decoded;
@@ -710,7 +710,7 @@ int wmain(int argc, wchar_t** argv)
 
 		size_t vgm_header_len = sizeof(VGM_HEADER);
 		size_t master_clock;
-		
+
 		if (chip_force != NONE) {
 			chip = chip_force;
 		}
@@ -770,7 +770,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned Algorithm[9] = { 0 };
 		unsigned Disable_note_off[9] = { 0 };
 
-		unsigned __int8 Panpot_YM2151[8] = { 0xC0, 0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0,  0xC0 };
+		unsigned __int8 Panpot_YM2151[8] = { 0x3, 0x3,  0x3,  0x3,  0x3,  0x3,  0x3,  0x3 };
 
 		// 初期化
 		if ((chip == YM2203)) {
@@ -800,14 +800,27 @@ int wmain(int argc, wchar_t** argv)
 				0x54, 0x68, 0x7F, 0x54, 0x69, 0x7F, 0x54, 0x6A, 0x7F, 0x54, 0x6B, 0x7F, 0x54, 0x6C, 0x7F, 0x54, 0x6D, 0x7F,
 				0x54, 0x6E, 0x7F, 0x54, 0x6F, 0x7F, 0x54, 0x70, 0x7F, 0x54, 0x71, 0x7F, 0x54, 0x72, 0x7F, 0x54, 0x73, 0x7F,
 				0x54, 0x74, 0x7F, 0x54, 0x75, 0x7F, 0x54, 0x76, 0x7F, 0x54, 0x77, 0x7F, 0x54, 0x78, 0x7F, 0x54, 0x79, 0x7F,
-				0x54, 0x7A, 0x7F, 0x54, 0x7B, 0x7F, 0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F };
+				0x54, 0x7A, 0x7F, 0x54, 0x7B, 0x7F, 0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F,
+				0x54, 0x43, 0x02, 0x54, 0x44, 0x02, 0x54, 0x45, 0x02, 0x54, 0x63, 0x0F, 0x54, 0x64, 0x0F, 0x54, 0x65, 0x0F,
+				0x54, 0x83, 0x1F, 0x54, 0x84, 0x1F, 0x54, 0x85, 0x1F, 0x54, 0xA3, 0x00, 0x54, 0xA4, 0x00, 0x54, 0xA5, 0x00,
+				0x54, 0xC3, 0x00, 0x54, 0xC4, 0x00, 0x54, 0xC5, 0x00, 0x54, 0xE3, 0x0F, 0x54, 0xE4, 0x0F, 0x54, 0xE5, 0x0F,
+				0x54, 0x4B, 0x04, 0x54, 0x4C, 0x04, 0x54, 0x4D, 0x04, 0x54, 0x6B, 0x28, 0x54, 0x6C, 0x28, 0x54, 0x6D, 0x28,
+				0x54, 0x8B, 0x1F, 0x54, 0x8C, 0x1F, 0x54, 0x8D, 0x1F, 0x54, 0xAB, 0x00, 0x54, 0xAC, 0x00, 0x54, 0xAD, 0x00,
+				0x54, 0xCB, 0x00, 0x54, 0xCC, 0x00, 0x54, 0xCD, 0x00, 0x54, 0xEB, 0x0F, 0x54, 0xEC, 0x0F, 0x54, 0xED, 0x0F,
+				0x54, 0x53, 0x06, 0x54, 0x54, 0x06, 0x54, 0x55, 0x06, 0x54, 0x73, 0x28, 0x54, 0x74, 0x28, 0x54, 0x75, 0x28,
+				0x54, 0x93, 0x1F, 0x54, 0x94, 0x1F, 0x54, 0x95, 0x1F, 0x54, 0xB3, 0x00, 0x54, 0xB4, 0x00, 0x54, 0xB5, 0x00,
+				0x54, 0xD3, 0x00, 0x54, 0xD4, 0x00, 0x54, 0xD5, 0x00, 0x54, 0xF3, 0x0F, 0x54, 0xF4, 0x0F, 0x54, 0xF5, 0x0F,
+				0x54, 0x5B, 0x02, 0x54, 0x5C, 0x02, 0x54, 0x5D, 0x02, 0x54, 0x7B, 0x00, 0x54, 0x7C, 0x00, 0x54, 0x7D, 0x00,
+				0x54, 0x9B, 0x1F, 0x54, 0x9C, 0x1F, 0x54, 0x9D, 0x1F, 0x54, 0xBB, 0x00, 0x54, 0xBC, 0x00, 0x54, 0xBD, 0x00,
+				0x54, 0xDB, 0x00, 0x54, 0xDC, 0x00, 0x54, 0xDD, 0x00, 0x54, 0xFB, 0x0F, 0x54, 0xFC, 0x0F, 0x54, 0xFD, 0x0F,
+				0x54, 0x23, 0xC3, 0x54, 0x24, 0xC3, 0x54, 0x25, 0xC3 };
 
 			memcpy_s(vgm_pos, sizeof(Init_YM2151), Init_YM2151, sizeof(Init_YM2151));
 			vgm_pos += sizeof(Init_YM2151);
 		}
 
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
-			if (src->time == SIZE_MAX) {
+			if (src->time == SIZE_MAX || length_real == 0) {
 				break;
 			}
 			if (src->CH >= CHs_limit) {
@@ -919,7 +932,9 @@ int wmain(int argc, wchar_t** argv)
 			case 0xEB: // Panpot
 				if (chip == YM2608) {
 					unsigned __int8 Panpot = 0xC0;
-					if (src->Param < 64) {
+					if (src->Param & 0x80 || src->Param == 0) {
+					}
+					else if (src->Param < 64) {
 						Panpot = 0x80;
 					}
 					else if (src->Param > 64) {
@@ -937,12 +952,14 @@ int wmain(int argc, wchar_t** argv)
 					}
 				}
 				else if (chip == YM2151) {
-					Panpot_YM2151[src->CH] = 0xC0;
-					if (src->Param < 64) {
-						Panpot_YM2151[src->CH] = 0x80;
+					Panpot_YM2151[src->CH] = 0x3;
+					if (src->Param & 0x80 || src->Param == 0) {
+					}
+					else if (src->Param < 64) {
+						Panpot_YM2151[src->CH] = 0x2;
 					}
 					else if (src->Param > 64) {
-						Panpot_YM2151[src->CH] = 0x40;
+						Panpot_YM2151[src->CH] = 0x1;
 					}
 				}
 				break;
@@ -1115,29 +1132,86 @@ int wmain(int argc, wchar_t** argv)
 				else if (chip == YM2151) {
 					if (src->CH < 8) {
 						Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
+						(T + src->Param)->H.S.RL = Panpot_YM2151[src->CH];
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x20 + src->CH;
-						*vgm_pos++ = (T + src->Param)->H.B | Panpot_YM2151[src->CH];
-						for (unsigned plen = 0; plen < 6; plen++) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x40 + src->CH + plen * 0x20;
-							*vgm_pos++ = (T + src->Param)->Op[0].B[plen];
-						}
-						for (unsigned plen = 0; plen < 6; plen++) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x50 + src->CH + plen * 0x20;
-							*vgm_pos++ = (T + src->Param)->Op[1].B[plen];
-						}
-						for (unsigned plen = 0; plen < 6; plen++) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x48 + src->CH + plen * 0x20;
-							*vgm_pos++ = (T + src->Param)->Op[2].B[plen];
-						}
-						for (unsigned plen = 0; plen < 6; plen++) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x58 + src->CH + plen * 0x20;
-							*vgm_pos++ = (T + src->Param)->Op[3].B[plen];
-						}
+						*vgm_pos++ = (T + src->Param)->H.B;
+
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x40 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x60 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].S.TL;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x80 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].B[2];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].B[3];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xC0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].B[4];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xE0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[0].B[5];
+
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x50 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x70 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].S.TL;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x90 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].B[2];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xB0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].B[3];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xD0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].B[4];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xF0 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[1].B[5];
+
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x48 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x68 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].S.TL;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x88 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].B[2];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].B[3];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xC8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].B[4];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xE8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[2].B[5];
+
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x58 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].B[0];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x78 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].S.TL;
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x98 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].B[2];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xB8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].B[3];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xD8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].B[4];
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xF8 + src->CH;
+						*vgm_pos++ = (T + src->Param)->Op[3].B[5];
 					}
 				}
 				break;
