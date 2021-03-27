@@ -940,6 +940,21 @@ int wmain(int argc, wchar_t** argv)
 			case 0xEB: // Panpot
 				if (chip == YM2608) {
 					unsigned __int8 Panpot = 0xC0;
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
+
+					if (src->CH < 3) {
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
+					}
+					else if (src->CH > 5) {
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
+						break;
+					}
+
 					if (src->Param & 0x80 || src->Param == 0) {
 					}
 					else if (src->Param < 64) {
@@ -948,16 +963,10 @@ int wmain(int argc, wchar_t** argv)
 					else if (src->Param > 64) {
 						Panpot = 0x40;
 					}
-					if (src->CH < 3) {
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0xB4 + src->CH;
-						*vgm_pos++ = Panpot;
-					}
-					else if (src->CH > 5) {
-						*vgm_pos++ = vgm_command_chip2[chip];
-						*vgm_pos++ = 0xB4 + src->CH - 6;
-						*vgm_pos++ = Panpot;
-					}
+
+					*vgm_pos++ = out_Port;
+					*vgm_pos++ = 0xB4 + out_Ch;
+					*vgm_pos++ = Panpot;
 				}
 				else if (chip == YM2151) {
 					Panpot_YM2151[src->CH] = 0x3;
@@ -974,67 +983,57 @@ int wmain(int argc, wchar_t** argv)
 			case 0xF5: // Tone select
 				if ((chip == YM2203) || (chip == YM2608)) {
 					static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
+
 					if (src->CH < 3) {
-						Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0xB0 + src->CH;
-						*vgm_pos++ = (T + src->Param)->H.B;
-
-						for (size_t op = 0; op < 4; op++) {
-							for (size_t j = 0; j < 6; j++) {
-								if (j == 1 && chip != YM2203 &&
-									(Algorithm[src->CH] == 7 || Algorithm[src->CH] > 4 && op
-										|| Algorithm[src->CH] > 3 && op >= 2 || op == 3)) {
-								}
-								else {
-									*vgm_pos++ = vgm_command_chip[chip];
-									*vgm_pos++ = 0x30 + 0x10 * j + Op_index[op] + src->CH;
-									*vgm_pos++ = (T + src->Param)->Op[op].B[j];
-								}
-							}
-						}
-
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
 					}
 					else if (src->CH > 5) {
-						Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
-						*vgm_pos++ = vgm_command_chip2[chip];
-						*vgm_pos++ = 0xB0 + src->CH - 6;
-						*vgm_pos++ = (T + src->Param)->H.B;
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
+						break;
+					}
 
-						for (size_t op = 0; op < 4; op++) {
-							for (size_t j = 0; j < 6; j++) {
-								if (j == 1 &&
-									(Algorithm[src->CH] == 7 || Algorithm[src->CH] > 4 && op
+					Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
+					*vgm_pos++ = out_Port;
+					*vgm_pos++ = 0xB0 + out_Ch;
+					*vgm_pos++ = (T + src->Param)->H.B;
+
+					for (size_t op = 0; op < 4; op++) {
+						for (size_t j = 0; j < 6; j++) {
+							if (j == 1 && pM2HDR->ver >= 3 &&
+								(Algorithm[src->CH] == 7 || Algorithm[src->CH] > 4 && op
 									|| Algorithm[src->CH] > 3 && op >= 2 || op == 3)) {
-								}
-								else {
-									*vgm_pos++ = vgm_command_chip2[chip];
-									*vgm_pos++ = 0x30 + 0x10 * j + Op_index[op] + src->CH - 6;
-									*vgm_pos++ = (T + src->Param)->Op[op].B[j];
-								}
+							}
+							else {
+								*vgm_pos++ = out_Port;
+								*vgm_pos++ = 0x30 + 0x10 * j + Op_index[op] + out_Ch;
+								*vgm_pos++ = (T + src->Param)->Op[op].B[j];
 							}
 						}
 					}
 				}
 				else if (chip == YM2151) {
 					static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-					if (src->CH < 8) {
-						Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
-						(T + src->Param)->H.S.RL = Panpot_YM2151[src->CH];
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x08;
-						*vgm_pos++ = src->CH;
+					Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
+					(T + src->Param)->H.S.RL = Panpot_YM2151[src->CH];
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x08;
+					*vgm_pos++ = src->CH;
 
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x20 + src->CH;
-						*vgm_pos++ = (T + src->Param)->H.B;
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x20 + src->CH;
+					*vgm_pos++ = (T + src->Param)->H.B;
 
-						for (size_t op = 0; op < 4; op++) {
-							for (size_t j = 0; j < 6; j++) {
-								*vgm_pos++ = vgm_command_chip[chip];
-								*vgm_pos++ = 0x40 + 0x20 * j + Op_index[op] + src->CH;
-								*vgm_pos++ = (T + src->Param)->Op[op].B[j];
-							}
+					for (size_t op = 0; op < 4; op++) {
+						for (size_t j = 0; j < 6; j++) {
+							*vgm_pos++ = vgm_command_chip[chip];
+							*vgm_pos++ = 0x40 + 0x20 * j + Op_index[op] + src->CH;
+							*vgm_pos++ = (T + src->Param)->Op[op].B[j];
 						}
 					}
 				}
@@ -1073,93 +1072,75 @@ int wmain(int argc, wchar_t** argv)
 				break;
 			case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
 				if ((chip == YM2203) || (chip == YM2608)) {
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
+
 					if (src->CH < 3) {
-						switch (Algorithm[src->CH]) {
-						case 7:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x40 + src->CH;
-							*vgm_pos++ = ~src->Param;
-						case 5:
-						case 6:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x44 + src->CH;
-							*vgm_pos++ = ~src->Param;
-						case 4:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x48 + src->CH;
-							*vgm_pos++ = ~src->Param;
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x4C + src->CH;
-							*vgm_pos++ = ~src->Param;
-							break;
-						default:
-							wprintf_s(L"? How to reach ?\n");
-						}
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
 					}
-					else if (src->CH < 6) {
+					else if (src->CH > 5) {
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x08 + src->CH - 3;
 						*vgm_pos++ = src->Param >> 3;
+						break;
 					}
-					else if (src->CH > 5) {
-						switch (Algorithm[src->CH]) {
-						case 7:
-							*vgm_pos++ = vgm_command_chip2[chip];
-							*vgm_pos++ = 0x40 + src->CH - 6;
-							*vgm_pos++ = ~src->Param;
-						case 5:
-						case 6:
-							*vgm_pos++ = vgm_command_chip2[chip];
-							*vgm_pos++ = 0x44 + src->CH - 6;
-							*vgm_pos++ = ~src->Param;
-						case 4:
-							*vgm_pos++ = vgm_command_chip2[chip];
-							*vgm_pos++ = 0x48 + src->CH - 6;
-							*vgm_pos++ = ~src->Param;
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-							*vgm_pos++ = vgm_command_chip2[chip];
-							*vgm_pos++ = 0x4C + src->CH - 6;
-							*vgm_pos++ = ~src->Param;
-							break;
-						default:
-							wprintf_s(L"? How to reach ?\n");
-						}
+
+					switch (Algorithm[src->CH]) {
+					case 7:
+						*vgm_pos++ = out_Port;
+						*vgm_pos++ = 0x40 + out_Ch;
+						*vgm_pos++ = ~src->Param;
+					case 5:
+					case 6:
+						*vgm_pos++ = out_Port;
+						*vgm_pos++ = 0x44 + out_Ch;
+						*vgm_pos++ = ~src->Param;
+					case 4:
+						*vgm_pos++ = out_Port;
+						*vgm_pos++ = 0x48 + out_Ch;
+						*vgm_pos++ = ~src->Param;
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						*vgm_pos++ = out_Port;
+						*vgm_pos++ = 0x4C + out_Ch;
+						*vgm_pos++ = ~src->Param;
+						break;
+					default:
+						wprintf_s(L"? How to reach ?\n");
 					}
 				}
 				else if (chip == YM2151) {
-					if (src->CH < 8) {
-						switch (Algorithm[src->CH]) {
-						case 7:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x60 + src->CH;
-							*vgm_pos++ = ~src->Param & 0x7F;
-						case 5:
-						case 6:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x68 + src->CH;
-							*vgm_pos++ = ~src->Param & 0x7F;
-						case 4:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x70 + src->CH;
-							*vgm_pos++ = ~src->Param & 0x7F;
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x78 + src->CH;
-							*vgm_pos++ = ~src->Param & 0x7F;
-							break;
-						default:
-							wprintf_s(L"? How to reach ?\n");
-						}
+					switch (Algorithm[src->CH]) {
+					case 7:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x60 + src->CH;
+						*vgm_pos++ = ~src->Param & 0x7F;
+					case 5:
+					case 6:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x68 + src->CH;
+						*vgm_pos++ = ~src->Param & 0x7F;
+					case 4:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x70 + src->CH;
+						*vgm_pos++ = ~src->Param & 0x7F;
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0x78 + src->CH;
+						*vgm_pos++ = ~src->Param & 0x7F;
+						break;
+					default:
+						wprintf_s(L"? How to reach ?\n");
 					}
 				}
 				break;
@@ -1172,29 +1153,18 @@ int wmain(int argc, wchar_t** argv)
 			case 0x06:
 			case 0x07:
 				if ((chip == YM2203) || (chip == YM2608)) {
-					if (src->CH < 3) {
-						union {
-							struct {
-								unsigned __int16 FNumber : 11;
-								unsigned __int16 Block : 3;
-								unsigned __int16 dummy : 2;
-							} S;
-							unsigned __int8 B[2];
-						} U;
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
 
-						U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
-						U.S.Block = src->Event;
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0xA4 + src->CH;
-						*vgm_pos++ = U.B[1];
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0xA0 + src->CH;
-						*vgm_pos++ = U.B[0];
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x28;
-						*vgm_pos++ = src->CH | 0xF0;
+					if (src->CH < 3) {
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
 					}
-					else if (src->CH < 6) {
+					else if (src->CH > 5) {
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
 						union {
 							unsigned __int16 W;
 							unsigned __int8 B[2];
@@ -1212,60 +1182,58 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x07;
 						*vgm_pos++ = SSG_out;
+						break;
 					}
-					else if (src->CH > 5) {
-						union {
-							struct {
-								unsigned __int16 FNumber : 11;
-								unsigned __int16 Block : 3;
-								unsigned __int16 dummy : 2;
-							} S;
-							unsigned __int8 B[2];
-						} U;
 
-						U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
-						U.S.Block = src->Event;
-						*vgm_pos++ = vgm_command_chip2[chip];
-						*vgm_pos++ = 0xA4 + src->CH - 6;
-						*vgm_pos++ = U.B[1];
-						*vgm_pos++ = vgm_command_chip2[chip];
-						*vgm_pos++ = 0xA0 + src->CH - 6;
-						*vgm_pos++ = U.B[0];
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x28;
-						*vgm_pos++ = (src->CH - 6) | 0xF4;
-					}
+					union {
+						struct {
+							unsigned __int16 FNumber : 11;
+							unsigned __int16 Block : 3;
+							unsigned __int16 dummy : 2;
+						} S;
+						unsigned __int8 B[2];
+					} U;
+
+					U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
+					U.S.Block = src->Event;
+					*vgm_pos++ = out_Port;
+					*vgm_pos++ = 0xA4 + out_Ch;
+					*vgm_pos++ = U.B[1];
+					*vgm_pos++ = out_Port;
+					*vgm_pos++ = 0xA0 + out_Ch;
+					*vgm_pos++ = U.B[0];
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x28;
+					*vgm_pos++ = out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0);
 				}
 				else if (chip == YM2151) {
-					if (src->CH < 8) {
-						unsigned key = src->Event * 12 + src->Param;
-						if (key < 3) {
-							wprintf_s(L"%zu: %2u: Very low key%2u\n", src->time, src->CH, key);
-							key += 12;
-						}
-						key -= 3;
-						unsigned oct = key / 12;
-						unsigned pre_note = key % 12;
-						unsigned note = (pre_note << 2) / 3;
-						//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param, oct, note);
-						union {
-							struct {
-								unsigned __int8 note : 4;
-								unsigned __int8 oct : 3;
-								unsigned __int8 dummy : 1;
-							} S;
-							unsigned __int8 KC;
-						} U;
-
-						U.S.note = note;
-						U.S.oct = oct;
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x28 + src->CH;
-						*vgm_pos++ = U.KC;
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x08;
-						*vgm_pos++ = src->CH | 0x78;
+					unsigned key = src->Event * 12 + src->Param;
+					if (key < 3) {
+						wprintf_s(L"%zu: %2u: Very low key%2u\n", src->time, src->CH, key);
+						key += 12;
 					}
+					key -= 3;
+					unsigned oct = key / 12;
+					unsigned pre_note = key % 12;
+					unsigned note = (pre_note << 2) / 3;
+					//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param, oct, note);
+					union {
+						struct {
+							unsigned __int8 note : 4;
+							unsigned __int8 oct : 3;
+							unsigned __int8 dummy : 1;
+						} S;
+						unsigned __int8 KC;
+					} U;
+
+					U.S.note = note;
+					U.S.oct = oct;
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x28 + src->CH;
+					*vgm_pos++ = U.KC;
+					*vgm_pos++ = vgm_command_chip[chip];
+					*vgm_pos++ = 0x08;
+					*vgm_pos++ = src->CH | 0x78;
 				}
 				break;
 			case 0xE9: // Tie
