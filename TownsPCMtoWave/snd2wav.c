@@ -35,7 +35,6 @@ int wmain(int argc, wchar_t **argv)
 	}
 
 	while (--argc) {
-		char change = 0;
 		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode) {
 			wprintf_s(L"File open error %s.\n", *argv);

@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "gc.h"
+#include "../aclib/wave.h"
 
 #include "stdtype.h"
 #include "stdbool.h"
@@ -50,6 +51,41 @@ struct mako2_tone {
 	} Op[4];
 };
 
+struct PCM4 {
+	unsigned __int8 H : 4;
+	unsigned __int8 L : 4;
+};
+
+struct PM_header {
+	unsigned __int16 ID; // must be 'PM' 0x504D
+	unsigned __int8 Ch;
+	unsigned __int16 StartAddr;
+	unsigned __int8 BitsPerSample;
+	unsigned __int16 sSampleRate; // *100
+	unsigned __int16 Size;
+	unsigned __int16 unk;
+} *pmH;
+
+struct MP_header {
+	unsigned __int32 ID; // must be 'MPd ' 0x4D506400
+	unsigned __int16 sSampleRate; // *100
+	unsigned __int16 Len; // File Length
+	unsigned __int8 unk[8];
+} *mpH;
+
+struct TSND_header {
+	unsigned char Name[8];
+	unsigned __int32 ID;
+	unsigned __int32 Size;
+	unsigned __int32 LoopStart;
+	unsigned __int32 LoopEnd;
+	unsigned __int16 tSampleRate;
+	unsigned __int16 unk1;
+	unsigned __int8 note;
+	unsigned __int8 unk2;
+	unsigned __int16 unk3;
+	unsigned __int8 body[];
+} *tsndH;
 #pragma pack ()
 
 // MAKO.OCM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っている)
@@ -173,6 +209,10 @@ int wmain(int argc, wchar_t** argv)
 			}
 			continue;
 		}
+		wchar_t path[_MAX_PATH];
+		wchar_t fname[_MAX_FNAME];
+		wchar_t dir[_MAX_DIR];
+		wchar_t drive[_MAX_DRIVE];
 
 		FILE* pFi, * pFo;
 		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");
@@ -215,9 +255,183 @@ int wmain(int argc, wchar_t** argv)
 			mako2form = pM2HDR->ver;
 		}
 
+		// MAKO2フォーマットでないならPCMであると仮定する
 		if (!mako2form) {
-			wprintf_s(L"Format ID  isn't match. %d %ld\n", pM2HDR->ver, pM2HDR->chiptune_addr);
-			fclose(pFi);
+			size_t pcm_size;
+			size_t pcm_srate;
+			struct PCM4* pcm_inbuf = NULL;
+
+			if (*(unsigned __int64*)inbuf == 0) {
+				struct WAVE_header waveH;
+				struct WAVE_chunk1 waveC1;
+				struct WAVE_chunk2 waveC2;
+
+				tsndH = inbuf;
+				// WAVE 8bitは符号なし8bit表現で、TOWNS SNDは符号1bit+7bitで-0と+0に1の差がある表現な上に中心値は-0。
+				// そこでトリッキーな変換を行う
+				// 負数をそのまま使うことで0x80(-0)-0xFF(-127)を0x80(128)-0xFF(255)とする。
+				// 正数は反転し0x00(+0)-0x7F(127)を0x7F(-1)-0x00(-128)にする。
+				// 自分でコード書いて忘れていたので解析する羽目になったからコメント入れた(2020.05.22)
+				for (size_t i = 0; i < tsndH->Size; i++) {
+					if (!(tsndH->body[i] & 0x80)) {
+						tsndH->body[i] = ~(tsndH->body[i] | 0x80);
+					}
+				}
+
+				waveC2.Subchunk2ID = _byteswap_ulong(0x64617461);
+				waveC2.Subchunk2Size = rcount;
+
+				waveC1.Subchunk1ID = _byteswap_ulong(0x666d7420);
+				waveC1.Subchunk1Size = 16;
+				waveC1.AudioFormat = 1;
+				waveC1.NumChannels = 1;
+				waveC1.SampleRate = (2000L * tsndH->tSampleRate / 98 + 1) >> 1; // 0.098で割るのではなく、2000/98を掛けて+1して2で割る
+				waveC1.BitsPerSample = 8;
+				waveC1.ByteRate = waveC1.NumChannels * waveC1.SampleRate * waveC1.BitsPerSample / 8;
+				waveC1.BlockAlign = waveC1.NumChannels * waveC1.BitsPerSample / 8;
+
+				waveH.ChunkID = _byteswap_ulong(0x52494646);
+				waveH.Format = _byteswap_ulong(0x57415645);
+				waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
+
+				_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+				_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".WAV");
+				wprintf_s(L"Data size %lu, SampleRatio %lu.\n", waveC2.Subchunk2Size, waveC1.SampleRate);
+				wprintf_s(L"Output to %s.\n", path);
+
+				ecode = _wfopen_s(&pFo, path, L"wb");
+				if (ecode || !pFo) {
+					wprintf_s(L"File open error %s.\n", *argv);
+					exit(ecode);
+				}
+
+				rcount = fwrite(&waveH, sizeof(waveH), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(&waveC1, sizeof(waveC1), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(&waveC2, sizeof(waveC2), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(tsndH->body, 1, waveC2.Subchunk2Size, pFo);
+				if (rcount != waveC2.Subchunk2Size) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				fclose(pFo);
+			}
+			else if (*(unsigned __int32 *)inbuf == _byteswap_ulong(0x4D506400)) {
+				mpH = inbuf;
+				wprintf_s(L"File size %ld. %ld Hz.\n", mpH->Len, mpH->sSampleRate * 100);
+				pcm_size = mpH->Len - 0x10;
+				pcm_srate = 100L * mpH->sSampleRate;
+				pcm_inbuf = inbuf + sizeof(struct MP_header);
+			}
+			else if (*(unsigned __int16 *)inbuf == _byteswap_ushort(0x504D)) {
+				wprintf_s(L"File size %ld. %d Ch. %ld Hz. %d bits/sample.\n",
+						pmH->Size, pmH->Ch, pmH->sSampleRate * 100, pmH->BitsPerSample);
+
+				if (pmH->Ch != 1 || pmH->BitsPerSample != 4) {
+					wprintf_s(L"Skip File %s.\n", *argv);
+					continue;
+				}
+				pcm_size = pmH->Size;
+				pcm_srate = 100L * pmH->sSampleRate;
+				pcm_inbuf = inbuf + sizeof(struct PM_header);
+			}
+			else {
+				wprintf_s(L"Unknown file type. %s\n", *argv);
+				pcm_size = fs.st_size;
+				pcm_srate = 8000;
+				pcm_inbuf = inbuf;
+			}
+
+			unsigned __int8* buffer = GC_malloc(pcm_size * 2);
+			if (buffer == NULL) {
+				wprintf_s(L"Memory allocation error.\n");
+				exit(-2);
+			}
+
+			for (size_t i = 0; i < pcm_size; i++) {
+				buffer[i * 2] = pcm_inbuf[i].L << 4;
+				buffer[i * 2 + 1] = pcm_inbuf[i].H << 4;
+			}
+
+			size_t len = 0;
+
+			while (buffer[len] && len < pcm_size * 2) {
+				len++;
+			}
+
+			if (len) {
+				struct WAVE_header waveH;
+				struct WAVE_chunk1 waveC1;
+				struct WAVE_chunk2 waveC2;
+
+				waveC2.Subchunk2ID = _byteswap_ulong(0x64617461);
+				waveC2.Subchunk2Size = len;
+
+				waveC1.Subchunk1ID = _byteswap_ulong(0x666d7420);
+				waveC1.Subchunk1Size = 16;
+				waveC1.AudioFormat = 1;
+				waveC1.NumChannels = 1;
+				waveC1.SampleRate = pcm_srate;
+				waveC1.BitsPerSample = 8;
+				waveC1.ByteRate = waveC1.NumChannels * waveC1.SampleRate * waveC1.BitsPerSample / 8;
+				waveC1.BlockAlign = waveC1.NumChannels * waveC1.BitsPerSample / 8;
+
+				waveH.ChunkID = _byteswap_ulong(0x52494646);
+				waveH.Format = _byteswap_ulong(0x57415645);
+				waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
+
+				_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+				_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".WAV");
+				wprintf_s(L"Data size %ld, SampleRatio %ld.\n", waveC2.Subchunk2Size, waveC1.SampleRate);
+				wprintf_s(L"Output to %s.\n", path);
+
+				ecode = _wfopen_s(&pFo, path, L"wb");
+				if (ecode || !pFo) {
+					wprintf_s(L"File open error %s.\n", *argv);
+					exit(ecode);
+				}
+
+				rcount = fwrite(&waveH, sizeof(waveH), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(&waveC1, sizeof(waveC1), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(&waveC2, sizeof(waveC2), 1, pFo);
+				if (rcount != 1) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				rcount = fwrite(buffer, 1, waveC2.Subchunk2Size, pFo);
+				if (rcount != waveC2.Subchunk2Size) {
+					wprintf_s(L"File write error %s.\n", *argv);
+					fclose(pFo);
+					exit(-2);
+				}
+				fclose(pFo);
+			}
 			continue;
 		}
 
@@ -1007,7 +1221,7 @@ int wmain(int argc, wchar_t** argv)
 
 					for (size_t op = 0; op < 4; op++) {
 						for (size_t j = 0; j < 6; j++) {
-							if (j == 1 && pM2HDR->ver >= 3 &&
+							if (j == 1 && mako2form >= 3 &&
 								(Algorithm[src->CH] == 7 || Algorithm[src->CH] > 4 && op
 									|| Algorithm[src->CH] > 3 && op >= 2 || op == 3)) {
 							}
@@ -1278,14 +1492,12 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 
-		wchar_t fn[_MAX_FNAME], fpath[_MAX_PATH];
+		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".vgm");
 
-		_wsplitpath_s(*argv, NULL, 0, NULL, 0, fn, _MAX_FNAME, NULL, 0);
-		_wmakepath_s(fpath, _MAX_PATH, NULL, NULL, fn, L".vgm");
-
-		ecode = _wfopen_s(&pFo, fpath, L"wb");
+		ecode = _wfopen_s(&pFo, path, L"wb");
 		if (ecode || !pFo) {
-			fwprintf_s(stderr, L"%s cannot open\n", fpath);
+			fwprintf_s(stderr, L"%s cannot open\n", path);
 			exit(ecode);
 		}
 
