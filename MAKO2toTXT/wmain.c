@@ -777,6 +777,7 @@ int wmain(int argc, wchar_t** argv)
 		int Detune[9] = { 0 };
 		unsigned Algorithm[9] = { 0 };
 		unsigned Disable_note_off[9] = { 0 };
+		unsigned __int8 Volume[9] = { 0 };
 
 		unsigned __int8 Panpot_YM2151[8] = { 0x3, 0x3,  0x3,  0x3,  0x3,  0x3,  0x3,  0x3 };
 
@@ -956,6 +957,7 @@ int wmain(int argc, wchar_t** argv)
 					}
 
 					if (src->Param & 0x80 || src->Param == 0) {
+						Panpot = 0xC0;
 					}
 					else if (src->Param < 64) {
 						Panpot = 0x80;
@@ -969,8 +971,8 @@ int wmain(int argc, wchar_t** argv)
 					*vgm_pos++ = Panpot;
 				}
 				else if (chip == YM2151) {
-					Panpot_YM2151[src->CH] = 0x3;
 					if (src->Param & 0x80 || src->Param == 0) {
+						Panpot_YM2151[src->CH] = 0x3;
 					}
 					else if (src->Param < 64) {
 						Panpot_YM2151[src->CH] = 0x2;
@@ -1071,6 +1073,14 @@ int wmain(int argc, wchar_t** argv)
 				}
 				break;
 			case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
+			case 0xE1: // Velocity
+				if (src->Event == 0xE1) {
+					Volume[src->CH] += src->Param;
+					Volume[src->CH] &= 0x7F;
+				}
+				else {
+					Volume[src->CH] = src->Param;
+				}
 				if ((chip == YM2203) || (chip == YM2608)) {
 					unsigned __int8 out_Port;
 					unsigned __int8 out_Ch;
@@ -1086,7 +1096,7 @@ int wmain(int argc, wchar_t** argv)
 					else {
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x08 + src->CH - 3;
-						*vgm_pos++ = src->Param >> 3;
+						*vgm_pos++ = Volume[src->CH] >> 3;
 						break;
 					}
 
@@ -1094,23 +1104,23 @@ int wmain(int argc, wchar_t** argv)
 					case 7:
 						*vgm_pos++ = out_Port;
 						*vgm_pos++ = 0x40 + out_Ch;
-						*vgm_pos++ = ~src->Param;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 5:
 					case 6:
 						*vgm_pos++ = out_Port;
 						*vgm_pos++ = 0x44 + out_Ch;
-						*vgm_pos++ = ~src->Param;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 4:
 						*vgm_pos++ = out_Port;
 						*vgm_pos++ = 0x48 + out_Ch;
-						*vgm_pos++ = ~src->Param;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 						*vgm_pos++ = out_Port;
 						*vgm_pos++ = 0x4C + out_Ch;
-						*vgm_pos++ = ~src->Param;
+						*vgm_pos++ = ~Volume[src->CH];
 						break;
 					default:
 						wprintf_s(L"? How to reach ?\n");
@@ -1121,29 +1131,31 @@ int wmain(int argc, wchar_t** argv)
 					case 7:
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x60 + src->CH;
-						*vgm_pos++ = ~src->Param & 0x7F;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 5:
 					case 6:
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x68 + src->CH;
-						*vgm_pos++ = ~src->Param & 0x7F;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 4:
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x70 + src->CH;
-						*vgm_pos++ = ~src->Param & 0x7F;
+						*vgm_pos++ = ~Volume[src->CH];
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 						*vgm_pos++ = vgm_command_chip[chip];
 						*vgm_pos++ = 0x78 + src->CH;
-						*vgm_pos++ = ~src->Param & 0x7F;
+						*vgm_pos++ = ~Volume[src->CH];
 						break;
 					default:
 						wprintf_s(L"? How to reach ?\n");
 					}
 				}
 				break;
+
+
 			case 0x00: // Note On
 			case 0x01:
 			case 0x02:
@@ -1240,7 +1252,6 @@ int wmain(int argc, wchar_t** argv)
 				Disable_note_off[src->CH] = 1;
 				break;
 			case 0xE0: // Counter
-			case 0xE1:
 				break;
 			}
 
