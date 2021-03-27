@@ -261,7 +261,7 @@ int wmain(int argc, wchar_t** argv)
 			size_t pcm_srate;
 			struct PCM4* pcm_inbuf = NULL;
 
-			if (*(unsigned __int64*)inbuf == 0) {
+			if (*(unsigned __int64*)inbuf == 0 && *((unsigned __int32*)inbuf + 3)) {
 				struct WAVE_header waveH;
 				struct WAVE_chunk1 waveC1;
 				struct WAVE_chunk2 waveC2;
@@ -279,7 +279,7 @@ int wmain(int argc, wchar_t** argv)
 				}
 
 				waveC2.Subchunk2ID = _byteswap_ulong(0x64617461);
-				waveC2.Subchunk2Size = rcount;
+				waveC2.Subchunk2Size = tsndH->Size;
 
 				waveC1.Subchunk1ID = _byteswap_ulong(0x666d7420);
 				waveC1.Subchunk1Size = 16;
@@ -330,8 +330,10 @@ int wmain(int argc, wchar_t** argv)
 					exit(-2);
 				}
 				fclose(pFo);
+				continue;
 			}
-			else if (*(unsigned __int32 *)inbuf == _byteswap_ulong(0x4D506400)) {
+
+			if (*(unsigned __int32 *)inbuf == _byteswap_ulong(0x4D506400)) {
 				mpH = inbuf;
 				wprintf_s(L"File size %ld. %ld Hz.\n", mpH->Len, mpH->sSampleRate * 100);
 				pcm_size = mpH->Len - 0x10;
