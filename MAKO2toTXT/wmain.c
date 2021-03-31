@@ -40,7 +40,8 @@ struct mako2_tone {
 			unsigned __int8 NU2 : 1; // Not used
 			unsigned __int8 KS : 2; // Key Scale
 			unsigned __int8 DR : 5; // Decay Rate
-			unsigned __int8 NU3 : 3; // Not used
+			unsigned __int8 NU3 : 2; // Not used
+			unsigned __int8 AMON : 1; // AMS On
 			unsigned __int8 SR : 5; // Sustain Rate
 			unsigned __int8 NU4 : 3; // Not used
 			unsigned __int8 RR : 4; // Release Rate
@@ -49,6 +50,23 @@ struct mako2_tone {
 		} S;
 		unsigned __int8 B[9];
 	} Op[4];
+};
+
+union LR_AMS_PMS_YM2608 {
+	struct {
+		unsigned __int8 PMS : 3;
+		unsigned __int8 NC : 1;
+		unsigned __int8 AMS : 2;
+		unsigned __int8 LR : 2;
+	} S;
+	unsigned __int8 B;
+};
+
+struct PMS_AMS_YM2151 {
+	unsigned __int8 AMS : 2;
+	unsigned __int8 NC1 : 2;
+	unsigned __int8 PMS : 3;
+	unsigned __int8 NC2 : 1;
 };
 
 struct PCM4 {
@@ -154,7 +172,10 @@ struct EVENT {
 	unsigned __int8 CH; //
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの テンポ=10, 消音=0, 音源初期化=20, 発音=30程度で
 	unsigned __int8 Event; // イベント種本体
-	unsigned __int8 Param; // イベントのパラメータ
+	union { // イベントのパラメータ
+		unsigned __int8 B[10];
+		unsigned __int16 W[5];
+	} Param;
 };
 
 int eventsort(const* x, const void* n1, const void* n2)
@@ -185,6 +206,13 @@ int eventsort(const* x, const void* n1, const void* n2)
 		}
 
 	}
+}
+
+void make_vgmdata(unsigned __int8 ** dest, unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
+{
+	*(*dest)++ = command;
+	*(*dest)++ = address;
+	*(*dest)++ = data;
 }
 
 int wmain(int argc, wchar_t** argv)
@@ -522,56 +550,6 @@ int wmain(int argc, wchar_t** argv)
 						makenote++;
 						break;
 
-					case 0xE0: // Counter
-					case 0xE1: // Velocity
-					case 0xF4: // Tempo
-					case 0xF5: // Tone select
-					case 0xF9: // Volume change
-					case 0xFC: // Detune
-						*dest++ = *src++;
-						*dest++ = *src++;
-						break;
-
-					case 0xEB: // Panpot
-						chip = YM2608;
-						*dest++ = *src++;
-						*dest++ = *src++;
-						break;
-
-					case 0xE4: // LFO
-						chip = YM2608;
-						*dest++ = *src++;
-						*dest++ = *src++;
-						*dest++ = *src++;
-						*dest++ = *src++;
-						break;
-
-					case 0xFE: // none
-						wprintf_s(L"%02X\n", *src);
-						src += 4;
-						break;
-					case 0xE5:
-					case 0xFA: // none
-					case 0xFD: // none
-						wprintf_s(L"%02X\n", *src);
-						src += 2;
-						break;
-					case 0xE6:
-					case 0xE7:
-						wprintf_s(L"%02X\n", *src);
-						src += 9;
-						break;
-					case 0xE8:
-						wprintf_s(L"%02X\n", *src);
-						src += 11;
-						break;
-					case 0xE9: // Tie
-						*dest++ = *src++;
-						break;
-					case 0xEC:
-						(MMLs_decoded.CHs + i)->Mute_on = 1;
-						src++;
-						break;
 					case 0xEE:
 						Octave_current = Octave = (Octave + 1) & 0x7;
 						src++;
@@ -588,14 +566,14 @@ int wmain(int argc, wchar_t** argv)
 						Octave_current = *++src;
 						src++;
 						break;
-					case 0xEA:
-						flag_gate = 1;
-						gate_step = *++src;
-						src++;
-						break;
 					case 0xF2:
 						flag_gate = 0;
 						gate_step = (short)(*++src) + 1;
+						src++;
+						break;
+					case 0xEA:
+						flag_gate = 1;
+						gate_step = *++src;
 						src++;
 						break;
 					case 0xF3:
@@ -608,11 +586,12 @@ int wmain(int argc, wchar_t** argv)
 							src += 2;
 						}
 						break;
+
 					case 0xF6: // none
-					case 0xFB:
 						wprintf_s(L"%02X\n", *src);
 						src += 3;
 						break;
+
 					case 0xF7:
 						Octave_current = (Octave_current - 1) & 0x7;
 						src++;
@@ -620,6 +599,76 @@ int wmain(int argc, wchar_t** argv)
 					case 0xF8:
 						Octave_current = (Octave_current + 1) & 0x7;
 						src++;
+						break;
+					case 0xFA: // none
+					case 0xFD: // none
+						wprintf_s(L"%02X\n", *src);
+						src += 2;
+						break;
+					case 0xFE: // none
+						wprintf_s(L"%02X\n", *src);
+						src += 4;
+						break;
+
+					case 0xE0: // Counter
+					case 0xE1: // Velocity
+					case 0xF4: // Tempo
+					case 0xF5: // Tone select
+					case 0xF9: // Volume change
+					case 0xFC: // Detune
+						*dest++ = *src++;
+						*dest++ = *src++;
+						break;
+
+					case 0xEC:
+						(MMLs_decoded.CHs + i)->Mute_on = 1;
+						src++;
+						break;
+
+					case 0xE5: // set flags 4 5 6
+					case 0xEB: // Panpot
+						chip = YM2608;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						break;
+
+					case 0xE9: // Tie
+						*dest++ = *src++;
+						break;
+
+					case 0xE7:
+					case 0xE6:
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						break;
+
+					case 0xE8:
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						break;
+
+					case 0xE4: // LFO
+						chip = YM2608;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
+						*dest++ = *src++;
 						break;
 					default:
 						src++;
@@ -690,7 +739,7 @@ int wmain(int argc, wchar_t** argv)
 
 
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
-		size_t delta_time_LCM = MMLs_decoded.CHs->Loop_delta;
+		size_t delta_time_LCM = 1;
 		size_t max_time = MMLs_decoded.CHs->time_total;
 		size_t end_time = 0;
 		size_t loop_start_time = MMLs_decoded.CHs->Loop_time;
@@ -779,85 +828,114 @@ int wmain(int argc, wchar_t** argv)
 				case 0x07:
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					time += *((unsigned __int16*)src)++;
 					dest->Type = 30;
 					dest->CH = i;
 					dest++;
-					len += 4;
 					break;
 				case 0x80:
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					time += *((unsigned __int16*)src)++;
 					dest->Type = 0;
 					dest->CH = i;
 					dest++;
-					len += 4;
 					break;
 				case 0xE0: // Counter
 				case 0xE1: // Velocity
 				case 0xFC: // Detune
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					dest->Type = 20;
 					dest->CH = i;
 					dest++;
-					len += 2;
 					break;
+				case 0xE5: // set flags 4 5 6
 				case 0xF5: // Tone select
 				case 0xF9: // Volume change
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					dest->Type = 25;
 					dest->CH = i;
 					dest++;
-					len += 2;
 					break;
 				case 0xEB: // Panpot
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					dest->Type = 27;
 					dest->CH = i;
 					dest++;
-					len += 2;
 					break;
 				case 0xF4: // Tempo
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = *src++;
+					dest->Param.B[0] = *src++;
 					dest->time = time;
 					dest->Type = 10;
 					dest->CH = i;
 					dest++;
-					len += 2;
 					break;
 				case 0xE9: // Tie
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param = 0;
+					dest->Param.B[0] = 0;
 					dest->time = time;
 					dest->Type = 31;
 					dest->CH = i;
 					dest++;
-					len++;
 					break;
 				case 0xE4: // LFO
-					src += 4;
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param.B[0] = *src++;
+					dest->Param.B[1] = *src++;
+					dest->Param.B[2] = *src++;
+					dest->time = time;
+					dest->Type = 26;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xE7: 
+				case 0xE6: 
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param.W[0] = *(unsigned __int16 *)src++;
+					dest->Param.W[1] = *(unsigned __int16 *)src++;
+					dest->Param.W[2] = *(unsigned __int16 *)src++;
+					dest->Param.W[3] = *(unsigned __int16 *)src++;
+					dest->time = time;
+					dest->Type = 25;
+					dest->CH = i;
+					dest++;
+					break;
+				case 0xE8: 
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param.W[0] = *(unsigned __int16 *)src++;
+					dest->Param.W[1] = *(unsigned __int16 *)src++;
+					dest->Param.W[2] = *(unsigned __int16 *)src++;
+					dest->Param.W[3] = *(unsigned __int16 *)src++;
+					dest->Param.W[4] = *(unsigned __int16 *)src++;
+					dest->time = time;
+					dest->Type = 25;
+					dest->CH = i;
+					dest++;
 					break;
 				default:
 					wprintf_s(L"%zu: %2zu: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
 					break;
 				}
+				len += src - src_orig;
 			}
 		}
 
@@ -938,12 +1016,32 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8 vgm_command_chip[] = { 0x00, 0x55, 0x56, 0x54 };
 		unsigned __int8 vgm_command_chip2[] = { 0x00, 0x55, 0x57, 0x54 };
 		unsigned __int8 SSG_out = 0xBF;
-		int Detune[9] = { 0 };
-		unsigned Algorithm[9] = { 0 };
-		unsigned Disable_note_off[9] = { 0 };
-		unsigned __int8 Volume[9] = { 0 };
+
+		struct CH_params {
+			__int16 Detune;
+			__int16 vDetune;
+			__int16 vDetune_wait;
+			__int16 vDetune_first_wait;
+			__int16 vDetune_next_wait;
+			__int16 vDetune_delta;
+			__int16 vDetune_limit;
+			unsigned __int8 Algorithm;
+			unsigned __int8 Disable_note_off; // flag1
+			unsigned __int8 vDetune_ready; // flag4
+			unsigned __int8 flag5;
+			unsigned __int8 LFO_ready; // flag6
+			unsigned __int8 vDetune_direction; // flag7
+			unsigned __int8 flag8;
+			unsigned __int8 LFO_enable; // flag9
+			unsigned __int8 Volume;
+			unsigned __int8 Tone;
+			unsigned __int8 AMS;
+			unsigned __int8 PMS;
+		} *pCHparam = GC_malloc(sizeof(struct CH_params) * CHs_limit);
 
 		unsigned __int8 Panpot_YM2151[8] = { 0x3, 0x3,  0x3,  0x3,  0x3,  0x3,  0x3,  0x3 };
+
+
 
 		// 初期化
 		if ((chip == YM2203)) {
@@ -1065,46 +1163,38 @@ int wmain(int argc, wchar_t** argv)
 				loop_enable = 0;
 			}
 
-			switch (src->Event) {
+						switch (src->Event) {
 			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
 //				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
-				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param + 1) >> 1;
-				Tempo = src->Param;
+				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param.B[0] + 1) >> 1;
+				Tempo = src->Param.B[0];
 				size_t NA;
 				if (chip == YM2203) {
-					NA = 1024 - (((master_clock * 2) / (192LL * src->Param) + 1) >> 1);
+					NA = 1024 - (((master_clock * 2) / (192LL * src->Param.B[0]) + 1) >> 1);
 				}
 				else if (chip == YM2608) {
-					NA = 1024 - (((master_clock * 2) / (384LL * src->Param) + 1) >> 1);
+					NA = 1024 - (((master_clock * 2) / (384LL * src->Param.B[0]) + 1) >> 1);
 				}
 				else if (chip == YM2151) {
-					NA = 1024 - (((3 * master_clock * 2) / (512LL * src->Param) + 1) >> 1);
+					NA = 1024 - (((3 * master_clock * 2) / (512LL * src->Param.B[0]) + 1) >> 1);
 				}
 				// wprintf_s(L"%8zu: Tempo %zd NA %zd\n", src->time, Tempo, NA);
 				if ((chip == YM2203) || (chip == YM2608)) {
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x24;
-					*vgm_pos++ = (NA >> 2) & 0xFF;
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x25;
-					*vgm_pos++ = NA & 0x03;
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x24, (NA >> 2) & 0xFF);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x25, NA & 0x03);
 				}
 				else if (chip == YM2151) {
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x10;
-					*vgm_pos++ = (NA >> 2) & 0xFF;
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x11;
-					*vgm_pos++ = NA & 0x03;
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x10, (NA >> 2) & 0xFF);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x11, NA & 0x03);
 				}
 				//				wprintf_s(L"%8zu: NEW tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				break;
 			case 0xFC: // Detune
-				Detune[src->CH] = (__int8)src->Param;
+				(pCHparam + src->CH)->Detune = (__int16)((__int8)src->Param.B[0]);
 				break;
 			case 0xEB: // Panpot
 				if (chip == YM2608) {
-					unsigned __int8 Panpot = 0xC0;
+					unsigned __int8 Panpot = 3;
 					unsigned __int8 out_Port;
 					unsigned __int8 out_Ch;
 
@@ -1120,28 +1210,32 @@ int wmain(int argc, wchar_t** argv)
 						break;
 					}
 
-					if (src->Param & 0x80 || src->Param == 0) {
-						Panpot = 0xC0;
+					if (src->Param.B[0] & 0x80 || src->Param.B[0] == 0) {
+						Panpot = 3;
 					}
-					else if (src->Param < 64) {
-						Panpot = 0x80;
+					else if (src->Param.B[0] < 64) {
+						Panpot = 2;
 					}
-					else if (src->Param > 64) {
-						Panpot = 0x40;
+					else if (src->Param.B[0] > 64) {
+						Panpot = 1;
 					}
 
-					*vgm_pos++ = out_Port;
-					*vgm_pos++ = 0xB4 + out_Ch;
-					*vgm_pos++ = Panpot;
+					union LR_AMS_PMS_YM2608 LRAP;
+					LRAP.S.LR = Panpot;
+					if ((pCHparam + src->CH)->LFO_ready) {
+						LRAP.S.AMS = (pCHparam + src->CH)->AMS;
+						LRAP.S.PMS = (pCHparam + src->CH)->PMS;
+					};
+					make_vgmdata(&vgm_pos, out_Port, 0xB4 + out_Ch, LRAP.B);
 				}
 				else if (chip == YM2151) {
-					if (src->Param & 0x80 || src->Param == 0) {
+					if (src->Param.B[0] & 0x80 || src->Param.B[0] == 0) {
 						Panpot_YM2151[src->CH] = 0x3;
 					}
-					else if (src->Param < 64) {
+					else if (src->Param.B[0] < 64) {
 						Panpot_YM2151[src->CH] = 0x2;
 					}
-					else if (src->Param > 64) {
+					else if (src->Param.B[0] > 64) {
 						Panpot_YM2151[src->CH] = 0x1;
 					}
 				}
@@ -1151,6 +1245,7 @@ int wmain(int argc, wchar_t** argv)
 					static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 					unsigned __int8 out_Port;
 					unsigned __int8 out_Ch;
+					(pCHparam + src->CH)->Tone = src->Param.B[0];
 
 					if (src->CH < 3) {
 						out_Ch = src->CH;
@@ -1164,86 +1259,64 @@ int wmain(int argc, wchar_t** argv)
 						break;
 					}
 
-					Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
-					*vgm_pos++ = out_Port;
-					*vgm_pos++ = 0xB0 + out_Ch;
-					*vgm_pos++ = (T + src->Param)->H.B;
+					(pCHparam + src->CH)->Algorithm = (T + src->Param.B[0])->H.S.Connect;
+					make_vgmdata(&vgm_pos, out_Port, 0xB0 + out_Ch, (T + src->Param.B[0])->H.B);
 
 					for (size_t op = 0; op < 4; op++) {
 						for (size_t j = 0; j < 6; j++) {
 							if (j == 1 && mako2form >= 3 &&
-								(Algorithm[src->CH] == 7 || Algorithm[src->CH] > 4 && op
-									|| Algorithm[src->CH] > 3 && op >= 2 || op == 3)) {
+								((pCHparam + src->CH)->Algorithm == 7 || (pCHparam + src->CH)->Algorithm > 4 && op
+									|| (pCHparam + src->CH)->Algorithm > 3 && op >= 2 || op == 3)) {
 							}
 							else {
-								*vgm_pos++ = out_Port;
-								*vgm_pos++ = 0x30 + 0x10 * j + Op_index[op] + out_Ch;
-								*vgm_pos++ = (T + src->Param)->Op[op].B[j];
+								make_vgmdata(&vgm_pos, out_Port, 0x30 + 0x10 * j + Op_index[op] + out_Ch, (T + src->Param.B[0])->Op[op].B[j]);
 							}
 						}
 					}
 				}
 				else if (chip == YM2151) {
 					static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-					Algorithm[src->CH] = (T + src->Param)->H.S.Connect;
-					(T + src->Param)->H.S.RL = Panpot_YM2151[src->CH];
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x08;
-					*vgm_pos++ = src->CH;
+					(pCHparam + src->CH)->Algorithm = (T + src->Param.B[0])->H.S.Connect;
+					(T + src->Param.B[0])->H.S.RL = Panpot_YM2151[src->CH];
 
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x20 + src->CH;
-					*vgm_pos++ = (T + src->Param)->H.B;
-
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x20 + src->CH, (T + src->Param.B[0])->H.B);
 					for (size_t op = 0; op < 4; op++) {
 						for (size_t j = 0; j < 6; j++) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x40 + 0x20 * j + Op_index[op] + src->CH;
-							*vgm_pos++ = (T + src->Param)->Op[op].B[j];
+							make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x40 + 0x20 * j + Op_index[op] + src->CH, (T + src->Param.B[0])->Op[op].B[j]);
 						}
 					}
 				}
 				break;
 			case 0x80: // Note Off
-				if (Disable_note_off[src->CH]) {
-					Disable_note_off[src->CH] = 0;
+				if ((pCHparam + src->CH)->Disable_note_off) {
+					(pCHparam + src->CH)->Disable_note_off = 0;
 				}
 				else {
 					if ((chip == YM2203) || (chip == YM2608)) {
 						if (src->CH < 3) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x28;
-							*vgm_pos++ = src->CH;
+							make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28, src->CH);
 						}
 						else if (src->CH < 6) {
 							SSG_out |= (1 << (src->CH - 3));
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x07;
-							*vgm_pos++ = SSG_out;
+							make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x07, SSG_out);
 						}
 						else if (src->CH > 5) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x28;
-							*vgm_pos++ = (src->CH - 6) | 0x04;
+							make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28, (src->CH - 6) | 0x04);
 						}
 					}
 					else if (chip == YM2151) {
-						if (src->CH < 8) {
-							*vgm_pos++ = vgm_command_chip[chip];
-							*vgm_pos++ = 0x08;
-							*vgm_pos++ = src->CH;
-						}
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
 					}
 				}
 				break;
 			case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
 			case 0xE1: // Velocity
 				if (src->Event == 0xE1) {
-					Volume[src->CH] += src->Param;
-					Volume[src->CH] &= 0x7F;
+					(pCHparam + src->CH)->Volume += src->Param.B[0];
+					(pCHparam + src->CH)->Volume &= 0x7F;
 				}
 				else {
-					Volume[src->CH] = src->Param;
+					(pCHparam + src->CH)->Volume = src->Param.B[0];
 				}
 				if ((chip == YM2203) || (chip == YM2608)) {
 					unsigned __int8 out_Port;
@@ -1258,68 +1331,116 @@ int wmain(int argc, wchar_t** argv)
 						out_Port = vgm_command_chip2[chip];
 					}
 					else {
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x08 + src->CH - 3;
-						*vgm_pos++ = Volume[src->CH] >> 3;
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08 + src->CH - 3, (pCHparam + src->CH)->Volume >> 3);
 						break;
 					}
 
-					switch (Algorithm[src->CH]) {
+					switch ((pCHparam + src->CH)->Algorithm) {
 					case 7:
-						*vgm_pos++ = out_Port;
-						*vgm_pos++ = 0x40 + out_Ch;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, out_Port, 0x40 + out_Ch, ~(pCHparam + src->CH)->Volume);
 					case 5:
 					case 6:
-						*vgm_pos++ = out_Port;
-						*vgm_pos++ = 0x44 + out_Ch;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, out_Port, 0x44 + out_Ch, ~(pCHparam + src->CH)->Volume);
 					case 4:
-						*vgm_pos++ = out_Port;
-						*vgm_pos++ = 0x48 + out_Ch;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, out_Port, 0x48 + out_Ch, ~(pCHparam + src->CH)->Volume);
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						*vgm_pos++ = out_Port;
-						*vgm_pos++ = 0x4C + out_Ch;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, out_Port, 0x4C + out_Ch, ~(pCHparam + src->CH)->Volume);
 						break;
 					default:
 						wprintf_s(L"? How to reach ?\n");
 					}
 				}
 				else if (chip == YM2151) {
-					switch (Algorithm[src->CH]) {
+					switch ((pCHparam + src->CH)->Algorithm) {
 					case 7:
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x60 + src->CH;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x60 + src->CH, ~(pCHparam + src->CH)->Volume);
 					case 5:
 					case 6:
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x68 + src->CH;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x68 + src->CH, ~(pCHparam + src->CH)->Volume);
 					case 4:
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x70 + src->CH;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x70 + src->CH, ~(pCHparam + src->CH)->Volume);
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x78 + src->CH;
-						*vgm_pos++ = ~Volume[src->CH];
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x78 + src->CH, ~(pCHparam + src->CH)->Volume);
 						break;
 					default:
 						wprintf_s(L"? How to reach ?\n");
 					}
 				}
 				break;
+			case 0xE4: // LFO
+				(pCHparam + src->CH)->LFO_ready = 1;
+				(pCHparam + src->CH)->PMS = src->Param.B[1];
+				(pCHparam + src->CH)->AMS = src->Param.B[2];
+				if (chip == YM2608) {
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
 
-
+					if (src->CH < 3) {
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
+					}
+					else if (src->CH > 5) {
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
+						break;
+					}
+					switch ((pCHparam + src->CH)->Algorithm) {
+					case 7:
+						make_vgmdata(&vgm_pos, out_Port, 0x60 + out_Ch, (T + (pCHparam + src->CH)->Tone)->Op[0].B[3] | 0x80);
+					case 5:
+					case 6:
+						make_vgmdata(&vgm_pos, out_Port, 0x64 + out_Ch, (T + (pCHparam + src->CH)->Tone)->Op[2].B[3] | 0x80);
+					case 4:
+						make_vgmdata(&vgm_pos, out_Port, 0x68 + out_Ch, (T + (pCHparam + src->CH)->Tone)->Op[1].B[3] | 0x80);
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						make_vgmdata(&vgm_pos, out_Port, 0x6C + out_Ch, (T + (pCHparam + src->CH)->Tone)->Op[3].B[3] | 0x80);
+						break;
+					default:
+						wprintf_s(L"? How to reach ?\n");
+					}
+					make_vgmdata(&vgm_pos, out_Port, 0x22, src->Param.B[0] | 0x8);
+				}
+#if 0
+				else if (chip == YM2151) {
+					switch ((pCHparam + src->CH)->Algorithm) {
+					case 7:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA0 + src->CH;
+						*vgm_pos++ = (T + (pCHparam + src->CH)->Tone)->Op[0].B[3] | 0x80;
+					case 5:
+					case 6:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xA8 + src->CH;
+						*vgm_pos++ = (T + (pCHparam + src->CH)->Tone)->Op[2].B[3] | 0x80;
+					case 4:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xB0 + src->CH;
+						*vgm_pos++ = (T + (pCHparam + src->CH)->Tone)->Op[1].B[3] | 0x80;
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						*vgm_pos++ = vgm_command_chip[chip];
+						*vgm_pos++ = 0xB8 + src->CH;
+						*vgm_pos++ = (T + (pCHparam + src->CH)->Tone)->Op[3].B[3] | 0x80;
+						break;
+					default:
+						wprintf_s(L"? How to reach ?\n");
+					}
+				}
+				break;
+#endif
 			case 0x00: // Note On
 			case 0x01:
 			case 0x02:
@@ -1341,23 +1462,19 @@ int wmain(int argc, wchar_t** argv)
 						out_Port = vgm_command_chip2[chip];
 					}
 					else {
+						out_Ch = src->CH - 3;
+						out_Port = vgm_command_chip[chip];
 						union {
 							unsigned __int16 W;
 							unsigned __int8 B[2];
 						} U;
 
-						U.W = TP[src->Event][src->Param] + (-Detune[src->CH] >> 2);
+						U.W = TP[src->Event][src->Param.B[0]] + (-(pCHparam + src->CH)->Detune >> 2);
 
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x01 + (src->CH - 3) * 2;
-						*vgm_pos++ = U.B[1];
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x00 + (src->CH - 3) * 2;
-						*vgm_pos++ = U.B[0];
+						make_vgmdata(&vgm_pos, out_Port, 0x01 + out_Ch * 2, U.B[1]);
+						make_vgmdata(&vgm_pos, out_Port, 0x00 + out_Ch * 2, U.B[0]);
 						SSG_out &= ~(1 << (src->CH - 3));
-						*vgm_pos++ = vgm_command_chip[chip];
-						*vgm_pos++ = 0x07;
-						*vgm_pos++ = SSG_out;
+						make_vgmdata(&vgm_pos, out_Port, 0x07, SSG_out);
 						break;
 					}
 
@@ -1370,20 +1487,14 @@ int wmain(int argc, wchar_t** argv)
 						unsigned __int8 B[2];
 					} U;
 
-					U.S.FNumber = FNumber[src->Param] + Detune[src->CH];
+					U.S.FNumber = FNumber[src->Param.B[0]] + (pCHparam + src->CH)->Detune;
 					U.S.Block = src->Event;
-					*vgm_pos++ = out_Port;
-					*vgm_pos++ = 0xA4 + out_Ch;
-					*vgm_pos++ = U.B[1];
-					*vgm_pos++ = out_Port;
-					*vgm_pos++ = 0xA0 + out_Ch;
-					*vgm_pos++ = U.B[0];
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x28;
-					*vgm_pos++ = out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0);
+					make_vgmdata(&vgm_pos, out_Port, 0xA4 + out_Ch, U.B[1]);
+					make_vgmdata(&vgm_pos, out_Port, 0xA0 + out_Ch, U.B[0]);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28, out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0));
 				}
 				else if (chip == YM2151) {
-					unsigned key = src->Event * 12 + src->Param;
+					unsigned key = src->Event * 12 + src->Param.B[0];
 					if (key < 3) {
 						wprintf_s(L"%zu: %2u: Very low key%2u\n", src->time, src->CH, key);
 						key += 12;
@@ -1392,7 +1503,7 @@ int wmain(int argc, wchar_t** argv)
 					unsigned oct = key / 12;
 					unsigned pre_note = key % 12;
 					unsigned note = (pre_note << 2) / 3;
-					//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param, oct, note);
+					//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param.B[0], oct, note);
 					union {
 						struct {
 							unsigned __int8 note : 4;
@@ -1404,16 +1515,17 @@ int wmain(int argc, wchar_t** argv)
 
 					U.S.note = note;
 					U.S.oct = oct;
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x28 + src->CH;
-					*vgm_pos++ = U.KC;
-					*vgm_pos++ = vgm_command_chip[chip];
-					*vgm_pos++ = 0x08;
-					*vgm_pos++ = src->CH | 0x78;
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28 + src->CH, U.KC);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH | 0x78);
 				}
 				break;
 			case 0xE9: // Tie
-				Disable_note_off[src->CH] = 1;
+				(pCHparam + src->CH)->Disable_note_off = 1;
+				break;
+			case 0xE5: // Set Flags
+				(pCHparam + src->CH)->vDetune_ready = !!(src->Param.B[0] & 1);
+				(pCHparam + src->CH)->flag5 = !!(src->Param.B[0] & 2);
+				(pCHparam + src->CH)->LFO_ready = !!(src->Param.B[0] & 4);
 				break;
 			case 0xE0: // Counter
 				break;
