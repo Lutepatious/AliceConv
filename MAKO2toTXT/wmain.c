@@ -135,11 +135,10 @@ struct mako2_mml_decoded {
 		unsigned __int8 MML[MML_BUFSIZ];
 		size_t len;
 		size_t len_unrolled;
-		size_t Loop_address;
-		size_t Loop_len;
 		size_t time_total;
-		size_t Loop_time;
-		size_t Loop_delta;
+		size_t Loop_start_pos;
+		size_t Loop_start_time;
+		size_t Loop_delta_time;
 		unsigned __int8 Mute_on;
 	} *CHs;
 };
@@ -208,11 +207,48 @@ int eventsort(const* x, const void* n1, const void* n2)
 	}
 }
 
-void make_vgmdata(unsigned __int8 ** dest, unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
+void make_vgmdata(unsigned __int8** dest, unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
 {
 	*(*dest)++ = command;
 	*(*dest)++ = address;
 	*(*dest)++ = data;
+}
+
+void make_vgmwait(unsigned __int8** dest, size_t wait)
+{
+	while (wait) {
+		const size_t wait0 = 0xFFFF;
+		const size_t wait1 = 882;
+		const size_t wait2 = 735;
+		const size_t wait3 = 16;
+
+		if (wait >= wait0) {
+			*(*dest)++ = 0x61;
+			*((unsigned __int16*)*dest)++ = wait0;
+			wait -= wait0;
+		}
+		else if (wait == wait1 * 2 || wait == wait1 + wait2 || (wait <= wait1 + wait3 && wait >= wait1)) {
+			*(*dest)++ = 0x63;
+			wait -= wait1;
+		}
+		else if (wait == wait2 * 2 || (wait <= wait2 + wait3 && wait >= wait2)) {
+			*(*dest)++ = 0x62;
+			wait -= wait2;
+		}
+		else if (wait <= wait3 * 2 && wait >= wait3) {
+			*(*dest)++ = 0x7F;
+			wait -= wait3;
+		}
+		else if (wait <= 15) {
+			*(*dest)++ = 0x70 | (wait - 1);
+			wait = 0;
+		}
+		else {
+			*(*dest)++ = 0x61;
+			*((unsigned __int16*)*dest)++ = wait;
+			wait = 0;
+		}
+	}
 }
 
 int wmain(int argc, wchar_t** argv)
@@ -358,10 +394,10 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 
-			waveC2.Subchunk2ID = _byteswap_ulong(0x64617461);
+			waveC2.Subchunk2ID = _byteswap_ulong(0x64617461); // "data"
 			waveC2.Subchunk2Size = len;
 
-			waveC1.Subchunk1ID = _byteswap_ulong(0x666d7420);
+			waveC1.Subchunk1ID = _byteswap_ulong(0x666d7420); // "fmt "
 			waveC1.Subchunk1Size = 16;
 			waveC1.AudioFormat = 1;
 			waveC1.NumChannels = 1;
@@ -370,8 +406,8 @@ int wmain(int argc, wchar_t** argv)
 			waveC1.ByteRate = waveC1.NumChannels * waveC1.SampleRate * waveC1.BitsPerSample / 8;
 			waveC1.BlockAlign = waveC1.NumChannels * waveC1.BitsPerSample / 8;
 
-			waveH.ChunkID = _byteswap_ulong(0x52494646);
-			waveH.Format = _byteswap_ulong(0x57415645);
+			waveH.ChunkID = _byteswap_ulong(0x52494646); // "RIFF"
+			waveH.Format = _byteswap_ulong(0x57415645); // "WAVE"
 			waveH.ChunkSize = 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size;
 
 			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
@@ -479,13 +515,13 @@ int wmain(int argc, wchar_t** argv)
 			__int16 time, time_on, time_off, gate_step = 7;
 			unsigned __int8 flag_gate = 0;
 			unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML;
-			(MMLs_decoded.CHs + i)->Loop_address = 0;
-			(MMLs_decoded.CHs + i)->Loop_time = 0;
+			(MMLs_decoded.CHs + i)->Loop_start_pos = 0;
+			(MMLs_decoded.CHs + i)->Loop_start_time = 0;
 
 			for (size_t j = 0; j < Blocks; j++) {
 				if (j == Loop_Block) {
-					(MMLs_decoded.CHs + i)->Loop_address = dest - (MMLs_decoded.CHs + i)->MML;
-					(MMLs_decoded.CHs + i)->Loop_time = (MMLs_decoded.CHs + i)->time_total;
+					(MMLs_decoded.CHs + i)->Loop_start_pos = dest - (MMLs_decoded.CHs + i)->MML;
+					(MMLs_decoded.CHs + i)->Loop_start_time = (MMLs_decoded.CHs + i)->time_total;
 				}
 
 				pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
@@ -725,8 +761,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 			(MMLs_decoded.CHs + i)->len = dest - (MMLs_decoded.CHs + i)->MML;
-			(MMLs_decoded.CHs + i)->Loop_delta = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_time;
-			(MMLs_decoded.CHs + i)->Loop_len = (MMLs_decoded.CHs + i)->len - (MMLs_decoded.CHs + i)->Loop_address;
+			(MMLs_decoded.CHs + i)->Loop_delta_time = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_start_time;
 
 #if 0
 			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
@@ -742,7 +777,7 @@ int wmain(int argc, wchar_t** argv)
 		size_t delta_time_LCM = 1;
 		size_t max_time = MMLs_decoded.CHs->time_total;
 		size_t end_time = 0;
-		size_t loop_start_time = MMLs_decoded.CHs->Loop_time;
+		size_t loop_start_time = MMLs_decoded.CHs->Loop_start_time;
 		size_t latest_CH = 0;
 		unsigned no_loop = 1;
 
@@ -753,17 +788,17 @@ int wmain(int argc, wchar_t** argv)
 			// 全チャンネルが非ループかチェック
 			no_loop &= (MMLs_decoded.CHs + i)->Mute_on;
 			// そもそもループしないチャネルはスキップ
-			if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta == 0) {
+			if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta_time == 0) {
 				continue;
 			}
-			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta);
+			delta_time_LCM = LCM(delta_time_LCM, (MMLs_decoded.CHs + i)->Loop_delta_time);
 			// ループなしの最長時間割り出し
 			if (max_time < (MMLs_decoded.CHs + i)->time_total) {
 				max_time = (MMLs_decoded.CHs + i)->time_total;
 			}
 			// ループ開始が最後のチャネル割り出し
-			if (loop_start_time < (MMLs_decoded.CHs + i)->Loop_time) {
-				loop_start_time = (MMLs_decoded.CHs + i)->Loop_time;
+			if (loop_start_time < (MMLs_decoded.CHs + i)->Loop_start_time) {
+				loop_start_time = (MMLs_decoded.CHs + i)->Loop_start_time;
 				latest_CH = i;
 			}
 		}
@@ -777,21 +812,18 @@ int wmain(int argc, wchar_t** argv)
 			loop_start_time = SIZE_MAX;
 		}
 		else {
-			wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
+			wprintf_s(L"Loop: Yes %zu Start %zu\n", delta_time_LCM, loop_start_time);
 			end_time = loop_start_time + delta_time_LCM;
 			for (size_t i = 0; i < CHs_real; i++) {
 				// そもそもループしないチャネルはスキップ
-				if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta == 0) {
+				if ((MMLs_decoded.CHs + i)->Mute_on || (MMLs_decoded.CHs + i)->Loop_delta_time == 0) {
 					continue;
 				}
-				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address;
-				unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->len;
-				size_t len = (MMLs_decoded.CHs + i)->Loop_len;
-				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_time;
-				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta);
-				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len + len * times;
+				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_start_time;
+				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta_time + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta_time);
+				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len * (times + 1) - (MMLs_decoded.CHs + i)->Loop_start_pos * times;
 
-				wprintf_s(L"%2zu: %9zu -> %9zu\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled);
+				wprintf_s(L"%2zu: %9zu -> %9zu : loop from %zu(%zu)\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled, (MMLs_decoded.CHs + i)->Loop_start_pos, (MMLs_decoded.CHs + i)->Loop_start_time);
 			}
 		}
 
@@ -803,17 +835,22 @@ int wmain(int argc, wchar_t** argv)
 		size_t counter = 0;
 		size_t time_loop_start = 0;
 		unsigned loop_enable = 0;
-		for (size_t i = 0; i < CHs_real; i++) {
+		for (size_t j = 0; j < CHs_real; j++) {
+			size_t i = CHs_real - 1 - j;
+			if (chip == YM2151 || chip_force == YM2151) {
+				i = j;
+			}
+
 			size_t time = 0;
 			size_t len = 0;
 			while (len < (MMLs_decoded.CHs + i)->len_unrolled) {
 				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + len;
-				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_address)) && (loop_start_time != SIZE_MAX)) {
+				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_start_pos)) && (loop_start_time != SIZE_MAX)) {
 					time_loop_start = time;
 					loop_enable = 1;
 				}
 				while (src >= (MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->len) {
-					src -= (MMLs_decoded.CHs + i)->Loop_len;
+					src -= (MMLs_decoded.CHs + i)->len - (MMLs_decoded.CHs + i)->Loop_start_pos;
 				}
 
 				unsigned __int8* src_orig = src;
@@ -905,27 +942,27 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
-				case 0xE7: 
-				case 0xE6: 
+				case 0xE7:
+				case 0xE6:
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param.W[0] = *(unsigned __int16 *)src++;
-					dest->Param.W[1] = *(unsigned __int16 *)src++;
-					dest->Param.W[2] = *(unsigned __int16 *)src++;
-					dest->Param.W[3] = *(unsigned __int16 *)src++;
+					dest->Param.W[0] = *(unsigned __int16*)src++;
+					dest->Param.W[1] = *(unsigned __int16*)src++;
+					dest->Param.W[2] = *(unsigned __int16*)src++;
+					dest->Param.W[3] = *(unsigned __int16*)src++;
 					dest->time = time;
 					dest->Type = 25;
 					dest->CH = i;
 					dest++;
 					break;
-				case 0xE8: 
+				case 0xE8:
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param.W[0] = *(unsigned __int16 *)src++;
-					dest->Param.W[1] = *(unsigned __int16 *)src++;
-					dest->Param.W[2] = *(unsigned __int16 *)src++;
-					dest->Param.W[3] = *(unsigned __int16 *)src++;
-					dest->Param.W[4] = *(unsigned __int16 *)src++;
+					dest->Param.W[0] = *(unsigned __int16*)src++;
+					dest->Param.W[1] = *(unsigned __int16*)src++;
+					dest->Param.W[2] = *(unsigned __int16*)src++;
+					dest->Param.W[3] = *(unsigned __int16*)src++;
+					dest->Param.W[4] = *(unsigned __int16*)src++;
 					dest->time = time;
 					dest->Type = 25;
 					dest->CH = i;
@@ -950,9 +987,11 @@ int wmain(int argc, wchar_t** argv)
 		while ((pEVENTs + length_real)->time < end_time) {
 			length_real++;
 		}
-		while ((pEVENTs + length_real)->Event == 0x80) {
+#if 1
+		while ((pEVENTs + length_real)->time == end_time && (pEVENTs + length_real)->Event == 0x80) {
 			length_real++;
 		}
+#endif
 		wprintf_s(L"Event Length %8zu\n", length_real);
 
 #if 1
@@ -1097,7 +1136,7 @@ int wmain(int argc, wchar_t** argv)
 			if (src->CH >= CHs_limit) {
 				continue;
 			}
-			if (src->time - Time_Prev) {
+			if (src->time - Time_Prev && (src - pEVENTs) < length_real) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -1118,52 +1157,20 @@ int wmain(int argc, wchar_t** argv)
 				Time_Prev_VGM_abs += d_VGMT;
 				Time_Prev = src->time;
 
-				while (d_VGMT) {
-					const size_t wait0 = 0xFFFF;
-					const size_t wait1 = 882;
-					const size_t wait2 = 735;
-					const size_t wait3 = 16;
-
-					if (d_VGMT >= wait0) {
-						*vgm_pos++ = 0x61;
-						*((unsigned __int16*)vgm_pos)++ = wait0;
-						d_VGMT -= wait0;
-					}
-					else if (d_VGMT == wait1 * 2 || d_VGMT == wait1 + wait2 || (d_VGMT <= wait1 + wait3 && d_VGMT >= wait1)) {
-						*vgm_pos++ = 0x63;
-						d_VGMT -= wait1;
-					}
-					else if (d_VGMT == wait2 * 2 || (d_VGMT <= wait2 + wait3 && d_VGMT >= wait2)) {
-						*vgm_pos++ = 0x62;
-						d_VGMT -= wait2;
-					}
-					else if (d_VGMT <= wait3 * 2 && d_VGMT >= wait3) {
-						*vgm_pos++ = 0x7F;
-						d_VGMT -= wait3;
-					}
-					else if (d_VGMT <= 15) {
-						*vgm_pos++ = 0x70 | (d_VGMT - 1);
-						d_VGMT = 0;
-					}
-					else {
-						*vgm_pos++ = 0x61;
-						*((unsigned __int16*)vgm_pos)++ = d_VGMT;
-						d_VGMT = 0;
-					}
-				}
+				make_vgmwait(&vgm_pos, d_VGMT);
 			}
 
 			if ((src - pEVENTs) == length_real) {
 				break;
 			}
 
-			if (loop_enable && src->time == time_loop_start && src->Type) {
+			if (loop_enable && src->time >= time_loop_start) {
 				Time_Loop_VGM_abs = Time_Prev_VGM_abs;
 				loop_pos = vgm_pos;
 				loop_enable = 0;
 			}
 
-						switch (src->Event) {
+			switch (src->Event) {
 			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
 //				wprintf_s(L"%8zu: OLD tempo %zd total %zd\n", src->time, Tempo, Time_Prev_VGM);
 				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param.B[0] + 1) >> 1;
