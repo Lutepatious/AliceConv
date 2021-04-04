@@ -1347,6 +1347,7 @@ int wmain(int argc, wchar_t** argv)
 					(pCHparam + src->CH)->Algorithm = (T + src->Param.B[0])->H.S.Connect;
 					(T + src->Param.B[0])->H.S.RL = Panpot_YM2151[src->CH];
 
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
 					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x20 + src->CH, (T + src->Param.B[0])->H.B);
 					for (size_t op = 0; op < 4; op++) {
 						for (size_t j = 0; j < 6; j++) {
