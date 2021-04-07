@@ -1234,7 +1234,7 @@ int wmain(int argc, wchar_t** argv)
 				Time_Prev_VGM = ((Time_Prev_VGM * Tempo * 2) / src->Param.B[0] + 1) >> 1;
 				Tempo = src->Param.B[0];
 
-				// この後のNAの計算とタイマ割り込みの設定はVGMでは不要
+				// この後のNAの計算とタイマ割り込みの設定は実際には不要
 				size_t NA;
 				if (chip == YM2203) {
 					NA = 1024 - (((master_clock * 2) / (192LL * src->Param.B[0]) + 1) >> 1);
@@ -1446,6 +1446,7 @@ int wmain(int argc, wchar_t** argv)
 				}
 				break;
 			case 0xE4: // LFO
+				wprintf_s(L"E4 - LFO not implimented.\n");
 				(pCHparam + src->CH)->LFO_ready = 1;
 				(pCHparam + src->CH)->PMS = src->Param.B[1];
 				(pCHparam + src->CH)->AMS = src->Param.B[2];
@@ -1514,6 +1515,7 @@ int wmain(int argc, wchar_t** argv)
 				break;
 #endif
 			case 0xE7: // vDetune
+				wprintf_s(L"E7 - vDetune not implimented.\n");
 				(pCHparam + src->CH)->vDetune_ready = 1;
 				(pCHparam + src->CH)->vDetune_first_wait = src->Param.W[0];
 				(pCHparam + src->CH)->vDetune_next_wait = src->Param.W[1];
@@ -1531,6 +1533,7 @@ int wmain(int argc, wchar_t** argv)
 				break;
 
 			case 0xE6: // vVolume
+				wprintf_s(L"E6 - vVolume not implimented.\n");
 				(pCHparam + src->CH)->vVolume_ready = 1;
 				(pCHparam + src->CH)->vVolume_first_wait = src->Param.W[0];
 				(pCHparam + src->CH)->vVolume_next_wait = src->Param.W[1];
@@ -1569,6 +1572,7 @@ int wmain(int argc, wchar_t** argv)
 				}
 				break;
 			case 0xE8: // vVolume
+				wprintf_s(L"E8 - vVolume not implimented.\n");
 				(pCHparam + src->CH)->vVolume_ready = 1;
 				(pCHparam + src->CH)->vVolume_first_wait = src->Param.W[0];
 				(pCHparam + src->CH)->vVolume_next_wait = src->Param.W[1];
@@ -1598,6 +1602,7 @@ int wmain(int argc, wchar_t** argv)
 				(pCHparam + src->CH)->Disable_note_off = 1;
 				break;
 			case 0xE5: // Set Flags
+				wprintf_s(L"E5 - V3 features not implimented.\n");
 				(pCHparam + src->CH)->vDetune_ready = !!(src->Param.B[0] & 1);
 				(pCHparam + src->CH)->vVolume_ready = !!(src->Param.B[0] & 2);
 				(pCHparam + src->CH)->LFO_ready = !!(src->Param.B[0] & 4);
