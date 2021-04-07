@@ -328,6 +328,7 @@ void make_vgm_init(unsigned __int8** dest, enum CHIP chip)
 	*dest += Init_len;
 }
 
+
 wchar_t* filename_replace_ext(wchar_t* outfilename, wchar_t* newext)
 {
 	static wchar_t path[_MAX_PATH];
@@ -602,7 +603,7 @@ int wmain(int argc, wchar_t** argv)
 			//			wprintf_s(L"CH %2zu: %2zu Blocks return to %2zu ", i, Blocks, Loop_Block);
 
 			unsigned __int16 Octave = 4, Octave_current = 4;
-			unsigned __int16 time_default = 48, note;
+			unsigned __int16 time_default = 0x40, note;
 			__int16 time, time_on, time_off, gate_step = 7;
 			unsigned __int8 flag_gate = 0;
 			unsigned __int8* dest = (MMLs_decoded.CHs + i)->MML;
@@ -1188,6 +1189,7 @@ int wmain(int argc, wchar_t** argv)
 		} *pCHparam = GC_malloc(sizeof(struct CH_params) * CHs_limit);
 
 		unsigned __int8 Panpot_YM2151[8] = { 0x3, 0x3,  0x3,  0x3,  0x3,  0x3,  0x3,  0x3 };
+		unsigned __int8 NoteOn_YM2151[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
 			if (src->time == SIZE_MAX || length_real == 0) {
@@ -1347,7 +1349,10 @@ int wmain(int argc, wchar_t** argv)
 					(pCHparam + src->CH)->Algorithm = (T + src->Param.B[0])->H.S.Connect;
 					(T + src->Param.B[0])->H.S.RL = Panpot_YM2151[src->CH];
 
-					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
+					if (NoteOn_YM2151[src->CH]) {
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
+						NoteOn_YM2151[src->CH] = 0;
+					}
 					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x20 + src->CH, (T + src->Param.B[0])->H.B);
 					for (size_t op = 0; op < 4; op++) {
 						for (size_t j = 0; j < 6; j++) {
@@ -1375,6 +1380,7 @@ int wmain(int argc, wchar_t** argv)
 					}
 					else if (chip == YM2151) {
 						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
+						NoteOn_YM2151[src->CH] = 0;
 					}
 				}
 				break;
@@ -1425,17 +1431,17 @@ int wmain(int argc, wchar_t** argv)
 				else if (chip == YM2151) {
 					switch ((pCHparam + src->CH)->Algorithm) {
 					case 7:
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x60 + src->CH, ~(pCHparam + src->CH)->Volume);
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x60 + src->CH, ~(pCHparam + src->CH)->Volume & 0x7F);
 					case 5:
 					case 6:
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x68 + src->CH, ~(pCHparam + src->CH)->Volume);
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x68 + src->CH, ~(pCHparam + src->CH)->Volume & 0x7F);
 					case 4:
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x70 + src->CH, ~(pCHparam + src->CH)->Volume);
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x70 + src->CH, ~(pCHparam + src->CH)->Volume & 0x7F);
 					case 0:
 					case 1:
 					case 2:
 					case 3:
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x78 + src->CH, ~(pCHparam + src->CH)->Volume);
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x78 + src->CH, ~(pCHparam + src->CH)->Volume & 0x7F);
 						break;
 					default:
 						wprintf_s(L"? How to reach ?\n");
@@ -1584,8 +1590,13 @@ int wmain(int argc, wchar_t** argv)
 
 					U.S.note = note;
 					U.S.oct = oct;
+					if (NoteOn_YM2151[src->CH]) {
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
+						NoteOn_YM2151[src->CH] = 0;
+					}
 					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28 + src->CH, U.KC);
 					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH | 0x78);
+					NoteOn_YM2151[src->CH] = 1;
 				}
 				break;
 			case 0xE9: // Tie
