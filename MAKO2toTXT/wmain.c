@@ -1055,7 +1055,7 @@ int wmain(int argc, wchar_t** argv)
 		// イベント列をソートする
 		qsort_s(pEVENTs, dest - pEVENTs, sizeof(struct EVENT), eventsort, NULL);
 
-		// イベント列の長さを測る、時間になってもNote offが続くなら追加する
+		// イベント列の長さを測る。もしループ末尾がループ入り口直前と一致するならループ起終点を繰り上げる
 		size_t length_real = 0;
 		size_t loop_start_index = SIZE_MAX;
 		while ((pEVENTs + length_real)->time < end_time) {
