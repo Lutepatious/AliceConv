@@ -590,6 +590,7 @@ int wmain(int argc, wchar_t** argv)
 
 		for (size_t i = 0; i < CHs_real; i++) {
 			if (!pM2HDR->CH_addr[i]) {
+				(MMLs_decoded.CHs + i)->Mute_on = 1;
 				continue;
 			}
 			size_t Blocks = 0;
@@ -620,9 +621,9 @@ int wmain(int argc, wchar_t** argv)
 				pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
 				unsigned __int8* src = &inbuf[*(pBlock_offset + j)];
 
-//				wprintf_s(L"%2zu: ", j);
+				//				wprintf_s(L"%2zu: ", j);
 				while (*src != 0xFF) {
-//					wprintf_s(L"%02X ", *src);
+					//					wprintf_s(L"%02X ", *src);
 					unsigned makenote = 0;
 					switch (*src) {
 					case 0x00:
@@ -826,6 +827,7 @@ int wmain(int argc, wchar_t** argv)
 							time_on = 0;
 						}
 						if (time_on) {
+							*dest++ = 0x90;
 							*dest++ = Octave_current * 12 + note - 1; // 0 - 95 (MIDI Note No.12 - 107)
 							*((unsigned __int16*)dest)++ = time_on;
 							(MMLs_decoded.CHs + i)->time_total += time_on;
@@ -838,7 +840,7 @@ int wmain(int argc, wchar_t** argv)
 						}
 					}
 				}
-//				wprintf_s(L"\n");
+				//				wprintf_s(L"\n");
 			}
 
 			(MMLs_decoded.CHs + i)->len = dest - (MMLs_decoded.CHs + i)->MML;
@@ -953,7 +955,7 @@ int wmain(int argc, wchar_t** argv)
 
 				unsigned __int8* src_orig = src;
 				switch (*src) {
-				case 0x80:
+				case 0x80: // Note off
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->time = time;
@@ -1058,17 +1060,17 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
+				case 0x90: // Note on
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param.B[0] = *src++;
+					dest->time = time;
+					time += *((unsigned __int16*)src)++;
+					dest->Type = 30;
+					dest->CH = i;
+					dest++;
+					break;
 				default:
-					if (*src < 96) { // Note on
-						dest->Count = counter++;
-						dest->Event = *src++;
-						dest->time = time;
-						time += *((unsigned __int16*)src)++;
-						dest->Type = 30;
-						dest->CH = i;
-						dest++;
-						break;
-					}
 					wprintf_s(L"%zu: %2zu: How to reach ? %02X %02X %02X %02X %02X %02X %02X %02X,%02X %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *(src - 8), *(src - 7), *(src - 6), *(src - 5), *(src - 4), *(src - 3), *(src - 2), *(src - 1), *src, *(src + 1));
 					break;
 				}
@@ -1661,83 +1663,80 @@ int wmain(int argc, wchar_t** argv)
 			case 0xFA:
 				wprintf_s(L"FA - not implimented.\n");
 				break;
+			case 0x90: // Note on
+				if ((chip == YM2203) || (chip == YM2608)) {
+					unsigned __int8 out_Port;
+					unsigned __int8 out_Ch;
 
-			default:
-				if (src->Event < 96) { // Note on
-					if ((chip == YM2203) || (chip == YM2608)) {
-						unsigned __int8 out_Port;
-						unsigned __int8 out_Ch;
-
-						if (src->CH < 3) {
-							out_Ch = src->CH;
-							out_Port = vgm_command_chip[chip];
-						}
-						else if (src->CH > 5) {
-							out_Ch = src->CH - 6;
-							out_Port = vgm_command_chip2[chip];
-						}
-						else {
-							out_Ch = src->CH - 3;
-							out_Port = vgm_command_chip[chip];
-							union {
-								unsigned __int16 W;
-								unsigned __int8 B[2];
-							} U;
-
-							U.W = TP[src->Event] + (-(pCHparam + src->CH)->Detune >> 2);
-
-							make_vgmdata(&vgm_pos, out_Port, 0x01 + out_Ch * 2, U.B[1]);
-							make_vgmdata(&vgm_pos, out_Port, 0x00 + out_Ch * 2, U.B[0]);
-							SSG_out &= ~(1 << (src->CH - 3));
-							make_vgmdata(&vgm_pos, out_Port, 0x07, SSG_out);
-							break;
-						}
-
+					if (src->CH < 3) {
+						out_Ch = src->CH;
+						out_Port = vgm_command_chip[chip];
+					}
+					else if (src->CH > 5) {
+						out_Ch = src->CH - 6;
+						out_Port = vgm_command_chip2[chip];
+					}
+					else {
+						out_Ch = src->CH - 3;
+						out_Port = vgm_command_chip[chip];
 						union {
-							struct {
-								unsigned __int16 FNumber : 11;
-								unsigned __int16 Block : 3;
-								unsigned __int16 dummy : 2;
-							} S;
+							unsigned __int16 W;
 							unsigned __int8 B[2];
 						} U;
 
-						U.S.FNumber = FNumber[src->Event % 12] + (pCHparam + src->CH)->Detune;
-						U.S.Block = src->Event / 12;
-						make_vgmdata(&vgm_pos, out_Port, 0xA4 + out_Ch, U.B[1]);
-						make_vgmdata(&vgm_pos, out_Port, 0xA0 + out_Ch, U.B[0]);
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28, out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0));
-					}
-					else if (chip == YM2151) {
-						unsigned key = src->Event;
-						if (key < 3) {
-							wprintf_s(L"%zu: %2u: Very low key%2u\n", src->time, src->CH, key);
-							key += 12;
-						}
-						key -= 3;
-						unsigned oct = key / 12;
-						unsigned pre_note = key % 12;
-						unsigned note = (pre_note << 2) / 3;
-						//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param.B[0], oct, note);
-						union {
-							struct {
-								unsigned __int8 note : 4;
-								unsigned __int8 oct : 3;
-								unsigned __int8 dummy : 1;
-							} S;
-							unsigned __int8 KC;
-						} U;
+						U.W = TP[src->Param.B[0]] + (-(pCHparam + src->CH)->Detune >> 2);
 
-						U.S.note = note;
-						U.S.oct = oct;
-						if (NoteOn_YM2151[src->CH]) {
-							make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
-							NoteOn_YM2151[src->CH] = 0;
-						}
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28 + src->CH, U.KC);
-						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH | 0x78);
-						NoteOn_YM2151[src->CH] = 1;
+						make_vgmdata(&vgm_pos, out_Port, 0x01 + out_Ch * 2, U.B[1]);
+						make_vgmdata(&vgm_pos, out_Port, 0x00 + out_Ch * 2, U.B[0]);
+						SSG_out &= ~(1 << (src->CH - 3));
+						make_vgmdata(&vgm_pos, out_Port, 0x07, SSG_out);
+						break;
 					}
+
+					union {
+						struct {
+							unsigned __int16 FNumber : 11;
+							unsigned __int16 Block : 3;
+							unsigned __int16 dummy : 2;
+						} S;
+						unsigned __int8 B[2];
+					} U;
+
+					U.S.FNumber = FNumber[src->Param.B[0] % 12] + (pCHparam + src->CH)->Detune;
+					U.S.Block = src->Param.B[0] / 12;
+					make_vgmdata(&vgm_pos, out_Port, 0xA4 + out_Ch, U.B[1]);
+					make_vgmdata(&vgm_pos, out_Port, 0xA0 + out_Ch, U.B[0]);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28, out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0));
+				}
+				else if (chip == YM2151) {
+					unsigned key = src->Param.B[0];
+					if (key < 3) {
+						wprintf_s(L"%zu: %2u: Very low key%2u\n", src->time, src->CH, key);
+						key += 12;
+					}
+					key -= 3;
+					unsigned oct = key / 12;
+					unsigned pre_note = key % 12;
+					unsigned note = (pre_note << 2) / 3;
+					//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", src->time, src->Event, src->Param.B[0], oct, note);
+					union {
+						struct {
+							unsigned __int8 note : 4;
+							unsigned __int8 oct : 3;
+							unsigned __int8 dummy : 1;
+						} S;
+						unsigned __int8 KC;
+					} U;
+
+					U.S.note = note;
+					U.S.oct = oct;
+					if (NoteOn_YM2151[src->CH]) {
+						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH);
+						NoteOn_YM2151[src->CH] = 0;
+					}
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x28 + src->CH, U.KC);
+					make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x08, src->CH | 0x78);
+					NoteOn_YM2151[src->CH] = 1;
 				}
 				break;
 			}
