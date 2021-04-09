@@ -557,12 +557,10 @@ int wmain(int argc, wchar_t** argv)
 #endif
 
 		unsigned CHs = (pM2HDR->chiptune_addr - 4) / 4;
-		unsigned CHs_real = 0;
+		unsigned CHs_real = CHs;
 
-		for (size_t i = 0; i < CHs; i++) {
-			if (pM2HDR->CH_addr[i]) {
-				CHs_real++;
-			}
+		while (!pM2HDR->CH_addr[CHs_real - 1]) {
+			CHs_real--;
 		}
 
 		if (chip_force != NONE) {
@@ -586,11 +584,14 @@ int wmain(int argc, wchar_t** argv)
 		struct mako2_mml_decoded MMLs_decoded;
 		MMLs_decoded.CHs = GC_malloc(sizeof(struct mako2_mml_CH_decoded) * CHs_real);
 		if (MMLs_decoded.CHs == NULL) {
-			wprintf_s(L"Memory allocation error. \n");
+			wprintf_s(L"Memory allocation error.\n");
 			exit(-2);
 		}
 
 		for (size_t i = 0; i < CHs_real; i++) {
+			if (!pM2HDR->CH_addr[i]) {
+				continue;
+			}
 			size_t Blocks = 0;
 			unsigned __int16* pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
 			unsigned __int16 Block_offset = *pBlock_offset;
@@ -619,10 +620,10 @@ int wmain(int argc, wchar_t** argv)
 				pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
 				unsigned __int8* src = &inbuf[*(pBlock_offset + j)];
 
-				// wprintf_s(L"%2zu: ", j);
+//				wprintf_s(L"%2zu: ", j);
 				while (*src != 0xFF) {
+//					wprintf_s(L"%02X ", *src);
 					unsigned makenote = 0;
-					// wprintf_s(L"%02X ", *src);
 					switch (*src) {
 					case 0x00:
 					case 0x01:
@@ -716,7 +717,8 @@ int wmain(int argc, wchar_t** argv)
 						break;
 
 					case 0xF6: // none
-						wprintf_s(L"%02X\n", *src);
+						memcpy_s(dest, 3, src, 3);
+						dest += 3;
 						src += 3;
 						break;
 
@@ -729,7 +731,6 @@ int wmain(int argc, wchar_t** argv)
 						src++;
 						break;
 
-					case 0xFA: // none
 					case 0xFD: // none
 						wprintf_s(L"%02X\n", *src);
 						src += 2;
@@ -745,6 +746,7 @@ int wmain(int argc, wchar_t** argv)
 					case 0xF4: // Tempo
 					case 0xF5: // Tone select
 					case 0xF9: // Volume change
+					case 0xFA: // none
 					case 0xFC: // Detune
 						memcpy_s(dest, 2, src, 2);
 						dest += 2;
@@ -782,7 +784,6 @@ int wmain(int argc, wchar_t** argv)
 						dest += 11;
 						src += 11;
 						break;
-						break;
 
 					case 0xE4: // LFO
 						chip = YM2608;
@@ -794,7 +795,7 @@ int wmain(int argc, wchar_t** argv)
 					default:
 						src++;
 					}
-					// 音程表現はオクターブ*12+音名の8bit(0-95)とするMIDIノートナンバーから12引いた値となる。
+					// 音程表現はオクターブ*12+音名の8bit(0-95)とする。MIDIノートナンバーから12引いた値となる。
 					if (makenote) {
 						if (time == 1) {
 							time_on = 1;
@@ -837,23 +838,20 @@ int wmain(int argc, wchar_t** argv)
 						}
 					}
 				}
-				src++;
-
-				//	wprintf_s(L"\n");
+//				wprintf_s(L"\n");
 			}
 
 			(MMLs_decoded.CHs + i)->len = dest - (MMLs_decoded.CHs + i)->MML;
 			(MMLs_decoded.CHs + i)->Loop_delta_time = (MMLs_decoded.CHs + i)->time_total - (MMLs_decoded.CHs + i)->Loop_start_time;
 
 #if 0
-			wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
+			//		wprintf_s(L"MML Length %zu Time %zu Loop Start time %zu, Loop delta time %zu\n", (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->time_total, (MMLs_decoded.CHs + i)->Loop_time, (MMLs_decoded.CHs + i)->Loop_delta);
 			for (size_t j = 0; j < (MMLs_decoded.CHs + i)->len; j++) {
 				wprintf_s(L"%02X ", (MMLs_decoded.CHs + i)->MML[j]);
 			}
 			wprintf_s(L"\n");
 #endif
 		}
-
 
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
 		size_t delta_time_LCM = 1;
@@ -904,15 +902,21 @@ int wmain(int argc, wchar_t** argv)
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_start_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta_time + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta_time);
 				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len * (times + 1) - (MMLs_decoded.CHs + i)->Loop_start_pos * times;
-
+#if 0
 				wprintf_s(L"%2zu: %9zu -> %9zu : loop from %zu(%zu)\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled, (MMLs_decoded.CHs + i)->Loop_start_pos, (MMLs_decoded.CHs + i)->Loop_start_time);
+#endif
 			}
 		}
 
 		wprintf_s(L"Make Sequential events\n");
 
 		// 得られた展開データからイベント列を作る。
-		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * end_time * 3);
+		size_t length_alloc = end_time * 2;
+		struct EVENT* pEVENTs = GC_malloc(sizeof(struct EVENT) * length_alloc);
+		if (pEVENTs == NULL) {
+			wprintf_s(L"Memory allocation error.\n");
+			exit(-2);
+		}
 		struct EVENT* dest = pEVENTs;
 		size_t counter = 0;
 		size_t time_loop_start = 0;
@@ -926,6 +930,18 @@ int wmain(int argc, wchar_t** argv)
 			size_t time = 0;
 			size_t len = 0;
 			while (len < (MMLs_decoded.CHs + i)->len_unrolled) {
+				if (dest - pEVENTs == length_alloc) {
+					size_t length_current = dest - pEVENTs;
+					length_alloc += end_time;
+					pEVENTs = GC_realloc(pEVENTs, sizeof(struct EVENT) * length_alloc);
+					if (pEVENTs == NULL) {
+						wprintf_s(L"Memory allocation error.\n");
+						exit(-2);
+					}
+					dest = pEVENTs + length_current;
+					wprintf_s(L"Memory reallocated in making sequential.\n");
+				}
+
 				unsigned __int8* src = (MMLs_decoded.CHs + i)->MML + len;
 				if ((latest_CH == i) && (src == ((MMLs_decoded.CHs + i)->MML + (MMLs_decoded.CHs + i)->Loop_start_pos)) && (loop_start_time != SIZE_MAX)) {
 					time_loop_start = time;
@@ -957,9 +973,20 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
+				case 0xF6: // none
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param.B[0] = *src++;
+					dest->Param.B[1] = *src++;
+					dest->time = time;
+					dest->Type = 25;
+					dest->CH = i;
+					dest++;
+					break;
 				case 0xE5: // set flags 4 5 6
 				case 0xF5: // Tone select
 				case 0xF9: // Volume change
+				case 0xFA: // none
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->Param.B[0] = *src++;
@@ -1005,14 +1032,14 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
-				case 0xE7:
-				case 0xE6:
+				case 0xE7: // vDetune
+				case 0xE6: // vVolume
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param.W[0] = *(unsigned __int16*)src++;
-					dest->Param.W[1] = *(unsigned __int16*)src++;
-					dest->Param.W[2] = *(unsigned __int16*)src++;
-					dest->Param.W[3] = *(unsigned __int16*)src++;
+					dest->Param.W[0] = *((unsigned __int16*)src)++;
+					dest->Param.W[1] = *((unsigned __int16*)src)++;
+					dest->Param.W[2] = *((unsigned __int16*)src)++;
+					dest->Param.W[3] = *((unsigned __int16*)src)++;
 					dest->time = time;
 					dest->Type = 25;
 					dest->CH = i;
@@ -1021,11 +1048,11 @@ int wmain(int argc, wchar_t** argv)
 				case 0xE8:
 					dest->Count = counter++;
 					dest->Event = *src++;
-					dest->Param.W[0] = *(unsigned __int16*)src++;
-					dest->Param.W[1] = *(unsigned __int16*)src++;
-					dest->Param.W[2] = *(unsigned __int16*)src++;
-					dest->Param.W[3] = *(unsigned __int16*)src++;
-					dest->Param.W[4] = *(unsigned __int16*)src++;
+					dest->Param.W[0] = *((unsigned __int16*)src)++;
+					dest->Param.W[1] = *((unsigned __int16*)src)++;
+					dest->Param.W[2] = *((unsigned __int16*)src)++;
+					dest->Param.W[3] = *((unsigned __int16*)src)++;
+					dest->Param.W[4] = *((unsigned __int16*)src)++;
 					dest->time = time;
 					dest->Type = 25;
 					dest->CH = i;
@@ -1042,7 +1069,7 @@ int wmain(int argc, wchar_t** argv)
 						dest++;
 						break;
 					}
-					wprintf_s(L"%zu: %2zu: How to reach ? %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *src);
+					wprintf_s(L"%zu: %2zu: How to reach ? %02X %02X %02X %02X %02X %02X %02X %02X,%02X %02X\n", src - (MMLs_decoded.CHs + i)->MML, i, *(src - 8), *(src - 7), *(src - 6), *(src - 5), *(src - 4), *(src - 3), *(src - 2), *(src - 1), *src, *(src + 1));
 					break;
 				}
 				len += src - src_orig;
@@ -1081,7 +1108,7 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Event Length %8zu Loop from %zu\n", length_real, loop_start_index);
 
-#if 1
+#if 0
 		for (size_t i = 0; i < length_real; i++) {
 			if ((pEVENTs + i)->Event == 0xE1) {
 				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param);
@@ -1131,7 +1158,12 @@ int wmain(int argc, wchar_t** argv)
 			break;
 		}
 
-		unsigned __int8* vgm_out = GC_malloc(end_time * 10);
+		size_t vgm_length = end_time * 10;
+		unsigned __int8* vgm_out = GC_malloc(vgm_length);
+		if (vgm_out == NULL) {
+			wprintf_s(L"Memory allocation error.\n");
+			exit(-2);
+		}
 		unsigned __int8* vgm_pos = vgm_out;
 
 		// 初期化
@@ -1185,6 +1217,20 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int8 NoteOn_YM2151[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		for (struct EVENT* src = pEVENTs; (src - pEVENTs) <= length_real; src++) {
+			if (vgm_pos - vgm_out + 200 >= vgm_length) {
+				size_t vgm_length_current = vgm_pos - vgm_out;
+				size_t loop_current = loop_pos - vgm_out;
+				vgm_length += end_time * 10;
+				vgm_out = GC_realloc(vgm_out, sizeof(struct EVENT) * vgm_length);
+				if (vgm_out == NULL) {
+					wprintf_s(L"Memory allocation error.\n");
+					exit(-2);
+				}
+				vgm_pos = vgm_out + vgm_length_current;
+				loop_pos = vgm_out + loop_current;
+				wprintf_s(L"Memory reallocated in making VGM.\n");
+			}
+
 			if (src->time == SIZE_MAX || length_real == 0) {
 				break;
 			}
@@ -1422,7 +1468,7 @@ int wmain(int argc, wchar_t** argv)
 						make_vgmdata(&vgm_pos, out_Port, 0x4C + out_Ch, ~(pCHparam + src->CH)->Volume);
 						break;
 					default:
-						wprintf_s(L"? How to reach ?\n");
+						wprintf_s(L"? How to reach %02X %1d %1d ?\n", src->Event, src->CH, (pCHparam + src->CH)->Algorithm);
 					}
 				}
 				else if (chip == YM2151) {
@@ -1441,7 +1487,7 @@ int wmain(int argc, wchar_t** argv)
 						make_vgmdata(&vgm_pos, vgm_command_chip[chip], 0x78 + src->CH, ~(pCHparam + src->CH)->Volume & 0x7F);
 						break;
 					default:
-						wprintf_s(L"? How to reach ?\n");
+						wprintf_s(L"? How to reach %02X ?\n", src->Event);
 					}
 				}
 				break;
@@ -1480,7 +1526,7 @@ int wmain(int argc, wchar_t** argv)
 						make_vgmdata(&vgm_pos, out_Port, 0x6C + out_Ch, (T + (pCHparam + src->CH)->Tone)->Op[3].B[3] | 0x80);
 						break;
 					default:
-						wprintf_s(L"? How to reach ?\n");
+						wprintf_s(L"? How to reach %02X ?\n", src->Event);
 					}
 					make_vgmdata(&vgm_pos, out_Port, 0x22, src->Param.B[0] | 0x8);
 				}
@@ -1509,7 +1555,7 @@ int wmain(int argc, wchar_t** argv)
 						*vgm_pos++ = (T + (pCHparam + src->CH)->Tone)->Op[3].B[3] | 0x80;
 						break;
 					default:
-						wprintf_s(L"? How to reach ?\n");
+						wprintf_s(L"? How to reach %02X ?\n", src->Event);
 					}
 				}
 				break;
@@ -1609,6 +1655,13 @@ int wmain(int argc, wchar_t** argv)
 				break;
 			case 0xE0: // Counter
 				break;
+			case 0xF6:
+				wprintf_s(L"F6 - not implimented.\n");
+				break;
+			case 0xFA:
+				wprintf_s(L"FA - not implimented.\n");
+				break;
+
 			default:
 				if (src->Event < 96) { // Note on
 					if ((chip == YM2203) || (chip == YM2608)) {
