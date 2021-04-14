@@ -559,12 +559,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned CHs = (pM2HDR->chiptune_addr - 4) / 4;
 		unsigned CHs_real = CHs;
 
-		while (!pM2HDR->CH_addr[CHs_real - 1]) {
-			CHs_real--;
-			if (!CHs_real) {
-				break;
-			}
-		}
+		while (CHs_real && !pM2HDR->CH_addr[--CHs_real]);
 		if (!CHs_real) {
 			wprintf_s(L"No Data. skip.\n");
 			continue;
