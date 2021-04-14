@@ -353,7 +353,7 @@ void pcm2wav(unsigned __int8* pcmdata, wchar_t* filename, size_t filelen)
 	unsigned __int8* buffer = NULL;
 	size_t len = 0;
 
-	if (*(unsigned __int64*)pcmdata == 0 && *((unsigned __int32*)pcmdata + 3)) {
+	if (*((unsigned __int64*)pcmdata + 2) == 0 && *((unsigned __int32*)pcmdata + 3)) {
 		tsndH = pcmdata;
 		buffer = tsndH->body;
 		// WAVE 8bitは符号なし8bit表現で、TOWNS SNDは符号1bit+7bitで-0と+0に1の差がある表現な上に中心値は-0。
@@ -1511,17 +1511,11 @@ int wmain(int argc, wchar_t** argv)
 						unsigned __int8 out_Port;
 						unsigned __int8 out_Ch;
 
-						if (src->CH < 3) {
-							out_Ch = src->CH;
-							out_Port = vgm_command_chip[chip];
-						}
-						else if (src->CH > 5) {
-							out_Ch = src->CH - 6;
-							out_Port = 0x57;
-						}
-						else {
+						if (src->CH < 3 || src->CH > 5) {
 							break;
 						}
+
+
 					}
 					break;
 				case 0xE9: // Tie
