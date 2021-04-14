@@ -159,7 +159,6 @@
     <ClCompile Include="wmain.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdbool.h" />
     <ClInclude Include="stdtype.h" />
     <ClInclude Include="VGMFile.h" />
   </ItemGroup>

@@ -9,7 +9,6 @@
 #include "../aclib/wave.h"
 
 #include "stdtype.h"
-#include "stdbool.h"
 #include "VGMFile.h"
 
 #pragma pack (1)
