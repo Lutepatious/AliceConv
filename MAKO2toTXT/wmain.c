@@ -562,6 +562,13 @@ int wmain(int argc, wchar_t** argv)
 
 		while (!pM2HDR->CH_addr[CHs_real - 1]) {
 			CHs_real--;
+			if (!CHs_real) {
+				break;
+			}
+		}
+		if (!CHs_real) {
+			wprintf_s(L"No Data. skip.\n");
+			continue;
 		}
 
 		if (chip_force != NONE) {
@@ -1323,11 +1330,12 @@ int wmain(int argc, wchar_t** argv)
 						}
 
 						union LR_AMS_PMS_YM2608 LRAP;
+						LRAP.B = 0;
 						LRAP.S.LR = Panpot;
 						if ((pCHparam + src->CH)->hLFO_ready) {
 							LRAP.S.AMS = (pCHparam + src->CH)->AMS;
 							LRAP.S.PMS = (pCHparam + src->CH)->PMS;
-						};
+						}
 						make_vgmdata(&vgm_pos, out_Port, 0xB4 + out_Ch, LRAP.B);
 					}
 					break;
@@ -1491,8 +1499,8 @@ int wmain(int argc, wchar_t** argv)
 						}
 					}
 					break;
-				case 0xE8: // sLFOv
-					wprintf_s(L"E8 - sLFOv not implimented.\n");
+				case 0xE8: // sLFOv SSG Only
+					wprintf_s(L"E8 %1X: %04X %04X %04X %04X %04X\n", src->CH, src->Param.W[0], src->Param.W[1], src->Param.W[2], src->Param.W[3], src->Param.W[4]);
 					(pCHparam + src->CH)->sLFOv_ready = 1;
 					(pCHparam + src->CH)->sLFOv_first_wait = src->Param.W[0];
 					(pCHparam + src->CH)->sLFOv_next_wait = src->Param.W[1];
@@ -1520,7 +1528,6 @@ int wmain(int argc, wchar_t** argv)
 					(pCHparam + src->CH)->Disable_note_off = 1;
 					break;
 				case 0xE5: // Set Flags
-					wprintf_s(L"E5 - V3 features not implimented.\n");
 					(pCHparam + src->CH)->sLFOd_ready = !!(src->Param.B[0] & 1);
 					(pCHparam + src->CH)->sLFOv_ready = !!(src->Param.B[0] & 2);
 					(pCHparam + src->CH)->hLFO_ready = !!(src->Param.B[0] & 4);
