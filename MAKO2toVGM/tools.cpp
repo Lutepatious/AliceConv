@@ -12,3 +12,25 @@ wchar_t* filename_replace_ext(wchar_t* outfilename, const wchar_t* newext)
 
 	return path;
 }
+
+size_t LCM(size_t a, size_t b)
+{
+	size_t L, S;
+	if (a == b) {
+		return a;
+	}
+	else if (a > b) {
+		L = a;
+		S = b;
+	}
+	else {
+		L = b;
+		S = a;
+	}
+	while (S != 0) {
+		size_t mod = L % S;
+		L = S;
+		S = mod;
+	}
+	return a * b / L;
+}

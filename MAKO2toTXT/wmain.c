@@ -559,7 +559,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned CHs = (pM2HDR->chiptune_addr - 4) / 4;
 		unsigned CHs_real = CHs;
 
-		while (CHs_real && !pM2HDR->CH_addr[--CHs_real]);
+		while (!pM2HDR->CH_addr[CHs_real - 1] && --CHs_real);
 		if (!CHs_real) {
 			wprintf_s(L"No Data. skip.\n");
 			continue;
@@ -597,12 +597,12 @@ int wmain(int argc, wchar_t** argv)
 			}
 			size_t Blocks = 0;
 			unsigned __int16* pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
-			unsigned __int16 Block_offset = *pBlock_offset;
-			while ((Block_offset & 0xFF00) != 0xFF00) {
+			unsigned __int16* pBlock_offset_work = pBlock_offset;
+			while ((*pBlock_offset_work & 0xFF00) != 0xFF00) {
 				Blocks++;
-				Block_offset = *++pBlock_offset;
+				pBlock_offset_work++;
 			}
-			size_t Loop_Block = Block_offset & 0xFF;
+			size_t Loop_Block = *pBlock_offset_work & 0xFF;
 
 			//			wprintf_s(L"CH %2zu: %2zu Blocks return to %2zu ", i, Blocks, Loop_Block);
 
@@ -620,8 +620,8 @@ int wmain(int argc, wchar_t** argv)
 					(MMLs_decoded.CHs + i)->Loop_start_time = (MMLs_decoded.CHs + i)->time_total;
 				}
 
-				pBlock_offset = (unsigned __int16*)&inbuf[pM2HDR->CH_addr[i]];
-				unsigned __int8* src = &inbuf[*(pBlock_offset + j)];
+//				unsigned __int8* src = &inbuf[*(pBlock_offset + j)];
+				unsigned __int8* src = (unsigned __int8*)inbuf + *(pBlock_offset + j);
 
 				//				wprintf_s(L"%2zu: ", j);
 				while (*src != 0xFF) {
@@ -910,7 +910,7 @@ int wmain(int argc, wchar_t** argv)
 #endif
 			}
 		}
-		if (!max_time) {
+		if (!end_time) {
 			wprintf_s(L"No Data. skip.\n");
 			continue;
 		}
@@ -936,6 +936,7 @@ int wmain(int argc, wchar_t** argv)
 
 			size_t time = 0;
 			size_t len = 0;
+			unsigned __int8 Disable_note_off = 0;
 			while (len < (MMLs_decoded.CHs + i)->len_unrolled) {
 				if (dest - pEVENTs == length_alloc) {
 					size_t length_current = dest - pEVENTs;
@@ -961,13 +962,19 @@ int wmain(int argc, wchar_t** argv)
 				unsigned __int8* src_orig = src;
 				switch (*src) {
 				case 0x80: // Note off
-					dest->Count = counter++;
-					dest->Event = *src++;
-					dest->time = time;
+					if (Disable_note_off) {
+						Disable_note_off = 0;
+						src++;
+					}
+					else {
+						dest->Count = counter++;
+						dest->Event = *src++;
+						dest->time = time;
+						dest->Type = 0;
+						dest->CH = i;
+						dest++;
+					}
 					time += *((unsigned __int16*)src)++;
-					dest->Type = 0;
-					dest->CH = i;
-					dest++;
 					break;
 				case 0xE0: // Counter
 				case 0xE1: // Velocity
@@ -1010,12 +1017,7 @@ int wmain(int argc, wchar_t** argv)
 					dest++;
 					break;
 				case 0xE9: // Tie
-					dest->Count = counter++;
-					dest->Event = *src++;
-					dest->time = time;
-					dest->Type = 31;
-					dest->CH = i;
-					dest++;
+					Disable_note_off = 1;
 					break;
 				case 0xE4: // hLFO
 					dest->Count = counter++;
@@ -1541,7 +1543,7 @@ int wmain(int argc, wchar_t** argv)
 
 						make_vgmdata(&vgm_pos, out_Port, 0x01 + out_Ch * 2, U.B[1]);
 						make_vgmdata(&vgm_pos, out_Port, 0x00 + out_Ch * 2, U.B[0]);
-						SSG_out &= ~(1 << (src->CH - 3));
+						SSG_out &= ~(1 << out_Ch);
 						make_vgmdata(&vgm_pos, out_Port, 0x07, SSG_out);
 						break;
 					}

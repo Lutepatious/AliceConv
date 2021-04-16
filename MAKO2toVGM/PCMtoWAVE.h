@@ -37,4 +37,4 @@ struct TSND_header {
 	unsigned __int16 unk3;
 	unsigned __int8 body[];
 };
-#pragma pack()
+#pragma pack ()

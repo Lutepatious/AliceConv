@@ -1,7 +1,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "gc.h"
+#include "gc_cpp.h"
 
 #include "../aclib/wave.h"
 #include "MAKO2toVGM.h"
