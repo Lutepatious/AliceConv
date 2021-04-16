@@ -976,6 +976,10 @@ int wmain(int argc, wchar_t** argv)
 					}
 					time += *((unsigned __int16*)src)++;
 					break;
+				case 0xE9: // Tie
+					Disable_note_off = 1;
+					src++;
+					break;
 				case 0xE0: // Counter
 				case 0xE1: // Velocity
 				case 0xFC: // Detune
@@ -1015,9 +1019,6 @@ int wmain(int argc, wchar_t** argv)
 					dest->Type = 10;
 					dest->CH = i;
 					dest++;
-					break;
-				case 0xE9: // Tie
-					Disable_note_off = 1;
 					break;
 				case 0xE4: // hLFO
 					dest->Count = counter++;

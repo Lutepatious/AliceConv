@@ -14,11 +14,14 @@ class EVENTS {
 	struct EVENT* event;
 	struct EVENT* dest;
 	size_t counter;
+	size_t time_loop_start;
+	size_t time_end;
+
+	struct EVENT* enlarge(size_t len_cur);
 
 public:
 	size_t events;
-	size_t delta;
-	EVENTS(size_t elems, size_t elems_delta);
-	struct EVENT* enlarge(size_t len_cur);
+	EVENTS(size_t elems, size_t end);
 	void convert(struct mako2_mml_decoded& MMLs);
+	void sort(void);
 };
