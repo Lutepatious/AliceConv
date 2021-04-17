@@ -190,5 +190,12 @@ int wmain(int argc, wchar_t** argv)
 		class EVENTS events(MMLs.end_time * 2, MMLs.end_time);
 		events.convert(MMLs);
 		events.sort();
+		if (debug) {
+			events.print_all();
+		}
+
+		wprintf_s(L"Make VGM\n");
+
+
 	}
 }

@@ -21,7 +21,10 @@ class EVENTS {
 
 public:
 	size_t events;
+	size_t length;
+	size_t loop_start;
 	EVENTS(size_t elems, size_t end);
 	void convert(struct mako2_mml_decoded& MMLs);
 	void sort(void);
+	void print_all(void);
 };

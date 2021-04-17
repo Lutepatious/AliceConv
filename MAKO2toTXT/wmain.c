@@ -1107,10 +1107,10 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Event Length %8zu Loop from %zu\n", length_real, loop_start_index);
 
-#if 0
+#if 1
 		for (size_t i = 0; i < length_real; i++) {
-			if ((pEVENTs + i)->Event == 0xE1) {
-				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param);
+			if ((pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xE7 || (pEVENTs + i)->Event == 0xE8 || (pEVENTs + i)->Event == 0xE5 || (pEVENTs + i)->Event == 0xF5 || (pEVENTs + i)->Event == 0x90 || (pEVENTs + i)->Event == 0x80) {
+				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param.B[0]);
 			}
 		}
 #endif

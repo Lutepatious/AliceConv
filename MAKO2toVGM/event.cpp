@@ -14,6 +14,8 @@ EVENTS::EVENTS(size_t elems, size_t end)
 	this->events = elems;
 	this->time_end = end;
 	this->time_loop_start = 0;
+	this->length = 0;
+	this->loop_start = SIZE_MAX;
 
 	this->event = (struct EVENT *) GC_malloc(sizeof(struct EVENT) * elems);
 	if (this->event == NULL) {
@@ -232,29 +234,35 @@ void EVENTS::sort(void)
 	qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
 
 	// イベント列の長さを測る。もしループ末尾がループ入り口直前と一致するならループ起終点を繰り上げる
-	size_t length_real = 0;
-	size_t loop_start_index = SIZE_MAX;
-	while ((this->event + length_real)->time < this->time_end) {
-		if ((this->event + length_real)->time >= this->time_loop_start) {
-			if (loop_start_index == SIZE_MAX) {
-				loop_start_index = length_real;
+	while ((this->event + this->length)->time < this->time_end) {
+		if ((this->event + this->length)->time >= this->time_loop_start) {
+			if (this->loop_start == SIZE_MAX) {
+				this->loop_start = this->length;
 			}
 		}
-		length_real++;
+		this->length++;
 	}
-	if (loop_start_index != SIZE_MAX) {
-		while (loop_start_index > 0
-			&& (this->event + length_real)->CH == (this->event + loop_start_index)->CH
-			&& (this->event + length_real)->Event == (this->event + loop_start_index)->Event
-			&& (this->event + length_real)->Param.B[0] == (this->event + loop_start_index)->Param.B[0]
-			&& (this->event + length_real)->time - (this->event + length_real - 1)->time == (this->event + loop_start_index)->time - (this->event + loop_start_index - 1)->time
+	if (this->loop_start != SIZE_MAX) {
+		while (this->loop_start > 0
+			&& (this->event + this->length)->CH == (this->event + this->loop_start)->CH
+			&& (this->event + this->length)->Event == (this->event + this->loop_start)->Event
+			&& (this->event + this->length)->Param.B[0] == (this->event + this->loop_start)->Param.B[0]
+			&& (this->event + this->length)->time - (this->event + this->length - 1)->time == (this->event + this->loop_start)->time - (this->event + this->loop_start - 1)->time
 			)
 		{
-			length_real--;
-			loop_start_index--;
+			this->length--;
+			this->loop_start--;
 		}
 	}
 
-	wprintf_s(L"Event Length %8zu Loop from %zu\n", length_real, loop_start_index);
+	wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);
+
+}
+
+void EVENTS::print_all(void)
+{
+	for (size_t i = 0; i < this->length; i++) {
+		wprintf_s(L"%8zu: %2d: %02X\n", (event + i)->time, (event + i)->CH, (event + i)->Event);
+	}
 
 }
