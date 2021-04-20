@@ -23,11 +23,16 @@ bool mako2_mml_decoded_CH::is_mute(void)
 	return this->Mute_on;
 }
 
-void mako2_mml_decoded_CH::decode(unsigned __int8* input)
+void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 {
+	if (!offs) {
+		this->mute_on();
+		return;
+	}
+
 	size_t Blocks = 0;
-	unsigned __int8* pBlock_offset = input;
-	unsigned __int16* pBlock_offset_work = (unsigned __int16*)pBlock_offset;
+	unsigned __int16* pBlock_offset = (unsigned __int16*)(input + offs);
+	unsigned __int16* pBlock_offset_work = pBlock_offset;
 	while ((*pBlock_offset_work & 0xFF00) != 0xFF00) {
 		Blocks++;
 		pBlock_offset_work++;
@@ -54,7 +59,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input)
 
 		//				wprintf_s(L"%2zu: ", j);
 		while (*src != 0xFF) {
-			//					wprintf_s(L"%02X ", *src);
+//			wprintf_s(L"%02X ", *src);
 			unsigned makenote = 0;
 			switch (*src) {
 			case 0x00:
@@ -305,8 +310,8 @@ void mako2_mml_decoded::unroll_loop(void)
 			max_time = (this->CH + i)->time_total;
 		}
 		// ループ開始が最後のチャネル割り出し
-		if (loop_start_time < (this->CH + i)->Loop_start_time) {
-			loop_start_time = (this->CH + i)->Loop_start_time;
+		if (this->loop_start_time < (this->CH + i)->Loop_start_time) {
+			this->loop_start_time = (this->CH + i)->Loop_start_time;
 			this->latest_CH = i;
 		}
 	}
@@ -317,11 +322,11 @@ void mako2_mml_decoded::unroll_loop(void)
 	if (no_loop) {
 		wprintf_s(L"Loop: NONE %zu\n", max_time);
 		this->end_time = max_time;
-		loop_start_time = SIZE_MAX;
+		this->loop_start_time = SIZE_MAX;
 	}
 	else {
-		wprintf_s(L"Loop: Yes %zu Start %zu\n", delta_time_LCM, loop_start_time);
-		this->end_time = loop_start_time + delta_time_LCM;
+		wprintf_s(L"Loop: Yes %zu Start %zu\n", delta_time_LCM, this->loop_start_time);
+		this->end_time = this->loop_start_time + delta_time_LCM;
 		for (size_t i = 0; i < this->CHs; i++) {
 			// そもそもループしないチャネルはスキップ
 			if ((this->CH + i)->is_mute() || (this->CH + i)->Loop_delta_time == 0) {

@@ -44,7 +44,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			continue;
 		}
-		FILE* pFi, * pFo;
+		FILE* pFi;
 		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");
 		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
@@ -120,12 +120,7 @@ int wmain(int argc, wchar_t** argv)
 
 		struct mako2_mml_decoded MMLs(CHs_real);
 		for (size_t i = 0; i < CHs_real; i++) {
-			if (!pM2HDR->CH_addr[i]) {
-				(MMLs.CH + i)->mute_on();
-				continue;
-			}
-
-			(MMLs.CH + i)->decode(&inbuf[pM2HDR->CH_addr[i]]);
+			(MMLs.CH + i)->decode(inbuf, pM2HDR->CH_addr[i]);
 		}
 
 		MMLs.unroll_loop();
@@ -146,7 +141,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		wprintf_s(L"Make VGM\n");
-		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (struct mako2_tone*)inbuf + pM2HDR->chiptune_addr, (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone));
+		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (struct mako2_tone*)(inbuf + pM2HDR->chiptune_addr), (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone));
 		vgmdata.make_init();
+		vgmdata.convert(events);
+		vgmdata.out(*argv);
 	}
 }

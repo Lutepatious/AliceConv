@@ -53,6 +53,8 @@ struct CH_params {
 	unsigned __int8 Tone;
 	unsigned __int8 AMS;
 	unsigned __int8 PMS;
+	unsigned __int8 Panpot = 3;
+	bool NoteOn;
 };
 
 class VGMdata {
@@ -78,12 +80,15 @@ class VGMdata {
 	unsigned version;
 	unsigned __int8 SSG_out = 0xBF;
 	unsigned __int8 Ex_Vols_count = 0;
+	size_t vgm_dlen = 0;
+	size_t vgm_extra_len = 0;
+	size_t padsize = 11;
 
 	struct EVENT* loop_start = NULL;
 	struct CH_params* pCHparam = NULL;
 	struct mako2_tone* T;
 	enum class CHIP chip = CHIP::NONE;
-	VGM_HEADER h_vgm;
+	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
 	VGMX_CHIP_DATA16 Ex_Vols = { 0,0,0 };
 	void enlarge(void);
@@ -93,10 +98,15 @@ class VGMdata {
 	void make_data_YM2151(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2151, address, data); };
 	void make_data_YM2608port0(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2608port0, address, data); };
 	void make_data_YM2608port1(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2608port1, address, data); };
+	void convert_YM2203(struct EVENT& eve);
+	void convert_YM2608(struct EVENT& eve);
+	void convert_YM2151(struct EVENT& eve);
+	void finish(void);
 
 public:
 	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_tone* t, size_t ntones);
 	void print_all_tones(void);
 	void make_init(void);
 	void convert(class EVENTS& in);
+	void out(wchar_t* p);
 };

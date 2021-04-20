@@ -905,7 +905,7 @@ int wmain(int argc, wchar_t** argv)
 				size_t time_extra = end_time - (MMLs_decoded.CHs + i)->Loop_start_time;
 				size_t times = time_extra / (MMLs_decoded.CHs + i)->Loop_delta_time + !!(time_extra % (MMLs_decoded.CHs + i)->Loop_delta_time);
 				(MMLs_decoded.CHs + i)->len_unrolled = (MMLs_decoded.CHs + i)->len * (times + 1) - (MMLs_decoded.CHs + i)->Loop_start_pos * times;
-#if 0
+#if 1
 				wprintf_s(L"%2zu: %9zu -> %9zu : loop from %zu(%zu)\n", i, (MMLs_decoded.CHs + i)->len, (MMLs_decoded.CHs + i)->len_unrolled, (MMLs_decoded.CHs + i)->Loop_start_pos, (MMLs_decoded.CHs + i)->Loop_start_time);
 #endif
 			}
@@ -1107,7 +1107,7 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Event Length %8zu Loop from %zu\n", length_real, loop_start_index);
 
-#if 1
+#if 0
 		for (size_t i = 0; i < length_real; i++) {
 			if ((pEVENTs + i)->Event == 0xE1 || (pEVENTs + i)->Event == 0xE7 || (pEVENTs + i)->Event == 0xE8 || (pEVENTs + i)->Event == 0xE5 || (pEVENTs + i)->Event == 0xF5 || (pEVENTs + i)->Event == 0x90 || (pEVENTs + i)->Event == 0x80) {
 				wprintf_s(L"%8zu: %2d: %02X %02X\n", (pEVENTs + i)->time, (pEVENTs + i)->CH, (pEVENTs + i)->Event, (pEVENTs + i)->Param.B[0]);

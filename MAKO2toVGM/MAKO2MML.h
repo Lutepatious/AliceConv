@@ -12,7 +12,7 @@ public:
 	mako2_mml_decoded_CH();
 	void mute_on(void);
 	bool is_mute(void);
-	void decode(unsigned __int8* input);
+	void decode(unsigned __int8* input, unsigned __int32 offs);
 };
 
 struct mako2_mml_decoded {

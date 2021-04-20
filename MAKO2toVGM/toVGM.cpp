@@ -211,6 +211,412 @@ void VGMdata::make_wait(size_t wait)
 	}
 }
 
+
+void VGMdata::convert_YM2203(struct EVENT& eve)
+{
+	struct mako2_tone* tone_cur;
+	unsigned Algorithm;
+	size_t NA;
+	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+
+	switch (eve.Event) {
+	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
+		this->Tempo = eve.Param.B[0];
+
+		// この後のNAの計算とタイマ割り込みの設定は実際には不要
+		NA = 1024 - (((this->master_clock * 2) / (192LL * eve.Param.B[0]) + 1) >> 1);
+		this->make_data_YM2203(0x24, (NA >> 2) & 0xFF);
+		this->make_data_YM2203(0x25, NA & 0x03);
+		break;
+	case 0xFC: // Detune
+		(this->pCHparam + eve.CH)->Detune = (__int16)((__int8)eve.Param.B[0]);
+		break;
+	case 0xF5: // Tone select
+		if (eve.CH >= 3) {
+			break;
+		}
+
+		(this->pCHparam + eve.CH)->Tone = eve.Param.B[0];
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+
+		this->make_data_YM2203(0xB0 + eve.CH, tone_cur->H.B);
+
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
+				}
+				else {
+					this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + eve.CH, tone_cur->Op[op].B[j]);
+				}
+			}
+		}
+		break;
+	case 0x80: // Note Off
+		if (eve.CH < 3) {
+			this->make_data_YM2203(0x28, eve.CH);
+		}
+		else if (eve.CH < 6) {
+			this->SSG_out |= (1 << (eve.CH - 3));
+			this->make_data_YM2203(0x07, this->SSG_out);
+		}
+		break;
+	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
+	case 0xE1: // Velocity
+		if (eve.Event == 0xE1) {
+			(this->pCHparam + eve.CH)->Volume += eve.Param.B[0];
+			(this->pCHparam + eve.CH)->Volume &= 0x7F;
+		}
+		else {
+			(this->pCHparam + eve.CH)->Volume = eve.Param.B[0];
+		}
+
+		if (eve.CH >= 3) {
+			this->make_data_YM2203(0x08 + eve.CH - 3, (this->pCHparam + eve.CH)->Volume >> 3);
+			break;
+		}
+
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+		for (size_t op = 0; op < 4; op++) {
+			if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+				this->make_data_YM2203(0x40 + 4 * op + eve.CH, (~(pCHparam + eve.CH)->Volume) & 0x7F);
+			}
+		}
+		break;
+	case 0x90: // Note on
+		if (eve.CH >= 3) {
+			union {
+				unsigned __int16 W;
+				unsigned __int8 B[2];
+			} U;
+
+			U.W = TP[eve.Param.B[0]] + (-(pCHparam + eve.CH)->Detune >> 2);
+
+			this->make_data_YM2203(0x01 + (eve.CH - 3) * 2, U.B[1]);
+			this->make_data_YM2203(0x00 + (eve.CH - 3) * 2, U.B[0]);
+			this->SSG_out &= ~(1 << (eve.CH - 3));
+			this->make_data_YM2203(0x07, this->SSG_out);
+			break;
+		}
+
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 dummy : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		U.S.FNumber = FNumber[eve.Param.B[0] % 12] + (pCHparam + eve.CH)->Detune;
+		U.S.Block = eve.Param.B[0] / 12;
+		this->make_data_YM2203(0xA4 + eve.CH, U.B[1]);
+		this->make_data_YM2203(0xA0 + eve.CH, U.B[0]);
+		this->make_data_YM2203(0x28, eve.CH | 0xF0);
+		break;
+	case 0xE0: // Counter
+		break;
+	}
+}
+
+void VGMdata::convert_YM2608(struct EVENT& eve)
+{
+	struct mako2_tone* tone_cur;
+	unsigned Algorithm;
+	size_t NA;
+	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+	unsigned __int8 out_Port;
+	unsigned __int8 out_Ch;
+	union LR_AMS_PMS_YM2608 LRAP;
+	switch (eve.Event) {
+	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
+		this->Tempo = eve.Param.B[0];
+
+		// この後のNAの計算とタイマ割り込みの設定は実際には不要
+		NA = 1024 - (((this->master_clock * 2) / (384LL * eve.Param.B[0]) + 1) >> 1);
+		this->make_data_YM2608port0(0x24, (NA >> 2) & 0xFF);
+		this->make_data_YM2608port0(0x25, NA & 0x03);
+		break;
+	case 0xFC: // Detune
+		(this->pCHparam + eve.CH)->Detune = (__int16)((__int8)eve.Param.B[0]);
+		break;
+	case 0xEB: // Panpot
+		(this->pCHparam + eve.CH)->Panpot = 3;
+		if (eve.CH < 3) {
+			out_Ch = eve.CH;
+			out_Port = vgm_command_YM2608port0;
+		}
+		else if (eve.CH > 5) {
+			out_Ch = eve.CH - 6;
+			out_Port = vgm_command_YM2608port1;
+		}
+		else {
+			break;
+		}
+
+		if (eve.Param.B[0] & 0x80 || eve.Param.B[0] == 0) {
+			(this->pCHparam + eve.CH)->Panpot = 3;
+		}
+		else if (eve.Param.B[0] < 64) {
+			(this->pCHparam + eve.CH)->Panpot = 2;
+		}
+		else if (eve.Param.B[0] > 64) {
+			(this->pCHparam + eve.CH)->Panpot = 1;
+		}
+
+		LRAP.B = 0;
+		LRAP.S.LR = (this->pCHparam + eve.CH)->Panpot;
+		this->make_data_YM2608port0(0xB4 + out_Ch, LRAP.B);
+		break;
+	case 0xF5: // Tone select
+		if (eve.CH < 3) {
+			out_Ch = eve.CH;
+			out_Port = vgm_command_YM2608port0;
+		}
+		else if (eve.CH > 5) {
+			out_Ch = eve.CH - 6;
+			out_Port = vgm_command_YM2608port1;
+		}
+		else {
+			break;
+		}
+
+		(this->pCHparam + eve.CH)->Tone = eve.Param.B[0];
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+
+		this->make_data(out_Port, 0xB0 + out_Ch, tone_cur->H.B);
+
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
+				}
+				else {
+					this->make_data(out_Port, 0x30 + 0x10 * j + Op_index[op] + out_Ch, tone_cur->Op[op].B[j]);
+				}
+			}
+		}
+		break;
+	case 0x80: // Note Off
+		if (eve.CH < 3) {
+			this->make_data_YM2608port0(0x28, eve.CH);
+		}
+		else if (eve.CH < 6) {
+			this->SSG_out |= (1 << (eve.CH - 3));
+			this->make_data_YM2608port0(0x07, this->SSG_out);
+		}
+		else if (eve.CH > 5) {
+			this->make_data_YM2608port0(0x28, (eve.CH - 6) | 0x04);
+		}
+		break;
+	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
+	case 0xE1: // Velocity
+		if (eve.Event == 0xE1) {
+			(this->pCHparam + eve.CH)->Volume += eve.Param.B[0];
+			(this->pCHparam + eve.CH)->Volume &= 0x7F;
+		}
+		else {
+			(this->pCHparam + eve.CH)->Volume = eve.Param.B[0];
+		}
+
+		if (eve.CH < 3) {
+			out_Ch = eve.CH;
+			out_Port = 0x56;
+		}
+		else if (eve.CH > 5) {
+			out_Ch = eve.CH - 6;
+			out_Port = 0x57;
+		}
+		else {
+			this->make_data_YM2608port0(0x08 + eve.CH - 3, (pCHparam + eve.CH)->Volume >> 3);
+			break;
+		}
+
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+
+		for (size_t op = 0; op < 4; op++) {
+			if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+				this->make_data(out_Port, 0x40 + 4 * op + out_Ch, (~(this->pCHparam + eve.CH)->Volume) & 0x7F);
+			}
+		}
+		break;
+	case 0x90: // Note on
+		if (eve.CH < 3) {
+			out_Ch = eve.CH;
+			out_Port = 0x56;
+		}
+		else if (eve.CH > 5) {
+			out_Ch = eve.CH - 6;
+			out_Port = 0x57;
+		}
+		else {
+			out_Ch = eve.CH - 3;
+			union {
+				unsigned __int16 W;
+				unsigned __int8 B[2];
+			} U;
+
+			U.W = TP[eve.Param.B[0]] + (-(this->pCHparam + eve.CH)->Detune >> 2);
+
+			this->make_data_YM2608port0(0x01 + out_Ch * 2, U.B[1]);
+			this->make_data_YM2608port0(0x00 + out_Ch * 2, U.B[0]);
+			this->SSG_out &= ~(1 << out_Ch);
+			this->make_data_YM2608port0(0x07, this->SSG_out);
+			break;
+		}
+
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 dummy : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		U.S.FNumber = FNumber[eve.Param.B[0] % 12] + (this->pCHparam + eve.CH)->Detune;
+		U.S.Block = eve.Param.B[0] / 12;
+		this->make_data(out_Port, 0xA4 + out_Ch, U.B[1]);
+		this->make_data(out_Port, 0xA0 + out_Ch, U.B[0]);
+		this->make_data_YM2608port0(0x28, out_Ch | 0xF0 | ((eve.CH > 5) ? 0x4 : 0));
+		break;
+	case 0xE0: // Counter
+		break;
+	}
+}
+
+void VGMdata::convert_YM2151(struct EVENT& eve)
+{
+	struct mako2_tone* tone_cur;
+	unsigned Algorithm;
+	size_t NA;
+	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
+	switch (eve.Event) {
+	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
+		this->Tempo = eve.Param.B[0];
+
+		// この後のNAの計算とタイマ割り込みの設定は実際には不要
+		NA = 1024 - (((3 * this->master_clock * 2) / (512LL * eve.Param.B[0]) + 1) >> 1);
+		this->make_data_YM2151(0x10, (NA >> 2) & 0xFF);
+		this->make_data_YM2151(0x11, NA & 0x03);
+		break;
+	case 0xFC: // Detune
+		(this->pCHparam + eve.CH)->Detune = (__int16)((__int8)eve.Param.B[0]);
+		break;
+	case 0xEB: // Panpot
+		(this->pCHparam + eve.CH)->Panpot = 3;
+		if (eve.Param.B[0] & 0x80 || eve.Param.B[0] == 0) {
+			(this->pCHparam + eve.CH)->Panpot = 3;
+		}
+		else if (eve.Param.B[0] < 64) {
+			(this->pCHparam + eve.CH)->Panpot = 2;
+		}
+		else if (eve.Param.B[0] > 64) {
+			(this->pCHparam + eve.CH)->Panpot = 1;
+		}
+		break;
+	case 0xF5: // Tone select
+		(this->pCHparam + eve.CH)->Tone = eve.Param.B[0];
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+		tone_cur->H.S.RL = (this->pCHparam + eve.CH)->Panpot;
+
+		if ((this->pCHparam + eve.CH)->NoteOn) {
+			this->make_data_YM2151(0x08, eve.CH);
+			(this->pCHparam + eve.CH)->NoteOn = false;
+		}
+		this->make_data_YM2151(0x20 + eve.CH, tone_cur->H.B);
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + eve.CH, tone_cur->Op[op].B[j]);
+			}
+		}
+		break;
+	case 0x80: // Note Off
+		this->make_data_YM2151(0x08, eve.CH);
+		(this->pCHparam + eve.CH)->NoteOn = false;
+		break;
+	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
+	case 0xE1: // Velocity
+		if (eve.Event == 0xE1) {
+			(this->pCHparam + eve.CH)->Volume += eve.Param.B[0];
+			(this->pCHparam + eve.CH)->Volume &= 0x7F;
+		}
+		else {
+			(this->pCHparam + eve.CH)->Volume = eve.Param.B[0];
+		}
+		tone_cur = T + (this->pCHparam + eve.CH)->Tone;
+		Algorithm = tone_cur->H.S.Connect;
+
+		for (size_t op = 0; op < 4; op++) {
+			if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+				this->make_data_YM2151(0x60 + 8 * op + eve.CH, (~(this->pCHparam + eve.CH)->Volume) & 0x7F);
+			}
+		}
+		break;
+	case 0x90: // Note on
+	{
+		unsigned key = eve.Param.B[0];
+		if (key < 3) {
+			wprintf_s(L"%zu: %2u: Very low key%2u\n", eve.time, eve.CH, key);
+			key += 12;
+		}
+		key -= 3;
+		unsigned oct = key / 12;
+		unsigned pre_note = key % 12;
+		unsigned note = (pre_note << 2) / 3;
+		//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", eve.time, eve.Event, eve.Param.B[0], oct, note);
+		union {
+			struct {
+				unsigned __int8 note : 4;
+				unsigned __int8 oct : 3;
+				unsigned __int8 dummy : 1;
+			} S;
+			unsigned __int8 KC;
+		} U;
+
+		U.S.note = note;
+		U.S.oct = oct;
+		if ((this->pCHparam + eve.CH)->NoteOn) {
+			this->make_data_YM2151(0x08, eve.CH);
+			(this->pCHparam + eve.CH)->NoteOn = false;
+		}
+		this->make_data_YM2151(0x28 + eve.CH, U.KC);
+		this->make_data_YM2151(0x08, eve.CH | 0x78);
+		(this->pCHparam + eve.CH)->NoteOn = true;
+		break;
+	}
+	case 0xE0: // Counter
+		break;
+	}
+}
+
+void VGMdata::finish(void)
+{
+	*this->vgm_pos++ = 0x66;
+	this->vgm_dlen = this->vgm_pos - this->vgm_out;
+
+	if (this->Ex_Vols_count) {
+		this->vgm_extra_len = sizeof(VGM_HDR_EXTRA) + 1 + sizeof(VGMX_CHIP_DATA16) + this->padsize;
+	}
+
+	size_t vgm_data_abs = this->vgm_header_len + this->vgm_extra_len;
+	this->h_vgm.lngTotalSamples = this->Time_Prev_VGM_abs;
+	this->h_vgm.lngDataOffset = vgm_data_abs - ((UINT8*)&this->h_vgm.lngDataOffset - (UINT8*)&this->h_vgm.fccVGM);
+	this->h_vgm.lngExtraOffset = this->vgm_header_len - ((UINT8*)&this->h_vgm.lngExtraOffset - (UINT8*)&this->h_vgm.fccVGM);
+	this->h_vgm.lngEOFOffset = vgm_data_abs + this->vgm_dlen - ((UINT8*)&this->h_vgm.lngEOFOffset - (UINT8*)&this->h_vgm.fccVGM);
+
+	if (loop_start != NULL) {
+		this->h_vgm.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
+		this->h_vgm.lngLoopOffset = vgm_data_abs + (this->vgm_loop_pos - this->vgm_out) - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
+	}
+}
+
 void VGMdata::convert(class EVENTS& in)
 {
 	for (struct EVENT* src = in.event; (src - in.event) <= in.length; src++) {
@@ -261,277 +667,43 @@ void VGMdata::convert(class EVENTS& in)
 			in.loop_enable = false;
 		}
 
-		struct mako2_tone* tone_cur;
-		unsigned Algorithm;
-		size_t NA;
-
 		if (chip == CHIP::YM2203) {
-			static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-
-			switch (src->Event) {
-			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-				this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / src->Param.B[0] + 1) >> 1;
-				this->Tempo = src->Param.B[0];
-
-				// この後のNAの計算とタイマ割り込みの設定は実際には不要
-				NA = 1024 - (((this->master_clock * 2) / (192LL * src->Param.B[0]) + 1) >> 1);
-				this->make_data_YM2203(0x24, (NA >> 2) & 0xFF);
-				this->make_data_YM2203(0x25, NA & 0x03);
-				break;
-			case 0xFC: // Detune
-				(this->pCHparam + src->CH)->Detune = (__int16)((__int8)src->Param.B[0]);
-				break;
-			case 0xF5: // Tone select
-				if (src->CH >= 3) {
-					break;
-				}
-
-				(this->pCHparam + src->CH)->Tone = src->Param.B[0];
-				tone_cur = T + (this->pCHparam + src->CH)->Tone;
-				Algorithm = tone_cur->H.S.Connect;
-
-				this->make_data_YM2203(0xB0 + src->CH, tone_cur->H.B);
-
-				for (size_t op = 0; op < 4; op++) {
-					for (size_t j = 0; j < 6; j++) {
-						if (j == 1 && this->version >= 3 &&	(Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
-						}
-						else {
-							this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + src->CH, tone_cur->Op[op].B[j]);
-						}
-					}
-				}
-				break;
-			case 0x80: // Note Off
-				if (src->CH < 3) {
-					this->make_data_YM2203(0x28, src->CH);
-				}
-				else if (src->CH < 6) {
-					this->SSG_out |= (1 << (src->CH - 3));
-					this->make_data_YM2203(0x07, this->SSG_out);
-				}
-				break;
-			case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-			case 0xE1: // Velocity
-				if (src->Event == 0xE1) {
-					(this->pCHparam + src->CH)->Volume += src->Param.B[0];
-					(this->pCHparam + src->CH)->Volume &= 0x7F;
-				}
-				else {
-					(this->pCHparam + src->CH)->Volume = src->Param.B[0];
-				}
-
-				if (src->CH >= 3) {
-					this->make_data_YM2203(0x08 + src->CH - 3, (this->pCHparam + src->CH)->Volume >> 3);
-					break;
-				}
-
-				tone_cur = T + (this->pCHparam + src->CH)->Tone;
-				Algorithm = tone_cur->H.S.Connect;
-				for (size_t op = 0; op < 4; op++) {
-					if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
-						this->make_data_YM2203(0x40 + 4 * op + src->CH, (~(pCHparam + src->CH)->Volume) & 0x7F);
-					}
-				}
-				break;
-			case 0x90: // Note on
-				if (src->CH >= 3) {
-					union {
-						unsigned __int16 W;
-						unsigned __int8 B[2];
-					} U;
-
-					U.W = TP[src->Param.B[0]] + (-(pCHparam + src->CH)->Detune >> 2);
-
-					this->make_data_YM2203(0x01 + (src->CH - 3) * 2, U.B[1]);
-					this->make_data_YM2203(0x00 + (src->CH - 3) * 2, U.B[0]);
-					this->SSG_out &= ~(1 << (src->CH - 3));
-					this->make_data_YM2203(0x07, this->SSG_out);
-					break;
-				}
-
-				union {
-					struct {
-						unsigned __int16 FNumber : 11;
-						unsigned __int16 Block : 3;
-						unsigned __int16 dummy : 2;
-					} S;
-					unsigned __int8 B[2];
-				} U;
-
-				U.S.FNumber = FNumber[src->Param.B[0] % 12] + (pCHparam + src->CH)->Detune;
-				U.S.Block = src->Param.B[0] / 12;
-				this->make_data_YM2203(0xA4 + src->CH, U.B[1]);
-				this->make_data_YM2203(0xA0 + src->CH, U.B[0]);
-				this->make_data_YM2203(0x28, src->CH | 0xF0);
-				break;
-			case 0xE0: // Counter
-				break;
-			}
+			this->convert_YM2203(*src);
 		}
 		else if (chip == CHIP::YM2608) {
-			static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-			unsigned __int8 out_Port;
-			unsigned __int8 out_Ch;
-			union LR_AMS_PMS_YM2608 LRAP;
-			unsigned __int8 Panpot;
-			switch (src->Event) {
-			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-				this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / src->Param.B[0] + 1) >> 1;
-				this->Tempo = src->Param.B[0];
-
-				// この後のNAの計算とタイマ割り込みの設定は実際には不要
-				NA = 1024 - (((master_clock * 2) / (384LL * src->Param.B[0]) + 1) >> 1);
-				this->make_data_YM2608port0(0x24, (NA >> 2) & 0xFF);
-				this->make_data_YM2608port0(0x25, NA & 0x03);
-				break;
-			case 0xFC: // Detune
-				(this->pCHparam + src->CH)->Detune = (__int16)((__int8)src->Param.B[0]);
-				break;
-			case 0xEB: // Panpot
-				Panpot = 3;
-				if (src->CH < 3) {
-					out_Ch = src->CH;
-					out_Port = vgm_command_YM2608port0;
-				}
-				else if (src->CH > 5) {
-					out_Ch = src->CH - 6;
-					out_Port = vgm_command_YM2608port1;
-				}
-				else {
-					break;
-				}
-
-				if (src->Param.B[0] & 0x80 || src->Param.B[0] == 0) {
-					Panpot = 3;
-				}
-				else if (src->Param.B[0] < 64) {
-					Panpot = 2;
-				}
-				else if (src->Param.B[0] > 64) {
-					Panpot = 1;
-				}
-
-				LRAP.B = 0;
-				LRAP.S.LR = Panpot;
-				this->make_data_YM2608port0(0xB4 + out_Ch, LRAP.B);
-				break;
-			case 0xF5: // Tone select
-				if (src->CH < 3) {
-					out_Ch = src->CH;
-					out_Port = vgm_command_YM2608port0;
-				}
-				else if (src->CH > 5) {
-					out_Ch = src->CH - 6;
-					out_Port = vgm_command_YM2608port1;
-				}
-				else {
-					break;
-				}
-
-				(this->pCHparam + src->CH)->Tone = src->Param.B[0];
-				tone_cur = T + (this->pCHparam + src->CH)->Tone;
-				Algorithm = tone_cur->H.S.Connect;
-
-				this->make_data(out_Port, 0xB0 + out_Ch, tone_cur->H.B);
-
-				for (size_t op = 0; op < 4; op++) {
-					for (size_t j = 0; j < 6; j++) {
-						if (j == 1 && this->version >= 3 &&	(Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
-						}
-						else {
-							this->make_data(out_Port, 0x30 + 0x10 * j + Op_index[op] + out_Ch, tone_cur->Op[op].B[j]);
-						}
-					}
-				}
-				break;
-			case 0x80: // Note Off
-				if (src->CH < 3) {
-					this->make_data_YM2608port0(0x28, src->CH);
-				}
-				else if (src->CH < 6) {
-					this->SSG_out |= (1 << (src->CH - 3));
-					this->make_data_YM2608port0(0x07, this->SSG_out);
-				}
-				else if (src->CH > 5) {
-					this->make_data_YM2608port0(0x28, (src->CH - 6) | 0x04);
-				}
-				break;
-			case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-			case 0xE1: // Velocity
-				if (src->Event == 0xE1) {
-					(this->pCHparam + src->CH)->Volume += src->Param.B[0];
-					(this->pCHparam + src->CH)->Volume &= 0x7F;
-				}
-				else {
-					(this->pCHparam + src->CH)->Volume = src->Param.B[0];
-				}
-
-				if (src->CH < 3) {
-					out_Ch = src->CH;
-					out_Port = 0x56;
-				}
-				else if (src->CH > 5) {
-					out_Ch = src->CH - 6;
-					out_Port = 0x57;
-				}
-				else {
-					this->make_data_YM2608port0(0x08 + src->CH - 3, (pCHparam + src->CH)->Volume >> 3);
-					break;
-				}
-
-				tone_cur = T + (this->pCHparam + src->CH)->Tone;
-				Algorithm = tone_cur->H.S.Connect;
-
-				for (size_t op = 0; op < 4; op++) {
-					if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
-						this->make_data(out_Port, 0x40 + 4 * op + out_Ch, (~(this->pCHparam + src->CH)->Volume) & 0x7F);
-					}
-				}
-				break;
-			case 0x90: // Note on
-				if (src->CH < 3) {
-					out_Ch = src->CH;
-					out_Port = 0x56;
-				}
-				else if (src->CH > 5) {
-					out_Ch = src->CH - 6;
-					out_Port = 0x57;
-				}
-				else {
-					out_Ch = src->CH - 3;
-					union {
-						unsigned __int16 W;
-						unsigned __int8 B[2];
-					} U;
-
-					U.W = TP[src->Param.B[0]] + (-(this->pCHparam + src->CH)->Detune >> 2);
-
-					this->make_data_YM2608port0(0x01 + out_Ch * 2, U.B[1]);
-					this->make_data_YM2608port0(0x00 + out_Ch * 2, U.B[0]);
-					this->SSG_out &= ~(1 << out_Ch);
-					this->make_data_YM2608port0(0x07, this->SSG_out);
-					break;
-				}
-
-				union {
-					struct {
-						unsigned __int16 FNumber : 11;
-						unsigned __int16 Block : 3;
-						unsigned __int16 dummy : 2;
-					} S;
-					unsigned __int8 B[2];
-				} U;
-
-				U.S.FNumber = FNumber[src->Param.B[0] % 12] + (this->pCHparam + src->CH)->Detune;
-				U.S.Block = src->Param.B[0] / 12;
-				this->make_data(out_Port, 0xA4 + out_Ch, U.B[1]);
-				this->make_data(out_Port, 0xA0 + out_Ch, U.B[0]);
-				this->make_data_YM2608port0(0x28, out_Ch | 0xF0 | ((src->CH > 5) ? 0x4 : 0));
-				break;
-			case 0xE0: // Counter
-				break;
-			}
+			this->convert_YM2608(*src);
+		}
+		else if (chip == CHIP::YM2151) {
+			this->convert_YM2151(*src);
 		}
 	}
+	this->finish();
+}
+
+void VGMdata::out(wchar_t* p)
+{
+	FILE* pFo;
+	wchar_t* path = filename_replace_ext(p, L".vgm");
+
+	errno_t ecode = _wfopen_s(&pFo, path, L"wb");
+	if (ecode || !pFo) {
+		fwprintf_s(stderr, L"%s cannot open\n", path);
+		exit(ecode);
+	}
+
+	fwrite(&h_vgm, 1, this->vgm_header_len, pFo);
+	if (this->vgm_extra_len) {
+		fwrite(&eh_vgm, 1, sizeof(VGM_HDR_EXTRA), pFo);
+		if (this->Ex_Vols_count) {
+			fwrite(&this->Ex_Vols_count, 1, 1, pFo);
+			fwrite(&this->Ex_Vols, sizeof(VGMX_CHIP_DATA16), this->Ex_Vols_count, pFo);
+		}
+		UINT8 PADDING[15] = { 0 };
+		fwrite(PADDING, 1, this->padsize, pFo);
+	}
+	fwrite(this->vgm_out, 1, this->vgm_dlen, pFo);
+	wprintf_s(L"VGM body length %8zu\n", this->vgm_dlen);
+
+	fclose(pFo);
+
 }
