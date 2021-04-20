@@ -13,9 +13,6 @@ EVENTS::EVENTS(size_t elems, size_t end)
 {
 	this->events = elems;
 	this->time_end = end;
-	this->time_loop_start = 0;
-	this->length = 0;
-	this->loop_start = SIZE_MAX;
 
 	this->event = (struct EVENT *) GC_malloc(sizeof(struct EVENT) * elems);
 	if (this->event == NULL) {
@@ -26,8 +23,9 @@ EVENTS::EVENTS(size_t elems, size_t end)
 	counter = 0;
 }
 
-struct EVENT* EVENTS::enlarge(size_t len_cur)
+void EVENTS::enlarge(void)
 {
+	size_t length_current = this->dest - this->event;
 	this->events += this->time_end;
 
 	this->event = (struct EVENT*)GC_realloc(this->event, sizeof(struct EVENT) * events);
@@ -36,8 +34,7 @@ struct EVENT* EVENTS::enlarge(size_t len_cur)
 		exit(-2);
 	}
 
-	this->dest = this->event + len_cur;
-	return this->event;
+	this->dest = this->event + length_current;
 }
 
 int eventsort(void* x, const void* n1, const void* n2)
@@ -72,7 +69,7 @@ int eventsort(void* x, const void* n1, const void* n2)
 
 void EVENTS::convert(struct mako2_mml_decoded& MMLs)
 {
-	unsigned loop_enable = 0;
+	this->loop_enable = false;
 
 	for (size_t j = 0; j < MMLs.CHs; j++) {
 		size_t i = MMLs.CHs - 1 - j;
@@ -83,14 +80,14 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs)
 		while (len < (MMLs.CH + i)->len_unrolled) {
 			size_t length_current = this->dest - this->event;
 			if (length_current == this->events) {
-				this->enlarge(length_current);
+				this->enlarge();
 				wprintf_s(L"Memory reallocated in making sequential.\n");
 			}
 
 			unsigned __int8* src = (MMLs.CH + i)->MML + len;
 			if ((MMLs.latest_CH == i) && (src == ((MMLs.CH + i)->MML + (MMLs.CH + i)->Loop_start_pos)) && (MMLs.loop_start_time != SIZE_MAX)) {
-				time_loop_start = time;
-				loop_enable = 1;
+				this->time_loop_start = time;
+				this->loop_enable = true;
 			}
 			while (src >= (MMLs.CH + i)->MML + (MMLs.CH + i)->len) {
 				src -= (MMLs.CH + i)->len - (MMLs.CH + i)->Loop_start_pos;

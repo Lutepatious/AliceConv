@@ -156,6 +156,7 @@
     <ClCompile Include="MAKO2MML.cpp" />
     <ClCompile Include="PCMtoWAVE.cpp" />
     <ClCompile Include="tools.cpp" />
+    <ClCompile Include="toVGM.cpp" />
     <ClCompile Include="wmain.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -164,6 +165,7 @@
     <ClInclude Include="MAKO2toVGM.h" />
     <ClInclude Include="PCMtoWAVE.h" />
     <ClInclude Include="stdtype.h" />
+    <ClInclude Include="toVGM.h" />
     <ClInclude Include="VGMFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -11,18 +11,18 @@ struct EVENT {
 };
 
 class EVENTS {
-	struct EVENT* event;
 	struct EVENT* dest;
-	size_t counter;
-	size_t time_loop_start;
-	size_t time_end;
-
-	struct EVENT* enlarge(size_t len_cur);
+	size_t counter = 0;
+	size_t time_loop_start = 0;
+	size_t time_end = SIZE_MAX;
+	void enlarge(void);
 
 public:
+	struct EVENT* event;
 	size_t events;
-	size_t length;
-	size_t loop_start;
+	size_t length = 0;
+	size_t loop_start = SIZE_MAX;
+	bool loop_enable = false;
 	EVENTS(size_t elems, size_t end);
 	void convert(struct mako2_mml_decoded& MMLs);
 	void sort(void);

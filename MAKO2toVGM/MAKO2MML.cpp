@@ -11,8 +11,6 @@
 mako2_mml_decoded_CH::mako2_mml_decoded_CH()
 {
 	MML = (unsigned __int8*)GC_malloc(32 * 1024);
-	len = len_unrolled = time_total = Loop_start_pos = Loop_start_time = Loop_delta_time = 0;
-	Mute_on = false;
 }
 
 void mako2_mml_decoded_CH::mute_on(void)
@@ -281,8 +279,6 @@ mako2_mml_decoded::mako2_mml_decoded(size_t ch)
 {
 	CHs = ch;
 	CH = new class mako2_mml_decoded_CH[CHs];
-	end_time = loop_start_time = 0;
-	latest_CH = 0;
 }
 
 void mako2_mml_decoded::unroll_loop(void)

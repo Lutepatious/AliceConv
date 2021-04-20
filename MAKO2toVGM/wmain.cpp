@@ -11,6 +11,7 @@
 #include "MAKO2toVGM.h"
 #include "MAKO2MML.h"
 #include "event.h"
+#include "toVGM.h"
 
 #pragma pack (1)
 struct mako2_header {
@@ -18,44 +19,7 @@ struct mako2_header {
 	unsigned __int32 ver : 8;
 	unsigned __int32 CH_addr[];
 };
-
-struct mako2_tone {
-	union {
-		struct {
-			unsigned __int8 Connect : 3; // CON Connection
-			unsigned __int8 FB : 3; // FL Self-FeedBack
-			unsigned __int8 RL : 2; // YM2151 Only
-		} S;
-		unsigned __int8 B;
-	} H;
-	unsigned __int8 Unk[6]; // FM? or what?
-	union {
-		struct {
-			unsigned __int8 MULTI : 4; // MUL Multiply
-			unsigned __int8 DT : 3; // DT1 DeTune
-			unsigned __int8 NU0 : 1; // Not used
-			unsigned __int8 TL : 7; // TL Total Level
-			unsigned __int8 NU1 : 1; // Not used
-			unsigned __int8 AR : 5; // AR Attack Rate
-			unsigned __int8 NU2 : 1; // Not used
-			unsigned __int8 KS : 2; // KS Key Scale
-			unsigned __int8 DR : 5; // D1R Decay Rate
-			unsigned __int8 NU3 : 2; // Not used
-			unsigned __int8 AMON : 1; // AMS-EN AMS On
-			unsigned __int8 SR : 5; // D2R Sustain Rate
-			unsigned __int8 NU4 : 1; // Not used
-			unsigned __int8 DT2 : 2; // DT2
-			unsigned __int8 RR : 4; // RR Release Rate
-			unsigned __int8 SL : 4; // D1L Sustain Level
-			unsigned __int8 Unk0[3]; // Unknown
-		} S;
-		unsigned __int8 B[9];
-	} Op[4];
-};
 #pragma pack ()
-
-
-
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -127,23 +91,10 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		size_t VOICEs = (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone);
-		struct mako2_tone* T = (struct mako2_tone*)inbuf + pM2HDR->chiptune_addr;
-
-		if (debug) {
-			for (size_t i = 0; i < VOICEs; i++) {
-				wprintf_s(L"Voice %2llu: FB %1d Connect %1d\n", i, (T + i)->H.S.FB, (T + i)->H.S.Connect);
-				for (size_t j = 0; j < 4; j++) {
-					wprintf_s(L" OP %1llu: DT %1d MULTI %2d TL %3d KS %1d AR %2d DR %2d SR %2d SL %2d RR %2d\n"
-						, j, (T + i)->Op[j].S.DT, (T + i)->Op[j].S.MULTI, (T + i)->Op[j].S.TL, (T + i)->Op[j].S.KS
-						, (T + i)->Op[j].S.AR, (T + i)->Op[j].S.DR, (T + i)->Op[j].S.SR, (T + i)->Op[j].S.SL, (T + i)->Op[j].S.RR);
-				}
-			}
-		}
-
 		unsigned CHs = (pM2HDR->chiptune_addr - 4) / 4;
 		unsigned CHs_real = CHs;
 
+		// —á:Ch.8‚ª‹ó‚Å‚È‚¢‚Æ‚«‚ÉCHs_real‚Í9‚ðˆÛŽ‚µ‚Ä‚¢‚È‚¯‚ê‚Î‚È‚ç‚È‚¢B‚æ‚Á‚Ä[CHs_real - 1]‚ð[--CHs_real]‚Æ‘‚«Š·‚¦‚Ä‚Í‚È‚ç‚È‚¢B
 		while (!pM2HDR->CH_addr[CHs_real - 1] && --CHs_real);
 		if (!CHs_real) {
 			wprintf_s(L"No Data. skip.\n");
@@ -165,7 +116,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		wprintf_s(L"%s: %zu bytes Format %u %2u/%2u CHs. %2llu Tones.\n", *argv, fs.st_size, mako2form, CHs_real, CHs, VOICEs);
+		wprintf_s(L"%s: %zu bytes Format %u %2u/%2u CHs.\n", *argv, fs.st_size, mako2form, CHs_real, CHs);
 
 		struct mako2_mml_decoded MMLs(CHs_real);
 		for (size_t i = 0; i < CHs_real; i++) {
@@ -195,7 +146,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		wprintf_s(L"Make VGM\n");
-
-
+		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (struct mako2_tone*)inbuf + pM2HDR->chiptune_addr, (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone));
+		vgmdata.make_init();
 	}
 }
