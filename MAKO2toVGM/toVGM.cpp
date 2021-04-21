@@ -58,7 +58,7 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_
 		wprintf_s(L"Please select chip by -n, -a, -x options.\n");
 		exit(-5);
 	}
-	pCHparam = (struct CH_params*)GC_malloc(sizeof(struct CH_params) * CHs_limit);
+	pCHparam = new struct CH_params[CHs_limit];
 }
 
 void VGMdata::print_all_tones(void)
