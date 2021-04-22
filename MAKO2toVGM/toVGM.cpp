@@ -215,7 +215,6 @@ void VGMdata::make_wait(size_t wait)
 void VGMdata::convert_YM2203(struct EVENT& eve)
 {
 	this->pCHparam_cur = this->pCHparam + eve.CH;
-	size_t NA;
 
 	switch (eve.Event) {
 	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
@@ -223,9 +222,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		this->Tempo = eve.Param.B[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
-		NA = 1024 - (((this->master_clock * 2) / (192LL * eve.Param.B[0]) + 1) >> 1);
-		this->make_data_YM2203(0x24, (NA >> 2) & 0xFF);
-		this->make_data_YM2203(0x25, NA & 0x03);
+		this->Timer_set_YM2203();
 		break;
 	case 0xFC: // Detune
 		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
@@ -302,6 +299,13 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 	}
 }
 
+void VGMdata::Timer_set_YM2203(void)
+{
+	size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
+	this->make_data_YM2203(0x24, (NA >> 2) & 0xFF);
+	this->make_data_YM2203(0x25, NA & 0x03);
+}
+
 void VGMdata::Volume_YM2203_FM(unsigned __int8 CH)
 {
 	unsigned Algorithm = (T + this->pCHparam_cur->Tone)->H.S.Connect;
@@ -335,10 +339,6 @@ void VGMdata::Tone_select_YM2203_FM(unsigned __int8 CH)
 void VGMdata::convert_YM2608(struct EVENT& eve)
 {
 	this->pCHparam_cur = this->pCHparam + eve.CH;
-	struct mako2_tone* tone_cur;
-	unsigned Algorithm;
-	size_t NA;
-	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 	unsigned __int8 out_Port;
 	unsigned __int8 out_Ch;
 	union LR_AMS_PMS_YM2608 LRAP;
@@ -348,9 +348,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		this->Tempo = eve.Param.B[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
-		NA = 1024 - (((this->master_clock * 2) / (384LL * eve.Param.B[0]) + 1) >> 1);
-		this->make_data_YM2608port0(0x24, (NA >> 2) & 0xFF);
-		this->make_data_YM2608port0(0x25, NA & 0x03);
+		this->Timer_set_YM2608();
 		break;
 	case 0xFC: // Detune
 		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
@@ -441,7 +439,6 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 			out_Port = 0x57;
 		}
 		else {
-			out_Ch = eve.CH - 3;
 			union {
 				unsigned __int16 W;
 				unsigned __int8 B[2];
@@ -449,9 +446,9 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 
 			U.W = TP[eve.Param.B[0]] + (-this->pCHparam_cur->Detune >> 2);
 
-			this->make_data_YM2608port0(0x01 + out_Ch * 2, U.B[1]);
-			this->make_data_YM2608port0(0x00 + out_Ch * 2, U.B[0]);
-			this->SSG_out &= ~(1 << out_Ch);
+			this->make_data_YM2608port0(0x01 + (eve.CH - 3) * 2, U.B[1]);
+			this->make_data_YM2608port0(0x00 + (eve.CH - 3) * 2, U.B[0]);
+			this->SSG_out &= ~(1 << (eve.CH - 3));
 			this->make_data_YM2608port0(0x07, this->SSG_out);
 			break;
 		}
@@ -474,6 +471,13 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 	case 0xE0: // Counter
 		break;
 	}
+}
+
+void VGMdata::Timer_set_YM2608(void)
+{
+	size_t NA = 1024 - (((this->master_clock * 2) / (384LL * this->Tempo) + 1) >> 1);
+	this->make_data_YM2608port0(0x24, (NA >> 2) & 0xFF);
+	this->make_data_YM2608port0(0x25, NA & 0x03);
 }
 
 void VGMdata::Volume_YM2608_FMport0(unsigned __int8 CH)
@@ -538,7 +542,6 @@ void VGMdata::Tone_select_YM2608_FMport1(unsigned __int8 CH)
 
 void VGMdata::convert_YM2151(struct EVENT& eve)
 {
-	size_t NA;
 	this->pCHparam_cur = this->pCHparam + eve.CH;
 
 	switch (eve.Event) {
@@ -547,9 +550,7 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		this->Tempo = eve.Param.B[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
-		NA = 1024 - (((3 * this->master_clock * 2) / (512LL * eve.Param.B[0]) + 1) >> 1);
-		this->make_data_YM2151(0x10, (NA >> 2) & 0xFF);
-		this->make_data_YM2151(0x11, NA & 0x03);
+		this->Timer_set_YM2151();
 		break;
 	case 0xFC: // Detune
 		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
@@ -588,38 +589,19 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		this->Volume_YM2151(eve.CH);
 		break;
 	case 0x90: // Note on
-	{
-		unsigned key = eve.Param.B[0];
-		if (key < 3) {
-			wprintf_s(L"%zu: %2u: Very low key%2u\n", eve.time, eve.CH, key);
-			key += 12;
-		}
-		key -= 3;
-		unsigned oct = key / 12;
-		unsigned pre_note = key % 12;
-		unsigned note = (pre_note << 2) / 3;
-		//						wprintf_s(L"%8zu: %u-%2u to %zu-%2u\n", eve.time, eve.Event, eve.Param.B[0], oct, note);
-		union {
-			struct {
-				unsigned __int8 note : 4;
-				unsigned __int8 oct : 3;
-				unsigned __int8 dummy : 1;
-			} S;
-			unsigned __int8 KC;
-		} U;
-
-		U.KC = 0;
-		U.S.note = note;
-		U.S.oct = oct;
 		this->Note_off_YM2151(eve.CH);
-		this->make_data_YM2151(0x28 + eve.CH, U.KC);
-		this->make_data_YM2151(0x08, eve.CH | 0x78);
-		this->pCHparam_cur->NoteOn = true;
+		this->Note_on_YM2151(eve.CH, eve.Param.B[0]);
 		break;
-	}
 	case 0xE0: // Counter
 		break;
 	}
+}
+
+void VGMdata::Timer_set_YM2151(void)
+{
+	size_t NA = 1024 - (((3 * this->master_clock * 2) / (512LL * this->Tempo) + 1) >> 1);
+	this->make_data_YM2151(0x10, (NA >> 2) & 0xFF);
+	this->make_data_YM2151(0x11, NA & 0x03);
 }
 
 void VGMdata::Tone_select_YM2151(unsigned __int8 CH)
@@ -643,6 +625,31 @@ void VGMdata::Note_off_YM2151(unsigned __int8 CH)
 		this->make_data_YM2151(0x08, CH);
 		this->pCHparam_cur->NoteOn = false;
 	}
+}
+
+void VGMdata::Note_on_YM2151(unsigned __int8 CH, unsigned __int8 key)
+{
+	if (key < 3) {
+		wprintf_s(L"%2u: Very low key%2u\n", CH, key);
+		key += 12;
+	}
+	key -= 3;
+	union {
+		struct {
+			unsigned __int8 note : 4;
+			unsigned __int8 oct : 3;
+			unsigned __int8 dummy : 1;
+		} S;
+		unsigned __int8 KC;
+	} U;
+	U.KC = 0;
+
+	unsigned pre_note = key % 12;
+	U.S.note = (pre_note << 2) / 3;
+	U.S.oct = key / 12;
+	this->make_data_YM2151(0x28 + CH, U.KC);
+	this->make_data_YM2151(0x08, CH | 0x78);
+	this->pCHparam_cur->NoteOn = true;
 }
 
 void VGMdata::Volume_YM2151(unsigned __int8 CH)

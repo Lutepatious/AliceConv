@@ -107,10 +107,14 @@ class VGMdata {
 	void Tone_select_YM2608_FMport0(unsigned __int8 CH);
 	void Tone_select_YM2608_FMport1(unsigned __int8 CH);
 	void Note_off_YM2151(unsigned __int8 CH);
+	void Note_on_YM2151(unsigned __int8 CH, unsigned __int8 key);
 	void Volume_YM2151(unsigned __int8 CH);
 	void Volume_YM2203_FM(unsigned __int8 CH);
 	void Volume_YM2608_FMport0(unsigned __int8 CH);
 	void Volume_YM2608_FMport1(unsigned __int8 CH);
+	void Timer_set_YM2203(void);
+	void Timer_set_YM2608(void);
+	void Timer_set_YM2151(void);
 	void finish(void);
 
 public:
