@@ -134,7 +134,7 @@ int wmain(int argc, wchar_t** argv)
 		// 得られた展開データからイベント列を作る。
 
 		class EVENTS events(MMLs.end_time * 2, MMLs.end_time);
-		events.convert(MMLs);
+		events.convert(MMLs, chip == CHIP::YM2151);
 		events.sort();
 		if (debug) {
 			events.print_all();

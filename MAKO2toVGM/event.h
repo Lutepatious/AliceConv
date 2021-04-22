@@ -24,7 +24,7 @@ public:
 	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
 	EVENTS(size_t elems, size_t end);
-	void convert(struct mako2_mml_decoded& MMLs);
+	void convert(struct mako2_mml_decoded& MMLs, bool direction = false);
 	void sort(void);
 	void print_all(void);
 };

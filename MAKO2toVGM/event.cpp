@@ -14,7 +14,7 @@ EVENTS::EVENTS(size_t elems, size_t end)
 	this->events = elems;
 	this->time_end = end;
 
-	this->event = (struct EVENT *) GC_malloc(sizeof(struct EVENT) * elems);
+	this->event = (struct EVENT*)GC_malloc(sizeof(struct EVENT) * elems);
 	if (this->event == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		exit(-2);
@@ -46,6 +46,27 @@ int eventsort(void* x, const void* n1, const void* n2)
 		return -1;
 	}
 	else {
+		if (((struct EVENT*)n1)->Count > ((struct EVENT*)n2)->Count) {
+			return 1;
+		}
+		else if (((struct EVENT*)n1)->Count < ((struct EVENT*)n2)->Count) {
+			return -1;
+		}
+		else {
+			return 0;
+		}
+	}
+}
+
+int eventsort_old(void* x, const void* n1, const void* n2)
+{
+	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
+		return 1;
+	}
+	else if (((struct EVENT*)n1)->time < ((struct EVENT*)n2)->time) {
+		return -1;
+	}
+	else {
 		if (((struct EVENT*)n1)->Type > ((struct EVENT*)n2)->Type) {
 			return 1;
 		}
@@ -67,12 +88,15 @@ int eventsort(void* x, const void* n1, const void* n2)
 	}
 }
 
-void EVENTS::convert(struct mako2_mml_decoded& MMLs)
+void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 {
 	this->loop_enable = false;
 
 	for (size_t j = 0; j < MMLs.CHs; j++) {
 		size_t i = MMLs.CHs - 1 - j;
+		if (direction) {
+			i = j;
+		}
 
 		size_t time = 0;
 		size_t len = 0;
