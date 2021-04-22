@@ -237,7 +237,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		if (eve.CH < 3) {
 			this->make_data_YM2203(0x28, eve.CH);
 		}
-		else if (eve.CH < 6) {
+		else {
 			this->SSG_out |= (1 << (eve.CH - 3));
 			this->make_data_YM2203(0x07, this->SSG_out);
 		}
