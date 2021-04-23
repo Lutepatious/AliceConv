@@ -87,6 +87,7 @@ class VGMdata {
 	struct EVENT* loop_start = NULL;
 	struct CH_params* pCHparam = NULL;
 	struct CH_params* pCHparam_cur = NULL;
+	unsigned __int8 CH_cur = 16;
 	struct mako2_tone* T;
 	enum class CHIP chip = CHIP::NONE;
 	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
@@ -102,21 +103,26 @@ class VGMdata {
 	void convert_YM2203(struct EVENT& eve);
 	void convert_YM2608(struct EVENT& eve);
 	void convert_YM2151(struct EVENT& eve);
-	void Tone_select_YM2151(unsigned __int8 CH);
+	void Tone_select_YM2151(void);
 	void Tone_select_YM2203_FM(unsigned __int8 CH);
 	void Tone_select_YM2608_FMport0(unsigned __int8 CH);
 	void Tone_select_YM2608_FMport1(unsigned __int8 CH);
-	void Note_off_YM2151(unsigned __int8 CH);
-	void Note_on_YM2151(unsigned __int8 CH, unsigned __int8 key);
+	void Note_off_YM2151(void);
+	void Note_on_YM2151(unsigned __int8 key);
 	void Note_on_YM2203_FM(unsigned __int8 CH, unsigned __int8 key);
 	void Note_on_YM2203_SSG(unsigned __int8 CH, unsigned __int8 key);
-	void Volume_YM2151(unsigned __int8 CH);
+	void Note_on_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 key);
+	void Note_on_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 key);
+	void Note_on_YM2608_SSG(unsigned __int8 CH, unsigned __int8 key);
+	void Volume_YM2151(void);
 	void Volume_YM2203_FM(unsigned __int8 CH);
 	void Volume_YM2608_FMport0(unsigned __int8 CH);
 	void Volume_YM2608_FMport1(unsigned __int8 CH);
 	void Timer_set_YM2203(void);
 	void Timer_set_YM2608(void);
 	void Timer_set_YM2151(void);
+	void Panpot_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 Pan);
+	void Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan);
 	void finish(void);
 
 public:
