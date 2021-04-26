@@ -1,13 +1,37 @@
+#pragma pack(1)
+struct LFO_soft_volume_SSG {
+	unsigned __int16 Volume;
+	unsigned __int16 Wait1;
+	unsigned __int16 Delta2;
+	unsigned __int16 Delta_last;
+	unsigned __int16 Delta1;
+};
+
+struct LFO_soft_volume_FM {
+	unsigned __int16 Wait1;
+	unsigned __int16 Wait2;
+	unsigned __int16 Delta1;
+	unsigned __int16 Limit;
+};
+
+struct LFO_soft_detune {
+	unsigned __int16 Wait1;
+	unsigned __int16 Wait2;
+	unsigned __int16 Delta1;
+	unsigned __int16 Limit;
+};
+#pragma pack()
+
+// イベント順序
+// 80 F4 F5 E7 E8 F9 FC E5 EB E9 90
+
 struct EVENT {
 	size_t time;
 	size_t Count;
 	unsigned __int8 CH; //
-	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの テンポ=10, 消音=0, 音源初期化=20, 発音=30程度で
+	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
-	union { // イベントのパラメータ
-		unsigned __int8 B[10];
-		unsigned __int16 W[5];
-	} Param;
+	unsigned __int8 Param[3]; // イベントのパラメータ
 };
 
 class EVENTS {
@@ -15,7 +39,35 @@ class EVENTS {
 	size_t counter = 0;
 	size_t time_loop_start = 0;
 	size_t time_end = SIZE_MAX;
+	bool sLFOv_ready = false;
+	bool sLFOd_ready = false;
+	bool sLFOv_direction = false;
+	bool sLFOd_direction = false;
+
+	struct {
+		struct LFO_soft_volume_SSG Param;
+		unsigned Mode;
+		unsigned __int16 Volume;
+		unsigned __int16 Delta;
+		unsigned __int16 Wait;
+	} sLFOv_SSG = { { 0, 0, 0, 0, 0 }, 0, 0, 0, 0 };
+
+	struct {
+		struct LFO_soft_volume_FM Param;
+		unsigned __int16 Wait;
+		unsigned __int16 Volume;
+	} sLFOv_FM = { { 0, 0, 0, 0}, 0, 0 };
+
+	struct {
+		struct LFO_soft_detune Param;
+		unsigned __int16 Wait;
+		unsigned __int16 Detune;
+	} sLFOd = { { 0, 0, 0, 0 }, 0, 0 };
+
 	void enlarge(void);
+	void sLFOv_setup_FM(void);
+	void sLFOv_setup_SSG(void);
+	void sLFOd_setup(void);
 
 public:
 	struct EVENT* event;

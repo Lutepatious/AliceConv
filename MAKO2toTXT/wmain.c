@@ -937,6 +937,8 @@ int wmain(int argc, wchar_t** argv)
 			size_t time = 0;
 			size_t len = 0;
 			unsigned __int8 Disable_note_off = 0;
+			size_t time_prev = 0;
+
 			while (len < (MMLs_decoded.CHs + i)->len_unrolled) {
 				if (dest - pEVENTs == length_alloc) {
 					size_t length_current = dest - pEVENTs;
@@ -960,6 +962,14 @@ int wmain(int argc, wchar_t** argv)
 				}
 
 				unsigned __int8* src_orig = src;
+				if (1) {
+					if (time == 0 || time_prev != time) {
+						wprintf_s(L"\n%08X: %02X: ", time, i);
+					}
+					wprintf_s(L"%02X ", *src);
+					time_prev = time;
+				}
+
 				switch (*src) {
 				case 0x80: // Note off
 					if (Disable_note_off) {
@@ -1031,8 +1041,8 @@ int wmain(int argc, wchar_t** argv)
 					dest->CH = i;
 					dest++;
 					break;
-				case 0xE7: // sLFOv
-				case 0xE6: // sLFOd
+				case 0xE6: // sLFOv
+				case 0xE7: // sLFOd
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->Param.W[0] = *((unsigned __int16*)src)++;

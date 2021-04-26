@@ -218,18 +218,18 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 
 	switch (eve.Event) {
 	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
-		this->Tempo = eve.Param.B[0];
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param[0] + 1) >> 1;
+		this->Tempo = eve.Param[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
 		this->Timer_set_YM2203();
 		break;
 	case 0xFC: // Detune
-		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
+		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param[0]);
 		break;
 	case 0xF5: // Tone select
 		if (this->CH_cur < 3) {
-			this->pCHparam_cur->Tone = eve.Param.B[0];
+			this->pCHparam_cur->Tone = eve.Param[0];
 			this->Tone_select_YM2203_FM(this->CH_cur);
 		}
 		break;
@@ -243,7 +243,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		}
 		break;
 	case 0xE1: // Velocity
-		this->pCHparam_cur->Volume += eve.Param.B[0];
+		this->pCHparam_cur->Volume += eve.Param[0];
 		this->pCHparam_cur->Volume &= 0x7F;
 
 		if (this->CH_cur < 3) {
@@ -254,7 +254,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		}
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-		this->pCHparam_cur->Volume = eve.Param.B[0];
+		this->pCHparam_cur->Volume = eve.Param[0];
 
 		if (this->CH_cur < 3) {
 			this->Volume_YM2203_FM(this->CH_cur);
@@ -265,10 +265,10 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		break;
 	case 0x90: // Note on
 		if (this->CH_cur < 3) {
-			this->Note_on_YM2203_FM(this->CH_cur, eve.Param.B[0]);
+			this->Note_on_YM2203_FM(this->CH_cur, eve.Param[0]);
 		}
 		else {
-			this->Note_on_YM2203_SSG(this->CH_cur - 3, eve.Param.B[0]);
+			this->Note_on_YM2203_SSG(this->CH_cur - 3, eve.Param[0]);
 		}
 		break;
 	}
@@ -350,30 +350,30 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 	this->pCHparam_cur = this->pCHparam + this->CH_cur;
 	switch (eve.Event) {
 	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
-		this->Tempo = eve.Param.B[0];
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param[0] + 1) >> 1;
+		this->Tempo = eve.Param[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
 		this->Timer_set_YM2608();
 		break;
 	case 0xFC: // Detune
-		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
+		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param[0]);
 		break;
 	case 0xEB: // Panpot
 		if (this->CH_cur < 3) {
-			this->Panpot_YM2608_FMport0(this->CH_cur, eve.Param.B[0]);
+			this->Panpot_YM2608_FMport0(this->CH_cur, eve.Param[0]);
 		}
 		else if (this->CH_cur > 5) {
-			this->Panpot_YM2608_FMport1(this->CH_cur - 6, eve.Param.B[0]);
+			this->Panpot_YM2608_FMport1(this->CH_cur - 6, eve.Param[0]);
 		}
 		break;
 	case 0xF5: // Tone select
 		if (this->CH_cur < 3) {
-			this->pCHparam_cur->Tone = eve.Param.B[0];
+			this->pCHparam_cur->Tone = eve.Param[0];
 			this->Tone_select_YM2608_FMport0(this->CH_cur);
 		}
 		else if (this->CH_cur > 5) {
-			this->pCHparam_cur->Tone = eve.Param.B[0];
+			this->pCHparam_cur->Tone = eve.Param[0];
 			this->Tone_select_YM2608_FMport1(this->CH_cur - 6);
 		}
 		break;
@@ -390,7 +390,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		}
 		break;
 	case 0xE1: // Velocity
-		this->pCHparam_cur->Volume += eve.Param.B[0];
+		this->pCHparam_cur->Volume += eve.Param[0];
 		this->pCHparam_cur->Volume &= 0x7F;
 
 		if (this->CH_cur < 3) {
@@ -403,7 +403,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 			this->make_data_YM2608port0(0x08 + this->CH_cur - 3, (pCHparam + this->CH_cur)->Volume >> 3);
 		}
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-		this->pCHparam_cur->Volume = eve.Param.B[0];
+		this->pCHparam_cur->Volume = eve.Param[0];
 
 		if (this->CH_cur < 3) {
 			this->Volume_YM2608_FMport0(this->CH_cur);
@@ -417,13 +417,13 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		break;
 	case 0x90: // Note on
 		if (this->CH_cur < 3) {
-			this->Note_on_YM2608_FMport0(this->CH_cur, eve.Param.B[0]);
+			this->Note_on_YM2608_FMport0(this->CH_cur, eve.Param[0]);
 		}
 		else if (this->CH_cur > 5) {
-			this->Note_on_YM2608_FMport1(this->CH_cur - 6, eve.Param.B[0]);
+			this->Note_on_YM2608_FMport1(this->CH_cur - 6, eve.Param[0]);
 		}
 		else {
-			this->Note_on_YM2608_SSG(this->CH_cur - 3, eve.Param.B[0]);
+			this->Note_on_YM2608_SSG(this->CH_cur - 3, eve.Param[0]);
 		}
 		break;
 	}
@@ -590,29 +590,29 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 
 	switch (eve.Event) {
 	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param.B[0] + 1) >> 1;
-		this->Tempo = eve.Param.B[0];
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param[0] + 1) >> 1;
+		this->Tempo = eve.Param[0];
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
 		this->Timer_set_YM2151();
 		break;
 	case 0xFC: // Detune
-		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param.B[0]);
+		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param[0]);
 		break;
 	case 0xEB: // Panpot
 		this->pCHparam_cur->Panpot = 3;
-		if (eve.Param.B[0] & 0x80 || eve.Param.B[0] == 0) {
+		if (eve.Param[0] & 0x80 || eve.Param[0] == 0) {
 			this->pCHparam_cur->Panpot = 3;
 		}
-		else if (eve.Param.B[0] < 64) {
+		else if (eve.Param[0] < 64) {
 			this->pCHparam_cur->Panpot = 2;
 		}
-		else if (eve.Param.B[0] > 64) {
+		else if (eve.Param[0] > 64) {
 			this->pCHparam_cur->Panpot = 1;
 		}
 		break;
 	case 0xF5: // Tone select
-		this->pCHparam_cur->Tone = eve.Param.B[0];
+		this->pCHparam_cur->Tone = eve.Param[0];
 		this->Note_off_YM2151();
 		this->Tone_select_YM2151();
 		break;
@@ -620,21 +620,21 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		this->Note_off_YM2151();
 		break;
 	case 0xE1: // Velocity
-		this->pCHparam_cur->Volume += eve.Param.B[0];
+		this->pCHparam_cur->Volume += eve.Param[0];
 		this->pCHparam_cur->Volume &= 0x7F;
 
 		this->Note_off_YM2151();
 		this->Volume_YM2151();
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-		this->pCHparam_cur->Volume = eve.Param.B[0];
+		this->pCHparam_cur->Volume = eve.Param[0];
 
 		this->Note_off_YM2151();
 		this->Volume_YM2151();
 		break;
 	case 0x90: // Note on
 		this->Note_off_YM2151();
-		this->Note_on_YM2151(eve.Param.B[0]);
+		this->Note_on_YM2151(eve.Param[0]);
 		break;
 	}
 }

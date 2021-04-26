@@ -37,7 +37,7 @@ void EVENTS::enlarge(void)
 	this->dest = this->event + length_current;
 }
 
-int eventsort(void* x, const void* n1, const void* n2)
+int eventsort_noweight(void* x, const void* n1, const void* n2)
 {
 	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
 		return 1;
@@ -58,7 +58,7 @@ int eventsort(void* x, const void* n1, const void* n2)
 	}
 }
 
-int eventsort_old(void* x, const void* n1, const void* n2)
+int eventsort(void* x, const void* n1, const void* n2)
 {
 	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
 		return 1;
@@ -84,7 +84,40 @@ int eventsort_old(void* x, const void* n1, const void* n2)
 				return 0;
 			}
 		}
+	}
+}
 
+void EVENTS::sLFOv_setup_FM(void)
+{
+	if (this->sLFOv_ready) {
+		this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait1;
+		this->sLFOv_FM.Volume = 0;
+		if (this->sLFOv_direction) {
+			this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
+			this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
+			this->sLFOv_direction = false;
+		}
+	}
+}
+
+void EVENTS::sLFOv_setup_SSG(void)
+{
+	if (this->sLFOv_ready) {
+		sLFOv_SSG.Mode = 1;
+		sLFOv_SSG.Volume = sLFOv_SSG.Delta = sLFOv_SSG.Param.Volume;
+	}
+}
+
+void EVENTS::sLFOd_setup(void)
+{
+	if (this->sLFOd_ready) {
+		this->sLFOd.Wait = this->sLFOd.Param.Wait1;
+		this->sLFOd.Detune = 0;
+		if (this->sLFOd_direction) {
+			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+			this->sLFOd_direction = false;
+		}
 	}
 }
 
@@ -140,13 +173,15 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				src++;
 				break;
 			case 0xE0: // Counter
+				src += 2;
+				break;
 			case 0xE1: // Velocity
 			case 0xFC: // Detune
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
-				dest->Type = 20;
+				dest->Type = 2;
 				dest->CH = i;
 				dest++;
 				break;
@@ -155,84 +190,76 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 			case 0xF9: // Volume change
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
-				dest->Type = 25;
+				dest->Type = 2;
 				dest->CH = i;
 				dest++;
 				break;
 			case 0xEB: // Panpot
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
-				dest->Type = 27;
+				dest->Type = 2;
 				dest->CH = i;
 				dest++;
 				break;
 			case 0xF4: // Tempo
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
-				dest->Type = 10;
+				dest->Type = 1;
 				dest->CH = i;
 				dest++;
 				break;
 			case 0xE4: // hLFO
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
-				dest->Param.B[1] = *src++;
-				dest->Param.B[2] = *src++;
+				dest->Param[0] = *src++;
+				dest->Param[1] = *src++;
+				dest->Param[2] = *src++;
 				dest->time = time;
-				dest->Type = 26;
+				dest->Type = 2;
 				dest->CH = i;
 				dest++;
 				break;
-			case 0xE7: // sLFOv
-			case 0xE6: // sLFOd
-				dest->Count = counter++;
-				dest->Event = *src++;
-				dest->Param.W[0] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[1] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[2] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[3] = *((unsigned __int16*)src);
-				src += 2;
-				dest->time = time;
-				dest->Type = 25;
-				dest->CH = i;
-				dest++;
+			case 0xE7: // sLFOd
+				src++;
+				this->sLFOd.Param = *((struct LFO_soft_detune*)src);
+				src += sizeof(struct LFO_soft_detune);
+				this->sLFOd_ready = true;
+				this->sLFOd_direction = false;
+				this->sLFOd_setup();
+				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit);
+				break;
+			case 0xE6: // sLFOv
+				src++;
+				this->sLFOv_FM.Param = *((struct LFO_soft_volume_FM*)src);
+				src += sizeof(struct LFO_soft_volume_FM);
+				this->sLFOv_ready = true;
+				this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait1;
+				this->sLFOv_FM.Volume = 0;
+				this->sLFOv_direction = false;
+				this->sLFOv_setup_FM();
+				wprintf_s(L"sLFOv_FM    %1zX: %08zX: w%04X %04X d%04X l%04X\n", i, time, this->sLFOv_FM.Param.Wait1, this->sLFOv_FM.Param.Wait2, this->sLFOv_FM.Param.Delta1, this->sLFOv_FM.Param.Limit);
 				break;
 			case 0xE8: // sLFOv
-				dest->Count = counter++;
-				dest->Event = *src++;
-				dest->Param.W[0] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[1] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[2] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[3] = *((unsigned __int16*)src);
-				src += 2;
-				dest->Param.W[4] = *((unsigned __int16*)src);
-				src += 2;
-				dest->time = time;
-				dest->Type = 25;
-				dest->CH = i;
-				dest++;
+				src++;
+				this->sLFOv_SSG.Param = *((struct LFO_soft_volume_SSG*)src);
+				src += sizeof(struct LFO_soft_volume_SSG);
+				this->sLFOv_ready = true;
+				wprintf_s(L"sLFOv_SSG   %1zX: %08zX: v%04X w%04X d%04X %04X %04X\n", i, time, this->sLFOv_SSG.Param.Volume, this->sLFOv_SSG.Param.Wait1, this->sLFOv_SSG.Param.Delta1, this->sLFOv_SSG.Param.Delta2, this->sLFOv_SSG.Param.Delta_last);
 				break;
 			case 0x90: // Note on
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param.B[0] = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
 				time += *((unsigned __int16*)src);
 				src += 2;
-				dest->Type = 30;
+				dest->Type = 9;
 				dest->CH = i;
 				dest++;
 				break;
@@ -267,7 +294,7 @@ void EVENTS::sort(void)
 		while (this->loop_start > 0
 			&& (this->event + this->length)->CH == (this->event + this->loop_start)->CH
 			&& (this->event + this->length)->Event == (this->event + this->loop_start)->Event
-			&& (this->event + this->length)->Param.B[0] == (this->event + this->loop_start)->Param.B[0]
+			&& (this->event + this->length)->Param[0] == (this->event + this->loop_start)->Param[0]
 			&& (this->event + this->length)->time - (this->event + this->length - 1)->time == (this->event + this->loop_start)->time - (this->event + this->loop_start - 1)->time
 			)
 		{
@@ -277,7 +304,6 @@ void EVENTS::sort(void)
 	}
 
 	wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);
-
 }
 
 void EVENTS::print_all(void)
