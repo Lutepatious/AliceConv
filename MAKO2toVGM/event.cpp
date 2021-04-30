@@ -103,8 +103,8 @@ void EVENTS::sLFOv_setup_FM(void)
 void EVENTS::sLFOv_setup_SSG(void)
 {
 	if (this->sLFOv_ready) {
-		sLFOv_SSG.Mode = 1;
-		sLFOv_SSG.Volume = sLFOv_SSG.Delta = sLFOv_SSG.Param.Volume;
+		this->sLFOv_SSG.Mode = 1;
+		this->sLFOv_SSG.Volume = this->sLFOv_SSG.Delta = this->sLFOv_SSG.Param.Volume;
 	}
 }
 
@@ -121,6 +121,104 @@ void EVENTS::sLFOd_setup(void)
 	}
 }
 
+void EVENTS::sLFOv_exec_FM(void)
+{
+	if (!this->sLFOv_ready) {
+		return;
+	}
+	if (this->sLFOv_FM.Wait) {
+		this->sLFOv_FM.Wait--;
+		return;
+	}
+	this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait2;
+	this->sLFOv_FM.Volume += this->sLFOv_FM.Param.Delta1;
+
+	if (this->sLFOv_FM.Volume >= 0) {
+		if (this->sLFOv_FM.Volume > this->sLFOv_FM.Param.Limit) {
+			this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
+			this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
+			this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
+			this->sLFOv_direction = true;
+		}
+	}
+	else {
+		if (this->sLFOv_FM.Volume < this->sLFOv_FM.Param.Limit) {
+			this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
+			this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
+			this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
+			this->sLFOv_direction = false;
+		}
+	}
+	// この後本体でイベント設定
+}
+
+void EVENTS::sLFOv_exec_SSG(void)
+{
+	if (!this->sLFOv_ready) {
+		return;
+	}
+	if (this->sLFOv_SSG.Mode == 1) { // 音量増
+		this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
+		if (this->sLFOv_SSG.Volume > 0x4000) {
+			this->sLFOv_SSG.Volume = 0x4000;
+			this->sLFOv_SSG.Wait = this->sLFOv_SSG.Param.Wait1;
+			this->sLFOv_SSG.Delta = this->sLFOv_SSG.Param.Delta2;
+			this->sLFOv_SSG.Mode = 2;
+		}
+	}
+	else if (this->sLFOv_SSG.Mode > 1 && this->sLFOv_SSG.Mode < 5) { // 音量減
+		this->sLFOv_SSG.Volume -= this->sLFOv_SSG.Delta;
+		if (this->sLFOv_SSG.Volume < 0) {
+			this->sLFOv_SSG.Volume = 0;
+			this->sLFOv_SSG.Mode = 0;
+//			s11B6(Ch); LFO対応のNote offルーチンを呼び出す
+			return;
+		}
+		if (this->sLFOv_SSG.Mode == 2) {
+			if (this->sLFOv_SSG.Wait) {
+				this->sLFOv_SSG.Delta = this->sLFOv_SSG.Param.Delta2;
+				this->sLFOv_SSG.Mode = 3;
+			}
+			this->sLFOv_SSG.Wait--;
+		}
+	}
+//	SSG_make_Vol();
+}
+
+void EVENTS::sLFOd_exec(void)
+{
+	if (!this->sLFOd_ready || this->Disable_note_off || this->Disable_LFO) {
+		return;
+	}
+
+	if (this->sLFOd.Wait) {
+		this->sLFOd.Wait--;
+		return;
+	}
+
+	this->sLFOd.Wait = this->sLFOd.Param.Wait2;
+	this->sLFOd.Detune += this->sLFOd.Param.Delta1;
+
+	if (this->sLFOd.Detune >= 0) {
+		if (this->sLFOd.Detune > this->sLFOd.Param.Limit) {
+			this->sLFOd.Detune = this->sLFOd.Param.Limit;
+			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+			this->sLFOd_direction = true;
+		}
+	}
+	else {
+		if (this->sLFOd.Detune < this->sLFOd.Param.Limit) {
+			this->sLFOd.Detune = this->sLFOd.Param.Limit;
+			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+			this->sLFOd_direction = false;
+		}
+	}
+	// この後本体でイベント設定
+
+}
+
 void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 {
 	this->loop_enable = false;
@@ -133,7 +231,6 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 
 		size_t time = 0;
 		size_t len = 0;
-		bool Disable_note_off = false;
 		while (len < (MMLs.CH + i)->len_unrolled) {
 			size_t length_current = this->dest - this->event;
 			if (length_current == this->events) {
@@ -153,8 +250,9 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 			unsigned __int8* src_orig = src;
 			switch (*src) {
 			case 0x80: // Note off
-				if (Disable_note_off) {
-					Disable_note_off = false;
+				if (this->Disable_note_off) {
+					this->Disable_note_off = false;
+					this->Disable_LFO = true;
 					src++;
 				}
 				else {
@@ -169,7 +267,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				src += 2;
 				break;
 			case 0xE9: // Tie
-				Disable_note_off = true;
+				this->Disable_note_off = true;
 				src++;
 				break;
 			case 0xE0: // Counter

@@ -39,15 +39,19 @@ class EVENTS {
 	size_t counter = 0;
 	size_t time_loop_start = 0;
 	size_t time_end = SIZE_MAX;
+	bool Disable_note_off = false;
+	bool Disable_LFO = false;
+
 	bool sLFOv_ready = false;
 	bool sLFOd_ready = false;
 	bool sLFOv_direction = false;
 	bool sLFOd_direction = false;
 
+
 	struct {
 		struct LFO_soft_volume_SSG Param;
 		unsigned Mode;
-		unsigned __int16 Volume;
+		__int16 Volume;
 		unsigned __int16 Delta;
 		unsigned __int16 Wait;
 	} sLFOv_SSG = { { 0, 0, 0, 0, 0 }, 0, 0, 0, 0 };
@@ -55,19 +59,22 @@ class EVENTS {
 	struct {
 		struct LFO_soft_volume_FM Param;
 		unsigned __int16 Wait;
-		unsigned __int16 Volume;
+		__int16 Volume;
 	} sLFOv_FM = { { 0, 0, 0, 0}, 0, 0 };
 
 	struct {
 		struct LFO_soft_detune Param;
 		unsigned __int16 Wait;
-		unsigned __int16 Detune;
+		__int16 Detune;
 	} sLFOd = { { 0, 0, 0, 0 }, 0, 0 };
 
 	void enlarge(void);
 	void sLFOv_setup_FM(void);
 	void sLFOv_setup_SSG(void);
 	void sLFOd_setup(void);
+	void sLFOv_exec_FM(void);
+	void sLFOv_exec_SSG(void);
+	void sLFOd_exec(void);
 
 public:
 	struct EVENT* event;
