@@ -10,15 +10,15 @@ struct LFO_soft_volume_SSG {
 struct LFO_soft_volume_FM {
 	unsigned __int16 Wait1;
 	unsigned __int16 Wait2;
-	unsigned __int16 Delta1;
-	unsigned __int16 Limit;
+	__int16 Delta1;
+	__int16 Limit;
 };
 
 struct LFO_soft_detune {
 	unsigned __int16 Wait1;
 	unsigned __int16 Wait2;
-	unsigned __int16 Delta1;
-	unsigned __int16 Limit;
+	__int16 Delta1;
+	__int16 Limit;
 };
 #pragma pack()
 
@@ -32,6 +32,7 @@ struct EVENT {
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
 	unsigned __int8 Param[3]; // イベントのパラメータ
+	__int16 ParamW; // イベントのパラメータ、LFO用のこのプログラムの内部用
 };
 
 class EVENTS {
@@ -39,6 +40,11 @@ class EVENTS {
 	size_t counter = 0;
 	size_t time_loop_start = 0;
 	size_t time_end = SIZE_MAX;
+	unsigned __int8 Volume_current = 0;
+	unsigned __int8 Volume_prev = 0;
+	__int16 Detune_current = 0;
+	__int16 Detune_prev = 0;
+
 	bool Disable_note_off = false;
 	bool Disable_LFO = false;
 
@@ -51,7 +57,7 @@ class EVENTS {
 	struct {
 		struct LFO_soft_volume_SSG Param;
 		unsigned Mode;
-		__int16 Volume;
+		int Volume;
 		unsigned __int16 Delta;
 		unsigned __int16 Wait;
 	} sLFOv_SSG = { { 0, 0, 0, 0, 0 }, 0, 0, 0, 0 };
@@ -59,13 +65,13 @@ class EVENTS {
 	struct {
 		struct LFO_soft_volume_FM Param;
 		unsigned __int16 Wait;
-		__int16 Volume;
+		int Volume;
 	} sLFOv_FM = { { 0, 0, 0, 0}, 0, 0 };
 
 	struct {
 		struct LFO_soft_detune Param;
 		unsigned __int16 Wait;
-		__int16 Detune;
+		int Detune;
 	} sLFOd = { { 0, 0, 0, 0 }, 0, 0 };
 
 	void enlarge(void);
@@ -75,6 +81,8 @@ class EVENTS {
 	void sLFOv_exec_FM(void);
 	void sLFOv_exec_SSG(void);
 	void sLFOd_exec(void);
+	void LFO_note_off(void);
+	void init(void);
 
 public:
 	struct EVENT* event;

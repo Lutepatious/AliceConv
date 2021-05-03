@@ -264,17 +264,26 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		}
 		break;
 	case 0x90: // Note on
+		this->pCHparam_cur->Key = eve.Param[0];
 		if (this->CH_cur < 3) {
-			this->Note_on_YM2203_FM(this->CH_cur, eve.Param[0]);
+			this->Note_on_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->Note_on_YM2203_SSG(this->CH_cur - 3, eve.Param[0]);
+			this->Note_on_YM2203_SSG(this->CH_cur - 3);
+		}
+		break;
+	case 0x98: // sLFOd
+		if (this->CH_cur < 3) {
+			this->sLFOd_YM2203_FM(this->CH_cur, eve.ParamW);
+		}
+		else {
+			this->sLFOd_YM2203_SSG(this->CH_cur - 3, eve.ParamW);
 		}
 		break;
 	}
 }
 
-void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH, unsigned __int8 key)
+void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -285,26 +294,56 @@ void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH, unsigned __int8 key)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[key % 12] + this->pCHparam_cur->Detune;
-	U.S.Block = key / 12;
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2203(0xA4 + CH, U.B[1]);
 	this->make_data_YM2203(0xA0 + CH, U.B[0]);
 	this->make_data_YM2203(0x28, CH | 0xF0);
 }
 
-void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH, unsigned __int8 key)
+void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH)
 {
 	union {
 		unsigned __int16 W;
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[key] + (-this->pCHparam_cur->Detune >> 2);
+	U.W = TP[this->pCHparam_cur->Key] + (-this->pCHparam_cur->Detune >> 2);
 
 	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
 	this->SSG_out &= ~(1 << CH);
 	this->make_data_YM2203(0x07, this->SSG_out);
+}
+
+void VGMdata::sLFOd_YM2203_FM(unsigned __int8 CH, __int16 Detune)
+{
+	union {
+		struct {
+			unsigned __int16 FNumber : 11;
+			unsigned __int16 Block : 3;
+			unsigned __int16 dummy : 2;
+		} S;
+		unsigned __int8 B[2];
+	} U;
+
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
+	this->make_data_YM2203(0xA4 + CH, U.B[1]);
+	this->make_data_YM2203(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::sLFOd_YM2203_SSG(unsigned __int8 CH, __int16 Detune)
+{
+	union {
+		unsigned __int16 W;
+		unsigned __int8 B[2];
+	} U;
+
+	U.W = TP[this->pCHparam_cur->Key] + (-Detune >> 2);
+
+	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
+	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
 }
 
 void VGMdata::Timer_set_YM2203(void)
@@ -335,7 +374,7 @@ void VGMdata::Tone_select_YM2203_FM(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
+			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
 			}
 			else {
 				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
@@ -416,14 +455,26 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		}
 		break;
 	case 0x90: // Note on
+		this->pCHparam_cur->Key = eve.Param[0];
 		if (this->CH_cur < 3) {
-			this->Note_on_YM2608_FMport0(this->CH_cur, eve.Param[0]);
+			this->Note_on_YM2608_FMport0(this->CH_cur);
 		}
 		else if (this->CH_cur > 5) {
-			this->Note_on_YM2608_FMport1(this->CH_cur - 6, eve.Param[0]);
+			this->Note_on_YM2608_FMport1(this->CH_cur - 6);
 		}
 		else {
-			this->Note_on_YM2608_SSG(this->CH_cur - 3, eve.Param[0]);
+			this->Note_on_YM2608_SSG(this->CH_cur - 3);
+		}
+		break;
+	case 0x98: // sLFOd
+		if (this->CH_cur < 3) {
+			this->sLFOd_YM2608_FMport0(this->CH_cur, eve.ParamW);
+		}
+		else if (this->CH_cur > 5) {
+			this->sLFOd_YM2608_FMport1(this->CH_cur - 6, eve.ParamW);
+		}
+		else {
+			this->sLFOd_YM2608_SSG(this->CH_cur - 3, eve.ParamW);
 		}
 		break;
 	}
@@ -465,7 +516,7 @@ void VGMdata::Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan)
 	this->make_data_YM2608port1(0xB4 + CH, LRAP.B);
 }
 
-void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 key)
+void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -476,14 +527,14 @@ void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 key)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[key % 12] + this->pCHparam_cur->Detune;
-	U.S.Block = key / 12;
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2608port0(0xA4 + CH, U.B[1]);
 	this->make_data_YM2608port0(0xA0 + CH, U.B[0]);
 	this->make_data_YM2608port0(0x28, CH | 0xF0);
 }
 
-void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 key)
+void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -494,26 +545,73 @@ void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 key)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[key % 12] + this->pCHparam_cur->Detune;
-	U.S.Block = key / 12;
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2608port1(0xA4 + CH, U.B[1]);
 	this->make_data_YM2608port1(0xA0 + CH, U.B[0]);
 	this->make_data_YM2608port0(0x28, CH | 0xF4);
 }
 
-void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH, unsigned __int8 key)
+void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH)
 {
 	union {
 		unsigned __int16 W;
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[key] + (-this->pCHparam_cur->Detune >> 2);
+	U.W = TP[this->pCHparam_cur->Key] + (-this->pCHparam_cur->Detune >> 2);
 
 	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
 	this->SSG_out &= ~(1 << CH);
 	this->make_data_YM2608port0(0x07, this->SSG_out);
+}
+
+void VGMdata::sLFOd_YM2608_FMport0(unsigned __int8 CH, __int16 Detune)
+{
+	union {
+		struct {
+			unsigned __int16 FNumber : 11;
+			unsigned __int16 Block : 3;
+			unsigned __int16 dummy : 2;
+		} S;
+		unsigned __int8 B[2];
+	} U;
+
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
+	this->make_data_YM2608port0(0xA4 + CH, U.B[1]);
+	this->make_data_YM2608port0(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::sLFOd_YM2608_FMport1(unsigned __int8 CH, __int16 Detune)
+{
+	union {
+		struct {
+			unsigned __int16 FNumber : 11;
+			unsigned __int16 Block : 3;
+			unsigned __int16 dummy : 2;
+		} S;
+		unsigned __int8 B[2];
+	} U;
+
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
+	U.S.Block = this->pCHparam_cur->Key / 12;
+	this->make_data_YM2608port1(0xA4 + CH, U.B[1]);
+	this->make_data_YM2608port1(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::sLFOd_YM2608_SSG(unsigned __int8 CH, __int16 Detune)
+{
+	union {
+		unsigned __int16 W;
+		unsigned __int8 B[2];
+	} U;
+
+	U.W = TP[this->pCHparam_cur->Key] + (-Detune >> 2);
+
+	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
+	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
 }
 
 void VGMdata::Timer_set_YM2608(void)
@@ -555,7 +653,7 @@ void VGMdata::Tone_select_YM2608_FMport0(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
+			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
 			}
 			else {
 				this->make_data_YM2608port0(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
@@ -574,7 +672,7 @@ void VGMdata::Tone_select_YM2608_FMport1(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3)) {
+			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
 			}
 			else {
 				this->make_data_YM2608port1(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
@@ -633,8 +731,9 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		this->Volume_YM2151();
 		break;
 	case 0x90: // Note on
+		this->pCHparam_cur->Key = eve.Param[0];
 		this->Note_off_YM2151();
-		this->Note_on_YM2151(eve.Param[0]);
+		this->Note_on_YM2151();
 		break;
 	}
 }
@@ -669,13 +768,13 @@ void VGMdata::Note_off_YM2151(void)
 	}
 }
 
-void VGMdata::Note_on_YM2151(unsigned __int8 key)
+void VGMdata::Note_on_YM2151(void)
 {
-	if (key < 3) {
-		wprintf_s(L"%2u: Very low key%2u\n", this->CH_cur, key);
-		key += 12;
+	if (this->pCHparam_cur->Key < 3) {
+		wprintf_s(L"%2u: Very low key%2u\n", this->CH_cur, this->pCHparam_cur->Key);
+		this->pCHparam_cur->Key += 12;
 	}
-	key -= 3;
+	this->pCHparam_cur->Key -= 3;
 	union {
 		struct {
 			unsigned __int8 note : 4;
@@ -686,9 +785,9 @@ void VGMdata::Note_on_YM2151(unsigned __int8 key)
 	} U;
 	U.KC = 0;
 
-	unsigned pre_note = key % 12;
+	unsigned pre_note = this->pCHparam_cur->Key % 12;
 	U.S.note = (pre_note << 2) / 3;
-	U.S.oct = key / 12;
+	U.S.oct = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2151(0x28 + this->CH_cur, U.KC);
 	this->make_data_YM2151(0x08, this->CH_cur | 0x78);
 	this->pCHparam_cur->NoteOn = true;
