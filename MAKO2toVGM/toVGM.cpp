@@ -264,12 +264,20 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		}
 		break;
 	case 0x90: // Note on
-		this->pCHparam_cur->Key = eve.Param[0];
 		if (this->CH_cur < 3) {
 			this->Note_on_YM2203_FM(this->CH_cur);
 		}
 		else {
 			this->Note_on_YM2203_SSG(this->CH_cur - 3);
+		}
+		break;
+	case 0x97: // Key_set
+		this->pCHparam_cur->Key = eve.Param[0];
+		if (this->CH_cur < 3) {
+			this->Key_set_YM2203_FM(this->CH_cur);
+		}
+		else {
+			this->Key_set_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0x98: // sLFOd
@@ -283,7 +291,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 	}
 }
 
-void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH)
+void VGMdata::Key_set_YM2203_FM(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -298,10 +306,14 @@ void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH)
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2203(0xA4 + CH, U.B[1]);
 	this->make_data_YM2203(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH)
+{
 	this->make_data_YM2203(0x28, CH | 0xF0);
 }
 
-void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH)
+void VGMdata::Key_set_YM2203_SSG(unsigned __int8 CH)
 {
 	union {
 		unsigned __int16 W;
@@ -312,6 +324,10 @@ void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH)
 
 	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
+}
+
+void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH)
+{
 	this->SSG_out &= ~(1 << CH);
 	this->make_data_YM2203(0x07, this->SSG_out);
 }
@@ -455,7 +471,6 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		}
 		break;
 	case 0x90: // Note on
-		this->pCHparam_cur->Key = eve.Param[0];
 		if (this->CH_cur < 3) {
 			this->Note_on_YM2608_FMport0(this->CH_cur);
 		}
@@ -464,6 +479,18 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		}
 		else {
 			this->Note_on_YM2608_SSG(this->CH_cur - 3);
+		}
+		break;
+	case 0x97: // Key set
+		this->pCHparam_cur->Key = eve.Param[0];
+		if (this->CH_cur < 3) {
+			this->Key_set_YM2608_FMport0(this->CH_cur);
+		}
+		else if (this->CH_cur > 5) {
+			this->Key_set_YM2608_FMport1(this->CH_cur - 6);
+		}
+		else {
+			this->Key_set_YM2608_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0x98: // sLFOd
@@ -482,6 +509,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 
 void VGMdata::Panpot_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 Pan)
 {
+	this->pCHparam_cur->Panpot = 3;
 	if (Pan & 0x80 || Pan == 0) {
 		this->pCHparam_cur->Panpot = 3;
 	}
@@ -500,6 +528,7 @@ void VGMdata::Panpot_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 Pan)
 
 void VGMdata::Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan)
 {
+	this->pCHparam_cur->Panpot = 3;
 	if (Pan & 0x80 || Pan == 0) {
 		this->pCHparam_cur->Panpot = 3;
 	}
@@ -516,7 +545,7 @@ void VGMdata::Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan)
 	this->make_data_YM2608port1(0xB4 + CH, LRAP.B);
 }
 
-void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH)
+void VGMdata::Key_set_YM2608_FMport0(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -531,10 +560,14 @@ void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH)
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2608port0(0xA4 + CH, U.B[1]);
 	this->make_data_YM2608port0(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH)
+{
 	this->make_data_YM2608port0(0x28, CH | 0xF0);
 }
 
-void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH)
+void VGMdata::Key_set_YM2608_FMport1(unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -549,10 +582,14 @@ void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH)
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2608port1(0xA4 + CH, U.B[1]);
 	this->make_data_YM2608port1(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH)
+{
 	this->make_data_YM2608port0(0x28, CH | 0xF4);
 }
 
-void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH)
+void VGMdata::Key_set_YM2608_SSG(unsigned __int8 CH)
 {
 	union {
 		unsigned __int16 W;
@@ -563,7 +600,10 @@ void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH)
 
 	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
-	this->SSG_out &= ~(1 << CH);
+}
+
+void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH)
+{	this->SSG_out &= ~(1 << CH);
 	this->make_data_YM2608port0(0x07, this->SSG_out);
 }
 
@@ -730,8 +770,11 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		this->Note_off_YM2151();
 		this->Volume_YM2151();
 		break;
-	case 0x90: // Note on
+	case 0x97:
 		this->pCHparam_cur->Key = eve.Param[0];
+		this->Key_set_YM2151();
+		break;
+	case 0x90: // Note on
 		this->Note_off_YM2151();
 		this->Note_on_YM2151();
 		break;
@@ -768,7 +811,7 @@ void VGMdata::Note_off_YM2151(void)
 	}
 }
 
-void VGMdata::Note_on_YM2151(void)
+void VGMdata::Key_set_YM2151(void)
 {
 	if (this->pCHparam_cur->Key < 3) {
 		wprintf_s(L"%2u: Very low key%2u\n", this->CH_cur, this->pCHparam_cur->Key);
@@ -789,6 +832,9 @@ void VGMdata::Note_on_YM2151(void)
 	U.S.note = (pre_note << 2) / 3;
 	U.S.oct = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2151(0x28 + this->CH_cur, U.KC);
+}
+
+void VGMdata::Note_on_YM2151(void) {
 	this->make_data_YM2151(0x08, this->CH_cur | 0x78);
 	this->pCHparam_cur->NoteOn = true;
 }

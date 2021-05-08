@@ -43,7 +43,8 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 	unsigned __int16 Octave = 4, Octave_current = 4;
 	unsigned __int16 time_default = 0x40, note;
 	__int16 time, time_on, time_off, gate_step = 7;
-	unsigned __int8 flag_gate = 0;
+	bool flag_gate = false;
+	bool tie = false;
 	unsigned __int8* dest = this->MML;
 
 	this->Loop_start_pos = 0;
@@ -134,12 +135,12 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 				src++;
 				break;
 			case 0xF2:
-				flag_gate = 0;
+				flag_gate = false;
 				gate_step = (short)(*++src) + 1;
 				src++;
 				break;
 			case 0xEA:
-				flag_gate = 1;
+				flag_gate = true;
 				gate_step = *++src;
 				src++;
 				break;
@@ -204,6 +205,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 
 			case 0xE9: // Tie
 				*dest++ = *src++;
+				tie = true;
 				break;
 
 			case 0xE7:
@@ -254,21 +256,20 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 					}
 				}
 				time_off = time - time_on;
-				if (!note) {
-					time_off += time_on;
-					time_on = 0;
+				if (!note || (time_on == 0)) {
+					*dest++ = 0x80;
+					*((unsigned __int16*)dest) = time;
+					dest += 2;
 				}
-				if (time_on) {
+				else {
 					*dest++ = 0x90;
 					*dest++ = Octave_current * 12 + note - 1; // 0 - 95 (MIDI Note No.12 - 107)
 					*((unsigned __int16*)dest) = time_on;
 					dest += 2;
-					this->time_total += time_on;
+					*((unsigned __int16*)dest) = time_off;
+					dest += 2;
 				}
-				*dest++ = 0x80;
-				*((unsigned __int16*)dest) = time_off;
-				dest += 2;
-				this->time_total += time_off;
+				this->time_total += time;
 				if (Octave_current != Octave) {
 					Octave_current = Octave;
 				}

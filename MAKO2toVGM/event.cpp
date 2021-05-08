@@ -200,7 +200,7 @@ void EVENTS::sLFOd_exec(void)
 	this->sLFOd.Detune += this->sLFOd.Param.Delta1;
 
 	if (this->sLFOd.Param.Delta1 >= 0) {
-		if (this->sLFOd.Detune >= this->sLFOd.Param.Limit) {
+		if (this->sLFOd.Detune > this->sLFOd.Param.Limit) {
 			this->sLFOd.Detune = this->sLFOd.Param.Limit;
 			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
 			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
@@ -208,7 +208,7 @@ void EVENTS::sLFOd_exec(void)
 		}
 	}
 	else {
-		if (this->sLFOd.Detune <= this->sLFOd.Param.Limit) {
+		if (this->sLFOd.Detune < this->sLFOd.Param.Limit) {
 			this->sLFOd.Detune = this->sLFOd.Param.Limit;
 			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
 			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
@@ -227,13 +227,13 @@ void EVENTS::init(void)
 	this->Detune_prev = 0;
 
 	this->Disable_note_off = false;
-	this->Disable_LFO = false;
+	this->Disable_LFO_init = false;
 
 	this->sLFOv_ready = false;
 	this->sLFOd_ready = false;
 	this->sLFOv_direction = false;
 	this->sLFOd_direction = false;
-
+	this->sLFOd_first_wait = true;
 
 	this->sLFOv_SSG = { { 0, 0, 0, 0, 0 }, 0, 0, 0, 0 };
 	this->sLFOv_FM = { { 0, 0, 0, 0}, 0, 0 };
@@ -281,34 +281,25 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 			}
 
 			unsigned __int8* src_orig = src;
-			size_t LFO_Time, LFO_start, time_keep;
+			size_t len_On, len_Off;
+			__int8 Volume;
 			switch (*src) {
 			case 0x80: // Note off
-				if (this->Disable_note_off) {
-					this->Disable_note_off = false;
-					this->Disable_LFO = true;
-					src++;
-					LFO_Time = *((unsigned __int16*)src);
-#if 0
-					if (LFO_Time) {
-						wprintf_s(L"LFO note off %1zX: %08zX: %zu\n", i, time, LFO_Time);
-					}
-#endif
-				}
-				else {
+				len_Off = *(unsigned __int16*)(src + 1);
+				if (len_Off) {
+					this->LFO_note_off();
 					dest->Count = counter++;
 					dest->Event = *src++;
 					dest->time = time;
 					dest->Type = 0;
 					dest->CH = i;
 					dest++;
-					LFO_Time = *((unsigned __int16*)src);
-					this->LFO_note_off();
 				}
-				time += LFO_Time;
+				time += len_Off;
 				src += 2;
 				break;
 			case 0xE9: // Tie
+//				wprintf_s(L"Tie      %1zX: %08zX\n", i, time);
 				this->Disable_note_off = true;
 				src++;
 				break;
@@ -316,6 +307,11 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				src += 2;
 				break;
 			case 0xE5: // set flags 4 5 6
+				src++;
+				this->sLFOd_ready = !!(*src & 0x1);
+				this->sLFOv_ready = !!(*src & 0x2);
+				src++;
+				break;
 			case 0xF5: // Tone select
 			case 0xEB: // Panpot
 				dest->Count = counter++;
@@ -336,23 +332,34 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				dest++;
 				break;
 			case 0xE1: // Velocity
-				dest->Count = counter++;
-				dest->Event = *src++;
-				dest->Param[0] = *src++;
-				this->Volume_current += dest->Param[0];
-				dest->time = time;
-				dest->Type = 2;
-				dest->CH = i;
-				dest++;
+				if (this->sLFOv_ready) {
+					src++;
+					this->Volume_current += *src++;
+				}
+				else {
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param[0] = *src++;
+					dest->time = time;
+					dest->Type = 2;
+					dest->CH = i;
+					dest++;
+				}
 				break;
 			case 0xF9: // Volume change
-				dest->Count = counter++;
-				dest->Event = *src++;
-				dest->Param[0] = this->Volume_prev = this->Volume_current = *src++;
-				dest->time = time;
-				dest->Type = 2;
-				dest->CH = i;
-				dest++;
+				if (this->sLFOv_ready) {
+					src++;
+					this->Volume_current = *src++;
+				}
+				else {
+					dest->Count = counter++;
+					dest->Event = *src++;
+					dest->Param[0] = this->Volume_current = *src++;
+					dest->time = time;
+					dest->Type = 2;
+					dest->CH = i;
+					dest++;
+				}
 				break;
 			case 0xF4: // Tempo
 				dest->Count = counter++;
@@ -381,7 +388,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				this->sLFOd_ready = true;
 				this->sLFOd_direction = false;
 				this->sLFOd_setup();
-				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit);
+				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
 				break;
 			case 0xE6: // sLFOv
 				src++;
@@ -402,85 +409,121 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				wprintf_s(L"sLFOv_SSG   %1zX: %08zX: v%04X w%04X d%04X %04X %04X\n", i, time, this->sLFOv_SSG.Param.Volume, this->sLFOv_SSG.Param.Wait1, this->sLFOv_SSG.Param.Delta1, this->sLFOv_SSG.Param.Delta2, this->sLFOv_SSG.Param.Delta_last);
 				break;
 			case 0x90: // Note on
+				len_On = *(unsigned __int16*)(src + 2);
+				len_Off = *(unsigned __int16*)(src + 4);
+				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param[0] = *src++;
-				dest->time = time_keep = time;
-				LFO_Time = *((unsigned __int16*)src);
-				time += LFO_Time;
-				src += 2;
+				dest->time = time;
+				dest->Type = 9;
+				dest->CH = i;
+				dest++;
 
-				if (this->Disable_LFO) {
-					this->Disable_LFO = false;
-					LFO_start = 0;
+				dest->Count = counter++;
+				dest->Event = 0x97;
+				dest->Param[0] = *src++;
+				dest->time = time;
+				dest->Type = 2;
+				dest->CH = i;
+				dest++;
+				src += 4;
+
+				if (this->Disable_LFO_init) {
+					this->Disable_LFO_init = false;
 				}
 				else {
-					dest->Count = counter++;
-					dest->Type = 9;
-					dest->CH = i;
-					dest++;
 					this->sLFOd_setup();
+					if (this->sLFOd_first_wait) {
+						this->sLFOd_first_wait = false;
+						this->sLFOd.Wait++;
+					}
 					if (i < 3 || i > 5) {
 						this->sLFOv_setup_FM();
 					}
 					else {
 						this->sLFOv_setup_SSG();
 					}
-					LFO_start = 1;
-					this->Volume_prev = this->Volume_current;
 				}
-				for (size_t j = LFO_start; j < LFO_Time; j++) {
-					if (this->sLFOd_ready) {
+
+				if (this->sLFOd_ready) {
+					for (size_t k = 0; k < len_On + len_Off; k++) {
 						this->sLFOd_exec();
-						__int16 Detune = this->Detune_current + this->sLFOd.Detune;
-						if (this->Detune_prev != Detune) {
-							this->Detune_prev = Detune;
-							wprintf_s(L"Detune   %1zX: %08zX: %08X\n", i, time_keep + j, Detune);
-							dest->Count = counter++;
-							dest->Event = 0x98;
-							dest->ParamW = Detune;
-							dest->time = time_keep + j;
-							dest->Type = 2;
-							dest->CH = i;
-							dest++;
+						if (k < len_On) {
+							__int16 Detune = this->Detune_current + this->sLFOd.Detune;
+							if (this->Detune_prev != Detune) {
+								this->Detune_prev = Detune;
+								//							wprintf_s(L"Detune   %1zX: %08zX: %08X\n", i, time + k, Detune);
+								dest->Count = counter++;
+								dest->Event = 0x98;
+								dest->ParamW = Detune;
+								dest->time = time + k;
+								dest->Type = 2;
+								dest->CH = i;
+								dest++;
+							}
+						}
+						else if (k == len_On) {
+							this->sLFOd_exec();
 						}
 					}
-					if (this->sLFOv_ready) {
-						__int8 Volume;
+				}
+				if (this->sLFOv_ready) {
+					for (size_t k = 0; k < len_On; k++) {
 						if (i < 3 || i > 5) {
 							this->sLFOv_exec_FM();
 							Volume = this->Volume_current + this->sLFOv_FM.Volume;
 						}
 						else {
 							this->sLFOv_exec_SSG();
-							Volume = (int) this->Volume_current * this->sLFOv_SSG.Volume >> 14;
+							Volume = (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
 							if (Volume == 0) {
 								if (this->Disable_note_off) {
 									this->Disable_note_off = false;
-									this->Disable_LFO = true;
+									this->Disable_LFO_init = true;
 								}
-								this->LFO_note_off();
-								dest->Count = counter++;
-								dest->Event = 0x80;
-								dest->time = time_keep + j;
-								dest->Type = 0;
-								dest->CH = i;
-								dest++;
-								continue;
+								else {
+									this->Volume_prev = Volume;
+									this->LFO_note_off();
+									dest->Count = counter++;
+									dest->Event = 0x80;
+									dest->time = time + k;
+									dest->Type = 0;
+									dest->CH = i;
+									dest++;
+									continue;
+								}
 							}
 						}
 						if (this->Volume_prev != Volume) {
-							wprintf_s(L"Volume   %1zX: %08zX: %01X %01X\n", i, (dest - 1)->time + j, Volume, this->Volume_prev);
+							//							wprintf_s(L"Volume   %1zX: %08zX: %01X %01X\n", i, (dest - 1)->time + k, Volume, this->Volume_prev);
 							this->Volume_prev = Volume;
 							dest->Count = counter++;
 							dest->Event = 0xF9;
 							dest->Param[0] = Volume;
-							dest->time = time_keep + j;
+							dest->time = time + k;
 							dest->Type = 2;
 							dest->CH = i;
 							dest++;
 						}
 					}
 				}
+
+				time += len_On;
+
+				if (this->Disable_note_off) {
+					this->Disable_note_off = false;
+					this->Disable_LFO_init = true;
+				}
+				else {
+					this->LFO_note_off();
+					dest->Count = counter++;
+					dest->Event = 0x80;
+					dest->time = time;
+					dest->Type = 0;
+					dest->CH = i;
+					dest++;
+				}
+
+				time += len_Off;
 
 				break;
 			default:

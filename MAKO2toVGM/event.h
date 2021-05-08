@@ -46,13 +46,13 @@ class EVENTS {
 	__int16 Detune_prev = 0;
 
 	bool Disable_note_off = false;
-	bool Disable_LFO = false;
+	bool Disable_LFO_init = false;
 
 	bool sLFOv_ready = false;
 	bool sLFOd_ready = false;
 	bool sLFOv_direction = false;
 	bool sLFOd_direction = false;
-
+	bool sLFOd_first_wait = false;
 
 	struct {
 		struct LFO_soft_volume_SSG Param;
