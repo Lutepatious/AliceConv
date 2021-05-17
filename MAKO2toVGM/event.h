@@ -78,9 +78,9 @@ class EVENTS {
 	void sLFOv_setup_FM(void);
 	void sLFOv_setup_SSG(void);
 	void sLFOd_setup(void);
-	void sLFOv_exec_FM(void);
-	void sLFOv_exec_SSG(void);
-	void sLFOd_exec(void);
+	__int8 sLFOv_exec_FM(void);
+	__int8 sLFOv_exec_SSG(void);
+	__int16 sLFOd_exec(void);
 	void LFO_note_off(void);
 	void init(void);
 

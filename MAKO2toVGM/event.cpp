@@ -109,14 +109,11 @@ void EVENTS::sLFOv_setup_SSG(void)
 }
 
 
-void EVENTS::sLFOv_exec_FM(void)
+__int8 EVENTS::sLFOv_exec_FM(void)
 {
-	if (!this->sLFOv_ready) {
-		return;
-	}
 	if (this->sLFOv_FM.Wait) {
 		this->sLFOv_FM.Wait--;
-		return;
+		return this->Volume_current + this->sLFOv_FM.Volume;
 	}
 	this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait2;
 	this->sLFOv_FM.Volume += this->sLFOv_FM.Param.Delta1;
@@ -137,21 +134,24 @@ void EVENTS::sLFOv_exec_FM(void)
 			this->sLFOv_direction = false;
 		}
 	}
-	// この後本体でイベント設定
+	return this->Volume_current + this->sLFOv_FM.Volume;
 }
 
-void EVENTS::sLFOv_exec_SSG(void)
+__int8 EVENTS::sLFOv_exec_SSG(void)
 {
-	if (!this->sLFOv_ready) {
-		return;
-	}
 	if (this->sLFOv_SSG.Mode == 1) { // 音量増
-		this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
-		if (this->sLFOv_SSG.Volume > 0x4000) {
+		if (this->sLFOv_SSG.Volume >= 0x3FFF) {
 			this->sLFOv_SSG.Volume = 0x4000;
+			this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
 			this->sLFOv_SSG.Wait = this->sLFOv_SSG.Param.Wait1;
 			this->sLFOv_SSG.Delta = this->sLFOv_SSG.Param.Delta1;
 			this->sLFOv_SSG.Mode = 2;
+		}
+		else {
+			this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
+		}
+		if (this->sLFOv_SSG.Volume > 0x4000) {
+			this->sLFOv_SSG.Volume = 0x4000;
 		}
 	}
 	else if (this->sLFOv_SSG.Mode > 1 && this->sLFOv_SSG.Mode < 5) { // 音量減
@@ -159,8 +159,6 @@ void EVENTS::sLFOv_exec_SSG(void)
 		if (this->sLFOv_SSG.Volume < 0) {
 			this->sLFOv_SSG.Volume = 0;
 			this->sLFOv_SSG.Mode = 0;
-			//			s11B6(Ch); LFO対応のNote offルーチンを呼び出す
-			return;
 		}
 		if (this->sLFOv_SSG.Mode == 2) {
 			if (this->sLFOv_SSG.Wait) {
@@ -170,7 +168,7 @@ void EVENTS::sLFOv_exec_SSG(void)
 			this->sLFOv_SSG.Wait--;
 		}
 	}
-	//	SSG_make_Vol();
+	return (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
 }
 
 void EVENTS::sLFOd_setup(void)
@@ -186,15 +184,11 @@ void EVENTS::sLFOd_setup(void)
 	}
 }
 
-void EVENTS::sLFOd_exec(void)
+__int16 EVENTS::sLFOd_exec(void)
 {
-	if (!this->sLFOd_ready) {
-		return;
-	}
-
 	if (this->sLFOd.Wait) {
 		this->sLFOd.Wait--;
-		return;
+		return this->Detune_current + this->sLFOd.Detune;
 	}
 
 	this->sLFOd.Wait = this->sLFOd.Param.Wait2;
@@ -216,8 +210,7 @@ void EVENTS::sLFOd_exec(void)
 			this->sLFOd_direction = false;
 		}
 	}
-	// この後本体でイベント設定
-
+	return this->Detune_current + this->sLFOd.Detune;
 }
 
 void EVENTS::init(void)
@@ -286,15 +279,13 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 			switch (*src) {
 			case 0x80: // Note off
 				len_Off = *(unsigned __int16*)(src + 1);
-				if (len_Off) {
-					this->LFO_note_off();
-					dest->Count = counter++;
-					dest->Event = *src++;
-					dest->time = time;
-					dest->Type = 0;
-					dest->CH = i;
-					dest++;
-				}
+				this->LFO_note_off();
+				dest->Count = counter++;
+				dest->Event = *src++;
+				dest->time = time;
+				dest->Type = 0;
+				dest->CH = i;
+				dest++;
 				time += len_Off;
 				src += 2;
 				break;
@@ -447,42 +438,39 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				}
 
 				for (size_t k = 0; k < len_On + len_Off; k++) {
-					if (k < len_On || this->Disable_note_off) {
-						if (this->sLFOd_ready) {
-							this->sLFOd_exec();
-							__int16 Detune = this->Detune_current + this->sLFOd.Detune;
-							if (this->Detune_prev != Detune) {
-								this->Detune_prev = Detune;
-								dest->Count = counter++;
-								dest->Event = 0x98;
-								dest->ParamW = Detune;
-								dest->time = time + k;
-								dest->Type = 2;
-								dest->CH = i;
-								dest++;
-							}
+					if (this->sLFOd_ready) {
+						__int16 Detune = this->sLFOd_exec();
+						if (this->Detune_prev != Detune) {
+							this->Detune_prev = Detune;
+							dest->Count = counter++;
+							dest->Event = 0x98;
+							dest->ParamW = Detune;
+							dest->time = time + k;
+							dest->Type = 2;
+							dest->CH = i;
+							dest++;
 						}
+					}
 
-						if (this->sLFOv_ready) {
-							__int8 Volume;
-							if (i < 3 || i > 5) {
-								this->sLFOv_exec_FM();
-								Volume = this->Volume_current + this->sLFOv_FM.Volume;
-							}
-							else {
-								this->sLFOv_exec_SSG();
-								Volume = (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
-							}
-							if (this->Volume_prev != Volume) {
-								this->Volume_prev = Volume;
-								dest->Count = counter++;
-								dest->Event = 0xF9;
-								dest->Param[0] = Volume;
-								dest->time = time + k;
-								dest->Type = 2;
-								dest->CH = i;
-								dest++;
-							}
+					if (this->sLFOv_ready) {
+						__int8 Volume;
+						if (i < 3 || i > 5) {
+							Volume = this->sLFOv_exec_FM();
+						}
+						else {
+							Volume = this->sLFOv_exec_SSG();
+							wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
+
+						}
+						if (this->Volume_prev != Volume) {
+							this->Volume_prev = Volume;
+							dest->Count = counter++;
+							dest->Event = 0xF9;
+							dest->Param[0] = Volume;
+							dest->time = time + k;
+							dest->Type = 2;
+							dest->CH = i;
+							dest++;
 						}
 					}
 				}
@@ -492,6 +480,9 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				if (this->Disable_note_off) {
 					this->Disable_note_off = false;
 					this->Disable_LFO_init = true;
+				}
+				else if (i > 2 && i < 6 && (sLFOv_ready || sLFOd_ready)) {
+
 				}
 				else {
 					this->LFO_note_off();
