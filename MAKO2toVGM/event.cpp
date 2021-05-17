@@ -60,6 +60,7 @@ int eventsort_noweight(void* x, const void* n1, const void* n2)
 
 int eventsort(void* x, const void* n1, const void* n2)
 {
+	unsigned CH_weight[16] = { 0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15 };
 	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
 		return 1;
 	}
@@ -74,14 +75,22 @@ int eventsort(void* x, const void* n1, const void* n2)
 			return -1;
 		}
 		else {
-			if (((struct EVENT*)n1)->Count > ((struct EVENT*)n2)->Count) {
-				return 1;
-			}
-			else if (((struct EVENT*)n1)->Count < ((struct EVENT*)n2)->Count) {
+			if (CH_weight[((struct EVENT*)n1)->CH] > CH_weight[((struct EVENT*)n2)->CH]) {
 				return -1;
 			}
+			else if (CH_weight[((struct EVENT*)n1)->CH] < CH_weight[((struct EVENT*)n2)->CH]) {
+				return 1;
+			}
 			else {
-				return 0;
+				if (((struct EVENT*)n1)->Count > ((struct EVENT*)n2)->Count) {
+					return 1;
+				}
+				else if (((struct EVENT*)n1)->Count < ((struct EVENT*)n2)->Count) {
+					return -1;
+				}
+				else {
+					return 0;
+				}
 			}
 		}
 	}
@@ -290,7 +299,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				src += 2;
 				break;
 			case 0xE9: // Tie
-				wprintf_s(L"Tie      %1zX: %08zX\n", i, time);
+//				wprintf_s(L"Tie      %1zX: %08zX\n", i, time);
 				this->Disable_note_off = true;
 				src++;
 				break;
@@ -379,7 +388,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				this->sLFOd_ready = true;
 				this->sLFOd_direction = false;
 				this->sLFOd_setup();
-				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
+				//				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
 				break;
 			case 0xE6: // sLFOv
 				src++;
@@ -459,8 +468,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 						}
 						else {
 							Volume = this->sLFOv_exec_SSG();
-							wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
-
+							//							wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
 						}
 						if (this->Volume_prev != Volume) {
 							this->Volume_prev = Volume;
