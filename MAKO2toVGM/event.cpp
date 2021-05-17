@@ -108,18 +108,6 @@ void EVENTS::sLFOv_setup_SSG(void)
 	}
 }
 
-void EVENTS::sLFOd_setup(void)
-{
-	if (this->sLFOd_ready) {
-		this->sLFOd.Wait = this->sLFOd.Param.Wait1;
-		this->sLFOd.Detune = 0;
-		if (this->sLFOd_direction) {
-			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
-			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
-			this->sLFOd_direction = false;
-		}
-	}
-}
 
 void EVENTS::sLFOv_exec_FM(void)
 {
@@ -185,6 +173,19 @@ void EVENTS::sLFOv_exec_SSG(void)
 	//	SSG_make_Vol();
 }
 
+void EVENTS::sLFOd_setup(void)
+{
+	if (this->sLFOd_ready) {
+		this->sLFOd.Wait = this->sLFOd.Param.Wait1;
+		this->sLFOd.Detune = 0;
+		if (this->sLFOd_direction) {
+			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+			this->sLFOd_direction = false;
+		}
+	}
+}
+
 void EVENTS::sLFOd_exec(void)
 {
 	if (!this->sLFOd_ready) {
@@ -200,7 +201,7 @@ void EVENTS::sLFOd_exec(void)
 	this->sLFOd.Detune += this->sLFOd.Param.Delta1;
 
 	if (this->sLFOd.Param.Delta1 >= 0) {
-		if (this->sLFOd.Detune > this->sLFOd.Param.Limit) {
+		if (this->sLFOd.Detune >= this->sLFOd.Param.Limit) {
 			this->sLFOd.Detune = this->sLFOd.Param.Limit;
 			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
 			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
@@ -208,7 +209,7 @@ void EVENTS::sLFOd_exec(void)
 		}
 	}
 	else {
-		if (this->sLFOd.Detune < this->sLFOd.Param.Limit) {
+		if (this->sLFOd.Detune <= this->sLFOd.Param.Limit) {
 			this->sLFOd.Detune = this->sLFOd.Param.Limit;
 			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
 			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
@@ -282,7 +283,6 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 
 			unsigned __int8* src_orig = src;
 			size_t len_On, len_Off;
-			__int8 Volume;
 			switch (*src) {
 			case 0x80: // Note off
 				len_Off = *(unsigned __int16*)(src + 1);
@@ -299,7 +299,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				src += 2;
 				break;
 			case 0xE9: // Tie
-//				wprintf_s(L"Tie      %1zX: %08zX\n", i, time);
+				wprintf_s(L"Tie      %1zX: %08zX\n", i, time);
 				this->Disable_note_off = true;
 				src++;
 				break;
@@ -427,6 +427,8 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				dest++;
 				src += 4;
 
+				this->Detune_prev = this->Detune_current;
+
 				if (this->Disable_LFO_init) {
 					this->Disable_LFO_init = false;
 				}
@@ -444,14 +446,13 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 					}
 				}
 
-				if (this->sLFOd_ready) {
-					for (size_t k = 0; k < len_On + len_Off; k++) {
-						this->sLFOd_exec();
-						if (k < len_On) {
+				for (size_t k = 0; k < len_On + len_Off; k++) {
+					if (k < len_On || this->Disable_note_off) {
+						if (this->sLFOd_ready) {
+							this->sLFOd_exec();
 							__int16 Detune = this->Detune_current + this->sLFOd.Detune;
 							if (this->Detune_prev != Detune) {
 								this->Detune_prev = Detune;
-								//							wprintf_s(L"Detune   %1zX: %08zX: %08X\n", i, time + k, Detune);
 								dest->Count = counter++;
 								dest->Event = 0x98;
 								dest->ParamW = Detune;
@@ -461,48 +462,27 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 								dest++;
 							}
 						}
-						else if (k == len_On) {
-							this->sLFOd_exec();
-						}
-					}
-				}
-				if (this->sLFOv_ready) {
-					for (size_t k = 0; k < len_On; k++) {
-						if (i < 3 || i > 5) {
-							this->sLFOv_exec_FM();
-							Volume = this->Volume_current + this->sLFOv_FM.Volume;
-						}
-						else {
-							this->sLFOv_exec_SSG();
-							Volume = (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
-							if (Volume == 0) {
-								if (this->Disable_note_off) {
-									this->Disable_note_off = false;
-									this->Disable_LFO_init = true;
-								}
-								else {
-									this->Volume_prev = Volume;
-									this->LFO_note_off();
-									dest->Count = counter++;
-									dest->Event = 0x80;
-									dest->time = time + k;
-									dest->Type = 0;
-									dest->CH = i;
-									dest++;
-									continue;
-								}
+
+						if (this->sLFOv_ready) {
+							__int8 Volume;
+							if (i < 3 || i > 5) {
+								this->sLFOv_exec_FM();
+								Volume = this->Volume_current + this->sLFOv_FM.Volume;
 							}
-						}
-						if (this->Volume_prev != Volume) {
-							//							wprintf_s(L"Volume   %1zX: %08zX: %01X %01X\n", i, (dest - 1)->time + k, Volume, this->Volume_prev);
-							this->Volume_prev = Volume;
-							dest->Count = counter++;
-							dest->Event = 0xF9;
-							dest->Param[0] = Volume;
-							dest->time = time + k;
-							dest->Type = 2;
-							dest->CH = i;
-							dest++;
+							else {
+								this->sLFOv_exec_SSG();
+								Volume = (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
+							}
+							if (this->Volume_prev != Volume) {
+								this->Volume_prev = Volume;
+								dest->Count = counter++;
+								dest->Event = 0xF9;
+								dest->Param[0] = Volume;
+								dest->time = time + k;
+								dest->Type = 2;
+								dest->CH = i;
+								dest++;
+							}
 						}
 					}
 				}
@@ -522,7 +502,6 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 					dest->CH = i;
 					dest++;
 				}
-
 				time += len_Off;
 
 				break;
@@ -574,5 +553,4 @@ void EVENTS::print_all(void)
 	for (size_t i = 0; i < this->length; i++) {
 		wprintf_s(L"%8zu: %2d: %02X\n", (event + i)->time, (event + i)->CH, (event + i)->Event);
 	}
-
 }
