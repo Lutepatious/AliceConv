@@ -236,8 +236,9 @@ void EVENTS::init(void)
 	this->sLFOd_ready = false;
 	this->sLFOv_direction = false;
 	this->sLFOd_direction = false;
+#if 0
 	this->sLFOd_first_wait = true;
-
+#endif
 	this->sLFOv_SSG = { { 0, 0, 0, 0, 0 }, 0, 0, 0, 0 };
 	this->sLFOv_FM = { { 0, 0, 0, 0}, 0, 0 };
 	this->sLFOd = { { 0, 0, 0, 0 }, 0, 0 };
@@ -434,10 +435,13 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				}
 				else {
 					this->sLFOd_setup();
+
+#if 0
 					if (this->sLFOd_first_wait) {
 						this->sLFOd_first_wait = false;
 						this->sLFOd.Wait++;
 					}
+#endif
 					if (i < 3 || i > 5) {
 						this->sLFOv_setup_FM();
 					}
@@ -522,7 +526,8 @@ void EVENTS::sort(void)
 	// イベント列をソートする
 	qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
 
-	// イベント列の長さを測る。もしループ末尾がループ入り口直前と一致するならループ起終点を繰り上げる
+
+	// イベント列の長さを測る。
 	while ((this->event + this->length)->time < this->time_end) {
 		if ((this->event + this->length)->time >= this->time_loop_start) {
 			if (this->loop_start == SIZE_MAX) {
@@ -531,11 +536,30 @@ void EVENTS::sort(void)
 		}
 		this->length++;
 	}
+
+#if 1
+	// 重複イベントを削除し、ソートしなおす
+	size_t length_work = this->length;
+	for (size_t i = 0; i < length_work - 1; i++) {
+		if ((this->event + i)->time == (this->event + i + 1)->time && (this->event + i)->Event == (this->event + i + 1)->Event) {
+			if ((this->event + i)->Event == 0xF4 && (this->event + i)->Param[0] == (this->event + i + 1)->Param[0]) {
+				(this->event + i)->time = SIZE_MAX;
+				if (i < this->loop_start) {
+					this->loop_start--;
+				}
+				this->length--;
+			}
+		}
+	}
+	qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
+#endif
+
+	// もしループ末尾がループ入り口直前と一致するならループ起終点を繰り上げる
 	if (this->loop_start != SIZE_MAX) {
 		while (this->loop_start > 0
-			&& (this->event + this->length)->CH == (this->event + this->loop_start)->CH
-			&& (this->event + this->length)->Event == (this->event + this->loop_start)->Event
-			&& (this->event + this->length)->Param[0] == (this->event + this->loop_start)->Param[0]
+			&& (this->event + this->length - 1)->CH == (this->event + this->loop_start - 1)->CH
+			&& (this->event + this->length - 1)->Event == (this->event + this->loop_start - 1)->Event
+			&& (this->event + this->length - 1)->Param[0] == (this->event + this->loop_start - 1)->Param[0]
 			&& (this->event + this->length)->time - (this->event + this->length - 1)->time == (this->event + this->loop_start)->time - (this->event + this->loop_start - 1)->time
 			)
 		{
@@ -545,6 +569,7 @@ void EVENTS::sort(void)
 	}
 
 	wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);
+
 }
 
 void EVENTS::print_all(void)

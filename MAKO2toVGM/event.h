@@ -52,8 +52,9 @@ class EVENTS {
 	bool sLFOd_ready = false;
 	bool sLFOv_direction = false;
 	bool sLFOd_direction = false;
+#if 0
 	bool sLFOd_first_wait = false;
-
+#endif
 	struct {
 		struct LFO_soft_volume_SSG Param;
 		unsigned Mode;
