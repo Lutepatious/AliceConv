@@ -22,7 +22,7 @@ void PCMtoWAV(unsigned __int8* pcmdata, wchar_t* filename, size_t filelen)
 	unsigned __int8* buffer = NULL;
 	size_t len = 0;
 
-	if (*((unsigned __int64*)pcmdata + 2) == 0 && *((unsigned __int32*)pcmdata + 3)) {
+	if (*((unsigned __int32*)pcmdata + 5) == 0 && *((unsigned __int32*)pcmdata + 3)) {
 		tsndH = (TSND_header*) pcmdata;
 		buffer = tsndH->body;
 		// WAVE 8bitは符号なし8bit表現で、TOWNS SNDは符号1bit+7bitで-0と+0に1の差がある表現な上に中心値は-0。
