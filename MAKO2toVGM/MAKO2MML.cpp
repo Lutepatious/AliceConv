@@ -299,6 +299,10 @@ void mako2_mml_decoded::unroll_loop(void)
 	for (size_t i = 0; i < this->CHs; i++) {
 		// ループ展開後の長さの初期化
 		(this->CH + i)->len_unrolled = (this->CH + i)->len;
+		// ループなしの最長時間割り出し
+		if (max_time < (this->CH + i)->time_total) {
+			max_time = (this->CH + i)->time_total;
+		}
 		// 全チャンネルが非ループかチェック
 		no_loop &= (this->CH + i)->is_mute();
 		// そもそもループしないチャネルはスキップ
@@ -306,10 +310,6 @@ void mako2_mml_decoded::unroll_loop(void)
 			continue;
 		}
 		delta_time_LCM = LCM(delta_time_LCM, (this->CH + i)->Loop_delta_time);
-		// ループなしの最長時間割り出し
-		if (max_time < (this->CH + i)->time_total) {
-			max_time = (this->CH + i)->time_total;
-		}
 		// ループ開始が最後のチャネル割り出し
 		if (this->loop_start_time < (this->CH + i)->Loop_start_time) {
 			this->loop_start_time = (this->CH + i)->Loop_start_time;

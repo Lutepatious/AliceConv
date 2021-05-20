@@ -270,7 +270,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 		size_t len = 0;
 		while (len < (MMLs.CH + i)->len_unrolled) {
 			size_t length_current = this->dest - this->event;
-			if (length_current + 200 >= this->events) {
+			if (length_current + 400 >= this->events) {
 				this->enlarge();
 				wprintf_s(L"Memory reallocated in making sequential.\n");
 			}
@@ -326,11 +326,12 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 			case 0xFC: // Detune
 				dest->Count = counter++;
 				dest->Event = *src++;
-				dest->Param[0] = this->Detune_current = *src++;
+				dest->Param[0] = *src++;
 				dest->time = time;
 				dest->Type = 2;
 				dest->CH = i;
 				dest++;
+				this->Detune_current = (__int8) dest->Param[0];
 				break;
 			case 0xE1: // Velocity
 				if (this->sLFOv_ready) {
@@ -389,7 +390,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				this->sLFOd_ready = true;
 				this->sLFOd_direction = false;
 				this->sLFOd_setup();
-				//				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
+				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
 				break;
 			case 0xE6: // sLFOv
 				src++;
