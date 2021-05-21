@@ -122,25 +122,26 @@ __int8 EVENTS::sLFOv_exec_FM(void)
 {
 	if (this->sLFOv_FM.Wait) {
 		this->sLFOv_FM.Wait--;
-		return this->Volume_current + this->sLFOv_FM.Volume;
-	}
-	this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait2;
-	this->sLFOv_FM.Volume += this->sLFOv_FM.Param.Delta1;
-
-	if (this->sLFOv_FM.Param.Delta1 >= 0) {
-		if (this->sLFOv_FM.Volume >= this->sLFOv_FM.Param.Limit) {
-			this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
-			this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
-			this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
-			this->sLFOv_direction = true;
-		}
 	}
 	else {
-		if (this->sLFOv_FM.Volume <= this->sLFOv_FM.Param.Limit) {
-			this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
-			this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
-			this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
-			this->sLFOv_direction = false;
+		this->sLFOv_FM.Wait = this->sLFOv_FM.Param.Wait2;
+		this->sLFOv_FM.Volume += this->sLFOv_FM.Param.Delta1;
+
+		if (this->sLFOv_FM.Param.Delta1 >= 0) {
+			if (this->sLFOv_FM.Volume >= this->sLFOv_FM.Param.Limit) {
+				this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
+				this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
+				this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
+				this->sLFOv_direction = true;
+			}
+		}
+		else {
+			if (this->sLFOv_FM.Volume <= this->sLFOv_FM.Param.Limit) {
+				this->sLFOv_FM.Volume = this->sLFOv_FM.Param.Limit;
+				this->sLFOv_FM.Param.Delta1 = -this->sLFOv_FM.Param.Delta1;
+				this->sLFOv_FM.Param.Limit = -this->sLFOv_FM.Param.Limit;
+				this->sLFOv_direction = false;
+			}
 		}
 	}
 	return this->Volume_current + this->sLFOv_FM.Volume;
@@ -197,29 +198,29 @@ __int16 EVENTS::sLFOd_exec(void)
 {
 	if (this->sLFOd.Wait) {
 		this->sLFOd.Wait--;
-		return this->Detune_current + this->sLFOd.Detune;
-	}
-
-	this->sLFOd.Wait = this->sLFOd.Param.Wait2;
-	this->sLFOd.Detune += this->sLFOd.Param.Delta1;
-
-	if (this->sLFOd.Param.Delta1 >= 0) {
-		if (this->sLFOd.Detune >= this->sLFOd.Param.Limit) {
-			this->sLFOd.Detune = this->sLFOd.Param.Limit;
-			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
-			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
-			this->sLFOd_direction = true;
-		}
 	}
 	else {
-		if (this->sLFOd.Detune <= this->sLFOd.Param.Limit) {
-			this->sLFOd.Detune = this->sLFOd.Param.Limit;
-			this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
-			this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
-			this->sLFOd_direction = false;
+		this->sLFOd.Wait = this->sLFOd.Param.Wait2;
+		this->sLFOd.Detune += this->sLFOd.Param.Delta1;
+
+		if (this->sLFOd.Param.Delta1 >= 0) {
+			if (this->sLFOd.Detune >= this->sLFOd.Param.Limit) {
+				this->sLFOd.Detune = this->sLFOd.Param.Limit;
+				this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+				this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+				this->sLFOd_direction = true;
+			}
+		}
+		else {
+			if (this->sLFOd.Detune <= this->sLFOd.Param.Limit) {
+				this->sLFOd.Detune = this->sLFOd.Param.Limit;
+				this->sLFOd.Param.Delta1 = -this->sLFOd.Param.Delta1;
+				this->sLFOd.Param.Limit = -this->sLFOd.Param.Limit;
+				this->sLFOd_direction = false;
+			}
 		}
 	}
-	return this->Detune_current + this->sLFOd.Detune;
+	return this->sLFOd.Detune;
 }
 
 void EVENTS::init(void)
@@ -270,7 +271,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 		size_t len = 0;
 		while (len < (MMLs.CH + i)->len_unrolled) {
 			size_t length_current = this->dest - this->event;
-			if (length_current + 400 >= this->events) {
+			if (length_current + 200 >= this->events) {
 				this->enlarge();
 				wprintf_s(L"Memory reallocated in making sequential.\n");
 			}
@@ -327,11 +328,11 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				dest->Count = counter++;
 				dest->Event = *src++;
 				dest->Param[0] = *src++;
+				this->Detune_current = (__int8)dest->Param[0];
 				dest->time = time;
 				dest->Type = 2;
 				dest->CH = i;
 				dest++;
-				this->Detune_current = (__int8) dest->Param[0];
 				break;
 			case 0xE1: // Velocity
 				if (this->sLFOv_ready) {
@@ -390,7 +391,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				this->sLFOd_ready = true;
 				this->sLFOd_direction = false;
 				this->sLFOd_setup();
-				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
+//				wprintf_s(L"sLFO_detune %1zX: %08zX: w%04X %04X d%04X l%04X: %04X %04X\n", i, time, this->sLFOd.Param.Wait1, this->sLFOd.Param.Wait2, this->sLFOd.Param.Delta1, this->sLFOd.Param.Limit, this->sLFOd.Wait, this->sLFOd.Detune);
 				break;
 			case 0xE6: // sLFOv
 				src++;
@@ -401,14 +402,14 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 				this->sLFOv_FM.Volume = 0;
 				this->sLFOv_direction = false;
 				this->sLFOv_setup_FM();
-				wprintf_s(L"sLFOv_FM    %1zX: %08zX: w%04X %04X d%04X l%04X\n", i, time, this->sLFOv_FM.Param.Wait1, this->sLFOv_FM.Param.Wait2, this->sLFOv_FM.Param.Delta1, this->sLFOv_FM.Param.Limit);
+//				wprintf_s(L"sLFOv_FM    %1zX: %08zX: w%04X %04X d%04X l%04X\n", i, time, this->sLFOv_FM.Param.Wait1, this->sLFOv_FM.Param.Wait2, this->sLFOv_FM.Param.Delta1, this->sLFOv_FM.Param.Limit);
 				break;
 			case 0xE8: // sLFOv
 				src++;
 				this->sLFOv_SSG.Param = *((struct LFO_soft_volume_SSG*)src);
 				src += sizeof(struct LFO_soft_volume_SSG);
 				this->sLFOv_ready = true;
-				wprintf_s(L"sLFOv_SSG   %1zX: %08zX: v%04X w%04X d%04X %04X %04X\n", i, time, this->sLFOv_SSG.Param.Volume, this->sLFOv_SSG.Param.Wait1, this->sLFOv_SSG.Param.Delta1, this->sLFOv_SSG.Param.Delta2, this->sLFOv_SSG.Param.Delta_last);
+//				wprintf_s(L"sLFOv_SSG   %1zX: %08zX: v%04X w%04X d%04X %04X %04X\n", i, time, this->sLFOv_SSG.Param.Volume, this->sLFOv_SSG.Param.Wait1, this->sLFOv_SSG.Param.Delta1, this->sLFOv_SSG.Param.Delta2, this->sLFOv_SSG.Param.Delta_last);
 				break;
 			case 0x90: // Note on
 				len_On = *(unsigned __int16*)(src + 2);
@@ -453,7 +454,7 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 
 				for (size_t k = 0; k < len_On + len_Off; k++) {
 					if (this->sLFOd_ready) {
-						__int16 Detune = this->sLFOd_exec();
+						__int16 Detune = this->Detune_current + this->sLFOd_exec();
 						if (this->Detune_prev != Detune) {
 							this->Detune_prev = Detune;
 							dest->Count = counter++;
