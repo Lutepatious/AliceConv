@@ -1,0 +1,8 @@
+Imported librarys and headers.
+
+zlib (https://www.zlib.net/)
+libpng (http://www.libpng.org/pub/png/)
+libtiff (http://www.simplesystems.org/libtiff/)
+
+stdtype.h (https://github.com/vgmrips/vgmtools)
+VGMFile.h (https://github.com/vgmrips/vgmtools)

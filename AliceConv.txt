@@ -33,6 +33,7 @@ libpng
 zlib (libpngに必要)
 libtiff
 Boehm GC
+vgmtools
 
 制作動機
 x64時代になりDOS時代のソフトを動かしにくくなった。
@@ -43,21 +44,24 @@ PC-9801の実機が壊れた。
 内容物
 DATSplitter.exe		アリスソフトの.DAT形式アーカイブからファイルを切り出す。
 N88Splitter.exe		N88-BASIC形式のディスクイメージからファイルを切り出す。
-PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
-TownsPCMtoWave.exe	FM TOWNS版闘神都市IIとAliceの館3のAMUS.TWの後半やASND.DAT、館CDや館CDIIに含まれるFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換
 WaveCorrector.exe	Only You 世紀末のジュリエット達のAWAV.DATに含まれるMicrosoft WAVE形式のファイルを補正。
 VSPtoPNG.exe		GL3,VSP,VSP256色,VSP200line,GM3,PC88,X68000の各形式のファイルをPNGに変換。
 MSXtoPNG.exeシリーズ	MSX2版のCGファイルをPNGに変換。
 TIFFtoPNG_Y1CD.exe	ALICEの館CD (FM TOWNS版)に含まれるTIFFファイルをPNGに変換
 DRStoPNG.exeシリーズ	Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換
+MAKO2toVGM.exe		MAKO2形式の楽曲データをFM/SSG音源は.vgm、PCM音源は.wavに変換する。
 
+廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
+PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
+TownsPCMtoWave.exe	FM TOWNS版闘神都市IIとAliceの館3のAMUS.TWの後半やASND.DAT、館CDや館CDIIに含まれるFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換
 
 基本的な動作
 原則としてファイル内容を全てメモリに読み込んでから処理を行います。
 Boehm GCを採用した関係で明示的なメモリ開放を止めたので最大メモリ消費量はわかりません。
 
-詳細
-DATSplitter.exe
+===各プログラムの詳細===
+
+### DATSplitter.exe ###
 
 コマンドラインで
 path>DATSplitter DAT形式ファイル
@@ -74,7 +78,7 @@ path>DATSplitter DAT形式ファイル
 
 ファイル複数指定可。
 
-N88Splitter.exe
+### N88Splitter.exe ###
 
 コマンドラインで
 path>N88Splitter N88-BASIC形式ディスクイメージ
@@ -92,24 +96,9 @@ HxCFloppyEmulator.exeを起動し、LoadボタンからD88形式イメージをロードした後、Expo
 ファイルサイズからPC-9801版のN88-BASIC(86)、PC-8801版のTwenty Sector DOS、PC-8801版のTiny MESH (22sector)を自動判別して中のファイルを切り出します。
 これによりついにNECのPC-9801版MS-DOSに含まれるFILECONVをお役御免にできました。
 なお、D88形式からディスクインターリーブや単密度の判定をしてRAWにするプログラムを書く気はありません。
+同様にFAT形式のDOSイメージからの切り出しツールを作る気もありません(LFNだのHuman68Kだのとややこしくなるので対応できません)
 
-PC98PCMtoWave.exe
-
-コマンドラインで
-path>PC98PCMtoWave ファイル
-とすると4bitPCMデータをMicrosoft WAVE形式に変換します。
-一応末尾チェックはしています。
-wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
-
-TownsPCMtoWave.exe
-
-コマンドラインで
-path>TownsPCMtoWave ファイル
-とするとFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換します。
-一応末尾チェックはしています。
-wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
-
-WaveCorrector.exe
+### WaveCorrector.exe ###
 
 コマンドラインで
 path>WaveCorrector ファイル
@@ -117,7 +106,7 @@ path>WaveCorrector ファイル
 アーカイブファイルから切り出した際に末尾につくゴミの除去や、過去のツールのヘッダの誤りを補正するための物です。
 wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
 
-VSPtoPNG.exe
+### VSPtoPNG.exe ###
 
 コマンドラインで
 path>VSPtoPNG ファイル
@@ -150,13 +139,14 @@ Super D.P.S以降の256色対応ゲームのうち、256色の物に限りVSP256
 
 FM TOWNS版IntruderのGM3にはパレット情報がありません。
 その為Ryu1氏作成の移植キットのGM3.COMに含まれるパレット情報を使用しています。
+
 PC-9801版Rance IVの一部画像にはパレット情報がありません
 (おそらく直前に使う画像のパレットを利用するらしい)。
 FM TOWNS版の同じ画像にはパレット情報があるのでそちらを利用する手があります。
 表示中にパレットをいじるタイプの画像もあります(DPS -SG-やRanceIVデモディスク)。
 単色で何も出ないと思う前に画像編集ソフトでパレットをいじってみましょう。
 
-MSXtoPNG.exe
+### MSXtoPNG.exe ###
 大まかに言ってVSPtoPNG.exeのMSX2版用です。
 個別のタイトル名がついているものはそのタイトル専用です
 
@@ -174,10 +164,10 @@ MSXtoPNG_GS_TITLE.exeでタイトル画面のCGとパレット情報ファイルが切り出されます。
 MSXtoPNG_GS.exeはこのパレット情報を使って動作します。
 作中でのパレットの扱いがよくわかっていないので詰まっています。
 
-MSXCombinePNG.exe
+### MSXCombinePNG.exe ###
 MSX版DPS SGの連番ファイル(奇数-偶数順)を合成し、インターレースモードでのCGを再現します。
 
-TIFFtoPNG_Y1CD.exe
+### TIFFtoPNG_Y1CD.exe ###
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
 電子の国のアリスやクイズの館、女の子図鑑の一部CGは特殊な色情報
 (どうも初期のTOWNSにおける特殊フォーマットだったらしい)を使ったため、
@@ -186,14 +176,14 @@ FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換す
 適切なパレットを生成してインデックスカラー化する本プログラムを作成しました。
 FM TOWNS版Rance IIIやALICEの館CD IIのTIFFフォイルにも適応できます。
 
-DRStoPNG.exe
+### DRStoPNG.exe ###
 Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 PC-9801版とX68000版の場合、カレントディレクトリにAディスクのCG003.DATを置いて
 
 >DRStoPNG
 とするだけで003.pngファイルが得られます。
 
-DRStoPNG_TOWNS.exe
+### DRStoPNG_TOWNS.exe ###
 FM TOWNS版Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 
 カレントディレクトリにAディスクのCG003.DATとOPENNING.DATを置いて
@@ -203,6 +193,47 @@ FM TOWNS版Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 これにより、鬼畜王ランスより前のアリスソフトのほぼ全てのCGを変換できるようになりました。
 残るは未入手の88VA版や一部ヒントディスクのCGとALICEの館CDのアイコン、
 X68000版闘神都市のスプライトで実現されたチップキャラやマップといったところです。
+
+
+### PC98PCMtoWave.exe ###
+廃止しました。MAKO2toVGM.exeに統合しました。
+
+コマンドラインで
+path>PC98PCMtoWave ファイル
+とすると4bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+### TownsPCMtoWave.exe ###
+廃止しました。MAKO2toVGM.exeに統合しました。
+
+コマンドラインで
+path>TownsPCMtoWave ファイル
+とするとFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+### MAKO2toVGM.exe ###
+MAKO2フォーマットの楽曲をFM/SSG音源は.vgmに、PCM音源は.WAVに変換します。
+RanceIII以降学園KINGまでの(DPS -SG-シリーズを除く)全ての楽曲が対象となります。
+
+?MUS*.DAT,ASND.DAT,AMSE.DATに含まれる楽曲ファイルを
+
+コマンドラインで
+path>MAKO2toVGM ファイル
+とするとPCMデータをMicrosoft WAVE形式に変換します。また、FM/SSG音源のファイルはvgm形式に変換します。
+MAKO2フォーマットには3バージョンあり
+バージョン2,3では音源をYM2608をターゲットとして変換します。
+バージョン1ではトラック数に合わせてYM2203,YM2151,YM2608を選択しますが判別不能に陥る場合があるため
+-n, -x, -aのオプションを用意し
+
+path>MAKO2toVGM -a ファイル (YM2608強制)
+の様に使います。
+このオプションが必要になるのはRanceIVとALICEの館3です。
+
+楽曲内のループは完全展開した上で全体のループをvgm内に設定しています。
+この時、一部の楽曲では元データのバグなのかチャネル間でわずかな長さのずれを起こして極端に長いループができる場合があります(19時間越えとか)。
+
 
 現在
 
