@@ -495,9 +495,11 @@ void EVENTS::convert(struct mako2_mml_decoded& MMLs, bool direction)
 					this->Disable_note_off = false;
 					this->Disable_LFO_init = true;
 				}
+#if 0
 				else if (i > 2 && i < 6 && (sLFOv_ready || sLFOd_ready)) {
 
 				}
+#endif
 				else {
 					this->LFO_note_off();
 					dest->Count = counter++;
