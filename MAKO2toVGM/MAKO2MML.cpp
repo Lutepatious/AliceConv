@@ -194,6 +194,9 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 			case 0xEC:
 				this->Mute_on = 1;
 				src++;
+				note = 0;
+				time = 0;
+				makenote++;
 				break;
 
 			case 0xE5: // set flags 4 5 6
