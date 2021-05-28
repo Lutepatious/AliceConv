@@ -159,7 +159,6 @@
     <ClCompile Include="event.cpp" />
     <ClCompile Include="MAKO2MML.cpp" />
     <ClCompile Include="PCMtoWAVE.cpp" />
-    <ClCompile Include="tools.cpp" />
     <ClCompile Include="toVGM.cpp" />
     <ClCompile Include="wmain.cpp" />
   </ItemGroup>
@@ -171,6 +170,11 @@
     <ClInclude Include="stdtype.h" />
     <ClInclude Include="toVGM.h" />
     <ClInclude Include="VGMFile.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\aclib\aclib.vcxproj">
+      <Project>{7421ff63-eafe-42d2-acc7-43ff244cfef6}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

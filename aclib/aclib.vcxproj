@@ -174,6 +174,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\MAKO2toVGM\tools.c" />
     <ClCompile Include="accore.c" />
     <ClCompile Include="GL.c" />
     <ClCompile Include="GL3.c" />
@@ -199,6 +200,7 @@
     <ClInclude Include="acinternal.h" />
     <ClInclude Include="pngio.h" />
     <ClInclude Include="tiffrw.h" />
+    <ClInclude Include="tools.h" />
     <ClInclude Include="wave.h" />
   </ItemGroup>
   <ItemGroup>

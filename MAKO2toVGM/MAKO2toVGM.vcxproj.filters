@@ -21,9 +21,6 @@
     <ClCompile Include="PCMtoWAVE.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="tools.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="event.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>

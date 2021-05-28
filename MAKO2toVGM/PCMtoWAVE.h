@@ -38,3 +38,5 @@ struct TSND_header {
 	unsigned __int8 body[];
 };
 #pragma pack ()
+
+void PCMtoWAV(unsigned __int8* pcmdata, wchar_t* filename, size_t filelen);

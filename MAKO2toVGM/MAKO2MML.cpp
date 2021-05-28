@@ -7,6 +7,8 @@
 
 #include "MAKO2toVGM.h"
 #include "MAKO2MML.h"
+#include "PCMtoWAVE.h"
+#include "../aclib/tools.h"
 
 mako2_mml_decoded_CH::mako2_mml_decoded_CH()
 {
@@ -61,7 +63,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 		//				wprintf_s(L"%2zu: ", j);
 		while (*src != 0xFF) {
 //			wprintf_s(L"%02X ", *src);
-			unsigned makenote = 0;
+			bool makenote = false;
 			switch (*src) {
 			case 0x00:
 			case 0x01:
@@ -78,7 +80,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 			case 0x0C:
 				note = *src++;
 				time = *src++;
-				makenote++;
+				makenote = true;
 				break;
 
 			case 0x0D:
@@ -97,7 +99,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 				note = *src++ - 0x0d;
 				time = *((unsigned __int16*)src);
 				src += 2;
-				makenote++;
+				makenote = true;
 				break;
 
 			case 0x80:
@@ -115,7 +117,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 			case 0x8C:
 				note = *src++ & 0x7F;
 				time = time_default;
-				makenote++;
+				makenote = true;
 				break;
 
 			case 0xEE:
@@ -196,7 +198,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 				src++;
 				note = 0;
 				time = 0;
-				makenote++;
+				makenote = true;
 				break;
 
 			case 0xE5: // set flags 4 5 6

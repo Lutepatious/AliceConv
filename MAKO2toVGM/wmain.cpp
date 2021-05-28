@@ -9,9 +9,11 @@
 #include "gc_cpp.h"
 
 #include "MAKO2toVGM.h"
+#include "PCMtoWAVE.h"
 #include "MAKO2MML.h"
 #include "event.h"
 #include "toVGM.h"
+#include "../aclib/tools.h"
 
 #pragma pack (1)
 struct mako2_header {

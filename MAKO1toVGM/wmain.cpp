@@ -7,6 +7,7 @@
 #include <sys/types.h>
 
 #include "gc_cpp.h"
+#include "MAKO1MML.h"
 
 #pragma pack (1)
 struct mako1_header {
@@ -29,7 +30,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		FILE* pFi;
-		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");
+		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
 		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
@@ -57,8 +58,34 @@ int wmain(int argc, wchar_t** argv)
 		struct mako1_header* pM1HDR = (struct mako1_header*)inbuf;
 
 		unsigned mako1form = 0;
-		if (pM1HDR->sig == 0xA000UL) {
+
+		if (pM1HDR->sig == 0xA000U
+			&& pM1HDR->CH[5].Address + pM1HDR->CH[5].Length < fs.st_size
+			&& pM1HDR->CH[0].Address + pM1HDR->CH[0].Length == pM1HDR->CH[1].Address
+			&& pM1HDR->CH[1].Address + pM1HDR->CH[1].Length == pM1HDR->CH[2].Address
+			&& pM1HDR->CH[2].Address + pM1HDR->CH[2].Length == pM1HDR->CH[3].Address
+			&& pM1HDR->CH[3].Address + pM1HDR->CH[3].Length == pM1HDR->CH[4].Address
+			&& pM1HDR->CH[4].Address + pM1HDR->CH[4].Length == pM1HDR->CH[5].Address
+			&& inbuf[pM1HDR->CH[1].Address - 1] == 0xFF
+			&& inbuf[pM1HDR->CH[2].Address - 1] == 0xFF
+			&& inbuf[pM1HDR->CH[3].Address - 1] == 0xFF
+			&& inbuf[pM1HDR->CH[4].Address - 1] == 0xFF
+			&& inbuf[pM1HDR->CH[5].Address - 1] == 0xFF
+			&& inbuf[pM1HDR->CH[5].Address + pM1HDR->CH[5].Length - 1] == 0xFF) {
 			mako1form = 1;
 		}
+		if (!mako1form) {
+			continue;
+		}
+		wprintf_s(L"%s is MAKO1 format. %u bytes\n", *argv, pM1HDR->CH[5].Address + pM1HDR->CH[5].Length);
+
+		struct mako1_mml_decoded MMLs;
+		for (size_t i = 0; i < 6; i++) {
+			(MMLs.CH + i)->decode(inbuf, pM1HDR->CH[i].Address);
+		}
+		if (debug) {
+			MMLs.print();
+		}
+		MMLs.unroll_loop();
 	}
 }

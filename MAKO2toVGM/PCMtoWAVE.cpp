@@ -4,8 +4,8 @@
 #include "gc_cpp.h"
 
 #include "../aclib/wave.h"
-#include "MAKO2toVGM.h"
 #include "PCMtoWAVE.h"
+#include "../aclib/tools.h"
 
 struct PM_header *pmH;
 struct MP_header *mpH;
