@@ -4,6 +4,12 @@
 #include <cwchar>
 #include <limits>
 
+#include "gc_cpp.h"
+
+#include "event1.h"
+#include "toVGM1.h"
+#include "tools.h"
+
 // MAKO.OCM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っている)
 static const unsigned __int16 FNumber[] = {
 	0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D,

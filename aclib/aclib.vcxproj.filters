@@ -72,7 +72,7 @@
     <ClCompile Include="PMS16.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="..\MAKO2toVGM\tools.c">
+    <ClCompile Include="tools.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,10 +95,10 @@
     <ClInclude Include="tools.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\MAKO2toVGM\stdtype.h">
+    <ClInclude Include="stdtype.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="..\MAKO2toVGM\VGMFile.h">
+    <ClInclude Include="VGMFile.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
