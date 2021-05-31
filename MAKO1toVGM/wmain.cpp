@@ -8,6 +8,7 @@
 
 #include "gc_cpp.h"
 #include "MAKO1MML.h"
+#include "event1.h"
 
 #pragma pack (1)
 struct mako1_header {
@@ -87,5 +88,19 @@ int wmain(int argc, wchar_t** argv)
 			MMLs.print();
 		}
 		MMLs.unroll_loop();
+
+		if (!MMLs.end_time) {
+			wprintf_s(L"No Data. skip.\n");
+			continue;
+		}
+
+		wprintf_s(L"Make Sequential events\n");
+		// 得られた展開データからイベント列を作る。
+		class EVENTS events(MMLs.end_time * 2, MMLs.end_time);
+		events.convert(MMLs);
+		events.sort();
+		if (debug) {
+			events.print_all();
+		}
 	}
 }

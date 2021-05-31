@@ -167,9 +167,7 @@
     <ClInclude Include="MAKO2MML.h" />
     <ClInclude Include="MAKO2toVGM.h" />
     <ClInclude Include="PCMtoWAVE.h" />
-    <ClInclude Include="stdtype.h" />
     <ClInclude Include="toVGM.h" />
-    <ClInclude Include="VGMFile.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aclib\aclib.vcxproj">

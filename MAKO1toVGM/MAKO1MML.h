@@ -1,7 +1,7 @@
 class mako1_mml_decoded_CH {
-	unsigned __int8* MML;
 	bool mute = true;
 public:
+	unsigned __int8* MML;
 	size_t len = 0;
 	size_t time_total = 0;
 	size_t len_unrolled = 0;

@@ -196,6 +196,8 @@
     <ClCompile Include="X68V.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\MAKO2toVGM\stdtype.h" />
+    <ClInclude Include="..\MAKO2toVGM\VGMFile.h" />
     <ClInclude Include="accore.h" />
     <ClInclude Include="acinternal.h" />
     <ClInclude Include="pngio.h" />
