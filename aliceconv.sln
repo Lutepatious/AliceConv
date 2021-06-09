@@ -75,6 +75,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MAKO2toVGM", "MAKO2toVGM\MA
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MAKO1toVGM", "MAKO1toVGM\MAKO1toVGM.vcxproj", "{92D183D0-244A-4CC8-B514-B9A7DCE5E7E9}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "test", "test\test.vcxproj", "{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -275,6 +277,14 @@ Global
 		{92D183D0-244A-4CC8-B514-B9A7DCE5E7E9}.Release|x64.Build.0 = Release|x64
 		{92D183D0-244A-4CC8-B514-B9A7DCE5E7E9}.Release|x86.ActiveCfg = Release|Win32
 		{92D183D0-244A-4CC8-B514-B9A7DCE5E7E9}.Release|x86.Build.0 = Release|Win32
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Debug|x64.ActiveCfg = Debug|x64
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Debug|x64.Build.0 = Debug|x64
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Debug|x86.ActiveCfg = Debug|Win32
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Debug|x86.Build.0 = Debug|Win32
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Release|x64.ActiveCfg = Release|x64
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Release|x64.Build.0 = Release|x64
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Release|x86.ActiveCfg = Release|Win32
+		{65EC1AC8-E641-42BD-BCD8-DC7879D6CFDA}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

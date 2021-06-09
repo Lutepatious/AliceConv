@@ -260,3 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 /MAKO2toTXT/mako2_fragments.c
+/test
