@@ -140,6 +140,7 @@ class VGMdata {
 public:
 	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_tone* t, size_t ntones);
 	void print_all_tones(void);
+	void check_all_tones_blank(void);
 	void make_init(void);
 	void convert(class EVENTS& in);
 	void out(wchar_t* p);

@@ -144,6 +144,7 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Make VGM\n");
 		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (struct mako2_tone*)(inbuf + pM2HDR->chiptune_addr), (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone));
+		vgmdata.check_all_tones_blank();
 		vgmdata.make_init();
 		vgmdata.convert(events);
 		vgmdata.out(*argv);

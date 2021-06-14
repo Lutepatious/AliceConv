@@ -23,6 +23,13 @@ static const unsigned __int16 TP[] = {
 	0x003B,0x0038,0x0035,0x0032,0x002F,0x002C,0x002A,0x0027,0x0025,0x0023,0x0021,0x001F,
 	0x001D,0x001C,0x001A,0x0019,0x0017,0x0016,0x0015,0x0013,0x0012,0x0011,0x0010,0x000F,0x000E };
 
+static const unsigned __int8 tone_default[] = {
+	0x03, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 
+	0x02, 0x0F, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
+	0x06, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
+	0x04, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
+	0x02, 0x00, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00 };
+
 VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_tone* t, size_t ntones)
 {
 	this->T = t;
@@ -65,14 +72,33 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_
 void VGMdata::print_all_tones(void)
 {
 	for (size_t i = 0; i < this->tones; i++) {
-		wprintf_s(L"Voice %2llu: FB %1d Connect %1d\n", i, (this->T + i)->H.S.FB, (this->T + i)->H.S.Connect);
+		unsigned __int8* param = (unsigned __int8*)(this->T + i);
+		wprintf_s(L"Voice %2zu: %02X %02X %02X %02X %02X %02X %02X\n", i, param[0], param[1], param[2], param[3], param[4], param[5], param[6]);
 		for (size_t j = 0; j < 4; j++) {
-			wprintf_s(L" OP %1llu: DT %1d MULTI %2d TL %3d KS %1d AR %2d DR %2d SR %2d SL %2d RR %2d\n"
-				, j, (this->T + i)->Op[j].S.DT, (this->T + i)->Op[j].S.MULTI, (this->T + i)->Op[j].S.TL, (this->T + i)->Op[j].S.KS
-				, (this->T + i)->Op[j].S.AR, (this->T + i)->Op[j].S.DR, (this->T + i)->Op[j].S.SR, (this->T + i)->Op[j].S.SL, (this->T + i)->Op[j].S.RR);
+			wprintf_s(L" OP %1zu: %02X %02X %02X %02X %02X %02X %02X %02X %02X\n"
+				, j, param[7 + j * 9], param[7 + j * 9 + 1], param[7 + j * 9 + 2], param[7 + j * 9 + 3], param[7 + j * 9 + 4], param[7 + j * 9 + 5], param[7 + j * 9 + 6], param[7 + j * 9 + 7], param[7 + j * 9 + 8]);
 		}
 	}
 }
+
+void VGMdata::check_all_tones_blank(void)
+{
+	for (size_t i = 0; i < this->tones; i++) {
+		unsigned __int8* param = (unsigned __int8*)(this->T + i);
+		unsigned __int8 test_result = param[2] | param[3] | param[4] | param[5] | param[6];
+		if (test_result) {
+			wprintf_s(L"Data exist in tone %zu Header\n", i);
+		}
+		test_result = 0;
+		for (size_t j = 0; j < 4; j++) {
+			test_result |= param[7 + j * 9 + 6] | param[7 + j * 9 + 7] | param[7 + j * 9 + 8];
+		}
+		if (test_result) {
+			wprintf_s(L"Data exist in tone %zu Ops\n", i);
+		}
+	}
+}
+
 
 void VGMdata::enlarge(void)
 {

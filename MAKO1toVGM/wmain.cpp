@@ -7,8 +7,11 @@
 #include <sys/types.h>
 
 #include "gc_cpp.h"
+
+#include "MAKO1toVGM.h"
 #include "MAKO1MML.h"
 #include "event1.h"
+#include "toVGM1.h"
 
 #pragma pack (1)
 struct mako1_header {
@@ -30,8 +33,19 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	while (--argc) {
+		enum Machine M_arch = Machine::PC9801;
+		if (**++argv == L'-') {
+			if (*(*argv + 1) == L'8') {
+				M_arch = Machine::PC88VA;
+			}
+			else if (*(*argv + 1) == L't') {
+				M_arch = Machine::FMTOWNS;
+			}
+			continue;
+		}
+
 		FILE* pFi;
-		errno_t ecode = _wfopen_s(&pFi, *++argv, L"rb");
+		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");
 		if (ecode || !pFi) {
 			wprintf_s(L"File open error %s.\n", *argv);
 			exit(ecode);
@@ -84,7 +98,7 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t i = 0; i < 6; i++) {
 			(MMLs.CH + i)->decode(inbuf, pM1HDR->CH[i].Address);
 		}
-		if (debug) {
+		if (true) {
 			MMLs.print();
 		}
 		MMLs.unroll_loop();
@@ -102,5 +116,10 @@ int wmain(int argc, wchar_t** argv)
 		if (debug) {
 			events.print_all();
 		}
+
+		class VGMdata1 vgmdata(MMLs.end_time, M_arch);
+		vgmdata.make_init();
+		vgmdata.convert(events);
+		vgmdata.out(*argv);
 	}
 }
