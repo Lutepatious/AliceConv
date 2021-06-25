@@ -412,12 +412,13 @@ void VGMdata1::convert_YM2203(struct EVENT& eve)
 		}
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
-		this->pCHparam_cur->Volume = ~eve.Param & 0x7F;
 
 		if (this->CH_cur < 3) {
+			this->pCHparam_cur->Volume = ~eve.Param & 0x7F;
 			this->Volume_YM2203_FM(this->CH_cur);
 		}
 		else {
+			this->pCHparam_cur->Volume = eve.Param;
 			this->make_data_YM2203(0x08 + this->CH_cur - 3, this->pCHparam_cur->Volume);
 		}
 		break;
@@ -526,11 +527,7 @@ void VGMdata1::Tone_select_YM2203_FM(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
-			}
-			else {
-				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
-			}
+			this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
 		}
 	}
 }
@@ -833,11 +830,7 @@ void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
-			}
-			else {
-				this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
-			}
+			this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
 		}
 	}
 }
@@ -852,11 +845,7 @@ void VGMdata1::Tone_select_YM2612_FMport1(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
-			}
-			else {
-				this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
-			}
+			this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
 		}
 	}
 }
