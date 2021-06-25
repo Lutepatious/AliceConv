@@ -6,16 +6,21 @@
 
 #include "gc_cpp.h"
 
+#define STATIC_FNUMBER
+
 #include "MAKO1toVGM.h"
 #include "event1.h"
 #include "toVGM1.h"
 #include "tools.h"
 
-// MAKO.OCM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っているが、97番目が無い)
+// MAKO.COM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っているが、97番目が無い)
+// なお、FM TOWNSでの音程が不明なため、コンストラクタ内で直接導出する方法に変えたので使わない。
+#ifdef STATIC_FNUMBER
 static const unsigned __int16 FNumber[] = {
 	0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D };
+#endif
 
-// MAKO.OCM (1,2共通)に埋め込まれているTone Period
+// MAKO.COM (1,2共通)に埋め込まれているTone Period
 static const unsigned __int16 TP[] = {
 	0x0EED, 0x0E17, 0x0D4C, 0x0C8D, 0x0BD9, 0x0B2F, 0x0A8E, 0x09F6, 0x0967, 0x08E0, 0x0860, 0x07E8,
 	0x0776, 0x070B, 0x06A6, 0x0646, 0x05EC, 0x0597, 0x0547, 0x04FB, 0x04B3, 0x0470, 0x0430, 0x03F4,
@@ -267,18 +272,29 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 		h_vgm.lngHzYM2612 = this->master_clock = MASTERCLOCK_FMTOWNS_OPN2;
 		wprintf_s(L"FM TOWNS mode.\n");
 	}
-	else if (this->arch == Machine::PC8801) {
-		this->preset = preset_88;
-		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
-		h_vgm.bytAYFlagYM2203 = 0x1;
-		wprintf_s(L"PC-8801 mode.\n");
-	}
 	else {
 		this->preset = preset_98;
 		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
 		h_vgm.bytAYFlagYM2203 = 0x1;
 		wprintf_s(L"PC-9801 mode.\n");
 	}
+
+#ifndef STATIC_FNUMBER
+	if (this->arch == Machine::FMTOWNS) {
+		for (size_t i = 0; i < 12; i++) {
+			double Freq = 440.0L * pow(2.0L, (-9.0L + i) / 12.0L);
+			double fFNumber = 144.0L * Freq * pow(2.0L, 21.0L - 4) / this->master_clock;
+			this->FNumber[i] = fFNumber + 0.5;
+		}
+	}
+	else {
+		for (size_t i = 0; i < 12; i++) {
+			double Freq = 440.0L * pow(2.0L, (-9.0L + i) / 12.0L);
+			double fFNumber = 72.0L * Freq * pow(2.0L, 21.0L - 4) / this->master_clock;
+			this->FNumber[i] = fFNumber + 0.5;
+		}
+	}
+#endif
 
 	pCHparam = new struct CH_params[6];
 }
@@ -648,7 +664,8 @@ void VGMdata1::convert_YM2612(struct EVENT& eve)
 		this->Tempo = eve.Param;
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
-		this->Timer_set_YM2612();
+		// TOWNS版の正しい式が不明のためコメントアウト
+		// this->Timer_set_YM2612();
 		break;
 	case 0xF5: // Tone select
 		if (this->CH_cur < 3) {

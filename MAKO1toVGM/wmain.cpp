@@ -41,9 +41,6 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
 			}
-			else if (*(*argv + 1) == L'8') {
-				M_arch = Machine::PC8801;
-			}
 			continue;
 		}
 
