@@ -32,14 +32,17 @@ int wmain(int argc, wchar_t** argv)
 		exit(-1);
 	}
 
+	enum Machine M_arch = Machine::PC9801;
 	while (--argc) {
-		enum Machine M_arch = Machine::PC9801;
 		if (**++argv == L'-') {
-			if (*(*argv + 1) == L'8') {
+			if (*(*argv + 1) == L'v') {
 				M_arch = Machine::PC88VA;
 			}
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
+			}
+			else if (*(*argv + 1) == L'8') {
+				M_arch = Machine::PC8801;
 			}
 			continue;
 		}
@@ -98,7 +101,7 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t i = 0; i < 6; i++) {
 			(MMLs.CH + i)->decode(inbuf, pM1HDR->CH[i].Address);
 		}
-		if (true) {
+		if (debug) {
 			MMLs.print();
 		}
 		MMLs.unroll_loop();

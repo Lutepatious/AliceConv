@@ -240,11 +240,11 @@ static const struct AC_FM_PARAMETER_BYTE preset_98[82] = {
 	{0x2D,0x0F,{{0x24,0x4D,0xC6,0x1F,0x00,0x08},{0x3F,0x0C,0x86,0x1F,0x00,0x0A},{0x36,0x0C,0x86,0x1F,0x00,0x0A},{0x39,0x0C,0x86,0x1F,0x00,0x0A}}},
 	{0x3C,0x0F,{{0x38,0x11,0x1F,0x13,0x0B,0xA5},{0x26,0x07,0x19,0x13,0x0B,0xA5},{0x38,0x1B,0x13,0x0B,0x13,0xA7},{0x38,0x00,0x19,0x0B,0x13,0xA7}}} };
 
+#define MASTERCLOCK_NEC_OPN (3993600)
+#define MASTERCLOCK_FMTOWNS_OPN2 (7200000)
 
 VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 {
-	this->arch = M_arch;
-	this->preset = (arch == Machine::PC88VA) ? preset_88 : preset_98;
 	this->bytes = elems * 10;
 	this->length = this->bytes;
 	this->vgm_out = (unsigned __int8*)GC_malloc(sizeof(unsigned __int8) * this->length);
@@ -254,8 +254,32 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 	}
 
 	this->vgm_pos = this->vgm_out;
-	h_vgm.lngHzYM2203 = this->master_clock = 3993600;
-	h_vgm.bytAYFlagYM2203 = 0x1;
+	this->arch = M_arch;
+
+	if (this->arch == Machine::PC88VA) {
+		this->preset = preset_88;
+		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
+		h_vgm.bytAYFlagYM2203 = 0x1;
+		wprintf_s(L"PC-88VA mode.\n");
+	}
+	else if (this->arch == Machine::FMTOWNS) {
+		this->preset = preset_98;
+		h_vgm.lngHzYM2612 = this->master_clock = MASTERCLOCK_FMTOWNS_OPN2;
+		wprintf_s(L"FM TOWNS mode.\n");
+	}
+	else if (this->arch == Machine::PC8801) {
+		this->preset = preset_88;
+		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
+		h_vgm.bytAYFlagYM2203 = 0x1;
+		wprintf_s(L"PC-8801 mode.\n");
+	}
+	else {
+		this->preset = preset_98;
+		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
+		h_vgm.bytAYFlagYM2203 = 0x1;
+		wprintf_s(L"PC-9801 mode.\n");
+	}
+
 	pCHparam = new struct CH_params[6];
 }
 
@@ -286,8 +310,21 @@ void VGMdata1::make_init(void)
 		0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
 		0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
 
-	const unsigned char* Init = Init_YM2203;
-	size_t Init_len = sizeof(Init_YM2203);
+	const static unsigned char Init_YM2612[] = {
+		0x52, 0x27, 0x30, 0x52, 0x90, 0x00, 0x52, 0x91, 0x00, 0x52, 0x92, 0x00, 0x52, 0x24, 0x70, 0x52, 0x25, 0x00 };
+
+
+	const unsigned char* Init;
+	size_t Init_len;
+
+	if (this->arch == Machine::FMTOWNS) {
+		Init = Init_YM2612;
+		Init_len = sizeof(Init_YM2612);
+	}
+	else {
+		Init = Init_YM2203;
+		Init_len = sizeof(Init_YM2203);
+	}
 
 	memcpy_s(this->vgm_pos, Init_len, Init, Init_len);
 	this->vgm_pos += Init_len;
@@ -417,8 +454,9 @@ void VGMdata1::Note_on_YM2203_FM(unsigned __int8 CH)
 {
 	union {
 		struct {
-			unsigned __int16 CH : 4;
-			unsigned __int16 Op_mask : 4;
+			unsigned __int8 CH : 2;
+			unsigned __int8 : 2;
+			unsigned __int8 Op_mask : 4;
 		} S;
 		unsigned __int8 B;
 	} U;
@@ -474,7 +512,7 @@ void VGMdata1::Tone_select_YM2203_FM(unsigned __int8 CH)
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8 *)&T.B.Op[op].DT_MULTI + j));
+			this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
 		}
 	}
 }
@@ -524,9 +562,20 @@ void VGMdata1::convert(class EVENTS& in)
 			// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
 			// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
 			// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+			// VAはBIOSが演奏するので調整しない。
 
 
-			size_t c_VGMT = (src->time * 60 * VGM_CLOCK * 2 * 6 / (48 * this->Tempo * 5) + 1) >> 1;
+			size_t c_VGMT;
+			if (this->arch == Machine::PC88VA) {
+				c_VGMT = (src->time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+			}
+			else if (this->arch == Machine::FMTOWNS) {
+				c_VGMT = (src->time * 60 * VGM_CLOCK * MASTERCLOCK_NEC_OPN * 2 * 2 / (48 * this->Tempo * MASTERCLOCK_FMTOWNS_OPN2) + 1) >> 1;
+			}
+			else { // defaultはPC-9801とする(PC-8801も同)
+				c_VGMT = (src->time * 60 * VGM_CLOCK * 2 * 6 / (48 * this->Tempo * 5) + 1) >> 1;
+			}
+
 			size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
 
 			//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
@@ -548,7 +597,12 @@ void VGMdata1::convert(class EVENTS& in)
 			in.loop_enable = false;
 		}
 
-		this->convert_YM2203(*src);
+		if (this->arch == Machine::FMTOWNS) {
+			this->convert_YM2612(*src);
+		}
+		else {
+			this->convert_YM2203(*src);
+		}
 	}
 	this->finish();
 }
@@ -579,3 +633,201 @@ void VGMdata1::out(wchar_t* p)
 
 	fclose(pFo);
 }
+
+void VGMdata1::convert_YM2612(struct EVENT& eve)
+{
+	this->CH_cur = eve.CH;
+	this->pCHparam_cur = this->pCHparam + this->CH_cur;
+	if (this->CH_cur >= 6) {
+		return;
+	}
+
+	switch (eve.Event) {
+	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+		this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
+		this->Tempo = eve.Param;
+
+		// この後のNAの計算とタイマ割り込みの設定は実際には不要
+		this->Timer_set_YM2612();
+		break;
+	case 0xF5: // Tone select
+		if (this->CH_cur < 3) {
+			this->pCHparam_cur->Tone = eve.Param & 0x7F;
+			this->Tone_select_YM2612_FMport0(this->CH_cur);
+		}
+		else {
+			this->pCHparam_cur->Tone = eve.Param & 0x7F;
+			this->Tone_select_YM2612_FMport1(this->CH_cur - 3);
+		}
+		break;
+	case 0x80: // Note Off
+		if (this->CH_cur < 3) {
+			this->make_data_YM2612port0(0x28, this->CH_cur);
+		}
+		else {
+			this->make_data_YM2612port0(0x28, (this->CH_cur - 3) | 0x04);
+		}
+		break;
+	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
+		this->pCHparam_cur->Volume = eve.Param;
+
+		if (this->CH_cur < 3) {
+			this->Volume_YM2612_FMport0(this->CH_cur);
+		}
+		else {
+			this->Volume_YM2612_FMport1(this->CH_cur - 3);
+		}
+		break;
+	case 0x90: // Note on
+		if (this->CH_cur < 3) {
+			this->Note_on_YM2612_FMport0(this->CH_cur);
+		}
+		else {
+			this->Note_on_YM2612_FMport1(this->CH_cur - 3);
+		}
+		break;
+	case 0x97: // Key_set
+		this->pCHparam_cur->Key = eve.Param;
+		if (this->CH_cur < 3) {
+			this->Key_set_YM2612_FMport0(this->CH_cur);
+		}
+		else {
+			this->Key_set_YM2612_FMport1(this->CH_cur - 3);
+		}
+		break;
+	}
+}
+
+void VGMdata1::Key_set_YM2612_FMport0(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int16 FNumber : 11;
+			unsigned __int16 Block : 3;
+			unsigned __int16 : 2;
+		} S;
+		unsigned __int8 B[2];
+	} U;
+
+	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12];
+	if (Octave == 8) {
+		U.S.FNumber <<= 1;
+		Octave = 7;
+	}
+	U.S.Block = Octave;
+
+	this->make_data_YM2612port0(0xA4 + CH, U.B[1]);
+	this->make_data_YM2612port0(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata1::Key_set_YM2612_FMport1(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int16 FNumber : 11;
+			unsigned __int16 Block : 3;
+			unsigned __int16 : 2;
+		} S;
+		unsigned __int8 B[2];
+	} U;
+
+	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
+	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12];
+	if (Octave == 8) {
+		U.S.FNumber <<= 1;
+		Octave = 7;
+	}
+	U.S.Block = Octave;
+
+	this->make_data_YM2612port1(0xA4 + CH, U.B[1]);
+	this->make_data_YM2612port1(0xA0 + CH, U.B[0]);
+}
+
+void VGMdata1::Note_on_YM2612_FMport0(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 Port : 1;
+			unsigned __int8 : 1;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, 0, this->T.S.OPR_MASK };
+	this->make_data_YM2612port0(0x28, U.B);
+}
+
+void VGMdata1::Note_on_YM2612_FMport1(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 Port : 1;
+			unsigned __int8 : 1;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, 1, this->T.S.OPR_MASK };
+	this->make_data_YM2612port0(0x28, U.B);
+}
+
+void VGMdata1::Timer_set_YM2612(void)
+{
+	size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
+	this->make_data_YM2612port0(0x24, (NA >> 2) & 0xFF);
+	this->make_data_YM2612port0(0x25, NA & 0x03);
+}
+
+void VGMdata1::Volume_YM2612_FMport0(unsigned __int8 CH)
+{
+	unsigned Algorithm = this->T.S.Connect;
+
+	for (size_t op = 0; op < 4; op++) {
+		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+			this->make_data_YM2612port0(0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
+		}
+	}
+}
+void VGMdata1::Volume_YM2612_FMport1(unsigned __int8 CH)
+{
+	unsigned Algorithm = this->T.S.Connect;
+
+	for (size_t op = 0; op < 4; op++) {
+		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+			this->make_data_YM2612port1(0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
+		}
+	}
+}
+
+void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
+{
+	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
+
+	this->make_data_YM2612port0(0xB0 + CH, this->T.B.FB_CON);
+
+	for (size_t op = 0; op < 4; op++) {
+		for (size_t j = 0; j < 6; j++) {
+			this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+		}
+	}
+}
+void VGMdata1::Tone_select_YM2612_FMport1(unsigned __int8 CH)
+{
+	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
+
+	this->make_data_YM2612port1(0xB0 + CH, this->T.B.FB_CON);
+
+	for (size_t op = 0; op < 4; op++) {
+		for (size_t j = 0; j < 6; j++) {
+			this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+		}
+	}
+}
+
