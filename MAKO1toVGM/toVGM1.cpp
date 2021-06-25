@@ -12,11 +12,9 @@
 #include "tools.h"
 
 // MAKO.COM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っているが、97番目が無い)
-// なお、FM TOWNSでの音程が不明なため、コンストラクタ内で直接導出する方法に変えたので使わない。
-#ifdef STATIC_FNUMBER
-static const unsigned __int16 FNumber[] = {
+// なお、コンストラクタ内で直接導出する方法に変えたので使わない。
+static const unsigned __int16 FNumber__old[] = {
 	0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D };
-#endif
 
 // MAKO.COM (1,2共通)に埋め込まれているTone Period
 static const unsigned __int16 TP[] = {
@@ -251,6 +249,7 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 	this->bytes = elems * 10;
 	this->length = this->bytes;
 	this->vgm_out = (unsigned __int8*)GC_malloc(sizeof(unsigned __int8) * this->length);
+	this->T.S.Connect = 7;
 	if (this->vgm_out == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		exit(-2);
@@ -277,7 +276,6 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 		wprintf_s(L"PC-9801 mode.\n");
 	}
 
-#ifndef STATIC_FNUMBER
 	if (this->arch == Machine::FMTOWNS) {
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0L * pow(2.0L, (-9.0L + i) / 12.0L);
@@ -292,7 +290,6 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 			this->FNumber[i] = fFNumber + 0.5;
 		}
 	}
-#endif
 
 	pCHparam = new struct CH_params[6];
 }
@@ -454,7 +451,7 @@ void VGMdata1::Key_set_YM2203_FM(unsigned __int8 CH)
 	} U;
 
 	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12];
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12];
 	if (Octave == 8) {
 		U.S.FNumber <<= 1;
 		Octave = 7;
@@ -508,10 +505,8 @@ void VGMdata1::Timer_set_YM2203(void)
 
 void VGMdata1::Volume_YM2203_FM(unsigned __int8 CH)
 {
-	unsigned Algorithm = this->T.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2203(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
@@ -521,13 +516,17 @@ void VGMdata1::Tone_select_YM2203_FM(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
-	unsigned Algorithm = this->T.S.Connect;
+	this->pCHparam_cur->Algorithm = this->T.S.Connect;
 
 	this->make_data_YM2203(0xB0 + CH, this->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
+			}
+			else {
+				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			}
 		}
 	}
 }
@@ -725,7 +724,7 @@ void VGMdata1::Key_set_YM2612_FMport0(unsigned __int8 CH)
 	} U;
 
 	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12];
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12];
 	if (Octave == 8) {
 		U.S.FNumber <<= 1;
 		Octave = 7;
@@ -748,7 +747,7 @@ void VGMdata1::Key_set_YM2612_FMport1(unsigned __int8 CH)
 	} U;
 
 	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12];
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12];
 	if (Octave == 8) {
 		U.S.FNumber <<= 1;
 		Octave = 7;
@@ -800,20 +799,16 @@ void VGMdata1::Timer_set_YM2612(void)
 
 void VGMdata1::Volume_YM2612_FMport0(unsigned __int8 CH)
 {
-	unsigned Algorithm = this->T.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2612port0(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
 }
 void VGMdata1::Volume_YM2612_FMport1(unsigned __int8 CH)
 {
-	unsigned Algorithm = this->T.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2612port1(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
@@ -822,30 +817,38 @@ void VGMdata1::Volume_YM2612_FMport1(unsigned __int8 CH)
 void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	unsigned Algorithm = this->T.S.Connect;
 
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
+	this->pCHparam_cur->Algorithm = this->T.S.Connect;
 
 	this->make_data_YM2612port0(0xB0 + CH, this->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
+			}
+			else {
+				this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			}
 		}
 	}
 }
 void VGMdata1::Tone_select_YM2612_FMport1(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	unsigned Algorithm = this->T.S.Connect;
 
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
+	this->pCHparam_cur->Algorithm = this->T.S.Connect;
 
 	this->make_data_YM2612port1(0xB0 + CH, this->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
+			}
+			else {
+				this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+			}
 		}
 	}
 }

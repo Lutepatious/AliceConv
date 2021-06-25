@@ -53,13 +53,10 @@ void mako1_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 			src++;
 			break;
 		case 0xF4: // Tempo
+		case 0xF5: // Tone select
 		case 0xF9: // Volume change
 			*dest++ = *src++;
 			*dest++ = *src++;
-			break;
-		case 0xF5: // Tone select
-			*dest++ = *src++;
-			*dest++ = (*src++) & 0x7F;
 			break;
 		case 0xF8: // ‘O‚Ì‰¹‚ÌÄ”­º
 			src++;

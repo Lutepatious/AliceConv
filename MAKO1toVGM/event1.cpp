@@ -146,7 +146,7 @@ void EVENTS::convert(struct mako1_mml_decoded& MMLs)
 				dest->Event = *src++;
 				dest->Param = *src++;
 				dest->time = time;
-				dest->Type = 2;
+				dest->Type = 3;
 				dest->CH = i;
 				dest++;
 				break;

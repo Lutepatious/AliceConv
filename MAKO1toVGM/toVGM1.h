@@ -56,6 +56,7 @@ struct CH_params {
 	unsigned __int8 Volume;
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
+	unsigned __int8 Algorithm;
 	bool NoteOn;
 };
 
@@ -86,9 +87,7 @@ class VGMdata1 {
 	size_t vgm_extra_len = 0;
 	size_t padsize = 11;
 
-#ifndef STATIC_FNUMBER
 	unsigned __int16 FNumber[12];
-#endif
 
 	struct EVENT* loop_start = NULL;
 	struct CH_params* pCHparam = NULL;
