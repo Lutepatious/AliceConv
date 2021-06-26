@@ -322,7 +322,8 @@ void VGMdata1::make_init(void)
 		0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
 
 	const static unsigned char Init_YM2612[] = {
-		0x52, 0x27, 0x30, 0x52, 0x90, 0x00, 0x52, 0x91, 0x00, 0x52, 0x92, 0x00, 0x52, 0x24, 0x70, 0x52, 0x25, 0x00 };
+		0x52, 0x27, 0x30, 0x52, 0x90, 0x00, 0x52, 0x91, 0x00, 0x52, 0x92, 0x00, 0x52, 0x24, 0x70, 0x52, 0x25, 0x00,
+		0x52, 0xB4, 0x80, 0x52, 0xB5, 0xC0, 0x52, 0xB6, 0x40, 0x53, 0xB4, 0x80, 0x53, 0xB5, 0xC0, 0x53, 0xB6, 0x40 };
 
 
 	const unsigned char* Init;
@@ -579,7 +580,6 @@ void VGMdata1::convert(class EVENTS& in)
 			// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 			// VAはBIOSが演奏するので調整しない。
 
-
 			size_t c_VGMT;
 			if (this->arch == Machine::PC88VA) {
 				c_VGMT = (src->time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
@@ -663,57 +663,35 @@ void VGMdata1::convert_YM2612(struct EVENT& eve)
 		this->Tempo = eve.Param;
 
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
-		// TOWNS版の正しい式が不明のためコメントアウト
-		// this->Timer_set_YM2612();
+		this->Timer_set_YM2612();
 		break;
 	case 0xF5: // Tone select
 		this->pCHparam_cur->Tone = eve.Param & 0x7F;
-		if (this->CH_cur < 3) {
-			this->Tone_select_YM2612_FMport0(this->CH_cur);
-		}
-		else {
-			this->Tone_select_YM2612_FMport1(this->CH_cur - 3);
-		}
+		this->Tone_select_YM2612_FM(this->CH_cur / 3, this->CH_cur % 3);
+
 		break;
 	case 0x80: // Note Off
-		if (this->CH_cur < 3) {
-			this->make_data_YM2612port0(0x28, this->CH_cur);
-		}
-		else {
-			this->make_data_YM2612port0(0x28, (this->CH_cur - 3) | 0x04);
-		}
+		this->Note_off_YM2612_FM(this->CH_cur / 3, this->CH_cur % 3);
+
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
 		this->pCHparam_cur->Volume = ~eve.Param & 0x7F;
+		this->Volume_YM2612_FM(this->CH_cur / 3, this->CH_cur % 3);
 
-		if (this->CH_cur < 3) {
-			this->Volume_YM2612_FMport0(this->CH_cur);
-		}
-		else {
-			this->Volume_YM2612_FMport1(this->CH_cur - 3);
-		}
 		break;
 	case 0x90: // Note on
-		if (this->CH_cur < 3) {
-			this->Note_on_YM2612_FMport0(this->CH_cur);
-		}
-		else {
-			this->Note_on_YM2612_FMport1(this->CH_cur - 3);
-		}
+		this->Note_on_YM2612_FM(this->CH_cur / 3, this->CH_cur % 3);
+
 		break;
 	case 0x97: // Key_set
 		this->pCHparam_cur->Key = eve.Param;
-		if (this->CH_cur < 3) {
-			this->Key_set_YM2612_FMport0(this->CH_cur);
-		}
-		else {
-			this->Key_set_YM2612_FMport1(this->CH_cur - 3);
-		}
+		this->Key_set_YM2612_FM(this->CH_cur / 3, this->CH_cur % 3);
+
 		break;
 	}
 }
 
-void VGMdata1::Key_set_YM2612_FMport0(unsigned __int8 CH)
+void VGMdata1::Key_set_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -732,34 +710,11 @@ void VGMdata1::Key_set_YM2612_FMport0(unsigned __int8 CH)
 	}
 	U.S.Block = Octave;
 
-	this->make_data_YM2612port0(0xA4 + CH, U.B[1]);
-	this->make_data_YM2612port0(0xA0 + CH, U.B[0]);
+	this->make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0xA4 + CH, U.B[1]);
+	this->make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0xA0 + CH, U.B[0]);
 }
 
-void VGMdata1::Key_set_YM2612_FMport1(unsigned __int8 CH)
-{
-	union {
-		struct {
-			unsigned __int16 FNumber : 11;
-			unsigned __int16 Block : 3;
-			unsigned __int16 : 2;
-		} S;
-		unsigned __int8 B[2];
-	} U;
-
-	unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
-	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12];
-	if (Octave == 8) {
-		U.S.FNumber <<= 1;
-		Octave = 7;
-	}
-	U.S.Block = Octave;
-
-	this->make_data_YM2612port1(0xA4 + CH, U.B[1]);
-	this->make_data_YM2612port1(0xA0 + CH, U.B[0]);
-}
-
-void VGMdata1::Note_on_YM2612_FMport0(unsigned __int8 CH)
+void VGMdata1::Note_on_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -771,11 +726,11 @@ void VGMdata1::Note_on_YM2612_FMport0(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, 0, this->pCHparam_cur->Op_mask };
+	U.S = { CH, port, this->pCHparam_cur->Op_mask };
 	this->make_data_YM2612port0(0x28, U.B);
 }
 
-void VGMdata1::Note_on_YM2612_FMport1(unsigned __int8 CH)
+void VGMdata1::Note_off_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	union {
 		struct {
@@ -787,35 +742,28 @@ void VGMdata1::Note_on_YM2612_FMport1(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, 1, this->pCHparam_cur->Op_mask };
+	U.S = { CH, port, 0 };
 	this->make_data_YM2612port0(0x28, U.B);
 }
 
 void VGMdata1::Timer_set_YM2612(void)
 {
-	size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
+	// ここは不可解
+	size_t NA = 1024 - (((MASTERCLOCK_NEC_OPN * 2) / (192LL * this->Tempo) + 1) >> 1);
 	this->make_data_YM2612port0(0x24, (NA >> 2) & 0xFF);
 	this->make_data_YM2612port0(0x25, NA & 0x03);
 }
 
-void VGMdata1::Volume_YM2612_FMport0(unsigned __int8 CH)
+void VGMdata1::Volume_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	for (size_t op = 0; op < 4; op++) {
 		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
-			this->make_data_YM2612port0(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
-		}
-	}
-}
-void VGMdata1::Volume_YM2612_FMport1(unsigned __int8 CH)
-{
-	for (size_t op = 0; op < 4; op++) {
-		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
-			this->make_data_YM2612port1(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
+			make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
 }
 
-void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
+void VGMdata1::Tone_select_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 
@@ -823,34 +771,14 @@ void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
 	this->pCHparam_cur->Algorithm = this->T.S.Connect;
 	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
 
-	this->make_data_YM2612port0(0xB0 + CH, this->T.B.FB_CON);
+	this->make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0xB0 + CH, this->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
 			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
 			}
 			else {
-				this->make_data_YM2612port0(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
-			}
-		}
-	}
-}
-void VGMdata1::Tone_select_YM2612_FMport1(unsigned __int8 CH)
-{
-	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-
-	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
-	this->pCHparam_cur->Algorithm = this->T.S.Connect;
-	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
-
-	this->make_data_YM2612port1(0xB0 + CH, this->T.B.FB_CON);
-
-	for (size_t op = 0; op < 4; op++) {
-		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
-			}
-			else {
-				this->make_data_YM2612port1(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+				make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
 			}
 		}
 	}

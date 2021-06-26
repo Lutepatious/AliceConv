@@ -116,16 +116,13 @@ class VGMdata1 {
 	void make_data_YM2612port0(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2612port0, address, data); };
 	void make_data_YM2612port1(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2612port1, address, data); };
 	void convert_YM2612(struct EVENT& eve);
-	void Tone_select_YM2612_FMport0(unsigned __int8 CH);
-	void Tone_select_YM2612_FMport1(unsigned __int8 CH);
-	void Key_set_YM2612_FMport0(unsigned __int8 CH);
-	void Key_set_YM2612_FMport1(unsigned __int8 CH);
-	void Note_on_YM2612_FMport0(unsigned __int8 CH);
-	void Note_on_YM2612_FMport1(unsigned __int8 CH);
-	void Volume_YM2612_FMport0(unsigned __int8 CH);
-	void Volume_YM2612_FMport1(unsigned __int8 CH);
 	void Timer_set_YM2612(void);
 
+	void Key_set_YM2612_FM(bool port, unsigned __int8 CH);
+	void Note_on_YM2612_FM(bool port, unsigned __int8 CH);
+	void Note_off_YM2612_FM(bool port, unsigned __int8 CH);
+	void Volume_YM2612_FM(bool port, unsigned __int8 CH);
+	void Tone_select_YM2612_FM(bool port, unsigned __int8 CH);
 
 public:
 	VGMdata1(size_t elems, enum class Machine M_arch);
