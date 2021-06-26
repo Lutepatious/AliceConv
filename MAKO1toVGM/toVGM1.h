@@ -57,6 +57,7 @@ struct CH_params {
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
 	unsigned __int8 Algorithm;
+	unsigned __int8 Op_mask;
 	bool NoteOn;
 };
 

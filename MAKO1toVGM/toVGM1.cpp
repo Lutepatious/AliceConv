@@ -473,7 +473,7 @@ void VGMdata1::Note_on_YM2203_FM(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, this->T.S.OPR_MASK };
+	U.S = { CH, this->pCHparam_cur->Op_mask };
 	this->make_data_YM2203(0x28, U.B);
 }
 
@@ -517,6 +517,7 @@ void VGMdata1::Tone_select_YM2203_FM(unsigned __int8 CH)
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
 	this->pCHparam_cur->Algorithm = this->T.S.Connect;
+	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
 
 	this->make_data_YM2203(0xB0 + CH, this->T.B.FB_CON);
 
@@ -770,7 +771,7 @@ void VGMdata1::Note_on_YM2612_FMport0(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, 0, this->T.S.OPR_MASK };
+	U.S = { CH, 0, this->pCHparam_cur->Op_mask };
 	this->make_data_YM2612port0(0x28, U.B);
 }
 
@@ -786,7 +787,7 @@ void VGMdata1::Note_on_YM2612_FMport1(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, 1, this->T.S.OPR_MASK };
+	U.S = { CH, 1, this->pCHparam_cur->Op_mask };
 	this->make_data_YM2612port0(0x28, U.B);
 }
 
@@ -820,6 +821,7 @@ void VGMdata1::Tone_select_YM2612_FMport0(unsigned __int8 CH)
 
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
 	this->pCHparam_cur->Algorithm = this->T.S.Connect;
+	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
 
 	this->make_data_YM2612port0(0xB0 + CH, this->T.B.FB_CON);
 
@@ -839,6 +841,7 @@ void VGMdata1::Tone_select_YM2612_FMport1(unsigned __int8 CH)
 
 	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
 	this->pCHparam_cur->Algorithm = this->T.S.Connect;
+	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
 
 	this->make_data_YM2612port1(0xB0 + CH, this->T.B.FB_CON);
 
