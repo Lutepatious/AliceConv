@@ -249,7 +249,6 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 	this->bytes = elems * 10;
 	this->length = this->bytes;
 	this->vgm_out = (unsigned __int8*)GC_malloc(sizeof(unsigned __int8) * this->length);
-	this->T.S.Connect = 7;
 	if (this->vgm_out == NULL) {
 		wprintf_s(L"Memory allocation error.\n");
 		exit(-2);
@@ -368,7 +367,7 @@ void VGMdata1::make_wait(size_t wait)
 			*this->vgm_pos++ = 0x7F;
 			wait -= wait3;
 		}
-		else if (wait <= 15) {
+		else if (wait < wait3) {
 			*this->vgm_pos++ = 0x70 | (wait - 1);
 			wait = 0;
 		}
@@ -402,11 +401,10 @@ void VGMdata1::convert_YM2203(struct EVENT& eve)
 		break;
 	case 0x80: // Note Off
 		if (this->CH_cur < 3) {
-			this->make_data_YM2203(0x28, this->CH_cur);
+			this->Note_off_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->SSG_out |= (1 << (this->CH_cur - 3));
-			this->make_data_YM2203(0x07, this->SSG_out);
+			this->Note_off_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
@@ -474,7 +472,22 @@ void VGMdata1::Note_on_YM2203_FM(unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, this->pCHparam_cur->Op_mask };
+	U.S = { CH, this->pCHparam_cur->T.S.OPR_MASK };
+	this->make_data_YM2203(0x28, U.B);
+}
+
+void VGMdata1::Note_off_YM2203_FM(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 : 2;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, 0 };
 	this->make_data_YM2203(0x28, U.B);
 }
 
@@ -497,6 +510,12 @@ void VGMdata1::Note_on_YM2203_SSG(unsigned __int8 CH)
 	this->make_data_YM2203(0x07, this->SSG_out);
 }
 
+void VGMdata1::Note_off_YM2203_SSG(unsigned __int8 CH)
+{
+	this->SSG_out |= (1 << CH);
+	this->make_data_YM2203(0x07, this->SSG_out);
+}
+
 void VGMdata1::Timer_set_YM2203(void)
 {
 	size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
@@ -507,7 +526,7 @@ void VGMdata1::Timer_set_YM2203(void)
 void VGMdata1::Volume_YM2203_FM(unsigned __int8 CH)
 {
 	for (size_t op = 0; op < 4; op++) {
-		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2203(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
@@ -516,18 +535,16 @@ void VGMdata1::Volume_YM2203_FM(unsigned __int8 CH)
 void VGMdata1::Tone_select_YM2203_FM(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
-	this->pCHparam_cur->Algorithm = this->T.S.Connect;
-	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
+	this->pCHparam_cur->T.B = *(this->preset + this->pCHparam_cur->Tone);
 
-	this->make_data_YM2203(0xB0 + CH, this->T.B.FB_CON);
+	this->make_data_YM2203(0xB0 + CH, this->pCHparam_cur->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
+			if (j == 1 && (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op == 1 || op == 3)) {
 			}
 			else {
-				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 			}
 		}
 	}
@@ -612,11 +629,13 @@ void VGMdata1::convert(class EVENTS& in)
 			in.loop_enable = false;
 		}
 
-		if (this->arch == Machine::FMTOWNS) {
-			this->convert_YM2612(*src);
-		}
-		else {
-			this->convert_YM2203(*src);
+		if (src->CH < 6) {
+			if (this->arch == Machine::FMTOWNS) {
+				this->convert_YM2612(*src);
+			}
+			else {
+				this->convert_YM2203(*src);
+			}
 		}
 	}
 	this->finish();
@@ -653,9 +672,6 @@ void VGMdata1::convert_YM2612(struct EVENT& eve)
 {
 	this->CH_cur = eve.CH;
 	this->pCHparam_cur = this->pCHparam + this->CH_cur;
-	if (this->CH_cur >= 6) {
-		return;
-	}
 
 	switch (eve.Event) {
 	case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
@@ -726,7 +742,7 @@ void VGMdata1::Note_on_YM2612_FM(bool port, unsigned __int8 CH)
 		unsigned __int8 B;
 	} U;
 
-	U.S = { CH, port, this->pCHparam_cur->Op_mask };
+	U.S = { CH, port, this->pCHparam_cur->T.S.OPR_MASK };
 	this->make_data_YM2612port0(0x28, U.B);
 }
 
@@ -757,7 +773,7 @@ void VGMdata1::Timer_set_YM2612(void)
 void VGMdata1::Volume_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	for (size_t op = 0; op < 4; op++) {
-		if (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
 			make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
 		}
 	}
@@ -766,19 +782,16 @@ void VGMdata1::Volume_YM2612_FM(bool port, unsigned __int8 CH)
 void VGMdata1::Tone_select_YM2612_FM(bool port, unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+	this->pCHparam_cur->T.B = *(this->preset + this->pCHparam_cur->Tone);
 
-	this->T.B = *(this->preset + this->pCHparam_cur->Tone);
-	this->pCHparam_cur->Algorithm = this->T.S.Connect;
-	this->pCHparam_cur->Op_mask = this->T.S.OPR_MASK;
-
-	this->make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0xB0 + CH, this->T.B.FB_CON);
+	this->make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0xB0 + CH, this->pCHparam_cur->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && (this->pCHparam_cur->Algorithm == 7 || this->pCHparam_cur->Algorithm > 4 && op || this->pCHparam_cur->Algorithm > 3 && op == 1 || op == 3)) {
+			if (j == 1 && (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op == 1 || op == 3)) {
 			}
 			else {
-				make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&T.B.Op[op].DT_MULTI + j));
+				make_data(port ? this->vgm_command_YM2612port1 : this->vgm_command_YM2612port0, 0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 			}
 		}
 	}

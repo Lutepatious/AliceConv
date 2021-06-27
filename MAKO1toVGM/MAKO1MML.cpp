@@ -146,7 +146,7 @@ bool mako1_mml_decoded_CH::is_mute(void)
 void mako1_mml_decoded::unroll_loop(void)
 {
 	// ループを展開し、全チャネルが同一長のループになるように調整する。
-	bool debug = true;
+	bool debug = false;
 	size_t max_time = 0;
 	size_t delta_time_LCM = 1;
 

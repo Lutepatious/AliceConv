@@ -5,7 +5,8 @@
 struct AC_FM_PARAMETER {
 	unsigned __int8 Connect : 3; // CON Connection
 	unsigned __int8 FB : 3; // FL Self-FeedBack
-	unsigned __int8 RL : 2; // YM2151 Only
+	unsigned __int8 L : 1; // Left YM2151 Only
+	unsigned __int8 R : 1; // Right YM2151 Only
 	unsigned __int8 OPR_MASK : 4;
 	unsigned __int8 : 4;
 	struct {
@@ -22,7 +23,7 @@ struct AC_FM_PARAMETER {
 		unsigned __int8 AMON : 1; // AMS-EN AMS On
 		unsigned __int8 SR : 5; // D2R Sustain Rate
 		unsigned __int8 : 1; // Not used
-		unsigned __int8 DT2 : 2; // DT2
+		unsigned __int8 DT2 : 2; // DT2 YM2151 Only
 		unsigned __int8 RR : 4; // RR Release Rate
 		unsigned __int8 SL : 4; // D1L Sustain Level
 	} Op[4];
@@ -56,8 +57,7 @@ struct CH_params {
 	unsigned __int8 Volume;
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
-	unsigned __int8 Algorithm;
-	unsigned __int8 Op_mask;
+	union AC_Tone T;
 	bool NoteOn;
 };
 
@@ -67,7 +67,6 @@ class VGMdata1 {
 	const static unsigned __int8 vgm_command_YM2612port0 = 0x52;
 	const static unsigned __int8 vgm_command_YM2612port1 = 0x53;
 	const struct AC_FM_PARAMETER_BYTE* preset;
-	union AC_Tone T;
 	unsigned __int8* vgm_out;
 	unsigned __int8* vgm_pos;
 	unsigned __int8* vgm_loop_pos = NULL;
@@ -110,6 +109,8 @@ class VGMdata1 {
 	void Key_set_YM2203_SSG(unsigned __int8 CH);
 	void Note_on_YM2203_FM(unsigned __int8 CH);
 	void Note_on_YM2203_SSG(unsigned __int8 CH);
+	void Note_off_YM2203_FM(unsigned __int8 CH);
+	void Note_off_YM2203_SSG(unsigned __int8 CH);
 	void Volume_YM2203_FM(unsigned __int8 CH);
 	void Timer_set_YM2203(void);
 

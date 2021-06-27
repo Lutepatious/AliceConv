@@ -36,12 +36,66 @@ struct mako2_tone {
 	} Op[4];
 };
 
+struct MAKO2_FM_PARAMETER {
+	unsigned __int8 Connect : 3; // CON Connection
+	unsigned __int8 FB : 3; // FL Self-FeedBack
+	unsigned __int8 L : 1; // Left YM2151 Only
+	unsigned __int8 R : 1; // Right YM2151 Only
+	unsigned __int8 OPR_MASK : 4;
+	unsigned __int8 : 4;
+	unsigned __int8 unknown[5];
+	struct {
+		unsigned __int8 MULTI : 4; // MUL Multiply
+		unsigned __int8 DT : 3; // DT1 DeTune
+		unsigned __int8 : 1; // Not used
+		unsigned __int8 TL : 7; // TL Total Level
+		unsigned __int8 : 1; // Not used
+		unsigned __int8 AR : 5; // AR Attack Rate
+		unsigned __int8 : 1; // Not used
+		unsigned __int8 KS : 2; // KS Key Scale
+		unsigned __int8 DR : 5; // D1R Decay Rate
+		unsigned __int8 : 2; // Not used
+		unsigned __int8 AMON : 1; // AMS-EN AMS On
+		unsigned __int8 SR : 5; // D2R Sustain Rate
+		unsigned __int8 : 1; // Not used
+		unsigned __int8 DT2 : 2; // DT2 YM2151 Only
+		unsigned __int8 RR : 4; // RR Release Rate
+		unsigned __int8 SL : 4; // D1L Sustain Level
+		unsigned __int8 unknown[3];
+	} Op[4];
+};
+
+#define LEN_MAKO2_FM_PARAMETER (sizeof(struct MAKO2_FM_PARAMETER))
+
+struct MAKO2_FM_PARAMETER_BYTE {
+	unsigned __int8 FB_CON;       // CON Connection, FL Self-FeedBack
+	unsigned __int8 OPMASK;       // Operator Mask
+	unsigned __int8 unknown[5];
+	struct {
+		unsigned __int8 DT_MULTI; // MUL Multiply,  DT1 DeTune
+		unsigned __int8 TL;       // TL Total Level
+		unsigned __int8 KS_AR;    // AR Attack Rate, KS Key Scale
+		unsigned __int8 AM_DR;    // D1R Decay Rate, AMS-EN AMS On
+		unsigned __int8 DT2_SR;   // D2R Sustain Rate,  DT2
+		unsigned __int8 SL_RR;    // RR Release Rate, D1L Sustain Level
+		unsigned __int8 unknown[3];
+	} Op[4];
+};
+
+#define LEN_MAKO2_FM_PARAMETER_BYTE (sizeof(struct MAKO2_FM_PARAMETER_BYTE))
+
+union MAKO2_Tone {
+	struct MAKO2_FM_PARAMETER S;
+	struct MAKO2_FM_PARAMETER_BYTE B;
+};
+
 union LR_AMS_PMS_YM2608 {
 	struct {
 		unsigned __int8 PMS : 3;
-		unsigned __int8 NC : 1;
+		unsigned __int8 : 1;
 		unsigned __int8 AMS : 2;
-		unsigned __int8 LR : 2;
+		unsigned __int8 R : 1;
+		unsigned __int8 L : 1;
 	} S;
 	unsigned __int8 B;
 };
@@ -52,9 +106,8 @@ struct CH_params {
 	unsigned __int8 Volume;
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
-	unsigned __int8 AMS;
-	unsigned __int8 PMS;
-	unsigned __int8 Panpot = 3;
+	union MAKO2_Tone T;
+	union LR_AMS_PMS_YM2608 LRAP = { {0, 0, 1, 1} };
 	bool NoteOn;
 };
 
@@ -89,7 +142,7 @@ class VGMdata {
 	struct CH_params* pCHparam = NULL;
 	struct CH_params* pCHparam_cur = NULL;
 	unsigned __int8 CH_cur = 16;
-	struct mako2_tone* T;
+	union MAKO2_Tone* Tunes;
 	enum class CHIP chip = CHIP::NONE;
 	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
@@ -104,41 +157,40 @@ class VGMdata {
 	void convert_YM2203(struct EVENT& eve);
 	void convert_YM2608(struct EVENT& eve);
 	void convert_YM2151(struct EVENT& eve);
+	void SSG_emulation_YM2151(void);
 	void Tone_select_YM2151(void);
 	void Tone_select_YM2203_FM(unsigned __int8 CH);
-	void Tone_select_YM2608_FMport0(unsigned __int8 CH);
-	void Tone_select_YM2608_FMport1(unsigned __int8 CH);
+	void Tone_select_YM2608_FM(bool port, unsigned __int8 CH);
 	void Key_set_YM2151(void);
 	void Key_set_YM2203_FM(unsigned __int8 CH);
 	void Key_set_YM2203_SSG(unsigned __int8 CH);
-	void Key_set_YM2608_FMport0(unsigned __int8 CH);
-	void Key_set_YM2608_FMport1(unsigned __int8 CH);
+	void Key_set_YM2608_FM(bool port, unsigned __int8 CH);
 	void Key_set_YM2608_SSG(unsigned __int8 CH);
 	void Note_off_YM2151(void);
+	void Note_off_YM2203_FM(unsigned __int8 CH);
+	void Note_off_YM2203_SSG(unsigned __int8 CH);
+	void Note_off_YM2608_FM(bool port, unsigned __int8 CH);
+	void Note_off_YM2608_SSG(unsigned __int8 CH);
 	void Note_on_YM2151(void);
 	void Note_on_YM2203_FM(unsigned __int8 CH);
 	void Note_on_YM2203_SSG(unsigned __int8 CH);
-	void Note_on_YM2608_FMport0(unsigned __int8 CH);
-	void Note_on_YM2608_FMport1(unsigned __int8 CH);
+	void Note_on_YM2608_FM(bool port, unsigned __int8 CH);
 	void Note_on_YM2608_SSG(unsigned __int8 CH);
 	void sLFOd_YM2203_FM(unsigned __int8 CH, __int16 Detune);
 	void sLFOd_YM2203_SSG(unsigned __int8 CH, __int16 Detune);
-	void sLFOd_YM2608_FMport0(unsigned __int8 CH, __int16 Detune);
-	void sLFOd_YM2608_FMport1(unsigned __int8 CH, __int16 Detune);
+	void sLFOd_YM2608_FM(bool port, unsigned __int8 CH, __int16 Detune);
 	void sLFOd_YM2608_SSG(unsigned __int8 CH, __int16 Detune);
 	void Volume_YM2151(void);
 	void Volume_YM2203_FM(unsigned __int8 CH);
-	void Volume_YM2608_FMport0(unsigned __int8 CH);
-	void Volume_YM2608_FMport1(unsigned __int8 CH);
+	void Volume_YM2608_FM(bool port, unsigned __int8 CH);
 	void Timer_set_YM2203(void);
 	void Timer_set_YM2608(void);
 	void Timer_set_YM2151(void);
-	void Panpot_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 Pan);
-	void Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan);
+	void Panpot_YM2608_FM(bool port, unsigned __int8 CH, unsigned __int8 Pan);
 	void finish(void);
 
 public:
-	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_tone* t, size_t ntones);
+	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones);
 	void print_all_tones(void);
 	void check_all_tones_blank(void);
 	void make_init(void);

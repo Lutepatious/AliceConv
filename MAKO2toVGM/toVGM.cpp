@@ -23,16 +23,16 @@ static const unsigned __int16 TP[] = {
 	0x003B,0x0038,0x0035,0x0032,0x002F,0x002C,0x002A,0x0027,0x0025,0x0023,0x0021,0x001F,
 	0x001D,0x001C,0x001A,0x0019,0x0017,0x0016,0x0015,0x0013,0x0012,0x0011,0x0010,0x000F,0x000E };
 
-static const unsigned __int8 tone_default[] = {
-	0x03, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 
-	0x02, 0x0F, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
-	0x06, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
-	0x04, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00,
-	0x02, 0x00, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00 };
+static const struct MAKO2_FM_PARAMETER_BYTE SSG_emulation = {
+	0x03, 0x0F, 0x00, 0x00, 0x00, 0x00, 0x00,
+	{{0x02, 0x0F, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
+	 {0x06, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
+	 {0x04, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
+	 {0x02, 0x00, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00}} };
 
-VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_tone* t, size_t ntones)
+VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones)
 {
-	this->T = t;
+	this->Tunes = t;
 	this->tones = ntones;
 	this->version = ver;
 	this->bytes = elems * 10;
@@ -72,7 +72,7 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, struct mako2_
 void VGMdata::print_all_tones(void)
 {
 	for (size_t i = 0; i < this->tones; i++) {
-		unsigned __int8* param = (unsigned __int8*)(this->T + i);
+		unsigned __int8* param = (unsigned __int8*)(this->Tunes + i);
 		wprintf_s(L"Voice %2zu: %02X %02X %02X %02X %02X %02X %02X\n", i, param[0], param[1], param[2], param[3], param[4], param[5], param[6]);
 		for (size_t j = 0; j < 4; j++) {
 			wprintf_s(L" OP %1zu: %02X %02X %02X %02X %02X %02X %02X %02X %02X\n"
@@ -84,7 +84,7 @@ void VGMdata::print_all_tones(void)
 void VGMdata::check_all_tones_blank(void)
 {
 	for (size_t i = 0; i < this->tones; i++) {
-		unsigned __int8* param = (unsigned __int8*)(this->T + i);
+		unsigned __int8* param = (unsigned __int8*)(this->Tunes + i);
 		unsigned __int8 test_result = param[2] | param[3] | param[4] | param[5] | param[6];
 		if (test_result) {
 			wprintf_s(L"Data exist in tone %zu Header\n", i);
@@ -162,20 +162,7 @@ void VGMdata::make_init(void)
 		0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F,
 		0x54, 0x08, 0x00, 0x54, 0x08, 0x01, 0x54, 0x08, 0x02, 0x54, 0x08, 0x03,
 		0x54, 0x08, 0x04, 0x54, 0x08, 0x05, 0x54, 0x08, 0x06, 0x54, 0x08, 0x07,
-		0x54, 0x14, 0x00,
-		0x54, 0x43, 0x02, 0x54, 0x44, 0x02, 0x54, 0x45, 0x02, 0x54, 0x63, 0x0F, 0x54, 0x64, 0x0F, 0x54, 0x65, 0x0F,
-		0x54, 0x83, 0x1F, 0x54, 0x84, 0x1F, 0x54, 0x85, 0x1F, 0x54, 0xA3, 0x00, 0x54, 0xA4, 0x00, 0x54, 0xA5, 0x00,
-		0x54, 0xC3, 0x00, 0x54, 0xC4, 0x00, 0x54, 0xC5, 0x00, 0x54, 0xE3, 0x0F, 0x54, 0xE4, 0x0F, 0x54, 0xE5, 0x0F,
-		0x54, 0x4B, 0x04, 0x54, 0x4C, 0x04, 0x54, 0x4D, 0x04, 0x54, 0x6B, 0x28, 0x54, 0x6C, 0x28, 0x54, 0x6D, 0x28,
-		0x54, 0x8B, 0x1F, 0x54, 0x8C, 0x1F, 0x54, 0x8D, 0x1F, 0x54, 0xAB, 0x00, 0x54, 0xAC, 0x00, 0x54, 0xAD, 0x00,
-		0x54, 0xCB, 0x00, 0x54, 0xCC, 0x00, 0x54, 0xCD, 0x00, 0x54, 0xEB, 0x0F, 0x54, 0xEC, 0x0F, 0x54, 0xED, 0x0F,
-		0x54, 0x53, 0x06, 0x54, 0x54, 0x06, 0x54, 0x55, 0x06, 0x54, 0x73, 0x28, 0x54, 0x74, 0x28, 0x54, 0x75, 0x28,
-		0x54, 0x93, 0x1F, 0x54, 0x94, 0x1F, 0x54, 0x95, 0x1F, 0x54, 0xB3, 0x00, 0x54, 0xB4, 0x00, 0x54, 0xB5, 0x00,
-		0x54, 0xD3, 0x00, 0x54, 0xD4, 0x00, 0x54, 0xD5, 0x00, 0x54, 0xF3, 0x0F, 0x54, 0xF4, 0x0F, 0x54, 0xF5, 0x0F,
-		0x54, 0x5B, 0x02, 0x54, 0x5C, 0x02, 0x54, 0x5D, 0x02, 0x54, 0x7B, 0x00, 0x54, 0x7C, 0x00, 0x54, 0x7D, 0x00,
-		0x54, 0x9B, 0x1F, 0x54, 0x9C, 0x1F, 0x54, 0x9D, 0x1F, 0x54, 0xBB, 0x00, 0x54, 0xBC, 0x00, 0x54, 0xBD, 0x00,
-		0x54, 0xDB, 0x00, 0x54, 0xDC, 0x00, 0x54, 0xDD, 0x00, 0x54, 0xFB, 0x0F, 0x54, 0xFC, 0x0F, 0x54, 0xFD, 0x0F,
-		0x54, 0x23, 0xC3, 0x54, 0x24, 0xC3, 0x54, 0x25, 0xC3 };
+		0x54, 0x14, 0x00 };
 
 	const unsigned char* Init;
 	size_t Init_len;
@@ -197,6 +184,18 @@ void VGMdata::make_init(void)
 
 	memcpy_s(this->vgm_pos, Init_len, Init, Init_len);
 	this->vgm_pos += Init_len;
+
+	if (this->chip == CHIP::YM2151) {
+		this->CH_cur = 3;
+		this->pCHparam_cur = this->pCHparam + this->CH_cur;
+		this->SSG_emulation_YM2151();
+		this->CH_cur = 4;
+		this->pCHparam_cur = this->pCHparam + this->CH_cur;
+		this->SSG_emulation_YM2151();
+		this->CH_cur = 5;
+		this->pCHparam_cur = this->pCHparam + this->CH_cur;
+		this->SSG_emulation_YM2151();
+	}
 }
 
 void VGMdata::make_wait(size_t wait)
@@ -262,11 +261,10 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 		break;
 	case 0x80: // Note Off
 		if (this->CH_cur < 3) {
-			this->make_data_YM2203(0x28, this->CH_cur);
+			this->Note_off_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->SSG_out |= (1 << (this->CH_cur - 3));
-			this->make_data_YM2203(0x07, this->SSG_out);
+			this->Note_off_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0xE1: // Velocity
@@ -337,7 +335,32 @@ void VGMdata::Key_set_YM2203_FM(unsigned __int8 CH)
 
 void VGMdata::Note_on_YM2203_FM(unsigned __int8 CH)
 {
-	this->make_data_YM2203(0x28, CH | 0xF0);
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 : 2;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, this->pCHparam_cur->T.S.OPR_MASK };
+	this->make_data_YM2203(0x28, U.B);
+}
+
+void VGMdata::Note_off_YM2203_FM(unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 : 2;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, 0 };
+	this->make_data_YM2203(0x28, U.B);
 }
 
 void VGMdata::Key_set_YM2203_SSG(unsigned __int8 CH)
@@ -356,6 +379,12 @@ void VGMdata::Key_set_YM2203_SSG(unsigned __int8 CH)
 void VGMdata::Note_on_YM2203_SSG(unsigned __int8 CH)
 {
 	this->SSG_out &= ~(1 << CH);
+	this->make_data_YM2203(0x07, this->SSG_out);
+}
+
+void VGMdata::Note_off_YM2203_SSG(unsigned __int8 CH)
+{
+	this->SSG_out |= (1 << CH);
 	this->make_data_YM2203(0x07, this->SSG_out);
 }
 
@@ -398,10 +427,8 @@ void VGMdata::Timer_set_YM2203(void)
 
 void VGMdata::Volume_YM2203_FM(unsigned __int8 CH)
 {
-	unsigned Algorithm = (T + this->pCHparam_cur->Tone)->H.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2203(0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
 		}
 	}
@@ -410,17 +437,16 @@ void VGMdata::Volume_YM2203_FM(unsigned __int8 CH)
 void VGMdata::Tone_select_YM2203_FM(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	struct mako2_tone* tone_cur = T + this->pCHparam_cur->Tone;
-	unsigned Algorithm = tone_cur->H.S.Connect;
+	this->pCHparam_cur->T = *(this->Tunes + this->pCHparam_cur->Tone);
 
-	this->make_data_YM2203(0xB0 + CH, tone_cur->H.B);
+	this->make_data_YM2203(0xB0 + CH, this->pCHparam_cur->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
+			if (j == 1 && this->version >= 3 && (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op == 1 || op == 3)) {
 			}
 			else {
-				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
+				this->make_data_YM2203(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 			}
 		}
 	}
@@ -442,44 +468,30 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param[0]);
 		break;
 	case 0xEB: // Panpot
-		if (this->CH_cur < 3) {
-			this->Panpot_YM2608_FMport0(this->CH_cur, eve.Param[0]);
-		}
-		else if (this->CH_cur > 5) {
-			this->Panpot_YM2608_FMport1(this->CH_cur - 6, eve.Param[0]);
+		if (this->CH_cur % 6 < 3) {
+			this->Panpot_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6, eve.Param[0]);
 		}
 		break;
 	case 0xF5: // Tone select
-		if (this->CH_cur < 3) {
+		if (this->CH_cur % 6 < 3) {
 			this->pCHparam_cur->Tone = eve.Param[0];
-			this->Tone_select_YM2608_FMport0(this->CH_cur);
-		}
-		else if (this->CH_cur > 5) {
-			this->pCHparam_cur->Tone = eve.Param[0];
-			this->Tone_select_YM2608_FMport1(this->CH_cur - 6);
+			this->Tone_select_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		break;
 	case 0x80: // Note Off
-		if (this->CH_cur < 3) {
-			this->make_data_YM2608port0(0x28, this->CH_cur);
+		if (this->CH_cur % 6 < 3) {
+			this->Note_off_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
-		else if (this->CH_cur < 6) {
-			this->SSG_out |= (1 << (this->CH_cur - 3));
-			this->make_data_YM2608port0(0x07, this->SSG_out);
-		}
-		else if (this->CH_cur > 5) {
-			this->make_data_YM2608port0(0x28, (this->CH_cur - 6) | 0x04);
+		else {
+			this->Note_off_YM2608_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0xE1: // Velocity
 		this->pCHparam_cur->Volume += eve.Param[0];
 		this->pCHparam_cur->Volume &= 0x7F;
 
-		if (this->CH_cur < 3) {
-			this->Volume_YM2608_FMport0(this->CH_cur);
-		}
-		else if (this->CH_cur > 5) {
-			this->Volume_YM2608_FMport1(this->CH_cur - 6);
+		if (this->CH_cur % 6 < 3) {
+			this->Volume_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
 			this->make_data_YM2608port0(0x08 + this->CH_cur - 3, (pCHparam + this->CH_cur)->Volume >> 3);
@@ -487,22 +499,16 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
 		this->pCHparam_cur->Volume = eve.Param[0];
 
-		if (this->CH_cur < 3) {
-			this->Volume_YM2608_FMport0(this->CH_cur);
-		}
-		else if (this->CH_cur > 5) {
-			this->Volume_YM2608_FMport1(this->CH_cur - 6);
+		if (this->CH_cur % 6 < 3) {
+			this->Volume_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
 			this->make_data_YM2608port0(0x08 + this->CH_cur - 3, (pCHparam + this->CH_cur)->Volume >> 3);
 		}
 		break;
 	case 0x90: // Note on
-		if (this->CH_cur < 3) {
-			this->Note_on_YM2608_FMport0(this->CH_cur);
-		}
-		else if (this->CH_cur > 5) {
-			this->Note_on_YM2608_FMport1(this->CH_cur - 6);
+		if (this->CH_cur % 6 < 3) {
+			this->Note_on_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
 			this->Note_on_YM2608_SSG(this->CH_cur - 3);
@@ -510,22 +516,16 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 		break;
 	case 0x97: // Key set
 		this->pCHparam_cur->Key = eve.Param[0];
-		if (this->CH_cur < 3) {
-			this->Key_set_YM2608_FMport0(this->CH_cur);
-		}
-		else if (this->CH_cur > 5) {
-			this->Key_set_YM2608_FMport1(this->CH_cur - 6);
+		if (this->CH_cur % 6 < 3) {
+			this->Key_set_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
 			this->Key_set_YM2608_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0x98: // sLFOd
-		if (this->CH_cur < 3) {
-			this->sLFOd_YM2608_FMport0(this->CH_cur, eve.ParamW);
-		}
-		else if (this->CH_cur > 5) {
-			this->sLFOd_YM2608_FMport1(this->CH_cur - 6, eve.ParamW);
+		if (this->CH_cur % 6 < 3) {
+			this->sLFOd_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6, eve.ParamW);
 		}
 		else {
 			this->sLFOd_YM2608_SSG(this->CH_cur - 3, eve.ParamW);
@@ -534,86 +534,39 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 	}
 }
 
-void VGMdata::Panpot_YM2608_FMport0(unsigned __int8 CH, unsigned __int8 Pan)
+void VGMdata::Panpot_YM2608_FM(bool port, unsigned __int8 CH, unsigned __int8 Pan)
 {
-	this->pCHparam_cur->Panpot = 3;
-	if (Pan & 0x80 || Pan == 0) {
-		this->pCHparam_cur->Panpot = 3;
+	if (Pan & 0x80 || Pan == 0 || Pan == 64) {
+		this->pCHparam_cur->LRAP.S.L = 1;
+		this->pCHparam_cur->LRAP.S.R = 1;
 	}
 	else if (Pan < 64) {
-		this->pCHparam_cur->Panpot = 2;
+		this->pCHparam_cur->LRAP.S.L = 1;
+		this->pCHparam_cur->LRAP.S.R = 0;
 	}
 	else if (Pan > 64) {
-		this->pCHparam_cur->Panpot = 1;
+		this->pCHparam_cur->LRAP.S.L = 0;
+		this->pCHparam_cur->LRAP.S.R = 1;
 	}
 
-	union LR_AMS_PMS_YM2608 LRAP;
-	LRAP.B = 0;
-	LRAP.S.LR = this->pCHparam_cur->Panpot;
-	this->make_data_YM2608port0(0xB4 + CH, LRAP.B);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xB4 + CH, this->pCHparam_cur->LRAP.B);
 }
 
-void VGMdata::Panpot_YM2608_FMport1(unsigned __int8 CH, unsigned __int8 Pan)
-{
-	this->pCHparam_cur->Panpot = 3;
-	if (Pan & 0x80 || Pan == 0) {
-		this->pCHparam_cur->Panpot = 3;
-	}
-	else if (Pan < 64) {
-		this->pCHparam_cur->Panpot = 2;
-	}
-	else if (Pan > 64) {
-		this->pCHparam_cur->Panpot = 1;
-	}
-
-	union LR_AMS_PMS_YM2608 LRAP;
-	LRAP.B = 0;
-	LRAP.S.LR = this->pCHparam_cur->Panpot;
-	this->make_data_YM2608port1(0xB4 + CH, LRAP.B);
-}
-
-void VGMdata::Key_set_YM2608_FMport0(unsigned __int8 CH)
+void VGMdata::Key_set_YM2608_FM(bool port, unsigned __int8 CH)
 {
 	union {
 		struct {
 			unsigned __int16 FNumber : 11;
 			unsigned __int16 Block : 3;
-			unsigned __int16 dummy : 2;
+			unsigned __int16 : 2;
 		} S;
 		unsigned __int8 B[2];
 	} U;
 
 	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
 	U.S.Block = this->pCHparam_cur->Key / 12;
-	this->make_data_YM2608port0(0xA4 + CH, U.B[1]);
-	this->make_data_YM2608port0(0xA0 + CH, U.B[0]);
-}
-
-void VGMdata::Note_on_YM2608_FMport0(unsigned __int8 CH)
-{
-	this->make_data_YM2608port0(0x28, CH | 0xF0);
-}
-
-void VGMdata::Key_set_YM2608_FMport1(unsigned __int8 CH)
-{
-	union {
-		struct {
-			unsigned __int16 FNumber : 11;
-			unsigned __int16 Block : 3;
-			unsigned __int16 dummy : 2;
-		} S;
-		unsigned __int8 B[2];
-	} U;
-
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
-	U.S.Block = this->pCHparam_cur->Key / 12;
-	this->make_data_YM2608port1(0xA4 + CH, U.B[1]);
-	this->make_data_YM2608port1(0xA0 + CH, U.B[0]);
-}
-
-void VGMdata::Note_on_YM2608_FMport1(unsigned __int8 CH)
-{
-	this->make_data_YM2608port0(0x28, CH | 0xF4);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA4 + CH, U.B[1]);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA0 + CH, U.B[0]);
 }
 
 void VGMdata::Key_set_YM2608_SSG(unsigned __int8 CH)
@@ -629,43 +582,65 @@ void VGMdata::Key_set_YM2608_SSG(unsigned __int8 CH)
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
 }
 
+void VGMdata::Note_on_YM2608_FM(bool port, unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 Port : 1;
+			unsigned __int8 : 1;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, port, this->pCHparam_cur->T.S.OPR_MASK };
+	this->make_data_YM2608port0(0x28, U.B);
+}
+
+void VGMdata::Note_off_YM2608_FM(bool port, unsigned __int8 CH)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 2;
+			unsigned __int8 Port : 1;
+			unsigned __int8 : 1;
+			unsigned __int8 Op_mask : 4;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { CH, port, 0 };
+	this->make_data_YM2608port0(0x28, U.B);
+}
+
 void VGMdata::Note_on_YM2608_SSG(unsigned __int8 CH)
-{	this->SSG_out &= ~(1 << CH);
+{
+	this->SSG_out &= ~(1 << CH);
 	this->make_data_YM2608port0(0x07, this->SSG_out);
 }
 
-void VGMdata::sLFOd_YM2608_FMport0(unsigned __int8 CH, __int16 Detune)
+void VGMdata::Note_off_YM2608_SSG(unsigned __int8 CH)
 {
-	union {
-		struct {
-			unsigned __int16 FNumber : 11;
-			unsigned __int16 Block : 3;
-			unsigned __int16 dummy : 2;
-		} S;
-		unsigned __int8 B[2];
-	} U;
-
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
-	U.S.Block = this->pCHparam_cur->Key / 12;
-	this->make_data_YM2608port0(0xA4 + CH, U.B[1]);
-	this->make_data_YM2608port0(0xA0 + CH, U.B[0]);
+	this->SSG_out |= (1 << CH);
+	this->make_data_YM2608port0(0x07, this->SSG_out);
 }
 
-void VGMdata::sLFOd_YM2608_FMport1(unsigned __int8 CH, __int16 Detune)
+void VGMdata::sLFOd_YM2608_FM(bool port, unsigned __int8 CH, __int16 Detune)
 {
 	union {
 		struct {
 			unsigned __int16 FNumber : 11;
 			unsigned __int16 Block : 3;
-			unsigned __int16 dummy : 2;
+			unsigned __int16 : 2;
 		} S;
 		unsigned __int8 B[2];
 	} U;
 
 	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
 	U.S.Block = this->pCHparam_cur->Key / 12;
-	this->make_data_YM2608port1(0xA4 + CH, U.B[1]);
-	this->make_data_YM2608port1(0xA0 + CH, U.B[0]);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA4 + CH, U.B[1]);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA0 + CH, U.B[0]);
 }
 
 void VGMdata::sLFOd_YM2608_SSG(unsigned __int8 CH, __int16 Detune)
@@ -688,61 +663,28 @@ void VGMdata::Timer_set_YM2608(void)
 	this->make_data_YM2608port0(0x25, NA & 0x03);
 }
 
-void VGMdata::Volume_YM2608_FMport0(unsigned __int8 CH)
+void VGMdata::Volume_YM2608_FM(bool port, unsigned __int8 CH)
 {
-	unsigned Algorithm = (T + this->pCHparam_cur->Tone)->H.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
-			this->make_data_YM2608port0(0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
+		if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
+			this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
 		}
 	}
 }
 
-void VGMdata::Volume_YM2608_FMport1(unsigned __int8 CH)
-{
-	unsigned Algorithm = (T + this->pCHparam_cur->Tone)->H.S.Connect;
-
-	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
-			this->make_data_YM2608port1(0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
-		}
-	}
-}
-
-void VGMdata::Tone_select_YM2608_FMport0(unsigned __int8 CH)
+void VGMdata::Tone_select_YM2608_FM(bool port, unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	struct mako2_tone* tone_cur = T + this->pCHparam_cur->Tone;
-	unsigned Algorithm = tone_cur->H.S.Connect;
+	this->pCHparam_cur->T = *(this->Tunes + this->pCHparam_cur->Tone);
 
-	this->make_data_YM2608port0(0xB0 + CH, tone_cur->H.B);
+	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xB0 + CH, this->pCHparam_cur->T.B.FB_CON);
 
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
+			if (j == 1 && this->version >= 3 && (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op == 1 || op == 3)) {
 			}
 			else {
-				this->make_data_YM2608port0(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
-			}
-		}
-	}
-}
-
-void VGMdata::Tone_select_YM2608_FMport1(unsigned __int8 CH)
-{
-	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-	struct mako2_tone* tone_cur = T + this->pCHparam_cur->Tone;
-	unsigned Algorithm = tone_cur->H.S.Connect;
-
-	this->make_data_YM2608port1(0xB0 + CH, tone_cur->H.B);
-
-	for (size_t op = 0; op < 4; op++) {
-		for (size_t j = 0; j < 6; j++) {
-			if (j == 1 && this->version >= 3 && (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op == 1 || op == 3)) {
-			}
-			else {
-				this->make_data_YM2608port1(0x30 + 0x10 * j + Op_index[op] + CH, tone_cur->Op[op].B[j]);
+				this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 			}
 		}
 	}
@@ -763,18 +705,6 @@ void VGMdata::convert_YM2151(struct EVENT& eve)
 		break;
 	case 0xFC: // Detune
 		this->pCHparam_cur->Detune = (__int16)((__int8)eve.Param[0]);
-		break;
-	case 0xEB: // Panpot
-		this->pCHparam_cur->Panpot = 3;
-		if (eve.Param[0] & 0x80 || eve.Param[0] == 0) {
-			this->pCHparam_cur->Panpot = 3;
-		}
-		else if (eve.Param[0] < 64) {
-			this->pCHparam_cur->Panpot = 2;
-		}
-		else if (eve.Param[0] > 64) {
-			this->pCHparam_cur->Panpot = 1;
-		}
 		break;
 	case 0xF5: // Tone select
 		this->pCHparam_cur->Tone = eve.Param[0];
@@ -818,23 +748,26 @@ void VGMdata::Timer_set_YM2151(void)
 void VGMdata::Tone_select_YM2151(void)
 {
 	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-	struct mako2_tone* tone_cur = T + this->pCHparam_cur->Tone;
-	unsigned Algorithm = tone_cur->H.S.Connect;
-	tone_cur->H.S.RL = this->pCHparam_cur->Panpot;
+	this->pCHparam_cur->T = *(this->Tunes + this->pCHparam_cur->Tone);
 
-	this->make_data_YM2151(0x20 + this->CH_cur, tone_cur->H.B);
+	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T.B.FB_CON | 0xC0);
 	for (size_t op = 0; op < 4; op++) {
 		for (size_t j = 0; j < 6; j++) {
-			this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + this->CH_cur, tone_cur->Op[op].B[j]);
+			this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + this->CH_cur, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 		}
 	}
 }
 
-void VGMdata::Note_off_YM2151(void)
+void VGMdata::SSG_emulation_YM2151(void)
 {
-	if (this->pCHparam_cur->NoteOn) {
-		this->make_data_YM2151(0x08, this->CH_cur);
-		this->pCHparam_cur->NoteOn = false;
+	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
+	this->pCHparam_cur->T.B = SSG_emulation;
+
+	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T.B.FB_CON | 0xC0);
+	for (size_t op = 0; op < 4; op++) {
+		for (size_t j = 0; j < 6; j++) {
+			this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + this->CH_cur, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
+		}
 	}
 }
 
@@ -849,7 +782,7 @@ void VGMdata::Key_set_YM2151(void)
 		struct {
 			unsigned __int8 note : 4;
 			unsigned __int8 oct : 3;
-			unsigned __int8 dummy : 1;
+			unsigned __int8 : 1;
 		} S;
 		unsigned __int8 KC;
 	} U;
@@ -862,16 +795,43 @@ void VGMdata::Key_set_YM2151(void)
 }
 
 void VGMdata::Note_on_YM2151(void) {
-	this->make_data_YM2151(0x08, this->CH_cur | 0x78);
+	union {
+		struct {
+			unsigned __int8 CH : 3;
+			unsigned __int8 Op_mask : 4;
+			unsigned __int8 : 1;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { this->CH_cur, this->pCHparam_cur->T.S.OPR_MASK };
+	this->make_data_YM2151(0x08, U.B);
 	this->pCHparam_cur->NoteOn = true;
+}
+
+void VGMdata::Note_off_YM2151(void)
+{
+	union {
+		struct {
+			unsigned __int8 CH : 3;
+			unsigned __int8 Op_mask : 4;
+			unsigned __int8 : 1;
+		} S;
+		unsigned __int8 B;
+	} U;
+
+	U.S = { this->CH_cur, 0 };
+
+	if (this->pCHparam_cur->NoteOn) {
+		this->make_data_YM2151(0x08, U.B);
+		this->pCHparam_cur->NoteOn = false;
+	}
 }
 
 void VGMdata::Volume_YM2151(void)
 {
-	unsigned Algorithm = (T + this->pCHparam_cur->Tone)->H.S.Connect;
-
 	for (size_t op = 0; op < 4; op++) {
-		if (Algorithm == 7 || Algorithm > 4 && op || Algorithm > 3 && op >= 2 || op == 3) {
+		if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
 			this->make_data_YM2151(0x60 + 8 * op + this->CH_cur, (~this->pCHparam_cur->Volume) & 0x7F);
 		}
 	}
