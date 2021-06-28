@@ -1,4 +1,4 @@
-Imported librarys and headers.
+Imported libraries and headers.
 
 zlib (https://www.zlib.net/)
 libpng (http://www.libpng.org/pub/png/)

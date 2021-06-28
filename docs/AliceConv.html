@@ -39,12 +39,68 @@
                 <li>VSP200line - variant of VSP (8/256 colors). Supported by RanceII for PC-8801 and Little Vampire for PC-9801 (ALICE-NET version).</li>
                 <li>VSP 256 colors - (256/16M colors). Format used in 256-colors games after Super D.P.S.</li>
                 <li>PMS - variant of VSP 256 colors. Format used after Kichikuou Rance (System 3.5).</li>
-                <li>FM TOWNS TIFF (256 colors). Format used in Alice no Yakata CD, Alice no Yakata CD II, Rance III FM TOWNS.</li>
                 <li>RanceII for X68000</li>
                 <li>Tousin Toshi for X68000</li>
+                <li>Abunai Bunkasai Zenya for X68000 in RanceIII Option Set for X68000/li>
             </ul>
             There are no common transparent information. So I cannot include transparent infos.
+            <li>TIFFtoPNG_Y1CD</li>
+            FM TOWNS TIFF (256 colors). Format used in Alice no Yakata CD, Alice no Yakata CD II, Rance III FM TOWNS.
+            <li>MSXtoPNG</li>
+            Converter for MSX2 CG.
+            <li>MSXtoPNG_LP</li>
+            for Little Princess (Champion Soft).
+            <li>MSXtoPNG_LV</li>
+            for Little Vampire (Champion Soft).
+            <li>MSXtoPNG_DrSTOP</li>
+            for Dr.STOP!.
+            <li>MSXtoPNG_TousinToshi</li>
+            for Tousin Toshi.
+            <li>MSXtoPNG_Intruder</li>
+            for Intruder. It needs COLPALET.DAT in A disk.
+            <li>MSXtoPNG_GS, MSXtoPNG_GS_TITLE</li>
+            Under development converter for Gakuen Senki (Champion Soft).
+            <li>DRStoPNG</li>
+            Converter for Dr.STOP! opening demo CG (cg003.dat) for PC-9801/X68000.
+            <li>DRStoPNG_TOWNS</li>
+            Converter for Dr.STOP! opening demo CG (cg003.dat) and openning.dat for FM TOWNS.
         </ul>
         <li>Sound</li>
+        <ul>
+            <li>MAKO1toVGM</li>
+            Converter for MAKO1 format to VGM.
+            <ul>
+                <li>Rance for PC-88VA/FM TOWNS</li>
+                <li>Intruder for FM TOWNS (in Alice no Yakata CD)</li>
+                <li>Cresent Moon Girl for PC-88VA, FM TOWNS (in Alice no Yakata CD)</li>
+                <li>Abunai Tengu Densetu for PC-88VA/FM TOWNS</li>
+                <li>Dream Program System for PC-88VA/FM TOWNS</li>
+                <li>Alice no Yakata for PC-88VA</li>
+                <li>RanceII for PC-9801/PC-8801/FM TOWNS and may-be PC-88VA (I have not)</li>
+                <li>Dream Program System -SG- for PC-9801/PC-88VA/FM TOWNS</li>
+                <li>Tousin Toshi for PC-9801/FM TOWNS</li>
+                <li>Dream Program System -SG- set2 for PC-9801/PC-88VA/FM TOWNS</li>
+                <li>Alice no Yakata CD for FM TOWNS</li>
+                <li>Dream Program System -SG- set3 for PC-9801/PC-88VA/FM TOWNS</li>
+            </ul>
+            It cannot determine machine specific information.
+            so It has 2 options.
+            <ul>
+                <li>-v for PC-88VA musics.</li>
+                <li>-t for FM TOWNS musics. </li>
+            </ul>
+            If no options applied. It works for PC-9801 music.
+            <li>MAKO2toVGM</li>
+            Converter for MAKO2 format to VGM.
+            It supports after RanceIII to Windows 3.1 era FM/SSG musics (except D.P.S -SG set3).
+            It converts SSG-PCM or TOWNS PCM to Windows WAVE.
+            It has 4 options.
+            <ul>
+                <li>-n for OPN mode.</li>
+                <li>-x for OPM (X68000) mode. </li>
+                <li>-a for OPNA mode. </li>
+                <li>-d for first impliment (RanceIII).</li>
+            </ul>
+        </ul>
     </ul>
 </body>
