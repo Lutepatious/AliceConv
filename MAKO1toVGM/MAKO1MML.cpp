@@ -149,6 +149,7 @@ void mako1_mml_decoded::unroll_loop(void)
 	bool debug = false;
 	size_t max_time = 0;
 	size_t delta_time_LCM = 1;
+	bool no_loop = true;
 
 	// 各ループ時間の最小公倍数をとる
 	for (size_t i = 0; i < this->CHs; i++) {
@@ -158,6 +159,9 @@ void mako1_mml_decoded::unroll_loop(void)
 		if (max_time < (this->CH + i)->time_total) {
 			max_time = (this->CH + i)->time_total;
 		}
+
+		// 全チャンネルが非ループかチェック
+		no_loop &= (this->CH + i)->is_mute();
 		// そもそもループしないチャネルはスキップ
 		if ((this->CH + i)->is_mute() || (this->CH + i)->time_total == 0) {
 			continue;
@@ -167,19 +171,26 @@ void mako1_mml_decoded::unroll_loop(void)
 	// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
 	// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
 	// 全チャンネルがループしないのならループ処理自体が不要
-	wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
-	this->end_time = delta_time_LCM;
-	for (size_t i = 0; i < this->CHs; i++) {
-		// そもそもループしないチャネルはスキップ
-		if ((this->CH + i)->is_mute() || (this->CH + i)->time_total == 0) {
-			continue;
-		}
-		size_t time_extra = this->end_time;
-		size_t times = time_extra / (this->CH + i)->time_total + !!(time_extra % (this->CH + i)->time_total);
-		(this->CH + i)->len_unrolled = (this->CH + i)->len * (times + 1);
-		if (debug) {
-			wprintf_s(L"%2zu: %9zu -> %9zu \n", i, (this->CH + i)->len, (this->CH + i)->len_unrolled);
+	// 全チャンネルがループしないのならループ処理自体が不要
+	if (no_loop) {
+		wprintf_s(L"Loop: NONE %zu\n", max_time);
+		this->end_time = max_time;
+		this->loop_start_time = SIZE_MAX;
+	}
+	else {
+		wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
+		this->end_time = delta_time_LCM;
+		for (size_t i = 0; i < this->CHs; i++) {
+			// そもそもループしないチャネルはスキップ
+			if ((this->CH + i)->is_mute() || (this->CH + i)->time_total == 0) {
+				continue;
+			}
+			size_t time_extra = this->end_time;
+			size_t times = time_extra / (this->CH + i)->time_total + !!(time_extra % (this->CH + i)->time_total);
+			(this->CH + i)->len_unrolled = (this->CH + i)->len * (times + 1);
+			if (debug) {
+				wprintf_s(L"%2zu: %9zu -> %9zu \n", i, (this->CH + i)->len, (this->CH + i)->len_unrolled);
+			}
 		}
 	}
-
 }
