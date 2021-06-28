@@ -137,6 +137,7 @@ class VGMdata {
 	size_t vgm_dlen = 0;
 	size_t vgm_extra_len = 0;
 	size_t padsize = 11;
+	bool dt_mode;
 
 	struct EVENT* loop_start = NULL;
 	struct CH_params* pCHparam = NULL;
@@ -182,7 +183,9 @@ class VGMdata {
 	void sLFOd_YM2608_SSG(unsigned __int8 CH, __int16 Detune);
 	void Volume_YM2151(void);
 	void Volume_YM2203_FM(unsigned __int8 CH);
+	void Volume_YM2203_SSG(unsigned __int8 CH);
 	void Volume_YM2608_FM(bool port, unsigned __int8 CH);
+	void Volume_YM2608_SSG(unsigned __int8 CH);
 	void Timer_set_YM2203(void);
 	void Timer_set_YM2608(void);
 	void Timer_set_YM2151(void);
@@ -190,7 +193,7 @@ class VGMdata {
 	void finish(void);
 
 public:
-	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones);
+	VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones, bool detune_mode);
 	void print_all_tones(void);
 	void check_all_tones_blank(void);
 	void make_init(void);

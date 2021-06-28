@@ -32,6 +32,7 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	enum CHIP chip_force = CHIP::NONE;
+	bool early_detune = false;
 	while (--argc) {
 		enum CHIP chip = CHIP::NONE;
 		if (**++argv == L'-') {
@@ -43,6 +44,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'x') {
 				chip_force = CHIP::YM2151;
+			}
+			else if (*(*argv + 1) == L'd') {
+				early_detune = true;
 			}
 			continue;
 		}
@@ -143,7 +147,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		wprintf_s(L"Make VGM\n");
-		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (union MAKO2_Tone*)(inbuf + pM2HDR->chiptune_addr), (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone));
+		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (union MAKO2_Tone*)(inbuf + pM2HDR->chiptune_addr), (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone), early_detune);
 		vgmdata.check_all_tones_blank();
 		vgmdata.make_init();
 		vgmdata.convert(events);

@@ -30,11 +30,12 @@ static const struct MAKO2_FM_PARAMETER_BYTE SSG_emulation = {
 	 {0x04, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
 	 {0x02, 0x00, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00}} };
 
-VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones)
+VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_Tone* t, size_t ntones, bool detune_mode)
 {
 	this->Tunes = t;
 	this->tones = ntones;
 	this->version = ver;
+	this->dt_mode = detune_mode;
 	this->bytes = elems * 10;
 	this->length = this->bytes;
 	this->vgm_out = (unsigned __int8*)GC_malloc(sizeof(unsigned __int8) * this->length);
@@ -275,7 +276,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 			this->Volume_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->make_data_YM2203(0x08 + this->CH_cur - 3, this->pCHparam_cur->Volume >> 3);
+			this->Volume_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
@@ -285,7 +286,7 @@ void VGMdata::convert_YM2203(struct EVENT& eve)
 			this->Volume_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->make_data_YM2203(0x08 + this->CH_cur - 3, this->pCHparam_cur->Volume >> 3);
+			this->Volume_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0x90: // Note on
@@ -370,7 +371,7 @@ void VGMdata::Key_set_YM2203_SSG(unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (-this->pCHparam_cur->Detune >> 2);
+	U.W = TP[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
 
 	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
@@ -434,6 +435,15 @@ void VGMdata::Volume_YM2203_FM(unsigned __int8 CH)
 	}
 }
 
+void VGMdata::Volume_YM2203_SSG(unsigned __int8 CH)
+{
+	unsigned __int8 Vol = this->pCHparam_cur->Volume >> 3;
+	if (Vol > 15) {
+		Vol = 15;
+	}
+	this->make_data_YM2203(0x08 + CH, Vol);
+}
+
 void VGMdata::Tone_select_YM2203_FM(unsigned __int8 CH)
 {
 	static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
@@ -494,7 +504,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 			this->Volume_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
-			this->make_data_YM2608port0(0x08 + this->CH_cur - 3, (pCHparam + this->CH_cur)->Volume >> 3);
+			this->Volume_YM2608_SSG(this->CH_cur - 3);
 		}
 	case 0xF9: // Volume change FMはアルゴリズムに合わせてスロット音量を変える仕様
 		this->pCHparam_cur->Volume = eve.Param[0];
@@ -503,7 +513,7 @@ void VGMdata::convert_YM2608(struct EVENT& eve)
 			this->Volume_YM2608_FM(this->CH_cur / 6, this->CH_cur % 6);
 		}
 		else {
-			this->make_data_YM2608port0(0x08 + this->CH_cur - 3, (pCHparam + this->CH_cur)->Volume >> 3);
+			this->Volume_YM2608_SSG(this->CH_cur - 3);
 		}
 		break;
 	case 0x90: // Note on
@@ -576,7 +586,7 @@ void VGMdata::Key_set_YM2608_SSG(unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (-this->pCHparam_cur->Detune >> 2);
+	U.W = TP[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
 
 	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
@@ -670,6 +680,15 @@ void VGMdata::Volume_YM2608_FM(bool port, unsigned __int8 CH)
 			this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0x40 + 4 * op + CH, (~this->pCHparam_cur->Volume) & 0x7F);
 		}
 	}
+}
+
+void VGMdata::Volume_YM2608_SSG(unsigned __int8 CH)
+{
+	unsigned __int8 Vol = this->pCHparam_cur->Volume >> 3;
+	if (Vol > 15) {
+		Vol = 15;
+	}
+	this->make_data_YM2608port0(0x08 + CH, Vol);
 }
 
 void VGMdata::Tone_select_YM2608_FM(bool port, unsigned __int8 CH)
