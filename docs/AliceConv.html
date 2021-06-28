@@ -1,0 +1,50 @@
+<title>AliceConv</title>
+<body>
+    <h1>Aliceconv - The converter collections for old Alicesoft games</h1>
+
+    <h2>Purpose</h2>
+    The purpose of this toolkit is to analyze past games and convert them into a modern and easy-to-understand format.
+    
+    <h2>Tools</h2>
+    <ul>
+        <li>Splitter</li>
+        It extracts files from disk image or archive file.
+        <ul>
+            <li>N88Splitter</li>
+            Extractor for N88 DISK BASIC formatted disk image.
+            <OL>
+                <LI>Create disk image with KryoFlux.</LI>
+                <LI>Convert to D88 disk image using <A href="https://simonowen.com/samdisk/">SAMDisk</A>.</LI>
+                <LI>Export IMG file (RAW Sector file format) using <A href="https://hxc2001.com/download/floppy_drive_emulator/index.html">HxCFloppyEmulator software</A>.</LI>
+                <LI>command prompt&gt; N88Spiltter &lt;disk image&gt;</LI>
+            </OL>
+            <li>DATSplitter</li>
+            Splitter for Alicesoft archive file. Such as ACG.DAT, AMUS.DAT, ADISK.DAT etc.
+            If the archive file has multi-archive link-information, Out-file will be named by that information.
+            Wildcard allowed.
+            <li>DATSplitter_old</li>
+            Sometimes DATsplitter failed by very-old archive file.
+            In that case, please use it.
+            Wildcard allowed.
+         </ul>
+        <li>CG</li>
+        <ul>
+            <li>VSPtoPNG</li>
+            Main tool of CG converters. It automatically detects these formats.
+            <ul>
+                <li>GL - very early CG format (8/512 colors) from Champion soft era (Predecessor of Alicesoft) to almost all PC-8801 games (except RanceII).</li>
+                <li>GL3 - early CG format (16/4096 colors) form Rance to Alice no yakata CD. PC-9801, PC-88VA and almost FM TOWNS, X68000.</li>
+                <li>GM3 - variant of GL3 (8/512 colors). Intruder for FM TOWNS only.</li>
+                <li>VSP - (16/4096 colors). Supported by many titles for PC-9801/FM TOWNS/X68000.</li>
+                <li>VSP200line - variant of VSP (8/256 colors). Supported by RanceII for PC-8801 and Little Vampire for PC-9801 (ALICE-NET version).</li>
+                <li>VSP 256 colors - (256/16M colors). Format used in 256-colors games after Super D.P.S.</li>
+                <li>PMS - variant of VSP 256 colors. Format used after Kichikuou Rance (System 3.5).</li>
+                <li>FM TOWNS TIFF (256 colors). Format used in Alice no Yakata CD, Alice no Yakata CD II, Rance III FM TOWNS.</li>
+                <li>RanceII for X68000</li>
+                <li>Tousin Toshi for X68000</li>
+            </ul>
+            There are no common transparent information. So I cannot include transparent infos.
+        </ul>
+        <li>Sound</li>
+    </ul>
+</body>
