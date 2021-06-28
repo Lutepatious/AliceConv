@@ -171,7 +171,6 @@ void mako1_mml_decoded::unroll_loop(void)
 	// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
 	// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
 	// 全チャンネルがループしないのならループ処理自体が不要
-	// 全チャンネルがループしないのならループ処理自体が不要
 	if (no_loop) {
 		wprintf_s(L"Loop: NONE %zu\n", max_time);
 		this->end_time = max_time;
