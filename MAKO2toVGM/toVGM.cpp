@@ -49,13 +49,23 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_T
 	if (this->chip == CHIP::YM2203) {
 		this->CHs_limit = 6;
 		h_vgm.lngHzYM2203 = this->master_clock = 3993600;
-		h_vgm.bytAYFlagYM2203 = 0x1;
+		//		h_vgm.bytAYType = 0x10;
+		//		h_vgm.bytAYFlagYM2203 = 0x1;
+		Ex_Vols.Type = 0x86;
+		Ex_Vols.Flags = 0;
+		Ex_Vols.Data = 0x804C;
+		Ex_Vols_count = 1;
 		wprintf_s(L"YM2203 mode.\n");
 	}
 	else if (this->chip == CHIP::YM2608) {
 		this->CHs_limit = 9;
 		h_vgm.lngHzYM2608 = this->master_clock = 7987200;
-		h_vgm.bytAYFlagYM2608 = 0x1;
+		//		h_vgm.bytAYType = 0x10;
+		//		h_vgm.bytAYFlagYM2608 = 0x1;
+		Ex_Vols.Type = 0x87;
+		Ex_Vols.Flags = 0;
+		Ex_Vols.Data = 0x8040;
+		Ex_Vols_count = 1;
 		wprintf_s(L"YM2608 mode.\n");
 	}
 	else if (this->chip == CHIP::YM2151) {

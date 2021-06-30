@@ -260,7 +260,12 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 	if (this->arch == Machine::PC88VA) {
 		this->preset = preset_88;
 		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
-		h_vgm.bytAYFlagYM2203 = 0x1;
+		//		h_vgm.bytAYType = 0x10;
+		//		h_vgm.bytAYFlagYM2203 = 0x1;
+		Ex_Vols.Type = 0x86;
+		Ex_Vols.Flags = 0;
+		Ex_Vols.Data = 0x808C;
+		Ex_Vols_count = 1;
 		wprintf_s(L"PC-88VA mode.\n");
 	}
 	else if (this->arch == Machine::FMTOWNS) {
@@ -271,7 +276,12 @@ VGMdata1::VGMdata1(size_t elems, enum class Machine M_arch)
 	else {
 		this->preset = preset_98;
 		h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
-		h_vgm.bytAYFlagYM2203 = 0x1;
+		//		h_vgm.bytAYType = 0x10;
+		//		h_vgm.bytAYFlagYM2203 = 0x1;
+		Ex_Vols.Type = 0x86;
+		Ex_Vols.Flags = 0;
+		Ex_Vols.Data = 0x804C;
+		Ex_Vols_count = 1;
 		wprintf_s(L"PC-9801 mode.\n");
 	}
 
@@ -602,8 +612,8 @@ void VGMdata1::convert(class EVENTS& in)
 				c_VGMT = (src->time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 			}
 			else if (this->arch == Machine::FMTOWNS) {
-//				たまに64bitでもオーバーフローする事がわかったので約分
-//				c_VGMT = (src->time * 60 * VGM_CLOCK * MASTERCLOCK_NEC_OPN * 2 * 2 / (48 * this->Tempo * MASTERCLOCK_FMTOWNS_OPN2) + 1) >> 1;
+				//				たまに64bitでもオーバーフローする事がわかったので約分
+				//				c_VGMT = (src->time * 60 * VGM_CLOCK * MASTERCLOCK_NEC_OPN * 2 * 2 / (48 * this->Tempo * MASTERCLOCK_FMTOWNS_OPN2) + 1) >> 1;
 				c_VGMT = (src->time * VGM_CLOCK * 52 * 2 * 2 / (3 * this->Tempo * 25) + 1) >> 1;
 			}
 			else { // defaultはPC-9801とする(PC-8801も同)
