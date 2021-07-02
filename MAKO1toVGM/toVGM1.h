@@ -88,6 +88,7 @@ class VGMdata1 {
 	size_t padsize = 11;
 
 	unsigned __int16 FNumber[12];
+	unsigned __int16 TPeriod[97];
 
 	struct EVENT* loop_start = NULL;
 	struct CH_params* pCHparam = NULL;
@@ -97,6 +98,8 @@ class VGMdata1 {
 	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
 	VGMX_CHIP_DATA16 Ex_Vols = { 0,0,0 };
+	unsigned __int16 make_VGM_Ex_Vol(double db);
+	unsigned __int16 make_VGM_Ex_Vol(unsigned __int8 percent);
 	void enlarge(void);
 	void make_wait(size_t wait);
 	void make_data(unsigned __int8 command, unsigned __int8 address, unsigned __int8 data);
@@ -129,5 +132,6 @@ public:
 	VGMdata1(size_t elems, enum class Machine M_arch);
 	void make_init(void);
 	void convert(class EVENTS& in);
+	void SetSSGvol(unsigned __int8 vol);
 	void out(wchar_t* p);
 };

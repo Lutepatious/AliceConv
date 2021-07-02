@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cerrno>
 #include <cwchar>
+#include <cmath>
 #include <limits>
 
 #include "gc_cpp.h"
@@ -12,8 +13,10 @@
 #include "tools.h"
 
 // MAKO.OCM (1,2共通)に埋め込まれているF-number (MAKO1は全オクターブ分入っている)
-static const unsigned __int16 FNumber[] = { 0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D };
-static const unsigned __int16 TP[] = {
+static const unsigned __int16 FNumber_old[] = { 0x0269, 0x028E, 0x02B4, 0x02DE, 0x0309, 0x0338, 0x0369, 0x039C, 0x03D3, 0x040E, 0x044B, 0x048D };
+
+// MAKO.COM (1,2共通)に埋め込まれているTone Period
+static const unsigned __int16 TP_old[] = {
 	0x0EED,0x0E17,0x0D4C,0x0C8D,0x0BD9,0x0B2F,0x0A8E,0x09F6,0x0967,0x08E0,0x0860,0x07E8,
 	0x0776,0x070B,0x06A6,0x0646,0x05EC,0x0597,0x0547,0x04FB,0x04B3,0x0470,0x0430,0x03F4,
 	0x03BB,0x0385,0x0353,0x0323,0x02F6,0x02CB,0x02A3,0x027D,0x0259,0x0238,0x0218,0x01FA,
@@ -53,8 +56,19 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_T
 		//		h_vgm.bytAYFlagYM2203 = 0x1;
 		Ex_Vols.Type = 0x86;
 		Ex_Vols.Flags = 0;
-		Ex_Vols.Data = 0x804C;
+		Ex_Vols.Data = 0x8000 | make_VGM_Ex_Vol((unsigned __int8) 60);
 		Ex_Vols_count = 1;
+
+		for (size_t i = 0; i < 12; i++) {
+			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
+			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->master_clock;
+			this->FNumber[i] = fFNumber + 0.5;
+		}
+		for (size_t i = 0; i < 97; i++) {
+			double Freq = 440.0 * pow(2.0, (-57.0 + i) / 12.0);
+			double fTP = this->master_clock / (64.0 * Freq);
+			this->TPeriod[i] = fTP + 0.5;
+		}
 		wprintf_s(L"YM2203 mode.\n");
 	}
 	else if (this->chip == CHIP::YM2608) {
@@ -64,20 +78,56 @@ VGMdata::VGMdata(size_t elems, enum class CHIP chip, unsigned ver, union MAKO2_T
 		//		h_vgm.bytAYFlagYM2608 = 0x1;
 		Ex_Vols.Type = 0x87;
 		Ex_Vols.Flags = 0;
-		Ex_Vols.Data = 0x8040;
+		Ex_Vols.Data = 0x8000 | make_VGM_Ex_Vol((unsigned __int8) 45);
 		Ex_Vols_count = 1;
+
+		for (size_t i = 0; i < 12; i++) {
+			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
+			double fFNumber = 144.0 * Freq * pow(2.0, 21.0 - 4) / this->master_clock;
+			this->FNumber[i] = fFNumber + 0.5;
+		}
+		for (size_t i = 0; i < 97; i++) {
+			double Freq = 440.0 * pow(2.0, (-57.0 + i) / 12.0);
+			double fTP = this->master_clock / (128.0 * Freq);
+			this->TPeriod[i] = fTP + 0.5;
+		}
 		wprintf_s(L"YM2608 mode.\n");
 	}
 	else if (this->chip == CHIP::YM2151) {
 		this->CHs_limit = 8;
 		h_vgm.lngHzYM2151 = this->master_clock = 4000000;
 		wprintf_s(L"YM2151 mode.\n");
+		for (size_t i = 0; i < 12; i++) {
+			this->FNumber[i] = 0;
+		}
+		for (size_t i = 0; i < 97; i++) {
+			this->TPeriod[i] = 0;
+		}
 	}
 	else {
 		wprintf_s(L"Please select chip by -n, -a, -x options.\n");
 		exit(-5);
 	}
+
 	pCHparam = new struct CH_params[CHs_limit];
+}
+
+unsigned __int16 VGMdata::make_VGM_Ex_Vol(double db)
+{
+	double vol = pow(10.0, db / 20.00);
+	wprintf_s(L"Volume %f\n", vol);
+
+	return (unsigned)(256.0 * vol + 0.5);
+}
+
+unsigned __int16 VGMdata::make_VGM_Ex_Vol(unsigned __int8 percent)
+{
+	return (unsigned)(256.0 * percent / 100.0 + 0.5);
+}
+
+void VGMdata::SetSSGvol(unsigned __int8 vol)
+{
+	Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol(vol);
 }
 
 void VGMdata::print_all_tones(void)
@@ -338,7 +388,7 @@ void VGMdata::Key_set_YM2203_FM(unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2203(0xA4 + CH, U.B[1]);
 	this->make_data_YM2203(0xA0 + CH, U.B[0]);
@@ -381,7 +431,7 @@ void VGMdata::Key_set_YM2203_SSG(unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
+	U.W = this->TPeriod[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
 
 	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
@@ -410,7 +460,7 @@ void VGMdata::sLFOd_YM2203_FM(unsigned __int8 CH, __int16 Detune)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + Detune;
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12] + Detune;
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data_YM2203(0xA4 + CH, U.B[1]);
 	this->make_data_YM2203(0xA0 + CH, U.B[0]);
@@ -423,7 +473,7 @@ void VGMdata::sLFOd_YM2203_SSG(unsigned __int8 CH, __int16 Detune)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (-Detune >> 2);
+	U.W = this->TPeriod[this->pCHparam_cur->Key] + (-Detune >> 2);
 
 	this->make_data_YM2203(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2203(0x00 + CH * 2, U.B[0]);
@@ -583,7 +633,7 @@ void VGMdata::Key_set_YM2608_FM(bool port, unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.S.FNumber = FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
+	U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12] + this->pCHparam_cur->Detune;
 	U.S.Block = this->pCHparam_cur->Key / 12;
 	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA4 + CH, U.B[1]);
 	this->make_data(port ? this->vgm_command_YM2608port1 : this->vgm_command_YM2608port0, 0xA0 + CH, U.B[0]);
@@ -596,7 +646,7 @@ void VGMdata::Key_set_YM2608_SSG(unsigned __int8 CH)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
+	U.W = this->TPeriod[this->pCHparam_cur->Key] + (this->dt_mode ? (-this->pCHparam_cur->Detune) : (-this->pCHparam_cur->Detune >> 2));
 
 	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);
@@ -670,7 +720,7 @@ void VGMdata::sLFOd_YM2608_SSG(unsigned __int8 CH, __int16 Detune)
 		unsigned __int8 B[2];
 	} U;
 
-	U.W = TP[this->pCHparam_cur->Key] + (-Detune >> 2);
+	U.W = this->TPeriod[this->pCHparam_cur->Key] + (-Detune >> 2);
 
 	this->make_data_YM2608port0(0x01 + CH * 2, U.B[1]);
 	this->make_data_YM2608port0(0x00 + CH * 2, U.B[0]);

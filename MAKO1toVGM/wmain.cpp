@@ -26,6 +26,7 @@ struct mako1_header {
 int wmain(int argc, wchar_t** argv)
 {
 	bool debug = false;
+	unsigned __int8 SSG_Volume = 0;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
@@ -40,6 +41,18 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
+			}
+			else if (*(*argv + 1) == L's') {
+				int tVol = _wtoi(*argv + 2);
+				if (tVol > 255) {
+					SSG_Volume = 255;
+				}
+				else if (tVol < 0) {
+					SSG_Volume = 0;
+				}
+				else {
+					SSG_Volume = tVol;
+				}
 			}
 			continue;
 		}
