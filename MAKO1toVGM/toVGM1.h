@@ -132,6 +132,6 @@ public:
 	VGMdata1(size_t elems, enum class Machine M_arch);
 	void make_init(void);
 	void convert(class EVENTS& in);
-	void SetSSGvol(unsigned __int8 vol);
+	void SetSSGVol(unsigned __int8 vol);
 	void out(wchar_t* p);
 };

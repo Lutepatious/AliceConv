@@ -83,23 +83,26 @@
                 <li>Alice no Yakata CD for FM TOWNS</li>
                 <li>Dream Program System -SG- set3 for PC-9801/PC-88VA/FM TOWNS</li>
             </ul>
-            It cannot determine machine specific information.
-            so It has 2 options.
+            It cannot autodetect machine specific information.
+            so It has 3 options.
             <ul>
-                <li>-v for PC-88VA musics.</li>
-                <li>-t for FM TOWNS musics. </li>
+                <li>-v for PC-88VA (YM-2203) musics.</li>
+                <li>-t for FM TOWNS(YM-2612) musics. </li>
+                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
             </ul>
-            If no options applied. It works for PC-9801 music.
+            If NOT -v/-t options applied. It works for PC-9801 music.
             <li>MAKO2toVGM</li>
             Converter for MAKO2 format to VGM.
             It supports after RanceIII to Windows 3.1 era FM/SSG musics (except D.P.S -SG set3).
-            It converts SSG-PCM or TOWNS PCM to Windows WAVE.
-            It has 4 options.
+            It also converts SSG-PCM or TOWNS PCM to Windows WAVE.
+            Autodetect file types (except RanceIV and Alice no Yakata 3).
+            It has 5 options.
             <ul>
                 <li>-n for OPN mode.</li>
                 <li>-x for OPM (X68000) mode. </li>
                 <li>-a for OPNA mode. </li>
-                <li>-d for first impliment (RanceIII).</li>
+                <li>-d for first impliment (RanceIII). Correct Detune level.</li>
+                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
             </ul>
         </ul>
     </ul>

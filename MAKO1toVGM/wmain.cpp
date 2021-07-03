@@ -133,6 +133,9 @@ int wmain(int argc, wchar_t** argv)
 		class VGMdata1 vgmdata(MMLs.end_time, M_arch);
 		vgmdata.make_init();
 		vgmdata.convert(events);
+		if (SSG_Volume) {
+			vgmdata.SetSSGVol(SSG_Volume);
+		}
 		vgmdata.out(*argv);
 	}
 }

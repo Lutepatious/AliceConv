@@ -164,6 +164,9 @@ int wmain(int argc, wchar_t** argv)
 		class VGMdata vgmdata(MMLs.end_time, chip, mako2form, (union MAKO2_Tone*)(inbuf + pM2HDR->chiptune_addr), (pM2HDR->CH_addr[0] - pM2HDR->chiptune_addr) / sizeof(struct mako2_tone), early_detune);
 		vgmdata.make_init();
 		vgmdata.convert(events);
+		if (SSG_Volume) {
+			vgmdata.SetSSGVol(SSG_Volume);
+		}
 		vgmdata.out(*argv);
 	}
 }

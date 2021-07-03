@@ -324,7 +324,7 @@ unsigned __int16 VGMdata1::make_VGM_Ex_Vol(unsigned __int8 percent)
 	return (unsigned)(256.0 * percent / 100.0 + 0.5);
 }
 
-void VGMdata1::SetSSGvol(unsigned __int8 vol)
+void VGMdata1::SetSSGVol(unsigned __int8 vol)
 {
 	Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol(vol);
 }
