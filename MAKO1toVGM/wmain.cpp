@@ -111,6 +111,7 @@ int wmain(int argc, wchar_t** argv)
 		for (size_t i = 0; i < 6; i++) {
 			(MMLs.CH + i)->decode(inbuf, pM1HDR->CH[i].Address);
 		}
+		
 		if (debug) {
 			MMLs.print();
 		}

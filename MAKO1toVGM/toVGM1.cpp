@@ -640,7 +640,7 @@ void VGMdata1::convert(class EVENTS& in)
 			else if (this->arch == Machine::FMTOWNS) {
 				//				たまに64bitでもオーバーフローする事がわかったので約分
 				//				c_VGMT = (src->time * 60 * VGM_CLOCK * MASTERCLOCK_NEC_OPN * 2 * 2 / (48 * this->Tempo * MASTERCLOCK_FMTOWNS_OPN2) + 1) >> 1;
-				c_VGMT = (src->time * VGM_CLOCK * 52 * 2 * 2 / (3 * this->Tempo * 25) + 1) >> 1;
+				c_VGMT = (src->time * 122304 / (this->Tempo) + 1) >> 1;
 			}
 			else { // defaultはPC-9801とする(PC-8801も同)
 				c_VGMT = (src->time * 60 * VGM_CLOCK * 2 * 6 / (48 * this->Tempo * 5) + 1) >> 1;
@@ -648,7 +648,7 @@ void VGMdata1::convert(class EVENTS& in)
 
 			size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
 
-			//				wprintf_s(L"%8zu: %zd %zd %zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
+			// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 			this->Time_Prev_VGM += d_VGMT;
 			this->Time_Prev_VGM_abs += d_VGMT;
 			this->Time_Prev = src->time;
