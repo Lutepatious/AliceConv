@@ -2,40 +2,6 @@
 #include "VGMFile.h"
 
 #pragma pack(1)
-struct mako2_tone {
-	union {
-		struct {
-			unsigned __int8 Connect : 3; // CON Connection
-			unsigned __int8 FB : 3; // FL Self-FeedBack
-			unsigned __int8 RL : 2; // YM2151 Only
-		} S;
-		unsigned __int8 B;
-	} H;
-	unsigned __int8 Unk[6]; // FM? or what?
-	union {
-		struct {
-			unsigned __int8 MULTI : 4; // MUL Multiply
-			unsigned __int8 DT : 3; // DT1 DeTune
-			unsigned __int8 NU0 : 1; // Not used
-			unsigned __int8 TL : 7; // TL Total Level
-			unsigned __int8 NU1 : 1; // Not used
-			unsigned __int8 AR : 5; // AR Attack Rate
-			unsigned __int8 NU2 : 1; // Not used
-			unsigned __int8 KS : 2; // KS Key Scale
-			unsigned __int8 DR : 5; // D1R Decay Rate
-			unsigned __int8 NU3 : 2; // Not used
-			unsigned __int8 AMON : 1; // AMS-EN AMS On
-			unsigned __int8 SR : 5; // D2R Sustain Rate
-			unsigned __int8 NU4 : 1; // Not used
-			unsigned __int8 DT2 : 2; // DT2
-			unsigned __int8 RR : 4; // RR Release Rate
-			unsigned __int8 SL : 4; // D1L Sustain Level
-			unsigned __int8 Unk0[3]; // Unknown
-		} S;
-		unsigned __int8 B[9];
-	} Op[4];
-};
-
 struct MAKO2_FM_PARAMETER {
 	unsigned __int8 Connect : 3; // CON Connection
 	unsigned __int8 FB : 3; // FL Self-FeedBack
