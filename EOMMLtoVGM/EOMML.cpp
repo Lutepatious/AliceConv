@@ -13,9 +13,10 @@ eomml_decoded_CH::eomml_decoded_CH()
 	this->MML = (unsigned __int8*)GC_malloc(32 * 1024);
 }
 
-eomml_decoded::eomml_decoded()
+eomml_decoded::eomml_decoded(size_t ch)
 {
-	this->CH = new class eomml_decoded_CH[6];
+	this->CHs = ch;
+	this->CH = new class eomml_decoded_CH[this->CHs];
 }
 
 void eomml_decoded_CH::print(void)
@@ -91,7 +92,7 @@ void eomml_decoded::unroll_loop(void)
 
 static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 {
-	unsigned NLen;
+	unsigned NLen, NLen_d;
 	char* tpos;
 
 	if (isdigit(**pmsrc)) {
@@ -110,19 +111,12 @@ static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 			wprintf_s(L"L %u: out of range.\n", TLen);
 		}
 
-		NLen = 192 >> M;
+		NLen_d = 192 >> M;
 	}
 	else {
-		NLen = Len;
+		NLen_d = Len;
 	}
-
-	return NLen;
-}
-
-static unsigned getNoteLen(unsigned __int8** pmsrc, unsigned Len)
-{
-	unsigned NLen, NLen_d;
-	NLen = NLen_d = getDefaultLen(pmsrc, Len);
+	NLen = NLen_d;
 	while (**pmsrc == '.') {
 		(*pmsrc)++;
 		NLen_d >>= 1;
@@ -132,7 +126,7 @@ static unsigned getNoteLen(unsigned __int8** pmsrc, unsigned Len)
 	return NLen;
 }
 
-void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
+void eomml_decoded_CH::decode(unsigned __int8* input)
 {
 
 	unsigned Octave = 4; // 1 - 9
@@ -144,35 +138,40 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 	unsigned Tone = 0;
 	unsigned Key_order[] = { 9, 11, 0, 2, 4, 5, 7 };
 	unsigned __int8* msrc = input;
+	unsigned __int8* dest = this->MML;
+	unsigned Octave_t;
+	unsigned VoltoXVol[16] = {85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125};
 
 	// eomml 覚書
 	// < 1オクターブ下げ
 	// > 1オクターブ上げ
 	// O デフォルト4 O4のAがA4と同じで440Hz
+	// L ドットが付けられる!
 	// X68000版の取り扱い
 	// 闘神都市では音No.80から81音にOPM98.DATを読み込む。(80-160がOPM98.DATの音になる)
 	while (*msrc) {
-		bool tie = false;
-		unsigned Octave_t;
 		unsigned RLen, NLen;
 		unsigned Key;
+		unsigned time_on, time_off;
 
 		switch (tolower(*msrc++)) {
-		case 'm':
-			if (tolower(*msrc) == 'b') {
+		case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
+			if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
 				msrc++;
 			}
 			break;
-		case 't':
+		case 't': // Tempo
 			if (isdigit(*msrc)) {
 				unsigned __int8* tpos;
 				Tempo = strtoul((const char*)msrc, (char**)&tpos, 10);
 				msrc = tpos;
 			}
 			if (Tempo < 32 || Tempo > 200) {
-				wprintf_s(L"T %u: out of range.\n", XVol);
+				wprintf_s(L"T %u: out of range.\n", Tempo);
 			}
 			// wprintf_s(L"Tempo %u\n", Tempo);
+			*dest++ = 0xF4;
+			*dest++ = Tempo;
 			break;
 		case '@':
 			if (tolower(*msrc) == 'v') {
@@ -185,6 +184,8 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 					wprintf_s(L"@V %u: out of range.\n", XVol);
 				}
 				// wprintf_s(L"XVol %u\n", XVol);
+				*dest++ = 0xF9;
+				*dest++ = XVol;
 			}
 			else {
 				if (isdigit(*msrc)) {
@@ -193,6 +194,8 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 					msrc = tpos;
 				}
 				//	wprintf_s(L"Tone %u\n", Tone);
+				*dest++ = 0xF5;
+				*dest++ = Tone;
 			}
 			break;
 		case 'q':
@@ -206,7 +209,7 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 			}
 			// wprintf_s(L"GS %u\n", GS);
 			break;
-		case 'v':
+		case 'v': // Volume
 			if (isdigit(*msrc)) {
 				unsigned __int8* tpos;
 				Vol = strtoul((const char*)msrc, (char**)&tpos, 10);
@@ -216,8 +219,10 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 				wprintf_s(L"V %u: out of range.\n", Vol);
 			}
 			// wprintf_s(L"Vol %u\n", Vol);
+			*dest++ = 0xF8;
+			*dest++ = Vol;
 			break;
-		case 'o':
+		case 'o': // Octave
 			if (isdigit(*msrc)) {
 				unsigned __int8* tpos;
 				Octave = strtoul((const char*)msrc, (char**)&tpos, 10);
@@ -228,38 +233,41 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 			}
 			// wprintf_s(L"Octave %u\n", Octave);
 			break;
-		case '>':
+		case '>': // Octave up
 			Octave++;
 			if (Octave > 8) {
 				wprintf_s(L">:result %u out of range.\n", Octave);
 			}
 			// wprintf_s(L"Octave %u\n", Octave);
 			break;
-		case '<':
+		case '<': // Octave down
 			Octave--;
 			if (Octave > 8) {
 				wprintf_s(L"<:result %u out of range.\n", Octave);
 			}
 			// wprintf_s(L"Octave %u\n", Octave);
 			break;
-		case 'l':
+		case 'l': // de fault Length
 			Len = getDefaultLen(&msrc, Len);
 			// wprintf_s(L"Len %u\n", Len);
 			break;
-		case 'r':
-			RLen = getNoteLen(&msrc, Len);
+		case 'r': // Rest
+			RLen = getDefaultLen(&msrc, Len);
 			// wprintf_s(L"Rest %u\n", RLen);
+			*dest++ = 0x80;
+			*dest++ = RLen;
+			this->time_total += RLen;
 			break;
-		case 'a':
-		case 'b':
-		case 'c':
-		case 'd':
-		case 'e':
-		case 'f':
-		case 'g':
+		case 'a': // Note key A
+		case 'b': // Note key B
+		case 'c': // Note key C
+		case 'd': // Note key D
+		case 'e': // Note key E
+		case 'f': // Note key F
+		case 'g': // Note key G
 			Key = Key_order[tolower(*(msrc - 1)) - 'a'];
 			Octave_t = Octave;
-			if (*msrc == '#' || *msrc == '+') {
+			if (*msrc == '#' || *msrc == '+') { // Sharp?
 				if (Key == 11) {
 					Key = 0;
 					Octave_t++;
@@ -269,7 +277,7 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 				}
 				msrc++;
 			}
-			else if (*msrc == '-') {
+			else if (*msrc == '-') { // flat?
 				if (Key == 0) {
 					Key = 11;
 					Octave_t--;
@@ -280,16 +288,38 @@ void eomml_decoded_CH::decode(unsigned __int8* input, unsigned __int16 offs)
 				msrc++;
 			}
 			Key += Octave_t * 12;
-			NLen = getNoteLen(&msrc, Len);
+			NLen = getDefaultLen(&msrc, Len);
+			// wprintf_s(L"Note %u %u\n", Key, NLen);
 			if (*msrc == '&') {
 				msrc++;
-				tie = true;
+				time_on = NLen;
 			}
-			// wprintf_s(L"Note %u %u\n", Key, NLen);
+			else if (NLen == 1)
+			{
+				time_on = 1;
+			}
+			else if (GS == 8) {
+				time_on = NLen - 1;
+			}
+			else {
+				time_on = NLen * GS >> 3;
+				if (time_on == 0) {
+					time_on = 1;
+				}
+			}
+			time_off = NLen - time_on;
+
+			*dest++ = 0x90;
+			*dest++ = Key; // 0 - 95 (MIDI Note No.12 - 107)
+			*dest++ = time_on;
+			*dest++ = time_off;
+			this->time_total += NLen;
+			this->mute = false;
 
 			break;
-		default:;
-			msrc++;
+		default:
+			wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
 		}
 	}
+	this->len = dest - this->MML;
 }

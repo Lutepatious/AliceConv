@@ -288,8 +288,8 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 
 mako2_mml_decoded::mako2_mml_decoded(size_t ch)
 {
-	CHs = ch;
-	CH = new class mako2_mml_decoded_CH[CHs];
+	this->CHs = ch;
+	this->CH = new class mako2_mml_decoded_CH[this->CHs];
 }
 
 void mako2_mml_decoded::unroll_loop(void)
