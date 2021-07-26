@@ -13,7 +13,6 @@ public:
 	size_t len_unrolled = 0;
 	eomml_decoded_CH();
 	void decode(unsigned __int8* input);
-	void decode_block(unsigned __int8* input);
 	void print(void);
 	bool is_mute(void);
 };

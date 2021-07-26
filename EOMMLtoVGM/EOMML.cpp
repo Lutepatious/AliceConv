@@ -19,7 +19,7 @@ eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize)
 	this->mpos = (unsigned __int8*)memchr(header, '\xFF', fsize);
 	this->pEOF = header + fsize;
 	this->CH = new class eomml_decoded_CH[CHs];
-	this->mml_block = (struct MML_BLOCK*) header;
+	this->mml_block = (struct MML_BLOCK*)header;
 	this->mml_blocks = (mpos - header) / CHs;
 	this->block = (unsigned __int8**)GC_malloc(sizeof(unsigned __int8*) * this->mml_blocks);
 	this->dest = this->mmls = (unsigned __int8*)GC_malloc(fsize - (mpos - header));
@@ -142,7 +142,7 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 	unsigned __int8* msrc = input;
 	unsigned __int8* dest = this->MML;
 	unsigned Octave_t;
-	unsigned VoltoXVol[16] = {85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125};
+	unsigned VoltoXVol[16] = { 85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125 };
 
 	// eomml 覚書
 	// < 1オクターブ下げ
@@ -338,12 +338,10 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 	this->len = dest - this->MML;
 }
 
-void eomml_decoded_CH::decode_block(unsigned __int8* input)
-{
-}
 
 void eomml_decoded::decode(void)
 {
+	bool debug = false;
 	size_t CH = 0;
 	this->mml[CH++] = this->dest;
 	bool in_bracket = false;
@@ -376,21 +374,30 @@ void eomml_decoded::decode(void)
 			*src = '\0';
 			this->block[j++] = ++src;
 		}
+
 		size_t newmml_len = 4096;
 		unsigned __int8* newmml = (unsigned __int8*)GC_malloc(newmml_len);
 		strcpy_s((char*)newmml, newmml_len, (const char*)this->block[0]);
+
 		for (size_t k = 0; k < this->mml_blocks; k++) {
 			size_t index = (this->mml_block + k)->ch[i] + 1;
-			//				wprintf_s(L"%zu\n", index);
+
+			if (debug) {
+				wprintf_s(L"%zu\n", index);
+			}
 
 			if (newmml_len < strlen((const char*)newmml) + strlen((const char*)this->block[index])) {
 				newmml_len += 4096;
 				newmml = (unsigned __int8*)GC_realloc(newmml, newmml_len);
 			}
+
 			strcat_s((char*)newmml, newmml_len, (const char*)this->block[index]);
 		}
-		//			puts((const char*)newmml);
-		(this->CH + i)->decode(newmml);
 
+		if (debug) {
+			puts((const char*)newmml);
+		}
+
+		(this->CH + i)->decode(newmml);
 	}
 }
