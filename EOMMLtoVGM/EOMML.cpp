@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <cctype>
 #include <cwchar>
 #include <limits>
@@ -13,10 +14,15 @@ eomml_decoded_CH::eomml_decoded_CH()
 	this->MML = (unsigned __int8*)GC_malloc(32 * 1024);
 }
 
-eomml_decoded::eomml_decoded(size_t ch)
+eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize)
 {
-	this->CHs = ch;
-	this->CH = new class eomml_decoded_CH[this->CHs];
+	this->mpos = (unsigned __int8*)memchr(header, '\xFF', fsize);
+	this->pEOF = header + fsize;
+	this->CH = new class eomml_decoded_CH[CHs];
+	this->mml_block = (struct MML_BLOCK*) header;
+	this->mml_blocks = (mpos - header) / CHs;
+	this->block = (unsigned __int8**)GC_malloc(sizeof(unsigned __int8*) * this->mml_blocks);
+	this->dest = this->mmls = (unsigned __int8*)GC_malloc(fsize - (mpos - header));
 }
 
 void eomml_decoded_CH::print(void)
@@ -29,7 +35,7 @@ void eomml_decoded_CH::print(void)
 
 void eomml_decoded::print(void)
 {
-	for (size_t i = 0; i < this->CHs; i++) {
+	for (size_t i = 0; i < CHs; i++) {
 		(this->CH + i)->print();
 	}
 }
@@ -48,7 +54,7 @@ void eomml_decoded::unroll_loop(void)
 	bool no_loop = true;
 
 	// 各ループ時間の最小公倍数をとる
-	for (size_t i = 0; i < this->CHs; i++) {
+	for (size_t i = 0; i < CHs; i++) {
 		// ループ展開後の長さの初期化
 		(this->CH + i)->len_unrolled = (this->CH + i)->len;
 		// ループなしの最長時間割り出し
@@ -68,14 +74,14 @@ void eomml_decoded::unroll_loop(void)
 	// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
 	// 全チャンネルがループしないのならループ処理自体が不要
 	if (no_loop) {
-		wprintf_s(L"Loop: NONE %zu\n", max_time);
+		wprintf_s(L"Loop: NONE %zu %zu\n", max_time, delta_time_LCM);
 		this->end_time = max_time;
 		this->loop_start_time = SIZE_MAX;
 	}
 	else {
 		wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
 		this->end_time = delta_time_LCM;
-		for (size_t i = 0; i < this->CHs; i++) {
+		for (size_t i = 0; i < CHs; i++) {
 			// そもそもループしないチャネルはスキップ
 			if ((this->CH + i)->is_mute() || (this->CH + i)->time_total == 0) {
 				continue;
@@ -84,7 +90,7 @@ void eomml_decoded::unroll_loop(void)
 			size_t times = time_extra / (this->CH + i)->time_total + !!(time_extra % (this->CH + i)->time_total);
 			(this->CH + i)->len_unrolled = (this->CH + i)->len * (times + 1);
 			if (debug) {
-				wprintf_s(L"%2zu: %9zu -> %9zu \n", i, (this->CH + i)->len, (this->CH + i)->len_unrolled);
+				wprintf_s(L"%2zu: %9zu -> %9zu (x %zu)\n", i, (this->CH + i)->time_total, delta_time_LCM, delta_time_LCM / (this->CH + i)->time_total);
 			}
 		}
 	}
@@ -102,16 +108,12 @@ static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 		if (TLen == 0 || TLen > 65) {
 			wprintf_s(L"L %u: out of range.\n", TLen);
 		}
-		size_t M = 0;
-		while (TLen % 2 == 0) {
-			TLen >>= 1;
-			M++;
-		}
-		if (TLen != 1) {
+		if (192 % TLen) {
 			wprintf_s(L"L %u: out of range.\n", TLen);
-		}
+			wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(*pmsrc - 3), *(*pmsrc - 2), *(*pmsrc - 1), **pmsrc, *(*pmsrc + 1));
 
-		NLen_d = 192 >> M;
+		}
+		NLen_d = 192 / TLen;
 	}
 	else {
 		NLen_d = Len;
@@ -174,6 +176,16 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			*dest++ = Tempo;
 			break;
 		case '@':
+			if (tolower(*msrc) == 'o') {
+				if (isdigit(*++msrc)) {
+					unsigned __int8* tpos;
+					Octave = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+				}
+				if (Octave > 8) {
+					wprintf_s(L"O %u: out of range.\n", Octave);
+				}
+			}
 			if (tolower(*msrc) == 'v') {
 				if (isdigit(*++msrc)) {
 					unsigned __int8* tpos;
@@ -218,9 +230,11 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			if (Vol > 15) {
 				wprintf_s(L"V %u: out of range.\n", Vol);
 			}
-			// wprintf_s(L"Vol %u\n", Vol);
-			*dest++ = 0xF8;
-			*dest++ = Vol;
+			else {
+				// wprintf_s(L"Vol %u\n", Vol);
+				*dest++ = 0xF8;
+				*dest++ = Vol;
+			}
 			break;
 		case 'o': // Octave
 			if (isdigit(*msrc)) {
@@ -322,4 +336,61 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 		}
 	}
 	this->len = dest - this->MML;
+}
+
+void eomml_decoded_CH::decode_block(unsigned __int8* input)
+{
+}
+
+void eomml_decoded::decode(void)
+{
+	size_t CH = 0;
+	this->mml[CH++] = this->dest;
+	bool in_bracket = false;
+
+	for (unsigned __int8* src = mpos + 1; *src != '\x1A' && src < this->pEOF; src++) {
+		switch (*src) {
+		case ' ':
+			break;
+		case '[':
+			in_bracket = true;
+			break;
+		case ']':
+			in_bracket = false;
+			*this->dest++ = '\0';
+			this->mml[CH++] = this->dest;
+			break;
+		default:
+			if (!in_bracket) {
+				*this->dest++ = *src;
+			}
+		}
+	}
+
+	CH--;
+
+	for (size_t i = 0; i < CHs; i++) {
+		size_t j = 0;
+		unsigned __int8* src = this->block[j++] = this->mml[i];
+		while (NULL != (src = (unsigned __int8*)strchr((const char*)src, '\x0d'))) {
+			*src = '\0';
+			this->block[j++] = ++src;
+		}
+		size_t newmml_len = 4096;
+		unsigned __int8* newmml = (unsigned __int8*)GC_malloc(newmml_len);
+		strcpy_s((char*)newmml, newmml_len, (const char*)this->block[0]);
+		for (size_t k = 0; k < this->mml_blocks; k++) {
+			size_t index = (this->mml_block + k)->ch[i] + 1;
+			//				wprintf_s(L"%zu\n", index);
+
+			if (newmml_len < strlen((const char*)newmml) + strlen((const char*)this->block[index])) {
+				newmml_len += 4096;
+				newmml = (unsigned __int8*)GC_realloc(newmml, newmml_len);
+			}
+			strcat_s((char*)newmml, newmml_len, (const char*)this->block[index]);
+		}
+		//			puts((const char*)newmml);
+		(this->CH + i)->decode(newmml);
+
+	}
 }

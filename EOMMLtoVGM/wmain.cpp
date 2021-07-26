@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <cwchar>
 #include <cctype>
+#include <cstring>
 #include <limits>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -13,6 +14,7 @@
 
 int wmain(int argc, wchar_t** argv)
 {
+	bool debug = false;
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
@@ -48,45 +50,12 @@ int wmain(int argc, wchar_t** argv)
 		fclose(pFi);
 
 		unsigned __int8* mpos = (unsigned __int8*)memchr(inbuf, '\xFF', fs.st_size);
+		size_t len_header = mpos - inbuf;
+		struct eomml_decoded MMLs(inbuf, fs.st_size);
 
-		unsigned __int8* mmls = (unsigned __int8*)GC_malloc(fs.st_size - (mpos - inbuf));
-		unsigned __int8* dest = mmls;
-		unsigned __int8* mml[CHs_MAX + 1];
-		size_t CH = 0;
-		mml[CH++] = mmls;
-		bool in_bracket = false;
+		MMLs.decode();
 
-		for (unsigned __int8* src = mpos + 1; *src != '\x1A' && src < inbuf + fs.st_size; src++) {
-			switch (*src) {
-			case ' ':
-				break;
-			case '\x0d':
-				break;
-			case '[':
-				in_bracket = true;
-				break;
-			case ']':
-				in_bracket = false;
-				*dest++ = '\0';
-				mml[CH++] = dest;
-				break;
-			default:
-				if (!in_bracket) {
-					*dest++ = *src;
-				}
-			}
-		}
-
-		CH--;
-
-		wprintf_s(L"File %s. %zu CHs.\n", *argv, CH);
-
-		struct eomml_decoded MMLs(CH);
-		for (size_t i = 0; i < CH; i++) {
-			(MMLs.CH + i)->decode(mml[i]);
-		}
-
-		if (true) {
+		if (debug) {
 			MMLs.print();
 		}
 
