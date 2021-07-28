@@ -37,7 +37,7 @@ void EVENTS::enlarge(void)
 	this->dest = this->event + length_current;
 }
 
-int eventsort_noweight(void* x, const void* n1, const void* n2)
+static int eventsort_noweight(void* x, const void* n1, const void* n2)
 {
 	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {
 		return 1;
@@ -58,7 +58,7 @@ int eventsort_noweight(void* x, const void* n1, const void* n2)
 	}
 }
 
-int eventsort(void* x, const void* n1, const void* n2)
+static int eventsort(void* x, const void* n1, const void* n2)
 {
 	unsigned CH_weight[16] = { 0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15 };
 	if (((struct EVENT*)n1)->time > ((struct EVENT*)n2)->time) {

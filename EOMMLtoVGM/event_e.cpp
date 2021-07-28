@@ -5,8 +5,8 @@
 
 #include "gc_cpp.h"
 
-#include "MAKO1MML.h"
-#include "event1.h"
+#include "EOMML.h"
+#include "event_e.h"
 
 EVENTS::EVENTS(size_t elems, size_t end)
 {
@@ -95,7 +95,7 @@ static int eventsort(void* x, const void* n1, const void* n2)
 	}
 }
 
-void EVENTS::convert(struct mako1_mml_decoded& MMLs)
+void EVENTS::convert(struct eomml_decoded& MMLs)
 {
 	this->loop_enable = false;
 
@@ -141,7 +141,8 @@ void EVENTS::convert(struct mako1_mml_decoded& MMLs)
 				dest->CH = i;
 				dest++;
 				break;
-			case 0xF9: // Volume change
+			case 0xF9: // Volume change (0-127)
+			case 0xF8: // Volume change (0-8)
 				dest->Count = counter++;
 				dest->Event = *src++;
 				dest->Param = *src++;

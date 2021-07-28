@@ -1,7 +1,7 @@
-constexpr unsigned CHs = 6;
+constexpr size_t channels = 6;
 
 struct MML_BLOCK {
-	unsigned __int8 ch[CHs];
+	unsigned __int8 ch[channels];
 };
 
 class eomml_decoded_CH {
@@ -25,8 +25,9 @@ struct eomml_decoded {
 	unsigned __int8* dest;
 	unsigned __int8* mpos;
 	unsigned __int8* pEOF;
-	unsigned __int8* mml[CHs + 1];
+	unsigned __int8* mml[channels + 1];
 
+	const size_t CHs = channels;
 	size_t mml_blocks;
 	size_t end_time = 0;
 	size_t loop_start_time = 0;

@@ -18,9 +18,9 @@ eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize)
 {
 	this->mpos = (unsigned __int8*)memchr(header, '\xFF', fsize);
 	this->pEOF = header + fsize;
-	this->CH = new class eomml_decoded_CH[CHs];
+	this->CH = new class eomml_decoded_CH[this->CHs];
 	this->mml_block = (struct MML_BLOCK*)header;
-	this->mml_blocks = (mpos - header) / CHs;
+	this->mml_blocks = (mpos - header) / this->CHs;
 	this->block = (unsigned __int8**)GC_malloc(sizeof(unsigned __int8*) * this->mml_blocks);
 	this->dest = this->mmls = (unsigned __int8*)GC_malloc(fsize - (mpos - header));
 }
@@ -35,7 +35,7 @@ void eomml_decoded_CH::print(void)
 
 void eomml_decoded::print(void)
 {
-	for (size_t i = 0; i < CHs; i++) {
+	for (size_t i = 0; i < this->CHs; i++) {
 		(this->CH + i)->print();
 	}
 }
@@ -54,7 +54,7 @@ void eomml_decoded::unroll_loop(void)
 	bool no_loop = true;
 
 	// 各ループ時間の最小公倍数をとる
-	for (size_t i = 0; i < CHs; i++) {
+	for (size_t i = 0; i < this->CHs; i++) {
 		// ループ展開後の長さの初期化
 		(this->CH + i)->len_unrolled = (this->CH + i)->len;
 		// ループなしの最長時間割り出し
@@ -81,7 +81,7 @@ void eomml_decoded::unroll_loop(void)
 	else {
 		wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
 		this->end_time = delta_time_LCM;
-		for (size_t i = 0; i < CHs; i++) {
+		for (size_t i = 0; i < this->CHs; i++) {
 			// そもそもループしないチャネルはスキップ
 			if ((this->CH + i)->is_mute() || (this->CH + i)->time_total == 0) {
 				continue;
@@ -367,7 +367,7 @@ void eomml_decoded::decode(void)
 
 	CH--;
 
-	for (size_t i = 0; i < CHs; i++) {
+	for (size_t i = 0; i < this->CHs; i++) {
 		size_t j = 0;
 		unsigned __int8* src = this->block[j++] = this->mml[i];
 		while (NULL != (src = (unsigned __int8*)strchr((const char*)src, '\x0d'))) {

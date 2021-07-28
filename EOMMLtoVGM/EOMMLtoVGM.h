@@ -1,3 +1,5 @@
+enum class Machine { NONE = 0, X68000, PC8801, PC9801 };
+
 #pragma pack(1)
 struct AC_FM_PARAMETER {
 	unsigned __int8 Connect : 3; // CON Connection
