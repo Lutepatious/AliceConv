@@ -6,6 +6,7 @@ struct CH_params {
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
 	union AC_Tone T;
+	union AC_Tone_x68 T_x68;
 	bool NoteOn;
 };
 
@@ -14,6 +15,7 @@ class VGMdata_e {
 	const static unsigned __int8 vgm_command_YM2151 = 0x54;
 	const static unsigned __int8 vgm_command_YM2203 = 0x55;
 	const struct AC_FM_PARAMETER_BYTE* preset;
+	const struct AC_FM_PARAMETER_BYTE_x68* preset_x68;
 	unsigned __int8* vgm_out;
 	unsigned __int8* vgm_pos;
 	unsigned __int8* vgm_loop_pos = NULL;
@@ -49,14 +51,14 @@ class VGMdata_e {
 	unsigned __int16 make_VGM_Ex_Vol(unsigned __int8 percent);
 	void enlarge(void);
 	void make_wait(size_t wait);
-	void Timer_set_YM2151(void);
-	void Tone_select_YM2151(void);
 	void make_data(unsigned __int8 command, unsigned __int8 address, unsigned __int8 data);
 	void finish(void);
 
 	void make_data_YM2203(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2203, address, data); };
 	void make_data_YM2151(unsigned __int8 address, unsigned __int8 data) { this->make_data(vgm_command_YM2151, address, data); };
+
 	void convert_YM2203(struct EVENT& eve);
+	void Timer_set_YM2203(void);
 	void Tone_select_YM2203_FM(unsigned __int8 CH);
 	void Key_set_YM2203_FM(unsigned __int8 CH);
 	void Key_set_YM2203_SSG(unsigned __int8 CH);
@@ -66,7 +68,9 @@ class VGMdata_e {
 	void Note_off_YM2203_SSG(unsigned __int8 CH);
 	void Volume_YM2203_FM(unsigned __int8 CH);
 
-	void Timer_set_YM2203(void);
+	void convert_YM2151(EVENT& eve);
+	void Timer_set_YM2151(void);
+	void Tone_select_YM2151(void);
 	void Key_set_YM2151(void);
 	void Note_on_YM2151(void);
 	void Note_off_YM2151(void);
