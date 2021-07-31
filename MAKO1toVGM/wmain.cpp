@@ -26,13 +26,13 @@ struct mako1_header {
 int wmain(int argc, wchar_t** argv)
 {
 	bool debug = false;
-	unsigned __int8 SSG_Volume = 0;
 
 	if (argc < 2) {
 		wprintf_s(L"Usage: %s file ...\n", *argv);
 		exit(-1);
 	}
 
+	unsigned __int8 SSG_Volume = 0;
 	enum Machine M_arch = Machine::PC9801;
 	while (--argc) {
 		if (**++argv == L'-') {

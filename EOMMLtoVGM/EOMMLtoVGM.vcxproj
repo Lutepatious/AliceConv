@@ -158,7 +158,6 @@
   <ItemGroup>
     <ClCompile Include="EOMML.cpp" />
     <ClCompile Include="event_e.cpp" />
-    <ClCompile Include="presets.cpp" />
     <ClCompile Include="toVGM_e.cpp" />
     <ClCompile Include="wmain.cpp" />
   </ItemGroup>

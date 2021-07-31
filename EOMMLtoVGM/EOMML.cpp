@@ -232,8 +232,9 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			}
 			else {
 				// wprintf_s(L"Vol %u\n", Vol);
-				*dest++ = 0xF8;
-				*dest++ = Vol;
+				XVol = Vol * 8 / 3 + 85;
+				*dest++ = 0xF9;
+				*dest++ = XVol;
 			}
 			break;
 		case 'o': // Octave

@@ -14,8 +14,8 @@ class VGMdata_e {
 	const static unsigned VGM_CLOCK = 44100;
 	const static unsigned __int8 vgm_command_YM2151 = 0x54;
 	const static unsigned __int8 vgm_command_YM2203 = 0x55;
-	const struct AC_FM_PARAMETER_BYTE* preset;
-	const struct AC_FM_PARAMETER_BYTE_x68* preset_x68;
+	const struct AC_FM_PARAMETER_BYTE* preset = NULL;
+	const struct AC_FM_PARAMETER_BYTE_x68* preset_x68 = NULL;
 	unsigned __int8* vgm_out;
 	unsigned __int8* vgm_pos;
 	unsigned __int8* vgm_loop_pos = NULL;
@@ -67,6 +67,7 @@ class VGMdata_e {
 	void Note_off_YM2203_FM(unsigned __int8 CH);
 	void Note_off_YM2203_SSG(unsigned __int8 CH);
 	void Volume_YM2203_FM(unsigned __int8 CH);
+	void Volume_YM2203_SSG(unsigned __int8 CH);
 
 	void convert_YM2151(EVENT& eve);
 	void Timer_set_YM2151(void);

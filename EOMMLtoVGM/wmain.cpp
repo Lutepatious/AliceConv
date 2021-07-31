@@ -23,8 +23,35 @@ int wmain(int argc, wchar_t** argv)
 		exit(-1);
 	}
 
+	unsigned __int8 SSG_Volume = 0;
+	enum Machine M_arch = Machine::X68000;
+	bool Tones_tousin = false;
 	while (--argc) {
-		++argv;
+		if (**++argv == L'-') {
+			if (*(*argv + 1) == L'8') {
+				M_arch = Machine::PC8801;
+			}
+			else if (*(*argv + 1) == L'9') {
+				M_arch = Machine::PC9801;
+			}
+			else if (*(*argv + 1) == L'T') {
+				M_arch = Machine::X68000;
+				bool Tones_tousin = true;
+			}
+			else if (*(*argv + 1) == L's') {
+				int tVol = _wtoi(*argv + 2);
+				if (tVol > 255) {
+					SSG_Volume = 255;
+				}
+				else if (tVol < 0) {
+					SSG_Volume = 0;
+				}
+				else {
+					SSG_Volume = tVol;
+				}
+			}
+			continue;
+		}
 
 		FILE* pFi;
 		errno_t ecode = _wfopen_s(&pFi, *argv, L"rb");

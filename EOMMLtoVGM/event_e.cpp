@@ -142,7 +142,6 @@ void EVENTS::convert(struct eomml_decoded& MMLs)
 				dest++;
 				break;
 			case 0xF9: // Volume change (0-127)
-			case 0xF8: // Volume change (0-8)
 				dest->Count = counter++;
 				dest->Event = *src++;
 				dest->Param = *src++;
