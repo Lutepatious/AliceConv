@@ -15,7 +15,7 @@ class VGMdata_e {
 	const static unsigned __int8 vgm_command_YM2151 = 0x54;
 	const static unsigned __int8 vgm_command_YM2203 = 0x55;
 	const struct AC_FM_PARAMETER_BYTE* preset = NULL;
-	const struct AC_FM_PARAMETER_BYTE_x68* preset_x68 = NULL;
+	const struct AC_FM_PARAMETER_BYTE_x68* preset_opm = NULL;
 	unsigned __int8* vgm_out;
 	unsigned __int8* vgm_pos;
 	unsigned __int8* vgm_loop_pos = NULL;
@@ -78,7 +78,7 @@ class VGMdata_e {
 	void Volume_YM2151(void);
 
 public:
-	VGMdata_e(size_t elems, enum class Machine M_arch);
+	VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98);
 	void make_init(void);
 	void convert(class EVENTS& in);
 	void SetSSGVol(unsigned __int8 vol);

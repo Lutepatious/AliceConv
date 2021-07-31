@@ -575,22 +575,7 @@ void VGMdata_e::make_init(void)
 		0x54, 0x74, 0x7F, 0x54, 0x75, 0x7F, 0x54, 0x76, 0x7F, 0x54, 0x77, 0x7F,
 		0x54, 0x78, 0x7F, 0x54, 0x79, 0x7F,	0x54, 0x7A, 0x7F, 0x54, 0x7B, 0x7F,
 		0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F,
-		0x54, 0x08, 0x00, 0x54, 0x08, 0x01, 0x54, 0x08, 0x02, 0x54, 0x08, 0x03,
-		0x54, 0x08, 0x04, 0x54, 0x08, 0x05, 0x54, 0x08, 0x06, 0x54, 0x08, 0x07,
-		0x54, 0x14, 0x00, 0x54, 0x10, 0x64, 0x54, 0x11, 0x00,
-		0x54, 0x08, 0x00, 0x54, 0x08, 0x01, 0x54, 0x08, 0x02, 0x54, 0x08, 0x03,
-		0x54, 0x08, 0x04, 0x54, 0x08, 0x05, 0x54, 0x08, 0x06, 0x54, 0x08, 0x07,
-		0x54, 0x60, 0x7F, 0x54, 0x61, 0x7F, 0x54, 0x62, 0x7F, 0x54, 0x63, 0x7F,
-		0x54, 0x64, 0x7F, 0x54, 0x65, 0x7F, 0x54, 0x66, 0x7F, 0x54, 0x67, 0x7F,
-		0x54, 0x68, 0x7F, 0x54, 0x69, 0x7F, 0x54, 0x6A, 0x7F, 0x54, 0x6B, 0x7F,
-		0x54, 0x6C, 0x7F, 0x54, 0x6D, 0x7F,	0x54, 0x6E, 0x7F, 0x54, 0x6F, 0x7F,
-		0x54, 0x70, 0x7F, 0x54, 0x71, 0x7F, 0x54, 0x72, 0x7F, 0x54, 0x73, 0x7F,
-		0x54, 0x74, 0x7F, 0x54, 0x75, 0x7F, 0x54, 0x76, 0x7F, 0x54, 0x77, 0x7F,
-		0x54, 0x78, 0x7F, 0x54, 0x79, 0x7F,	0x54, 0x7A, 0x7F, 0x54, 0x7B, 0x7F,
-		0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F,
-		0x54, 0x08, 0x00, 0x54, 0x08, 0x01, 0x54, 0x08, 0x02, 0x54, 0x08, 0x03,
-		0x54, 0x08, 0x04, 0x54, 0x08, 0x05, 0x54, 0x08, 0x06, 0x54, 0x08, 0x07,
-		0x54, 0x14, 0x00 };
+		0x54, 0x14, 0x00, 0x54, 0x10, 0x64, 0x54, 0x11, 0x00 };
 
 	const unsigned char* Init;
 	size_t Init_len;
@@ -739,7 +724,7 @@ void VGMdata_e::Timer_set_YM2151(void)
 void VGMdata_e::Tone_select_YM2151(void)
 {
 	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-	this->pCHparam_cur->T_x68.B = *(this->preset_x68 + this->pCHparam_cur->Tone);
+	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - 1);
 
 	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T_x68.B.FB_CON);
 	this->make_data_YM2151(0x38 + this->CH_cur, this->pCHparam_cur->T_x68.B.PMS_AMS);
@@ -785,7 +770,7 @@ void VGMdata_e::Key_set_YM2151(void)
 	} V;
 
 	V.S.Frac = 5;
-	this->make_data_YM2151(0x29 + this->CH_cur, V.KF);
+	this->make_data_YM2151(0x30 + this->CH_cur, V.KF);
 }
 
 void VGMdata_e::Note_on_YM2151(void) {
@@ -864,7 +849,7 @@ void VGMdata_e::convert_YM2203(struct EVENT& eve)
 			this->Volume_YM2203_FM(this->CH_cur);
 		}
 		else {
-			this->pCHparam_cur->Volume = (((unsigned) eve.Param - 84) * 16 - 1) / 43;
+			this->pCHparam_cur->Volume = (((unsigned)eve.Param - 84) * 16 - 1) / 43;
 			this->Volume_YM2203_SSG(this->CH_cur - 3);
 		}
 		break;
@@ -1005,7 +990,7 @@ void VGMdata_e::Tone_select_YM2203_FM(unsigned __int8 CH)
 	}
 }
 
-VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch)
+VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98)
 {
 	this->bytes = elems * 10;
 	this->length = this->bytes;
@@ -1041,9 +1026,15 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch)
 		wprintf_s(L"PC-9801 mode.\n");
 	}
 	else {
-		this->preset_x68 = preset_x68;
+		this->preset_opm = preset_x68;
 		h_vgm.lngHzYM2151 = this->master_clock = MASTERCLOCK_SHARP_OPM;
-		wprintf_s(L"X68000 mode.\n");
+		if (opm98) {
+			memcpy_s((void*)&this->preset_opm[0x50], sizeof(struct AC_FM_PARAMETER_BYTE_x68) * (200 - 0x50), preset_x68_opm98, sizeof(struct AC_FM_PARAMETER_BYTE_x68) * 82);
+			wprintf_s(L"X68000 mode. (with PC-9801 tones)\n");
+		}
+		else {
+			wprintf_s(L"X68000 mode.\n");
+		}
 	}
 
 	if (this->arch != Machine::X68000) {
@@ -1060,4 +1051,62 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch)
 	}
 
 	pCHparam = new struct CH_params[channels];
+}
+
+void VGMdata_e::convert(class EVENTS& in)
+{
+	for (struct EVENT* src = in.event; (src - in.event) <= in.length; src++) {
+		if (this->vgm_pos - this->vgm_out + 200 >= this->length) {
+			this->enlarge();
+			wprintf_s(L"Memory reallocated in making VGM.\n");
+		}
+		if (src->time == SIZE_MAX || this->length == 0) {
+			break;
+		}
+		if (src->time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+			// TPQN = 48
+			// Ttick = Tqn / 48
+			// c_VGMT = Ttick * src_time * VGM_CLOCK 
+			//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+			//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+			//
+			// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+			// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+			// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+			// VAはBIOSが演奏するので調整しない。
+
+			size_t c_VGMT = (src->time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+			size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
+
+			// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
+			this->Time_Prev_VGM += d_VGMT;
+			this->Time_Prev_VGM_abs += d_VGMT;
+			this->Time_Prev = src->time;
+
+			this->make_wait(d_VGMT);
+		}
+
+		if ((src - in.event) == in.length) {
+			break;
+		}
+
+		if (in.loop_enable && (src - in.event) == in.loop_start) {
+			this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
+			this->vgm_loop_pos = this->vgm_pos;
+			this->loop_start = src;
+			in.loop_enable = false;
+		}
+
+		if (this->arch == Machine::X68000) {
+			this->convert_YM2151(*src);
+		}
+		else {
+			this->convert_YM2203(*src);
+		}
+	}
+	this->finish();
 }

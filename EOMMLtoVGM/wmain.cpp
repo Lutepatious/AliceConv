@@ -36,7 +36,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'T') {
 				M_arch = Machine::X68000;
-				bool Tones_tousin = true;
+				Tones_tousin = true;
 			}
 			else if (*(*argv + 1) == L's') {
 				int tVol = _wtoi(*argv + 2);
@@ -104,5 +104,13 @@ int wmain(int argc, wchar_t** argv)
 		if (debug) {
 			events.print_all();
 		}
+
+		class VGMdata_e vgmdata(MMLs.end_time, M_arch, Tones_tousin);
+		vgmdata.make_init();
+		vgmdata.convert(events);
+		if (SSG_Volume) {
+			vgmdata.SetSSGVol(SSG_Volume);
+		}
+		vgmdata.out(*argv);
 	}
 }
