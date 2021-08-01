@@ -43,6 +43,7 @@ class VGMdata_e {
 	struct CH_params* pCHparam = NULL;
 	struct CH_params* pCHparam_cur = NULL;
 	enum class Machine arch = Machine::NONE;
+	bool x68tt = false;
 	unsigned __int8 CH_cur = 16;
 	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };

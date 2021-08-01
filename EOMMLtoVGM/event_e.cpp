@@ -5,13 +5,15 @@
 
 #include "gc_cpp.h"
 
+#include "EOMMLtoVGM.h"
 #include "EOMML.h"
 #include "event_e.h"
 
-EVENTS::EVENTS(size_t elems, size_t end)
+EVENTS::EVENTS(size_t elems, size_t end, enum class Machine M_arch)
 {
 	this->events = elems;
 	this->time_end = end;
+	this->Arch = M_arch;
 
 	this->event = (struct EVENT*)GC_malloc(sizeof(struct EVENT) * elems);
 	if (this->event == NULL) {
@@ -101,6 +103,9 @@ void EVENTS::convert(struct eomml_decoded& MMLs)
 
 	for (size_t j = 0; j < MMLs.CHs; j++) {
 		size_t i = MMLs.CHs - 1 - j;
+		if (Arch == Machine::X68000) {
+			i = j;
+		}
 
 		size_t time = 0;
 		size_t len = 0;
@@ -205,8 +210,12 @@ void EVENTS::convert(struct eomml_decoded& MMLs)
 void EVENTS::sort(void)
 {
 	// イベント列をソートする
-	qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
-
+	if (Arch == Machine::X68000) {
+		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort_noweight, NULL);
+	}
+	else {
+		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
+	}
 
 	// イベント列の長さを測る。
 	while ((this->event + this->length)->time < this->time_end) {
@@ -230,7 +239,12 @@ void EVENTS::sort(void)
 			}
 		}
 	}
-	qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
+	if (Arch == Machine::X68000) {
+		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort_noweight, NULL);
+	}
+	else {
+		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
+	}
 #endif
 
 	wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);

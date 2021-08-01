@@ -15,6 +15,7 @@ class EVENTS {
 	struct EVENT* dest;
 	size_t counter = 0;
 	size_t time_end = SIZE_MAX;
+	enum class Machine Arch;
 	void enlarge(void);
 
 public:
@@ -23,7 +24,7 @@ public:
 	size_t length = 0;
 	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
-	EVENTS(size_t elems, size_t end);
+	EVENTS(size_t elems, size_t end, enum class Machine M_arch);
 	void convert(struct eomml_decoded& MMLs);
 	void sort(void);
 	void print_all(void);

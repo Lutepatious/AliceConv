@@ -843,8 +843,8 @@ void VGMdata::SSG_emulation_YM2151(void)
 	this->pCHparam_cur->T.B = SSG_emulation;
 
 	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T.B.FB_CON | 0xC0);
-	for (size_t op = 0; op < 4; op++) {
-		for (size_t j = 0; j < 6; j++) {
+	for (size_t j = 0; j < 6; j++) {
+		for (size_t op = 0; op < 4; op++) {
 			this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + this->CH_cur, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
 		}
 	}
@@ -853,7 +853,7 @@ void VGMdata::SSG_emulation_YM2151(void)
 void VGMdata::Key_set_YM2151(void)
 {
 	if (this->pCHparam_cur->Key < 3) {
-		wprintf_s(L"%2u: Very low key%2u\n", this->CH_cur, this->pCHparam_cur->Key);
+		wprintf_s(L"%2u: Very low key %2u\n", this->CH_cur, this->pCHparam_cur->Key);
 		this->pCHparam_cur->Key += 12;
 	}
 	this->pCHparam_cur->Key -= 3;

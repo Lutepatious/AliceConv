@@ -98,7 +98,7 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Make Sequential events\n");
 		// 得られた展開データからイベント列を作る。
-		class EVENTS events(MMLs.end_time * 2, MMLs.end_time);
+		class EVENTS events(MMLs.end_time * 2, MMLs.end_time, M_arch);
 		events.convert(MMLs);
 		events.sort();
 		if (debug) {

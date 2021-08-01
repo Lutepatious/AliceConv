@@ -724,7 +724,7 @@ void VGMdata_e::Timer_set_YM2151(void)
 void VGMdata_e::Tone_select_YM2151(void)
 {
 	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - 1);
+	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - (x68tt ? 0 : 1));
 
 	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T_x68.B.FB_CON);
 	this->make_data_YM2151(0x38 + this->CH_cur, this->pCHparam_cur->T_x68.B.PMS_AMS);
@@ -732,8 +732,8 @@ void VGMdata_e::Tone_select_YM2151(void)
 	this->make_data_YM2151(0x19, this->pCHparam_cur->T_x68.B.PMD);
 	this->make_data_YM2151(0x19, this->pCHparam_cur->T_x68.B.AMD);
 	this->make_data_YM2151(0x1B, this->pCHparam_cur->T_x68.B.CT_WAVE);
-	for (size_t op = 0; op < 4; op++) {
-		for (size_t j = 0; j < 6; j++) {
+	for (size_t j = 0; j < 6; j++) {
+		for (size_t op = 0; op < 4; op++) {
 			this->make_data_YM2151(0x40 + 0x20 * j + Op_index[op] + this->CH_cur, *((unsigned __int8*)&this->pCHparam_cur->T_x68.B.Op[op].DT_MULTI + j));
 		}
 	}
@@ -741,11 +741,11 @@ void VGMdata_e::Tone_select_YM2151(void)
 
 void VGMdata_e::Key_set_YM2151(void)
 {
-	if (this->pCHparam_cur->Key < 2) {
-		wprintf_s(L"%2u: Very low key%2u\n", this->CH_cur, this->pCHparam_cur->Key);
+	if (this->pCHparam_cur->Key < 3) {
+		wprintf_s(L"%2u: Very low key %2u\n", this->CH_cur, this->pCHparam_cur->Key);
 		this->pCHparam_cur->Key += 12;
 	}
-	this->pCHparam_cur->Key -= 2;
+	this->pCHparam_cur->Key -= 3;
 	union {
 		struct {
 			unsigned __int8 note : 4;
@@ -1029,8 +1029,9 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98)
 		this->preset_opm = preset_x68;
 		h_vgm.lngHzYM2151 = this->master_clock = MASTERCLOCK_SHARP_OPM;
 		if (opm98) {
+			this->x68tt = true;
 			memcpy_s((void*)&this->preset_opm[0x50], sizeof(struct AC_FM_PARAMETER_BYTE_x68) * (200 - 0x50), preset_x68_opm98, sizeof(struct AC_FM_PARAMETER_BYTE_x68) * 82);
-			wprintf_s(L"X68000 mode. (with PC-9801 tones)\n");
+			wprintf_s(L"X68000 mode (with PC-9801 tones).\n");
 		}
 		else {
 			wprintf_s(L"X68000 mode.\n");
