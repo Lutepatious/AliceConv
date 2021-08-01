@@ -11,6 +11,7 @@ public:
 	size_t len = 0;
 	size_t time_total = 0;
 	size_t len_unrolled = 0;
+	bool x68tt = false;
 	eomml_decoded_CH();
 	void decode(unsigned __int8* input);
 	void print(void);
@@ -32,7 +33,7 @@ struct eomml_decoded {
 	size_t end_time = 0;
 	size_t loop_start_time = 0;
 
-	eomml_decoded(unsigned __int8* header, size_t fsize);
+	eomml_decoded(unsigned __int8* header, size_t fsize, bool opm98);
 	void decode(void);
 	void print(void);
 	void unroll_loop(void);

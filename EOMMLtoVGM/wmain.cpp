@@ -81,7 +81,7 @@ int wmain(int argc, wchar_t** argv)
 
 		unsigned __int8* mpos = (unsigned __int8*)memchr(inbuf, '\xFF', fs.st_size);
 		size_t len_header = mpos - inbuf;
-		struct eomml_decoded MMLs(inbuf, fs.st_size);
+		struct eomml_decoded MMLs(inbuf, fs.st_size, Tones_tousin);
 
 		MMLs.decode();
 

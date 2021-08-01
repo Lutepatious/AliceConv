@@ -14,7 +14,7 @@ eomml_decoded_CH::eomml_decoded_CH()
 	this->MML = (unsigned __int8*)GC_malloc(32 * 1024);
 }
 
-eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize)
+eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize, bool opm98)
 {
 	this->mpos = (unsigned __int8*)memchr(header, '\xFF', fsize);
 	this->pEOF = header + fsize;
@@ -23,6 +23,12 @@ eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize)
 	this->mml_blocks = (mpos - header) / this->CHs;
 	this->block = (unsigned __int8**)GC_malloc(sizeof(unsigned __int8*) * this->mml_blocks);
 	this->dest = this->mmls = (unsigned __int8*)GC_malloc(fsize - (mpos - header));
+	if (opm98) {
+		for (size_t i = 0; i < this->CHs; i++) {
+			(this->CH + i)->x68tt = true;
+			this->mml[i] = NULL;
+		}
+	}
 }
 
 void eomml_decoded_CH::print(void)
@@ -249,14 +255,24 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			// wprintf_s(L"Octave %u\n", Octave);
 			break;
 		case '>': // Octave up
-			Octave++;
+			if (this->x68tt) {
+				Octave--;
+			}
+			else {
+				Octave++;
+			}
 			if (Octave > 8) {
 				wprintf_s(L">:result %u out of range.\n", Octave);
 			}
 			// wprintf_s(L"Octave %u\n", Octave);
 			break;
 		case '<': // Octave down
-			Octave--;
+			if (this->x68tt) {
+				Octave++;
+			}
+			else {
+				Octave--;
+			}
 			if (Octave > 8) {
 				wprintf_s(L"<:result %u out of range.\n", Octave);
 			}

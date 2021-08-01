@@ -724,7 +724,7 @@ void VGMdata_e::Timer_set_YM2151(void)
 void VGMdata_e::Tone_select_YM2151(void)
 {
 	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
-	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - (x68tt ? 0 : 1));
+	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - 1);
 
 	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T_x68.B.FB_CON);
 	this->make_data_YM2151(0x38 + this->CH_cur, this->pCHparam_cur->T_x68.B.PMS_AMS);
@@ -1030,7 +1030,7 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98)
 		h_vgm.lngHzYM2151 = this->master_clock = MASTERCLOCK_SHARP_OPM;
 		if (opm98) {
 			this->x68tt = true;
-			memcpy_s((void*)&this->preset_opm[0x50], sizeof(struct AC_FM_PARAMETER_BYTE_x68) * (200 - 0x50), preset_x68_opm98, sizeof(struct AC_FM_PARAMETER_BYTE_x68) * 82);
+			memcpy_s((void*)&this->preset_opm[0x4F], sizeof(struct AC_FM_PARAMETER_BYTE_x68) * (200 - 0x4F), preset_x68_opm98, sizeof(struct AC_FM_PARAMETER_BYTE_x68) * 82);
 			wprintf_s(L"X68000 mode (with PC-9801 tones).\n");
 		}
 		else {

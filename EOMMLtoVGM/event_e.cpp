@@ -210,12 +210,7 @@ void EVENTS::convert(struct eomml_decoded& MMLs)
 void EVENTS::sort(void)
 {
 	// イベント列をソートする
-	if (Arch == Machine::X68000) {
-		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort_noweight, NULL);
-	}
-	else {
 		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
-	}
 
 	// イベント列の長さを測る。
 	while ((this->event + this->length)->time < this->time_end) {
@@ -239,12 +234,7 @@ void EVENTS::sort(void)
 			}
 		}
 	}
-	if (Arch == Machine::X68000) {
-		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort_noweight, NULL);
-	}
-	else {
 		qsort_s(this->event, this->dest - this->event, sizeof(struct EVENT), eventsort, NULL);
-	}
 #endif
 
 	wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);
