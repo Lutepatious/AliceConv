@@ -235,6 +235,11 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			}
 			if (Vol > 15) {
 				wprintf_s(L"V %u: out of range.\n", Vol);
+				if (Vol < 128) {
+					wprintf_s(L"Assume @V\n");
+					*dest++ = 0xF9;
+					*dest++ = Vol;
+				}
 			}
 			else {
 				// wprintf_s(L"Vol %u\n", Vol);

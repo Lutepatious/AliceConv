@@ -13,7 +13,7 @@
             <li>N88Splitter</li>
             Extractor for N88 DISK BASIC formatted disk image.
             <OL>
-                <LI>Create disk image with KryoFlux.</LI>
+                <LI>Create disk image with <A href="https://www.kryoflux.com/">KryoFlux</A>.</LI>
                 <LI>Convert to D88 disk image using <A href="https://simonowen.com/samdisk/">SAMDisk</A>.</LI>
                 <LI>Export IMG file (RAW Sector file format) using <A href="https://hxc2001.com/download/floppy_drive_emulator/index.html">HxCFloppyEmulator software</A>.</LI>
                 <LI>command prompt&gt; N88Spiltter &lt;disk image&gt;</LI>
@@ -41,7 +41,7 @@
                 <li>PMS - variant of VSP 256 colors. Format used after Kichikuou Rance (System 3.5).</li>
                 <li>RanceII for X68000</li>
                 <li>Tousin Toshi for X68000</li>
-                <li>Abunai Bunkasai Zenya for X68000 in RanceIII Option Set for X68000/li>
+                <li>Abunai Bunkasai Zenya for X68000 in RanceIII Option Set for X68000</li>
             </ul>
             There are no common transparent information. So I cannot include transparent infos.
             <li>TIFFtoPNG_Y1CD</li>
@@ -67,6 +67,30 @@
         </ul>
         <li>Sound</li>
         <ul>
+            <li>EOMMLtoVGM</li>
+            Converter for EOMML format to VGM.
+            <ul>
+                <li>Rance for X68000</li>
+                <li>Cresent Moon Girl for X68000</li>
+                <li>Abunai Tengu Densetu for X68000/PC-9801</li>
+                <li>Dream Program System for X68000/PC-9801</li>
+                <li>Alice no Yakata for X68000/PC-9801</li>
+                <li>RanceII for X68000</li>
+                <li>Dream Program System -SG- for X68000</li>
+                <li>Tousin Toshi for X68000</li>
+                <li>Dream Program System -SG- set2 for X68000</li>
+                <li>Dream Program System -SG- set3 for X68000</li>
+            </ul>
+            It cannot autodetect machine specific information.
+            I decided X68000 as default.
+
+            It has 4 options.
+            <ul>
+                <li>-9 for PC-9801 (YM-2203) musics.</li>
+                <li>-8 for PC-8801 (YM-2203) musics. (I'll remove it)</li>
+                <li>-T for ToushinToshi for X68000 (YM-2151) musics. </li>
+                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
+            </ul>
             <li>MAKO1toVGM</li>
             Converter for MAKO1 format to VGM.
             <ul>
@@ -84,10 +108,12 @@
                 <li>Dream Program System -SG- set3 for PC-9801/PC-88VA/FM TOWNS</li>
             </ul>
             It cannot autodetect machine specific information.
+            I decided PC-9801 as default.
+
             so It has 3 options.
             <ul>
                 <li>-v for PC-88VA (YM-2203) musics.</li>
-                <li>-t for FM TOWNS(YM-2612) musics. </li>
+                <li>-t for FM TOWNS (YM-2612) musics. </li>
                 <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
             </ul>
             If NOT -v/-t options applied. It works for PC-9801 music.

@@ -1,299 +1,333 @@
-�A���X�\�t�g�R���o�[�^�W�ɂ���
+﻿アリスソフトコンバータ集について
 
-�T�v
-���̃\�t�g�E�F�A�Q�̓A���X�\�t�g�̋���(System3����܂�)�̃f�[�^��ϊ����邽�߂̕��ł��B
-�W���I������.DAT�`���̃A�[�J�C�u�t�@�C������f�[�^��؂�o���A�ϊ�����@�\������܂��B
-�ꕔ�\�t�g�͑O�g�̃`�����s�I���\�t�g�̃f�[�^�ł����삵�܂����B
+概要
+このソフトウェア群はアリスソフトの旧作(System3時代まで)のデータを変換するための物です。
+標準的だった.DAT形式のアーカイブファイルからデータを切り出し、変換する機能があります。
+一部ソフトは前身のチャンピオンソフトのデータでも動作しました。
 
-�x��
-���얳�ۏ؂ł��B�����̃c�[���𗘗p����O�Ɍ��f�[�^�̃o�b�N�A�b�v����邱�Ƃ������v�����܂��B
-���̃\�t�g�E�F�A�Q�͍�҂������̗p�𑫂����߂ɍ쐬�������ł���A�G���[�`�F�b�N�Ȃǂ͕s���S�ł��B
-�ꕔ�̃R�[�h�̓��C�u�����̃T���v���Ȃǂ���R�s�y���������̕������L��܂�(�֐��̈Ӗ����炢�̓`�F�b�N���Ă܂���)�B
-����č�҂̊��Ɉˑ����镔�����L�邩���m��܂���B
-�\�[�X�R�[�h�͌��J����Ă��܂��B�C�ɂȂ���̓\�[�X���Q�Ƃ��Ď����ŏC���A�R���p�C�����邩�A���p���Ȃ��ł��������B
+警告
+動作無保証です。これらのツールを利用する前に元データのバックアップを取ることを強く要求します。
+このソフトウェア群は作者が自分の用を足すために作成した物であり、エラーチェックなどは不完全です。
+一部のコードはライブラリのサンプルなどからコピペしただけの部分が有ります(関数の意味ぐらいはチェックしてますが)。
+よって作者の環境に依存する部分が有るかも知れません。
+ソースコードは公開されています。気になる方はソースを参照して自分で修正、コンパイルするか、利用しないでください。
 
-���̃\�t�g�E�F�A�Q�͔N����̂���s�̃\�t�g�E�F�A�ɑ΂��ē��삵�܂��B
-�Ȃ��A�Y������\�t�g�E�F�A�̍ŐV�ł̔̔�����20�N�o�߂��Ă��邱�Ƃ��m�F���Ă��܂��B
-�Y������\�t�g�E�F�A�̖w�ǂ����ݔz�z�t���[�錾�̉��A���쌠���ێ��������������ł̖����z�z���F�߂��Ă��܂��B
-�����̎�����A���̃\�t�g�E�F�A�Q�ɂ�萶�����ꂽ�S�Ẵf�[�^�̍Ĕz�z���֎~���܂��B�l�Ŋy���ނ��߂����ɗ��p���Ă��������B
+このソフトウェア群は年齢制限のある市販ソフトウェアに対して動作します。
+なお、該当するソフトウェアの最新版の販売から20年経過していることを確認しています。
+該当するソフトウェアの殆どが現在配布フリー宣言の下、著作権を維持した一定条件下での無償配布が認められています。
+これらの事から、このソフトウェア群により生成された全てのデータの再配布を禁止します。個人で楽しむためだけに利用してください。
 
 
-���
-kitoh�܂���lutepatious�̃n���h���Ŋ������Ă��܂����B
+作者
+kitohまたはlutepatiousのハンドルで活動していました。
 https://github.com/Lutepatious/
-�Ɍ��J�ł���\�[�X���グ���Ă��܂��B
+に公開できるソースが上げられています。
 
-�A����(���[���A�h���X)
+連絡先(メールアドレス)
 lutepatious@me.com
-�Ȃ��A�s�R�ȃ��[���͏���Ƀt�B���^����܂��B
+なお、不審なメールは勝手にフィルタされます。
 
-���p���������n�A���C�u����
+利用した処理系、ライブラリ
 Visual Studio 2019
 libpng
-zlib (libpng�ɕK�v)
+zlib (libpngに必要)
 libtiff
 Boehm GC
 vgmtools
 
-���쓮�@
-x64����ɂȂ�DOS����̃\�t�g�𓮂����ɂ����Ȃ����B
-�����t�@�C�����Ɋ��ꂷ����DOS����̗��V�͌��ɂȂ����B
-���낻��΂Ȃ̂ō��܂ł̐����ɓ������B
-PC-9801�̎��@����ꂽ�B
+制作動機
+x64時代になりDOS時代のソフトを動かしにくくなった。
+長いファイル名に慣れすぎてDOS時代の流儀は嫌になった。
+そろそろ歳なので今までの整理に入った。
+PC-9801の実機が壊れた。
 
-���e��
-DATSplitter.exe		�A���X�\�t�g��.DAT�`���A�[�J�C�u����t�@�C����؂�o���B
-N88Splitter.exe		N88-BASIC�`���̃f�B�X�N�C���[�W����t�@�C����؂�o���B
-WaveCorrector.exe	Only You ���I���̃W�����G�b�g�B��AWAV.DAT�Ɋ܂܂��Microsoft WAVE�`���̃t�@�C����␳�B
-VSPtoPNG.exe		GL3,VSP,VSP256�F,VSP200line,GM3,PC88,X68000�̊e�`���̃t�@�C����PNG�ɕϊ��B
-MSXtoPNG.exe�V���[�Y	MSX2�ł�CG�t�@�C����PNG�ɕϊ��B
-TIFFtoPNG_Y1CD.exe	ALICE�̊�CD (FM TOWNS��)�Ɋ܂܂��TIFF�t�@�C����PNG�ɕϊ�
-DRStoPNG.exe�V���[�Y	Dr.STOP!�̃I�[�v�j���O�Ŏg����X�N���[���ꖇ�G��PNG�ɕϊ�
-MAKO2toVGM.exe		MAKO2�`���̊y�ȃf�[�^��FM/SSG������.vgm�APCM������.wav�ɕϊ�����B
+内容物
+DATSplitter.exe		アリスソフトの.DAT形式アーカイブからファイルを切り出す。
+N88Splitter.exe		N88-BASIC形式のディスクイメージからファイルを切り出す。
+WaveCorrector.exe	Only You 世紀末のジュリエット達のAWAV.DATに含まれるMicrosoft WAVE形式のファイルを補正。
+VSPtoPNG.exe		GL3,VSP,VSP256色,VSP200line,GM3,PC88,X68000の各形式のファイルをPNGに変換。
+MSXtoPNG.exeシリーズ	MSX2版のCGファイルをPNGに変換。
+TIFFtoPNG_Y1CD.exe	ALICEの館CD (FM TOWNS版)に含まれるTIFFファイルをPNGに変換
+DRStoPNG.exeシリーズ	Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換
+MAKO2toVGM.exe		MAKO2形式の楽曲データをFM/SSG音源は.vgm、PCM音源は.wavに変換する。
 
-�p�~�� (�@�\��MAKO2toVGM.EXE�Ɏ�荞�݂܂���)
-PC98PCMtoWave.exe	PC-9801�œ��_�s�sII��Alice�̊�3��AMUS.DAT�̌㔼��AMSE.DAT�Ɏ��^���ꂽ4bitPCM�f�[�^��Microsoft WAVE�`���ɕϊ�
-TownsPCMtoWave.exe	FM TOWNS�œ��_�s�sII��Alice�̊�3��AMUS.TW�̌㔼��ASND.DAT�A��CD���CDII�Ɋ܂܂��FM TOWNS�W��SND�`��8bitPCM�f�[�^��Microsoft WAVE�`���ɕϊ�
+廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
+PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
+TownsPCMtoWave.exe	FM TOWNS版闘神都市IIとAliceの館3のAMUS.TWの後半やASND.DAT、館CDや館CDIIに含まれるFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換
 
-��{�I�ȓ���
-�����Ƃ��ăt�@�C�����e��S�ă������ɓǂݍ���ł��珈�����s���܂��B
-Boehm GC���̗p�����֌W�Ŗ����I�ȃ������J�����~�߂��̂ōő僁��������ʂ͂킩��܂���B
+基本的な動作
+原則としてファイル内容を全てメモリに読み込んでから処理を行います。
+Boehm GCを採用した関係で明示的なメモリ開放を止めたので最大メモリ消費量はわかりません。
 
-===�e�v���O�����̏ڍ�===
+===各プログラムの詳細===
 
 ### DATSplitter.exe ###
 
-�R�}���h���C����
-path>DATSplitter DAT�`���t�@�C��
-�Ƃ���Ɗ܂܂��t�@�C����
-�����N�ԍ�(3��)+�h���C�u��(DAT�`���t�@�C���̐擪�ꕶ��)+DAT�t�@�C�����̏���(3��)+.DAT
-��(7����).DAT��(DAT�t�@�C�����̐擪�ȊO������)�̃f�B���N�g���ɐ؂�o���܂��B
+コマンドラインで
+path>DATSplitter DAT形式ファイル
+とすると含まれるファイルを
+リンク番号(3桁)+ドライブ名(DAT形式ファイルの先頭一文字)+DATファイル内の順番(3桁)+.DAT
+の(7文字).DATを(DATファイル名の先頭以外文字列)のディレクトリに切り出します。
 
-��:FCG.DAT -> CG\099F001.DAT
+例:FCG.DAT -> CG\099F001.DAT
  
-�A���X�\�t�g�A�[�J�C�u�X��88��Rance������o����DAT�t�@�C���ɂ��L���ł����B
-�̂̃A�[�J�C�u���ƃ����N�}�b�v�������̂�
-(DAT�t�@�C�����g���q�Ȃ�)�̃f�B���N�g����
-(DAT�t�@�C����)+DAT�t�@�C�����̏���(3��)+.DAT�̃t�@�C����؂�o���܂��B
+アリスソフトアーカイブスの88版Ranceから取り出したDATファイルにも有効でした。
+昔のアーカイブだとリンクマップが無いので
+(DATファイル名拡張子なし)のディレクトリに
+(DATファイル名)+DATファイル内の順番(3桁)+.DATのファイルを切り出します。
 
-�t�@�C�������w��B
+ファイル複数指定可。
 
 ### N88Splitter.exe ###
 
-�R�}���h���C����
-path>N88Splitter N88-BASIC�`���f�B�X�N�C���[�W
-�Ƃ���ƃf�B�X�N�C���[�W���̃t�@�C����؂�o���܂��B
+コマンドラインで
+path>N88Splitter N88-BASIC形式ディスクイメージ
+とするとディスクイメージ内のファイルを切り出します。
 
-�Ȃ��A�f�B�X�N�C���[�W��RAW�`���ł���K�v������܂��B
-�ϊ��菇�ł���
+なお、ディスクイメージはRAW形式である必要があります。
+変換手順ですが
 
-1. Kryoflux��RAW stream�`�������SAMDisk (https://simonowen.com/samdisk/)�ň�UD88�`���ɂ��Ă��������B
-2. HxCFloppyEmulator software (https://hxc2001.com/download/floppy_drive_emulator/index.html)��HxCFloppyEmulator_soft.zip����
-HxCFloppyEmulator.exe���N�����ALoad�{�^������D88�`���C���[�W�����[�h������AExport�{�^������IMG file (RAW Sector file format)��I��ŃZ�[�u���Ă��������B
+1. KryofluxのRAW stream形式からはSAMDisk (https://simonowen.com/samdisk/)で一旦D88形式にしてください。
+2. HxCFloppyEmulator software (https://hxc2001.com/download/floppy_drive_emulator/index.html)のHxCFloppyEmulator_soft.zip内の
+HxCFloppyEmulator.exeを起動し、LoadボタンからD88形式イメージをロードした後、ExportボタンからIMG file (RAW Sector file format)を選んでセーブしてください。
 
-3. ����ꂽ�f�B�X�N�C���[�W���g�p���܂��B
+3. 得られたディスクイメージを使用します。
 
-�t�@�C���T�C�Y����PC-9801�ł�N88-BASIC(86)�APC-8801�ł�Twenty Sector DOS�APC-8801�ł�Tiny MESH (22sector)���������ʂ��Ē��̃t�@�C����؂�o���܂��B
-����ɂ�����NEC��PC-9801��MS-DOS(�̂��Ɋg���Z�b�g�̂�)�Ɋ܂܂��FILECONV��������Ƃɂł��܂����B
-�Ȃ��AD88�`������f�B�X�N�C���^�[���[�u��P���x�̔��������RAW�ɂ���v���O�����������C�͂���܂���B
-���l��FAT�`����DOS�C���[�W����̐؂�o���c�[�������C������܂���(LFN����Human68K���̂Ƃ�₱�����Ȃ�̂őΉ��ł��܂���)
+ファイルサイズからPC-9801版のN88-BASIC(86)、PC-8801版のTwenty Sector DOS、PC-8801版のTiny MESH (22sector)を自動判別して中のファイルを切り出します。
+これによりついにNECのPC-9801版MS-DOS(のちに拡張セットのみ)に含まれるFILECONVをお役御免にできました。
+なお、D88形式からディスクインターリーブや単密度の判定をしてRAWにするプログラムを書く気はありません。
+同様にFAT形式のDOSイメージからの切り出しツールを作る気もありません(LFNだのHuman68Kだのとややこしくなるので対応できません)
 
 ### WaveCorrector.exe ###
 
-�R�}���h���C����
-path>WaveCorrector �t�@�C��
-�Ƃ���ƃw�b�_���`�F�b�N���A����ɍ��킹�ăt�@�C�����C�����܂��B
-�A�[�J�C�u�t�@�C������؂�o�����ۂɖ����ɂ��S�~�̏�����A�ߋ��̃c�[���̃w�b�_�̌���␳���邽�߂̕��ł��B
-wsetargv.obj�������N���Ă���̂Ń��C���h�J�[�h���g���܂��B�t�@�C�������w��B
+コマンドラインで
+path>WaveCorrector ファイル
+とするとヘッダをチェックし、それに合わせてファイルを修正します。
+アーカイブファイルから切り出した際に末尾につくゴミの除去や、過去のツールのヘッダの誤りを補正するための物です。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
 
 ### VSPtoPNG.exe ###
 
-�R�}���h���C����
-path>VSPtoPNG �t�@�C��
-�Ƃ���ƃt�@�C���̐擪���`�F�b�N���A�t�@�C���`�����������肵����ŃO���t�B�b�N�X�t�@�C����PNG�`���ɕϊ����܂��B
-���݂̏��A
-GL �`�����s�I���\�t�g����(PC-9801�Ŋ܂�)����A���X�\�t�g��PC-8801�ł�Rance II�ȊO�Ŏg��ꂽ�`��
-GL3 �����̃A���X�\�t�g�̃t�@�C���`����Rance����ALICE�̊�CD����PC-9801/FM TOWNS�Ƒ�����X68000��
-GM3 GL3�̈����ALICE�̊�CD�Ɋ܂܂��Intruder��p�̌`��
-VSP Rance III�ȍ~��PC-9801/FM TOWNS/X68000�ł̑����Ŏg��ꂽ�`��
-VSP200line PC-8801��Rance II�ƃA���X�l�b�g�z�zPC-9801 MS-DOS�Ή���Little Vampire�Ŏg��ꂽ�`��
-VSP256�F Super D.P.S�ȍ~��256�F�Ή��Q�[���Ŏg��ꂽ�`��
-PMS �S�{�������X�ȍ~�Ŏg��ꂽ�`�� 256�F�iVSP256�F�Ƃ̓w�b�_�Ⴂ)��65536�F������
-X68000�ł�Rance II,���_�s�s,���ԂȂ������ՑO��ŌʂɎg��ꂽ�`��
-���������肵�ĕϊ����܂��B
-wsetargv.obj�������N���Ă���̂Ń��C���h�J�[�h���g���܂��B�t�@�C�������w��B
-Rance IV��?ANIM.DAT�����g��VSP�Ȃ̂�DATSplitter�œW�J��ɕϊ��ł��܂��B
-TOWNS��DALK�̃u�[�g�f�B�X�N�Ɋ܂܂��*.PMS��TOWNS�łՂ� ������[�ł��G�Ɋ܂܂��*.PMS (VSP256�F)��
-�F�������t�@�j�[Bee��CG361.VSP�ɂ����̂܂ܑΉ����Ă��܂��B
+コマンドラインで
+path>VSPtoPNG ファイル
+とするとファイルの先頭をチェックし、ファイル形式を自動判定した上でグラフィックスファイルをPNG形式に変換します。
+現在の所、
+GL チャンピオンソフト時代(PC-9801版含む)からアリスソフトのPC-8801版のRance II以外で使われた形式
+GL3 初期のアリスソフトのファイル形式でRanceからALICEの館CD迄のPC-9801/FM TOWNSと多数のX68000版
+GM3 GL3の亜種でALICEの館CDに含まれるIntruder専用の形式
+VSP Rance III以降のPC-9801/FM TOWNS/X68000版の多くで使われた形式
+VSP200line PC-8801版Rance IIとアリスネット配布PC-9801 MS-DOS対応版Little Vampireで使われた形式
+VSP256色 Super D.P.S以降の256色対応ゲームで使われた形式
+PMS 鬼畜王ランス以降で使われた形式 256色（VSP256色とはヘッダ違い)と65536色がある
+X68000版のRance II,闘神都市,あぶない文化祭前夜で個別に使われた形式
+を自動判定して変換します。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+Rance IVの?ANIM.DATも中身はVSPなのでDATSplitterで展開後に変換できます。
+TOWNS版DALKのブートディスクに含まれる*.PMSやTOWNS版ぷろ すちゅーでんとGに含まれる*.PMS (VSP256色)や
+宇宙快盗ファニーBeeのCG361.VSPにもそのまま対応しています。
 
-��܂��Ȍ`���̖ڈ���
-Rance�AIntruder�A�N���Z���g���[��������A���ԂȂ��V��`���AD.P.S�A�A���X�̊فARance II�AD.P.S SG�A���_�s�s�A�A���X�̊�CD��GL3�����̔h��
-Rance II PC88�łƃA���X�l�b�g�z�zPC-9801 MS-DOS�Ή���Little Vampire��VSP 200line
-Rance III�ȍ~��16�F�ł�VSP
-Super D.P.S�ȍ~��256�F�Ή��Q�[���̂����A256�F�̕��Ɍ���VSP256
-�S�{�������X�ȍ~�̃Q�[���̂����A����̗����ňȊO��PMS
-�ł��B
+大まかな形式の目安は
+Rance、Intruder、クレセントムーンがぁる、あぶない天狗伝説、D.P.S、アリスの館、Rance II、D.P.S SG、闘神都市、アリスの館CDはGL3かその派生
+Rance II PC88版とアリスネット配布PC-9801 MS-DOS対応版Little VampireはVSP 200line
+Rance III以降の16色版はVSP
+Super D.P.S以降の256色対応ゲームのうち、256色の物に限りVSP256
+鬼畜王ランス以降のゲームのうち、旧作の廉価版以外はPMS
+です。
 
-�t�@�C���w�b�_����摜�̃��[�h�ʒu�ɍ��킹�ĉ摜��W�J���A���f�[�^�̂Ȃ����͓��ߏ����Ƃ��Ă��܂��B
-���ߐF�̔��ʕ��@���s���Ȃ̂ŕs���S�ł��B
+ファイルヘッダから画像のロード位置に合わせて画像を展開し、元データのない個所は透過処理としています。
+透過色の判別方法が不明なので不完全です。
 
-FM TOWNS��Intruder��GM3�ɂ̓p���b�g��񂪂���܂���B
-���̈�Ryu1���쐬�̈ڐA�L�b�g��GM3.COM�Ɋ܂܂��p���b�g�����g�p���Ă��܂��B
+FM TOWNS版IntruderのGM3にはパレット情報がありません。
+その為Ryu1氏作成の移植キットのGM3.COMに含まれるパレット情報を使用しています。
 
-PC-9801��Rance IV�̈ꕔ�摜�ɂ̓p���b�g��񂪂���܂���
-(�����炭���O�Ɏg���摜�̃p���b�g�𗘗p����炵��)�B
-FM TOWNS�ł̓����摜�ɂ̓p���b�g��񂪂���̂ł�����𗘗p����肪����܂��B
-�\�����Ƀp���b�g��������^�C�v�̉摜������܂�(DPS -SG-��RanceIV�f���f�B�X�N)�B
-�P�F�ŉ����o�Ȃ��Ǝv���O�ɉ摜�ҏW�\�t�g�Ńp���b�g���������Ă݂܂��傤�B
+PC-9801版Rance IVの一部画像にはパレット情報がありません
+(おそらく直前に使う画像のパレットを利用するらしい)。
+FM TOWNS版の同じ画像にはパレット情報があるのでそちらを利用する手があります。
+表示中にパレットをいじるタイプの画像もあります(DPS -SG-やRanceIVデモディスク)。
+単色で何も出ないと思う前に画像編集ソフトでパレットをいじってみましょう。
 
 ### MSXtoPNG.exe ###
-��܂��Ɍ�����VSPtoPNG.exe��MSX2�ŗp�ł��B
-�ʂ̃^�C�g���������Ă�����̂͂��̃^�C�g����p�ł�
+大まかに言ってVSPtoPNG.exeのMSX2版用です。
+個別のタイトル名がついているものはそのタイトル専用です
 
-MSXtoPNG_Intruder.exe�̂݃p���b�g���t�@�C�����K�v�ł��B
-A�f�B�X�N��COLPALET.DAT���J�����g�f�B���N�g���ɒu����MSXtoPNG_Intruder.exe�����s���Ă��������B
-�Ⴆ�Γ����f�B���N�g����Intruder��ACG.DAT,BCG.DAT,COLPALET.DAT��u����
+MSXtoPNG_Intruder.exeのみパレット情報ファイルが必要です。
+AディスクのCOLPALET.DATをカレントディレクトリに置いてMSXtoPNG_Intruder.exeを実行してください。
+例えば同じディレクトリにIntruderのACG.DAT,BCG.DAT,COLPALET.DATを置いて
 
 >DATSplitter ACG.DAT BCG.DAT
 >MSXtoPNG_Intruder CG\*.DAT
 
-�Ƃ����CG�f�B���N�g����PNG�t�@�C�����o���オ��܂��B
+とすればCGディレクトリにPNGファイルが出来上がります。
 
-MSXtoPNG_GS.exe��MSXtoPNG_GS_TITLE.exe�͊w����L�����̊J�����̂��̂ł��B
-MSXtoPNG_GS_TITLE.exe�Ń^�C�g����ʂ�CG�ƃp���b�g���t�@�C�����؂�o����܂��B
-MSXtoPNG_GS.exe�͂��̃p���b�g�����g���ē��삵�܂��B
-�쒆�ł̃p���b�g�̈������悭�킩���Ă��Ȃ��̂ŋl�܂��Ă��܂��B
+MSXtoPNG_GS.exeとMSXtoPNG_GS_TITLE.exeは学園戦記向けの開発中のものです。
+MSXtoPNG_GS_TITLE.exeでタイトル画面のCGとパレット情報ファイルが切り出されます。
+MSXtoPNG_GS.exeはこのパレット情報を使って動作します。
+作中でのパレットの扱いがよくわかっていないので詰まっています。
 
 ### MSXCombinePNG.exe ###
-MSX��DPS SG�̘A�ԃt�@�C��(�-������)���������A�C���^�[���[�X���[�h�ł�CG���Č����܂��B
+MSX版DPS SGの連番ファイル(奇数-偶数順)を合成し、インターレースモードでのCGを再現します。
 
 ### TIFFtoPNG_Y1CD.exe ###
-FM TOWNS�ɂ��������[�X����Ȃ�����ALICE�̊�CD�Ɋ܂܂��TIFF�t�@�C����PNG�ɕϊ�������̂ł��B
-�d�q�̍��̃A���X��N�C�Y�̊فA���̎q�}�ӂ̈ꕔCG�͓���ȐF���
-(�ǂ���������TOWNS�ɂ��������t�H�[�}�b�g�������炵��)���g�������߁A
-���ʂ̃O���t�B�b�N�r���[�A�ł̓O���C�X�P�[���ɂ��������܂���ł����B
-�����̌��ʁA8bit�_�C���N�g�J���[�Ɣ��������̂�
-�K�؂ȃp���b�g�𐶐����ăC���f�b�N�X�J���[������{�v���O�������쐬���܂����B
-FM TOWNS��Rance III��ALICE�̊�CD II��TIFF�t�H�C���ɂ��K���ł��܂��B
+FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
+電子の国のアリスやクイズの館、女の子図鑑の一部CGは特殊な色情報
+(どうも初期のTOWNSにおける特殊フォーマットだったらしい)を使ったため、
+普通のグラフィックビューアではグレイスケールにしか見えませんでした。
+調査の結果、8bitダイレクトカラーと判明したので
+適切なパレットを生成してインデックスカラー化する本プログラムを作成しました。
+FM TOWNS版Rance IIIやALICEの館CD IIのTIFFフォイルにも適応できます。
 
 ### DRStoPNG.exe ###
-Dr.STOP!�̃I�[�v�j���O�Ŏg����X�N���[���ꖇ�G��PNG�ɕϊ����܂��B
-PC-9801�ł�X68000�ł̏ꍇ�A�J�����g�f�B���N�g����A�f�B�X�N��CG003.DAT��u����
+Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
+PC-9801版とX68000版の場合、カレントディレクトリにAディスクのCG003.DATを置いて
 
 >DRStoPNG
-�Ƃ��邾����003.png�t�@�C���������܂��B
+とするだけで003.pngファイルが得られます。
 
 ### DRStoPNG_TOWNS.exe ###
-FM TOWNS��Dr.STOP!�̃I�[�v�j���O�Ŏg����X�N���[���ꖇ�G��PNG�ɕϊ����܂��B
+FM TOWNS版Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 
-�J�����g�f�B���N�g����A�f�B�X�N��CG003.DAT��OPENNING.DAT��u����
+カレントディレクトリにAディスクのCG003.DATとOPENNING.DATを置いて
 >DRStoPNG_TOWNS
-�Ƃ��邾����003.png��OPENNING.png�t�@�C���������܂��B
+とするだけで003.pngとOPENNING.pngファイルが得られます。
 
-����ɂ��A�S�{�������X���O�̃A���X�\�t�g�̂قڑS�Ă�CG��ϊ��ł���悤�ɂȂ�܂����B
-�c��͖������88VA�ł�ꕔ�q���g�f�B�X�N��CG��ALICE�̊�CD�̃A�C�R���A
-X68000�œ��_�s�s�̃X�v���C�g�Ŏ������ꂽ�`�b�v�L������}�b�v�Ƃ������Ƃ���ł��B
+これにより、鬼畜王ランスより前のアリスソフトのほぼ全てのCGを変換できるようになりました。
+残るは未入手の88VA版や一部ヒントディスクのCGとALICEの館CDのアイコン、
+X68000版闘神都市のスプライトで実現されたチップキャラやマップといったところです。
 
 
 ### PC98PCMtoWave.exe ###
-�p�~���܂����BMAKO2toVGM.exe�ɓ������܂����B
+廃止しました。MAKO2toVGM.exeに統合しました。
 
-�R�}���h���C����
-path>PC98PCMtoWave �t�@�C��
-�Ƃ����4bitPCM�f�[�^��Microsoft WAVE�`���ɕϊ����܂��B
-�ꉞ�����`�F�b�N�͂��Ă��܂��B
-wsetargv.obj�������N���Ă���̂Ń��C���h�J�[�h���g���܂��B�t�@�C�������w��B
+コマンドラインで
+path>PC98PCMtoWave ファイル
+とすると4bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
 
 ### TownsPCMtoWave.exe ###
-�p�~���܂����BMAKO2toVGM.exe�ɓ������܂����B
+廃止しました。MAKO2toVGM.exeに統合しました。
 
-�R�}���h���C����
-path>TownsPCMtoWave �t�@�C��
-�Ƃ����FM TOWNS�W��SND�`��8bitPCM�f�[�^��Microsoft WAVE�`���ɕϊ����܂��B
-�ꉞ�����`�F�b�N�͂��Ă��܂��B
-wsetargv.obj�������N���Ă���̂Ń��C���h�J�[�h���g���܂��B�t�@�C�������w��B
+コマンドラインで
+path>TownsPCMtoWave ファイル
+とするとFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換します。
+一応末尾チェックはしています。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
 
 ### MAKO2toVGM.exe ###
-MAKO2�t�H�[�}�b�g�̊y�Ȃ�FM/SSG������.vgm�ɁAPCM������.WAV�ɕϊ����܂��B
-RanceIII�ȍ~�w��KING�܂ł�(DPS -SG-�V���[�Y������)�S�Ă̊y�Ȃ��ΏۂƂȂ�܂�(���_�s�s����MAKO1�ł�MAKO2�ł̃p�b�P�[�W������܂�)�B
+MAKO2フォーマットの楽曲をFM/SSG音源は.vgmに、PCM音源は.WAVに変換します。
+RanceIII以降学園KINGまでの(DPS -SG-シリーズを除く)全ての楽曲が対象となります(闘神都市だけMAKO1版とMAKO2版のパッケージがあります)。
 
-?MUS*.DAT,ASND.DAT,AMSE.DAT�Ɋ܂܂��y�ȃt�@�C����
+?MUS*.DAT,ASND.DAT,AMSE.DATに含まれる楽曲ファイルを
 
-�R�}���h���C����
-path>MAKO2toVGM �t�@�C��
-�Ƃ����PCM�f�[�^��Microsoft WAVE�`���ɕϊ����܂��B�܂��AFM/SSG�����̃t�@�C����vgm�`���ɕϊ����܂��B
-MAKO2�t�H�[�}�b�g�ɂ�3�o�[�W��������
-�o�[�W����2,3�ł͉�����YM2608���^�[�Q�b�g�Ƃ��ĕϊ����܂��B
-�o�[�W����1�ł̓g���b�N���ɍ��킹��YM2203,YM2151,YM2608��I�����܂������ʕs�\�Ɋׂ�ꍇ�����邽��
--n, -x, -a�̃I�v�V������p�ӂ��܂����B
+コマンドラインで
+path>MAKO2toVGM ファイル
+とするとPCMデータをMicrosoft WAVE形式に変換します。また、FM/SSG音源のファイルはvgm形式に変換します。
+MAKO2フォーマットには3バージョンあり
+バージョン2,3では音源をYM2608をターゲットとして変換します。
+バージョン1ではトラック数に合わせてYM2203,YM2151,YM2608を選択しますが判別不能に陥る場合があるため
+-n, -x, -aのオプションを用意しました。
 
-path>MAKO2toVGM -a �t�@�C�� (YM2608����)
-path>MAKO2toVGM -x �t�@�C�� (YM2151����)
-�̗l�Ɏg���܂��B
-���̃I�v�V�������K�v�ɂȂ�̂�RanceIV��ALICE�̊�3�ł��B
+path>MAKO2toVGM -a ファイル (YM2608強制)
+path>MAKO2toVGM -x ファイル (YM2151強制)
+の様に使います。
+このオプションが必要になるのはRanceIVとALICEの館3です。
 
-�܂��A�ŏ���(RanceIII)��MAKO2�t�H�[�}�b�g�ł�SSG���̃f�`���[���p�����[�^���قȂ��Ă���A
-DR.STOP!�ȍ~��MAKO2�ƌ݊���������܂���B
-���ׁ̈A-d�I�v�V������p�ӂ��܂����B
+また、最初期(RanceIII)のMAKO2フォーマットではSSG部のデチューンパラメータが異なってあり、
+DR.STOP!以降のMAKO2と互換性がありません。
+この為、-dオプションを用意しました。
 
-FM�����ɑ΂���SSG�����̉��ʔ�̖����������邽�߁AVGM�̊g���w�b�_�𗘗p���A
-OPN�x�[�X(PC-9801-26/K)�ł�60%
-OPNA�x�[�X(PC-9801-73/86)�ł�45%
-�Ɗ���U��悤�ɂ��Ă��܂��B(hoot��ssg_mix�p�����[�^[dB*2�x�[�X]���Q�l)
-�Ή��I�v�V�����Ƃ���
--s(����)
-��p�ӂ��܂����B�L���l��1-255(%)��0�ȉ��Ȃ疳���A255�ȏ��255�ŗ}���܂��B
+FM音源に対するSSG音源の音量比の問題を解決するため、VGMの拡張ヘッダを利用し、
+OPNベース(PC-9801-26/K)では60%
+OPNAベース(PC-9801-73/86)では45%
+と割り振るようにしています。(hootのssg_mixパラメータ[dB*2ベース]を参考)
+対応オプションとして
+-s(整数)
+を用意しました。有効値は1-255(%)で0以下なら無効、255以上は255で抑えます。
 
-�Ȃ��AMAKO2�t�H�[�}�b�g�ł̃`�����l���̊��蓖�Ă�
-X68000�łł�SSG�G�~�����[�V�����≹���������������l������ƑS�Ă̊y�Ȃ�YM2608���[�h�ŕϊ����������ǂ���������܂���B
+なお、MAKO2フォーマットでのチャンネルの割り当てや
+X68000版でのSSGエミュレーションや音程下げすぎ問題を考慮すると全ての楽曲をYM2608モードで変換した方が良いかもしれません。
 
-�y�ȓ��̃��[�v�͊��S�W�J������őS�̂̃��[�v��vgm���ɐݒ肵�Ă��܂��B
-���̎��A�ꕔ�̊y�Ȃł͌��f�[�^�̃o�O�Ȃ̂��`���l���Ԃł킸���Ȓ����̂�����N�����ċɒ[�ɒ������[�v���ł���ꍇ������܂�(19���ԉz���Ƃ�)�B
+楽曲内のループは完全展開した上で全体のループをvgm内に設定しています。
+この時、一部の楽曲では元データのバグなのかチャネル間でわずかな長さのずれを起こして極端に長いループができる場合があります(19時間越えとか)。
 
 ### MAKO1toVGM.exe ###
-MAKO1�t�H�[�}�b�g�̊y�Ȃ�.vgm�ɕϊ����܂��B
-MAKO1�t�H�[�}�b�g�Ƃ͎��ۂɂ�PC-88VA��BIOS�p�̉��y�f�[�^�񂩂��̕ώ�ł��B
-���ׁ̈A���t�p�̃R�}���h���قړ����B
+MAKO1フォーマットの楽曲を.vgmに変換します。
+MAKO1フォーマットとは実際にはPC-88VAのBIOS用の音楽データ列かその変種です。
+その為、演奏用のコマンドもほぼ同じ。
 
-�Y������\�t�g��
-PC-88VA��(X68000�Ɠ����̕��܂�)�̑S��(RanceII�͏������Ă��Ȃ����ߖ��m�F)
-FM TOWNS�ł�Rance����D.P.S -SG-�V���[�Y�܂�(RanceIII��MAKO2)
-PC-9801�ł�RanceII, ���_�s�s (����ł�MAKO2�Ȃ̂őΏۊO), D.P.S -SG-, ALICE-NET�ł̕w�x����VX
-PC-8801�ł�RanceII
-�ȏ�ł��B
+該当するソフトは
+PC-88VA版(X68000と同梱の物含む)の全て(RanceIIは所持していないため未確認)
+FM TOWNS版のRanceからD.P.S -SG-シリーズまで(RanceIIIはMAKO2)
+PC-9801版のRanceII, 闘神都市 (後期版はMAKO2なので対象外), D.P.S -SG-, ALICE-NET版の婦警さんVX
+PC-8801版のRanceII
+以上です。
 
-�R�}���h���C����
-path>MAKO1toVGM [�I�v�V����] �t�@�C��
-�Ƃ��܂����A�@����Ȃǂ̎������ʂ��ł��܂���B
+コマンドラインで
+path>MAKO1toVGM [オプション] ファイル
+としますが、機種情報などの自動判別ができません。
 
-���̈�
--v PC-88VA�p�f�[�^(FM3�� SSG3��)�̕ϊ�
--t FM TOWNS�p�f�[�^(FM6�� �^���X�e���I)�̕ϊ�
-�̃I�v�V������p�ӂ��܂����B
-�I�v�V�������Ȃ����PC-9801,PC-8801�p�f�[�^�Ƃ��Ĉ����܂��B
+その為
+-v PC-88VA用データ(FM3音 SSG3音)の変換
+-t FM TOWNS用データ(FM6音 疑似ステレオ)の変換
+のオプションを用意しました。
+オプションがなければPC-9801,PC-8801用データとして扱います。
 
-FM�����ɑ΂���SSG�����̉��ʔ�̖����������邽�߁AVGM�̊g���w�b�_�𗘗p���A
-PC-9801�x�[�X�ł�60%
-PC-88VA�x�[�X�ł�100%
-�Ɗ���U��悤�ɂ��Ă��܂��B(hoot��ssg_mix�p�����[�^[dB*2�x�[�X]���Q�l)
-�Ή��I�v�V�����Ƃ���
--s(����)
-��p�ӂ��܂����B�L���l��1-255(%)��0�ȉ��Ȃ疳���A255�ȏ��255�ŗ}���܂��B
+FM音源に対するSSG音源の音量比の問題を解決するため、VGMの拡張ヘッダを利用し、
+PC-9801ベースでは60%
+PC-88VAベースでは100%
+と割り振るようにしています。(hootのssg_mixパラメータ[dB*2ベース]を参考)
+対応オプションとして
+-s(整数)
+を用意しました。有効値は1-255(%)で0以下なら無効、255以上は255で抑えます。
 
-D.P.S -SG- set3�̑��Ƃł͓���TOWNS�łŌ����ȉ����ꂪ�������܂��B
-PC-9801�ł�PC-88VA��(����2�@��ł̓f�[�^�͓���)�ł����ʂ��������̂ŋC���t���ɂ����ł����������Ă��܂��B
-�����͌��̃f�[�^�ɂ���A�Z���x������ꂽ��ɒ����x�������Ă��邽�߂ł��B
-�A���X�̊�II,DPS�S���Ɏ��^���ꂽMAKO2�ł͏C������Ă��܂��B
+D.P.S -SG- set3の卒業では特にTOWNS版で顕著な音ずれが発生します。
+PC-9801版とPC-88VA版(この2機種版はデータは同じ)でも音量が小さいので気が付きにくいですが発生しています。
+原因は元のデータにあり、短い休符を入れた後に長い休符を入れているためです。
+X68000版ではEOMML形式ですが、該当する部分でトラックのオクターブ設定をせずに休符としているので恐らくo4をr4と間違えたのだと思います。
+アリスの館II,DPS全部に収録されたMAKO2版は修正されています。
 
-����
+### EOMMLtoVGM.exe ###
+ヘッダがバイナリのEOMML形式の楽曲を.vgmに変換します。
+EOMML形式は基本的にはNEC系BASICのMMLですが細かい部分に差があります。
+但し極初期のPC-9801版では殆どテキストファイルであり、X68000版で利用されているものはヘッダ部分がバイナリ形式になっています。
 
-X68000�ł���݂���񕨌�q���g�f�B�X�N
-FM TOWNS��Rance II�q���g�f�B�X�N
-FM TOWNS�œ��_�s�sII�O���t�B�b�N�f�B�X�N
-PC-88VA��Rance II
-PC-88VA��Rance II�q���g�f�B�X�N
+該当するソフトは
+X68000版のRanceから闘神都市までとD.P.S -SG-シリーズ
+PC-9801版のあぶないてんぐ伝説、D.P.S、ALICEの館
+以上です。
 
-��������&���얢�m�F�ł��B�F�l�̂����͂����肢���܂��B
+コマンドラインで
+path>EOMMLtoVGM [オプション] ファイル
+としますが、機種情報などの自動判別ができません。
 
-�S�{�������X�Ȃ�System 3.5�ȍ~�̃Q�[���ɑΉ�����C�͂���܂���B
-�����̃c�[���������Ȃ��킯�ł��Ȃ��̂ŁB
+その為
+-9 PC-9801用データ(FM3音 SSG3音)の変換
+-T X68000版闘神都市用データの変換 専用の音の割り当てとMMLの解釈変更
+のオプションを用意しました。
+オプションがなければX68000用データとして扱います。
+
+FM音源に対するSSG音源の音量比の問題を解決するため、VGMの拡張ヘッダを利用し、
+PC-9801ベースでは60%
+と割り振るようにしています。(hootのssg_mixパラメータ[dB*2ベース]を参考)
+対応オプションとして
+-s(整数)
+を用意しました。有効値は1-255(%)で0以下なら無効、255以上は255で抑えます。
+
+アリスソフトの場合初期X68000版ではOPMDRV2.X対応の物が殆どですが、闘神都市はOPMDRV.X対応です。
+ここでMMLの文法に差があり、標準的(GW-BASIC、N88-BASIC、OPMDRV2.X含む)なMMLではオクターブの上下は><なのに対し、
+OPMDRV.Xは<>と逆になっており、解釈を変える必要があります。(個人的には<>の方が直感的だと思いますが)
+X68000版D.P.S -SG-にはおまけとしてTOOPM.Xというツールがあり、記号の入れ替えをしています。
+
+
+現在
+
+X68000版あゆみちゃん物語ヒントディスク
+FM TOWNS版Rance IIヒントディスク
+FM TOWNS版闘神都市IIグラフィックディスク
+PC-88VA版Rance II
+PC-88VA版Rance IIヒントディスク
+
+が未入手&動作未確認です。皆様のご協力をお願いします。
+
+鬼畜王ランスなどSystem 3.5以降のゲームに対応する気はありません。
+既存のツールが動かないわけでもないので。
