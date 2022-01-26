@@ -138,6 +138,7 @@ void EVENTS::convert(struct eomml_decoded& MMLs)
 				time += len_Off;
 				break;
 			case 0xF5: // Tone select
+			case 0xEB: // Panpot
 				dest->Count = counter++;
 				dest->Event = *src++;
 				dest->Param = *src++;

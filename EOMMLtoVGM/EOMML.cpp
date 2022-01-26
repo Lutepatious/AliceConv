@@ -149,6 +149,7 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 	unsigned __int8* dest = this->MML;
 	unsigned Octave_t;
 	unsigned VoltoXVol[16] = { 85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125 };
+	unsigned Panpot = 3;
 
 	// eomml 覚書
 	// < 1オクターブ下げ
@@ -167,6 +168,19 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
 				msrc++;
 			}
+			break;
+		case 'p': // Panpot
+			if (isdigit(*msrc)) {
+				unsigned __int8* tpos;
+				Panpot = strtoul((const char*)msrc, (char**)&tpos, 10);
+				msrc = tpos;
+			}
+			if (Panpot > 3) {
+				wprintf_s(L"P %u: out of range.\n", Panpot);
+			}
+			// wprintf_s(L"Panpot %u\n", Panpot);
+			*dest++ = 0xEB;
+			*dest++ = Panpot;
 			break;
 		case 't': // Tempo
 			if (isdigit(*msrc)) {

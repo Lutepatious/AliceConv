@@ -693,6 +693,24 @@ void VGMdata_e::convert_YM2151(struct EVENT& eve)
 		// この後のNAの計算とタイマ割り込みの設定は実際には不要
 		this->Timer_set_YM2151();
 		break;
+	case 0xEB:
+		if (eve.Param == 0) {
+			this->pCHparam_cur->YM2151_L = false;
+			this->pCHparam_cur->YM2151_R = false;
+		}
+		else if (eve.Param == 1) {
+			this->pCHparam_cur->YM2151_L = true;
+			this->pCHparam_cur->YM2151_R = false;
+		}
+		else if (eve.Param == 2) {
+			this->pCHparam_cur->YM2151_L = false;
+			this->pCHparam_cur->YM2151_R = true;
+		}
+		else {
+			this->pCHparam_cur->YM2151_L = true;
+			this->pCHparam_cur->YM2151_R = true;
+		}
+		break;
 	case 0xF5: // Tone select
 		this->pCHparam_cur->Tone = eve.Param;
 		this->Tone_select_YM2151();
@@ -725,6 +743,8 @@ void VGMdata_e::Tone_select_YM2151(void)
 {
 	static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
 	this->pCHparam_cur->T_x68.B = *(this->preset_opm + this->pCHparam_cur->Tone - 1);
+	this->pCHparam_cur->T_x68.S.L = this->pCHparam_cur->YM2151_L;
+	this->pCHparam_cur->T_x68.S.R = this->pCHparam_cur->YM2151_R;
 
 	this->make_data_YM2151(0x20 + this->CH_cur, this->pCHparam_cur->T_x68.B.FB_CON);
 	this->make_data_YM2151(0x38 + this->CH_cur, this->pCHparam_cur->T_x68.B.PMS_AMS);

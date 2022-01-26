@@ -8,6 +8,8 @@ struct CH_params {
 	union AC_Tone T;
 	union AC_Tone_x68 T_x68;
 	bool NoteOn;
+	bool YM2151_L = true;
+	bool YM2151_R = true;
 };
 
 class VGMdata_e {
