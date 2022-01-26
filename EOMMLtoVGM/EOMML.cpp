@@ -308,6 +308,26 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			*dest++ = RLen;
 			this->time_total += RLen;
 			break;
+		case '^': // Note continue
+			NLen = getDefaultLen(&msrc, Len);
+			if (GS == 8) {
+				time_on = NLen - 1;
+			}
+			else {
+				time_on = NLen * GS >> 3;
+				if (time_on == 0) {
+					time_on = 1;
+				}
+			}
+			time_off = NLen - time_on;
+
+			*dest++ = 0x90;
+			*dest++ = Key; // 0 - 95 (MIDI Note No.12 - 107)
+			*dest++ = time_on;
+			*dest++ = time_off;
+			this->time_total += NLen;
+			this->mute = false;
+			break;
 		case 'a': // Note key A
 		case 'b': // Note key B
 		case 'c': // Note key C
@@ -344,6 +364,9 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 				msrc++;
 				time_on = NLen;
 			}
+			else if (*msrc == '^') {
+				time_on = NLen;
+			}
 			else if (NLen == 1)
 			{
 				time_on = 1;
@@ -366,6 +389,8 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			this->time_total += NLen;
 			this->mute = false;
 
+			break;
+		case '!':
 			break;
 		default:
 			wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
