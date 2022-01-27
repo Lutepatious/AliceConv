@@ -1,3 +1,7 @@
+#include <string>
+#include <iostream>
+#include <sstream>
+#include <vector>
 #include <cstdio>
 #include <cstdlib>
 #include <cerrno>
@@ -78,10 +82,53 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		fclose(pFi);
+		
+		std::vector<unsigned __int8> buffer;
+		if (inbuf[0] == '"') {
+			std::string instr((char *) inbuf);
+			std::stringstream instr_s(instr);
+			std::string line;
+			bool header = true;
+			while (std::getline(instr_s, line)) {
+//				std::cout << line << std::endl;
+				line.erase(line.end() - 1); // remove CR
+				const std::string eomac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\"");
+				const std::string domac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[domac]\",\"[eomac]\",\"[eomac]\"");
+				if (line == eomac  || line == domac) {
+					header = false;
+//					std::cout << "Header end." << std::endl;
+					buffer.push_back(0xff);
+				}
+				else if (header) {
+					std::string col;
+					std::stringstream line_s(line);
+					while (std::getline(line_s, col, ',')) {
+						unsigned long v = std::stoul(col.substr(1, col.size() - 2));
+//						std::cout << v << std::endl;
+						buffer.push_back((unsigned __int8)v);
+					}
+				}
+				else if (line.size() > 1) {
+					buffer.insert(buffer.end(), line.begin() + 1, line.end() - 1);
+					buffer.push_back(0x0d);
+				}
+			}
 
-		unsigned __int8* mpos = (unsigned __int8*)memchr(inbuf, '\xFF', fs.st_size);
-		size_t len_header = mpos - inbuf;
-		struct eomml_decoded MMLs(inbuf, fs.st_size, Tones_tousin);
+#if 0
+			for (size_t i = 0; i < buffer.size(); i++) {
+				printf_s("%02X ", buffer[i]);
+			}
+#endif
+		}
+		else if (inbuf[0] != 0x00) {
+			continue;
+		}
+		else {
+			buffer.resize(fs.st_size);
+			memcpy_s(&buffer[0], fs.st_size, inbuf, fs.st_size);
+		}
+
+		struct eomml_decoded MMLs(&buffer[0], buffer.size(), Tones_tousin);
 
 		MMLs.decode();
 

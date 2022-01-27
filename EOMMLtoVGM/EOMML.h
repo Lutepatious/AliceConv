@@ -26,7 +26,7 @@ struct eomml_decoded {
 	unsigned __int8* dest;
 	unsigned __int8* mpos;
 	unsigned __int8* pEOF;
-	unsigned __int8* mml[channels + 1];
+	unsigned __int8* mml[channels + 1] = { NULL };
 
 	const size_t CHs = channels;
 	size_t mml_blocks;
