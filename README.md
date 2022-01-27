@@ -12,5 +12,6 @@ MSX2PNG serise
 2. Sound Converter
 MAKO2toVGM
 MAKO1toVGM
+EOMMLtoVGM
 
 docs/AliceConv.html
