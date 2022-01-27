@@ -1,3 +1,4 @@
+#include <string>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -14,7 +15,7 @@ eomml_decoded_CH::eomml_decoded_CH()
 	this->MML = (unsigned __int8*)GC_malloc(32 * 1024);
 }
 
-eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize, bool opm98)
+eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize, bool opm98, bool oct98)
 {
 	this->mpos = (unsigned __int8*)memchr(header, '\xFF', fsize);
 	this->pEOF = header + fsize;
@@ -26,7 +27,11 @@ eomml_decoded::eomml_decoded(unsigned __int8* header, size_t fsize, bool opm98)
 	if (opm98) {
 		for (size_t i = 0; i < this->CHs; i++) {
 			(this->CH + i)->x68tt = true;
-			this->mml[i] = NULL;
+		}
+	}
+	if (oct98) {
+		for (size_t i = 0; i < this->CHs; i++) {
+			(this->CH + i)->Oct98 = true;
 		}
 	}
 }
@@ -266,6 +271,9 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 			if (isdigit(*msrc)) {
 				unsigned __int8* tpos;
 				Octave = strtoul((const char*)msrc, (char**)&tpos, 10);
+				if (Oct98) {
+					Octave--;
+				}
 				msrc = tpos;
 			}
 			if (Octave > 8) {
@@ -436,9 +444,7 @@ void eomml_decoded::decode(void)
 			this->block[j++] = ++src;
 		}
 
-		size_t newmml_len = 4096;
-		unsigned __int8* newmml = (unsigned __int8*)GC_malloc(newmml_len);
-		strcpy_s((char*)newmml, newmml_len, (const char*)this->block[0]);
+		std::string new_mml((const char *)this->block[0]);
 
 		for (size_t k = 0; k < this->mml_blocks; k++) {
 			size_t index = (this->mml_block + k)->ch[i] + 1;
@@ -447,18 +453,17 @@ void eomml_decoded::decode(void)
 				wprintf_s(L"%zu\n", index);
 			}
 
-			if (newmml_len < strlen((const char*)newmml) + strlen((const char*)this->block[index])) {
-				newmml_len += 4096;
-				newmml = (unsigned __int8*)GC_realloc(newmml, newmml_len);
-			}
-
-			strcat_s((char*)newmml, newmml_len, (const char*)this->block[index]);
+			new_mml.append((const char*)this->block[index]);
 		}
 
 		if (debug) {
-			puts((const char*)newmml);
+			puts(new_mml.c_str());
 		}
 
-		(this->CH + i)->decode(newmml);
+		(this->CH + i)->decode((unsigned char *)new_mml.c_str());
+
+		new_mml.empty();
 	}
+
+
 }

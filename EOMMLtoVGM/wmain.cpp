@@ -30,6 +30,7 @@ int wmain(int argc, wchar_t** argv)
 	unsigned __int8 SSG_Volume = 0;
 	enum Machine M_arch = Machine::X68000;
 	bool Tones_tousin = false;
+	bool Old98_Octave = false;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'8') {
@@ -67,14 +68,9 @@ int wmain(int argc, wchar_t** argv)
 		struct __stat64 fs;
 		_fstat64(_fileno(pFi), &fs);
 
-		unsigned __int8* inbuf = (unsigned __int8*)GC_malloc(fs.st_size);
-		if (inbuf == NULL) {
-			wprintf_s(L"Memory allocation error. \n");
-			fclose(pFi);
-			exit(-2);
-		}
+		std::vector<unsigned __int8> inbuf(fs.st_size);
 
-		size_t rcount = fread_s(inbuf, fs.st_size, fs.st_size, 1, pFi);
+		size_t rcount = fread_s(&inbuf[0], fs.st_size, fs.st_size, 1, pFi);
 		if (rcount != 1) {
 			wprintf_s(L"File read error %zd.\n", rcount);
 			fclose(pFi);
@@ -82,10 +78,13 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		fclose(pFi);
-		
+
 		std::vector<unsigned __int8> buffer;
+		std::vector<unsigned __int8>* in = NULL;
 		if (inbuf[0] == '"') {
-			std::string instr((char *) inbuf);
+			M_arch = Machine::PC9801;
+			Old98_Octave = true;
+			std::string instr((char *) &inbuf[0]);
 			std::stringstream instr_s(instr);
 			std::string line;
 			bool header = true;
@@ -112,6 +111,7 @@ int wmain(int argc, wchar_t** argv)
 					buffer.insert(buffer.end(), line.begin() + 1, line.end() - 1);
 					buffer.push_back(0x0d);
 				}
+				in = &buffer;
 			}
 
 #if 0
@@ -124,13 +124,15 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 		else {
-			buffer.resize(fs.st_size);
-			memcpy_s(&buffer[0], fs.st_size, inbuf, fs.st_size);
+			in = &inbuf;
 		}
 
-		struct eomml_decoded MMLs(&buffer[0], buffer.size(), Tones_tousin);
+		struct eomml_decoded MMLs(&(*in)[0], in->size(), Tones_tousin, Old98_Octave);
 
 		MMLs.decode();
+
+		buffer.empty();
+		inbuf.empty();
 
 		if (debug) {
 			MMLs.print();
