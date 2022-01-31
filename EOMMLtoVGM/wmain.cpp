@@ -106,6 +106,7 @@ int wmain(int argc, wchar_t** argv)
 //						std::cout << v << std::endl;
 						buffer.push_back((unsigned __int8)v);
 					}
+					col.empty();
 				}
 				else if (line.size() > 1) {
 					buffer.insert(buffer.end(), line.begin() + 1, line.end() - 1);
@@ -113,6 +114,7 @@ int wmain(int argc, wchar_t** argv)
 				}
 				in = &buffer;
 			}
+			line.empty();
 
 #if 0
 			for (size_t i = 0; i < buffer.size(); i++) {
@@ -127,7 +129,7 @@ int wmain(int argc, wchar_t** argv)
 			in = &inbuf;
 		}
 
-		struct eomml_decoded MMLs(&(*in)[0], in->size(), Tones_tousin, Old98_Octave);
+		struct eomml_decoded MMLs(&in->at(0), in->size(), Tones_tousin, Old98_Octave);
 
 		MMLs.decode();
 
