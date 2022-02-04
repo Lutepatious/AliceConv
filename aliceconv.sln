@@ -78,6 +78,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EOMMLtoVGM", "EOMMLtoVGM\EOMMLtoVGM.vcxproj", "{AA6E78FC-678D-4AC3-939E-C38D0DD2AC89}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PSGtoVGM", "PSGtoVGM\PSGtoVGM.vcxproj", "{59964E9E-38B0-462B-B58F-386A1F1D65C6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7421FF63-EAFE-42D2-ACC7-43FF244CFEF6} = {7421FF63-EAFE-42D2-ACC7-43FF244CFEF6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
