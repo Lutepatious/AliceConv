@@ -45,7 +45,7 @@ int wmain(int argc, wchar_t** argv)
 		std::wcout << h->Load_Address_End - h->Load_Address_Start + 4 << "/" << inbuf.size() << std::endl;
 
 		for (size_t ch = 0; ch < CHs; ch++) {
-			std::wcout << std::hex << h->CH_Address[ch] - h->CH_Address[0] + 0x10 << std::endl;
+			std::wcout << std::hex << h->CH_Address[ch] - h->CH_Address[0] + sizeof(struct PC88_MML_HEADER) << std::endl;
 
 		}
 
