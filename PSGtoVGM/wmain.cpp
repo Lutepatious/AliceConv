@@ -20,7 +20,7 @@ struct MSX_PSG {
 	unsigned __int16 unk;
 	unsigned __int16 offs[3]; // +7 for absolute.
 	unsigned __int8 Volume[3];
-	unsigned __int8 unk1;
+	unsigned __int8 WaitMagnitude;
 	unsigned __int8 body[];
 };
 
@@ -118,10 +118,8 @@ public:
 					n.time_abs = total_length;
 					n.TP = cn[ch].Notes->TP;
 					n.CH = ch;
-					do {
-						total_length += cn[ch].Notes->length;
-						cn[ch].Notes++;
-					} while (n.TP.A == cn[ch].Notes->TP.A);
+					total_length += cn[ch].Notes->length;
+					cn[ch].Notes++;
 					Events.push_back(n);
 				}
 				struct NOTE end;
@@ -143,7 +141,7 @@ public:
 constexpr size_t MSX_VSYNC_NTSC = 60;  // Hz
 constexpr size_t VGM_CLOCK = 44100; // Hz
 
-constexpr size_t WAIT_BASE = VGM_CLOCK * 4 / MSX_VSYNC_NTSC;
+constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC;
 
 class PSGVGM {
 	union {
@@ -269,14 +267,14 @@ public:
 		}
 	}
 
-	void convert(std::vector<struct NOTE>& in)
+	void convert(std::vector<struct NOTE>& in, const unsigned __int8 Mag)
 	{
 		size_t time_prev = 0;
 		size_t time_prev_VGM_abs = 0;
 		for (const auto& i : in) {
 			size_t wait = i.time_abs - time_prev;
 			if (wait) {
-				wait *= WAIT_BASE;
+				wait *= WAIT_BASE * Mag;
 
 				time_prev = i.time_abs;
 				time_prev_VGM_abs += wait;
@@ -370,7 +368,7 @@ int wmain(int argc, wchar_t** argv)
 
 		class PSGVGM v;
 		v.make_init(in->Volume);
-		v.convert(p.Events);
+		v.convert(p.Events, in->WaitMagnitude);
 
 		inbuf.empty();
 
