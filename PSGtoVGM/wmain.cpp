@@ -141,7 +141,7 @@ public:
 constexpr size_t MSX_VSYNC_NTSC = 60;  // Hz
 constexpr size_t VGM_CLOCK = 44100; // Hz
 
-constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC;
+constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC; // must be 735
 
 class PSGVGM {
 	union {
@@ -297,21 +297,21 @@ public:
 
 	}
 
-	bool out(wchar_t* p)
+	size_t out(wchar_t* p)
 	{
 		wchar_t* outpath = filename_replace_ext(p, L".vgm");
 		std::ofstream outfile(outpath, std::ios::binary);
 		if (!outfile) {
 			std::wcerr << L"File " << p << L" open error." << std::endl;
 
-			return false;
+			return 0;
 		}
 
-		outfile.write((const char *) &this->vgm_header, sizeof(VGM_HEADER));
-		outfile.write((const char *) &this->vgm_body.at(0), this->vgm_body.size());
+		outfile.write((const char*)&this->vgm_header, sizeof(VGM_HEADER));
+		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
 
 		outfile.close();
-		return true;
+		return sizeof(VGM_HEADER) + this->vgm_body.size();
 	}
 };
 
@@ -328,18 +328,7 @@ int wmain(int argc, wchar_t** argv)
 	}
 
 	while (--argc) {
-		std::error_code ec{};
-
-		__int64 fsize = std::filesystem::file_size(*++argv, ec);
-
-		if (ec != std::error_code{}) {
-			std::wcerr << L"File " << *argv << L" is not exist." << std::endl;
-			std::cerr << ec << std::endl;
-
-			continue;
-		}
-
-		std::ifstream infile(*argv, std::ios::binary);
+		std::ifstream infile(*++argv, std::ios::binary);
 
 		if (!infile) {
 			std::wcerr << L"File " << *argv << L" open error." << std::endl;
@@ -347,8 +336,7 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		std::vector<__int8> inbuf(fsize);
-		infile.read(&inbuf.at(0), inbuf.size());
+		std::vector<__int8> inbuf{ std::istreambuf_iterator<__int8>(infile), std::istreambuf_iterator<__int8>() };
 
 		infile.close();
 
@@ -359,7 +347,7 @@ int wmain(int argc, wchar_t** argv)
 
 			continue;
 		}
-		std::wcout << L"File " << *argv << L" size " << in->Load_Address_End - in->Load_Address_Start + 1 + 7 << L"/" << fsize << L" bytes." << std::endl;
+		std::wcout << L"File " << *argv << L" size " << in->Load_Address_End - in->Load_Address_Start + 1 + 7 << L" bytes." << std::endl;
 
 		class PSG p;
 		p.Init(inbuf);
@@ -372,8 +360,16 @@ int wmain(int argc, wchar_t** argv)
 
 		inbuf.empty();
 
-		if (!v.out(*argv)) {
+		size_t outsize = v.out(*argv);
+		if (outsize == 0) {
+			std::wcerr << L"File output failed." << std::endl;
+
 			continue;
 		}
+		else {
+			std::wcout << outsize << L" bytes written." << std::endl;
+		}
 	}
+
+	return 0;
 }
