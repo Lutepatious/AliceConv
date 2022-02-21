@@ -144,6 +144,7 @@ constexpr size_t VGM_CLOCK = 44100; // Hz
 constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC; // must be 735
 
 class PSGVGM {
+	size_t vgm_loop_pos = 0;
 	union {
 		struct {
 			unsigned __int8 Tone_A : 1;
@@ -156,14 +157,16 @@ class PSGVGM {
 			unsigned __int8 IO_B : 1;
 		} B;
 		unsigned __int8 A;
-	} R7 = { .A = 0277 };
+	} R7;
 	const static unsigned __int8 vgm_command_AY8910 = 0xA0;
 	std::vector<unsigned __int8> vgm_body;
-	size_t vgm_loop_pos = 0;
-	VGM_HEADER vgm_header = { FCC_VGM, 0, 0x171 };
+	VGM_HEADER vgm_header;
 public:
 	PSGVGM(void)
 	{
+		this->R7.A = 0277;
+		this->vgm_header.fccVGM = FCC_VGM;
+		this->vgm_header.lngVersion = 0x171;
 		this->vgm_header.lngHzAY8910 = 3579545; // doubled 1789772.5Hz
 		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
