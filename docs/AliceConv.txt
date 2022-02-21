@@ -50,6 +50,9 @@ MSXtoPNG.exeシリーズ	MSX2版のCGファイルをPNGに変換。
 TIFFtoPNG_Y1CD.exe	ALICEの館CD (FM TOWNS版)に含まれるTIFFファイルをPNGに変換
 DRStoPNG.exeシリーズ	Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換
 MAKO2toVGM.exe		MAKO2形式の楽曲データをFM/SSG音源は.vgm、PCM音源は.wavに変換する。
+MAKO1toVGM.exe		MAKO1形式の楽曲データを.vgmに変換する。
+EOMMLtoVGM.exe		eomml形式の楽曲データを.vgmに変換する。
+PSGtoVGM.exe		MSX用PSGの楽曲データを.vgmに変換する。
 
 廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
 PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
@@ -287,7 +290,7 @@ X68000版ではEOMML形式ですが、該当する部分でトラックのオク
 アリスの館II,DPS全部に収録されたMAKO2版は修正されています。
 
 ### EOMMLtoVGM.exe ###
-ヘッダがバイナリのEOMML形式の楽曲を.vgmに変換します。
+EOMML形式の楽曲を.vgmに変換します。
 EOMML形式は基本的にはNEC系BASICのMMLですが細かい部分に差があります。
 但し極初期のPC-9801版では殆どテキストファイルであり、X68000版で利用されているものはヘッダ部分がバイナリ形式になっています。
 
@@ -321,6 +324,21 @@ X68000版D.P.S -SG-にはおまけとしてTOOPM.Xというツールがあり、
 PC-9801版のRance、CRESCENT MOON がぁるはテキストファイルだった為、対応に時間がかかりました。
 また、1オクターブ高い表記だったりと手間取っています。
 この2つは違いが顕著なので機種判別を行っています。
+
+### PSGtoVGM.exe ###
+MSX2版のM??.BINファイルを.vgm(ver.1.71)に変換します。
+該当するソフトは
+Rance1、Rance2、Intruder、CRESCENT MOON がぁる、あぶないてんぐ伝説、D.P.S、D.P.S -SG-
+以上です。
+
+コマンドラインで
+path>EOMMLtoVGM ファイル
+とします。
+
+このプログラムはVGM 1.71の隠れ仕様を前提としています(MAMEのソースコードから派生しているものです)。
+VGMPlay, in_vgmプラグイン, foo_input_vgmプラグインといったソフトなら正しく再生されます。
+MDPlayerでは音が1オクターブ高くなります。
+
 
 現在
 

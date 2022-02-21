@@ -13,5 +13,6 @@ MSX2PNG serise
 MAKO2toVGM
 MAKO1toVGM
 EOMMLtoVGM
+PSGtoVGM
 
 docs/AliceConv.html
