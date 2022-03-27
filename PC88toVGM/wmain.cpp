@@ -10,6 +10,7 @@
 #include "tools.h"
 
 constexpr size_t VGM_CLOCK = 44100;
+constexpr size_t INIT_LEN = 1;
 
 #pragma pack(1)
 constexpr size_t CHs = 6;
@@ -470,7 +471,7 @@ public:
 				block_len_total = this->time_total;
 				break;
 			case '*':
-				this->time_total = block_len_total + block_len_master[block++] + 1;
+				this->time_total = block_len_total + block_len_master[block++] + INIT_LEN;
 				block_len_total = this->time_total;
 				this->loop_start = this->E.size();
 				break;
@@ -604,7 +605,7 @@ class EVENTS {
 public:
 	std::vector<struct EVENT> events;
 	size_t length = 0;
-	size_t loop_start = 1;
+	size_t loop_start = INIT_LEN;
 	bool loop_enable = true;
 	void convert(class MML_decoded& MMLs)
 	{
