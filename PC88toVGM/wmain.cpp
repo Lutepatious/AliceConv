@@ -1005,7 +1005,6 @@ public:
 				this->make_wait(d_VGMT);
 			}
 
-			std::cout << in.loop_enable << " " << eve.time << " " << in.loop_start << std::endl;
 			if (in.loop_enable && eve.time == in.loop_start) {
 				this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
