@@ -9,6 +9,7 @@
 
 #include "tools.h"
 
+constexpr size_t VGM_CLOCK = 44100;
 
 #pragma pack(1)
 constexpr size_t CHs = 6;
@@ -247,7 +248,7 @@ public:
 
 	void decode(std::vector<size_t>& block_len_master)
 	{
-		unsigned Octave = 4; // 1 - 9
+		unsigned Octave = 5; // 1 - 9
 		unsigned GS = 8; // 1 - 8
 		unsigned Len = 48; // 0-192
 		unsigned Vol = 8; // 0-15
@@ -421,7 +422,10 @@ public:
 					}
 					msrc++;
 				}
-				Key += (Octave_t - 1) * 12;
+				if (Octave_t) {
+					Octave_t--;
+				}
+				Key += Octave_t * 12;
 				NLen = getDefaultLen(&msrc, Len);
 				// wprintf_s(L"Note %u %u\n", Key, NLen);
 				if (*msrc == '&') {
@@ -466,7 +470,7 @@ public:
 				block_len_total = this->time_total;
 				break;
 			case '*':
-				this->time_total = block_len_total + block_len_master[block++];
+				this->time_total = block_len_total + block_len_master[block++] + 1;
 				block_len_total = this->time_total;
 				this->loop_start = this->E.size();
 				break;
@@ -597,11 +601,11 @@ struct EVENT {
 class EVENTS {
 	size_t time_end = SIZE_MAX;
 
-
 public:
 	std::vector<struct EVENT> events;
 	size_t length = 0;
-	size_t loop_start = SIZE_MAX;
+	size_t loop_start = 1;
+	bool loop_enable = true;
 	void convert(class MML_decoded& MMLs)
 	{
 		size_t counter = 0;
@@ -655,7 +659,6 @@ public:
 		}
 
 		std::sort(events.begin(), events.end());
-
 	}
 
 	void print_all(void)
@@ -667,7 +670,6 @@ public:
 };
 
 constexpr size_t MASTERCLOCK_NEC_OPN = 3993600;
-constexpr size_t VGM_CLOCK = 44100;
 
 struct CH_params {
 	unsigned __int8 Volume;
@@ -688,6 +690,7 @@ class VGMdata_YM2203 {
 	size_t Time_Prev_VGM = 0;
 	size_t Time_Prev_VGM_abs = 0;
 	size_t Time_Loop_VGM_abs = 0;
+	size_t vgm_loop_pos;
 	unsigned __int8 SSG_out = 0277;
 	unsigned __int8 Ex_Vols_count = 0;
 	unsigned __int16 FNumber[12];
@@ -769,7 +772,6 @@ class VGMdata_YM2203 {
 	void finish(void)
 	{
 		this->vgm_body.push_back(0x66);
-		this->vgm_dlen = vgm_body.size();
 
 		if (this->Ex_Vols_count) {
 			this->vgm_extra_len = sizeof(VGM_HDR_EXTRA) + 1 + sizeof(VGMX_CHIP_DATA16) + this->padsize;
@@ -779,11 +781,11 @@ class VGMdata_YM2203 {
 		this->h_vgm.lngTotalSamples = this->Time_Prev_VGM_abs;
 		this->h_vgm.lngDataOffset = vgm_data_abs - ((UINT8*)&this->h_vgm.lngDataOffset - (UINT8*)&this->h_vgm.fccVGM);
 		this->h_vgm.lngExtraOffset = this->vgm_header_len - ((UINT8*)&this->h_vgm.lngExtraOffset - (UINT8*)&this->h_vgm.fccVGM);
-		this->h_vgm.lngEOFOffset = vgm_data_abs + this->vgm_dlen - ((UINT8*)&this->h_vgm.lngEOFOffset - (UINT8*)&this->h_vgm.fccVGM);
+		this->h_vgm.lngEOFOffset = vgm_data_abs + vgm_body.size() - ((UINT8*)&this->h_vgm.lngEOFOffset - (UINT8*)&this->h_vgm.fccVGM);
 
 		if (loop_start != NULL) {
 			this->h_vgm.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
-			this->h_vgm.lngLoopOffset = vgm_data_abs + this->vgm_dlen - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
+			this->h_vgm.lngLoopOffset = vgm_data_abs + this->vgm_loop_pos - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
 		}
 	}
 
@@ -912,7 +914,7 @@ public:
 		this->h_vgm.bytAYFlagYM2203 = 0x1;
 		this->Ex_Vols.Type = 0x86;
 		this->Ex_Vols.Flags = 0;
-		this->Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)100);
+		this->Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)200);
 		this->Ex_Vols_count = 1;
 
 		for (size_t i = 0; i < 12; i++) {
@@ -1002,14 +1004,13 @@ public:
 				this->make_wait(d_VGMT);
 			}
 
-#if 0
-			if (in.loop_enable && (src - in.event) == in.loop_start) {
+			std::cout << in.loop_enable << " " << eve.time << " " << in.loop_start << std::endl;
+			if (in.loop_enable && eve.time == in.loop_start) {
 				this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
-				this->vgm_loop_pos = this->vgm_pos;
-				this->loop_start = src;
+				this->vgm_loop_pos = vgm_body.size();
+				this->loop_start = &eve;
 				in.loop_enable = false;
 			}
-#endif
 
 			this->pCHparam_cur = &this->CHparam[eve.CH];
 
@@ -1153,7 +1154,6 @@ int wmain(int argc, wchar_t** argv)
 #endif
 		for (size_t i = 0; i < CHs; i++) {
 			M.CH[i].decode(M.master_block_len);
-			std::wcout << std::dec << M.CH[i].time_total << " " << M.CH[i].loop_start << " " << M.CH[i].E.size() << std::endl;
 		}
 		class EVENTS E;
 		E.convert(M);
@@ -1161,13 +1161,9 @@ int wmain(int argc, wchar_t** argv)
 
 		class VGMdata_YM2203 V;
 
-		std::cout << "VGM init"  << std::endl;
 		V.make_init();
-
-		std::cout << "VGM convert" << std::endl;
 		V.convert(E);
 
-		std::cout << "VGM out" << std::endl;
 		size_t outsize = V.out(*argv);
 		if (outsize == 0) {
 			std::wcerr << L"File output failed." << std::endl;
