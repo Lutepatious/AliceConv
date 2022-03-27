@@ -245,7 +245,7 @@ public:
 	std::vector<struct MML_Events> E;
 	std::vector<size_t> block_len;
 
-	void decode(std::vector<size_t> &block_len_master)
+	void decode(std::vector<size_t>& block_len_master)
 	{
 		unsigned Octave = 4; // 1 - 9
 		unsigned GS = 8; // 1 - 8
@@ -448,9 +448,11 @@ public:
 				e.Param = Key; // 0 - 95 (MIDI Note No.12 - 107)
 				this->E.push_back(e);
 
-				e.Time = this->time_total + time_on;
-				e.Type = 0x80;
-				this->E.push_back(e);
+				if (time_off) {
+					e.Time = this->time_total + time_on;
+					e.Type = 0x80;
+					this->E.push_back(e);
+				}
 
 				this->time_total += NLen;
 				this->mute = false;
@@ -658,7 +660,7 @@ public:
 
 	void print_all(void)
 	{
-		for(auto &e: this->events) {
+		for (auto& e : this->events) {
 			wprintf_s(L"%8zu: %2d: %02X\n", e.time, e.CH, e.Event);
 		}
 	}
@@ -667,26 +669,47 @@ public:
 constexpr size_t MASTERCLOCK_NEC_OPN = 3993600;
 constexpr size_t VGM_CLOCK = 44100;
 
-class VGMdata {
+struct CH_params {
+	unsigned __int8 Volume;
+	unsigned __int8 Tone;
+	unsigned __int8 Key;
+	union AC_Tone T;
+	bool NoteOn;
+};
+
+class VGMdata_YM2203 {
 	size_t padsize = 11;
-	const static unsigned __int8 vgm_command_YM2203 = 0x55;
+	size_t vgm_header_len = sizeof(VGM_HEADER);
+	size_t vgm_extra_len = 0;
+	size_t master_clock;
+	size_t vgm_dlen;
+	size_t Tempo = 120;
+	size_t Time_Prev = 0;
+	size_t Time_Prev_VGM = 0;
+	size_t Time_Prev_VGM_abs = 0;
+	size_t Time_Loop_VGM_abs = 0;
+	unsigned __int8 SSG_out = 0277;
+	unsigned __int8 Ex_Vols_count = 0;
+	unsigned __int16 FNumber[12];
+	unsigned __int16 TPeriod[97];
+	unsigned __int8 CH_cur = 16;
+
+	struct EVENT* loop_start = NULL;
+
+	const static unsigned __int8 vgm_command = 0x55;
 	std::vector<unsigned __int8> vgm_body;
-	VGM_HEADER vgm_header;
-	VGM_HEADER h_vgm = { FCC_VGM, 0, 0x171 };
+	VGM_HEADER h_vgm;
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
 	VGMX_CHIP_DATA16 Ex_Vols = { 0,0,0 };
 	const struct AC_FM_PARAMETER_BYTE* preset = preset_88;
+	struct CH_params CHparam[CHs];
+	struct CH_params* pCHparam_cur = NULL;
 
-	void make_data(unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
+	void make_data(unsigned __int8 address, unsigned __int8 data)
 	{
-		vgm_body.push_back(command);
+		vgm_body.push_back(vgm_command);
 		vgm_body.push_back(address);
 		vgm_body.push_back(data);
-	}
-
-	void make_data_YM2203(unsigned __int8 address, unsigned __int8 data)
-	{
-		this->make_data(vgm_command_YM2203, address, data);
 	}
 
 	void make_wait(size_t wait)
@@ -746,7 +769,7 @@ class VGMdata {
 	void finish(void)
 	{
 		this->vgm_body.push_back(0x66);
-		this->vgm_dlen = this->vgm_pos - this->vgm_out;
+		this->vgm_dlen = vgm_body.size();
 
 		if (this->Ex_Vols_count) {
 			this->vgm_extra_len = sizeof(VGM_HDR_EXTRA) + 1 + sizeof(VGMX_CHIP_DATA16) + this->padsize;
@@ -760,53 +783,130 @@ class VGMdata {
 
 		if (loop_start != NULL) {
 			this->h_vgm.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
-			this->h_vgm.lngLoopOffset = vgm_data_abs + (this->vgm_loop_pos - this->vgm_out) - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
+			this->h_vgm.lngLoopOffset = vgm_data_abs + this->vgm_dlen - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
 		}
 	}
 
-	unsigned __int8* vgm_out;
-	unsigned __int8* vgm_pos;
-	unsigned __int8* vgm_loop_pos = NULL;
-	size_t vgm_header_len = sizeof(VGM_HEADER);
-	size_t master_clock;
-	size_t bytes;
-	size_t length;
-	size_t tones;
-	size_t Tempo = 120;
-	size_t Time_Prev = 0;
-	size_t Time_Prev_VGM = 0;
-	size_t Time_Prev_VGM_abs = 0;
-	size_t Time_Loop_VGM_abs = 0;
-	unsigned version;
-	unsigned __int8 SSG_out = 0xBF;
-	unsigned __int8 Ex_Vols_count = 0;
-	size_t vgm_dlen = 0;
-	size_t vgm_extra_len = 0;
+	void Key_set_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
 
-	unsigned __int16 FNumber[12];
-	unsigned __int16 TPeriod[97];
+		unsigned __int8 Octave = this->pCHparam_cur->Key / 12;
+		U.S.FNumber = this->FNumber[this->pCHparam_cur->Key % 12];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
 
-	struct EVENT* loop_start = NULL;
-	struct CH_params* pCHparam = NULL;
-	struct CH_params* pCHparam_cur = NULL;
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
+	}
 
-	void convert_YM2203(struct EVENT& eve);
-	void Timer_set_YM2203(void);
-	void Tone_select_YM2203_FM(unsigned __int8 CH);
-	void Key_set_YM2203_FM(unsigned __int8 CH);
-	void Key_set_YM2203_SSG(unsigned __int8 CH);
-	void Note_on_YM2203_FM(unsigned __int8 CH);
-	void Note_on_YM2203_SSG(unsigned __int8 CH);
-	void Note_off_YM2203_FM(unsigned __int8 CH);
-	void Note_off_YM2203_SSG(unsigned __int8 CH);
-	void Volume_YM2203_FM(unsigned __int8 CH);
-	void Volume_YM2203_SSG(unsigned __int8 CH);
+	void Key_set_SSG(unsigned __int8 CH)
+	{
+		union {
+			unsigned __int16 W;
+			unsigned __int8 B[2];
+		} U;
+
+		U.W = this->TPeriod[this->pCHparam_cur->Key];
+
+		this->make_data(0x01 + CH * 2, U.B[1]);
+		this->make_data(0x00 + CH * 2, U.B[0]);
+	}
+
+	void Timer_set(void)
+	{
+		size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x24, (NA >> 2) & 0xFF);
+		this->make_data(0x25, NA & 0x03);
+	}
+
+	void Note_on_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->pCHparam_cur->T.S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Note_on_SSG(unsigned __int8 CH)
+	{
+		this->SSG_out &= ~(1 << CH);
+		this->make_data(0x07, this->SSG_out);
+	}
+
+	void Note_off_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 0 };
+		this->make_data(0x28, U.B);
+	}
+
+	void Note_off_SSG(unsigned __int8 CH)
+	{
+		this->SSG_out |= (1 << CH);
+		this->make_data(0x07, this->SSG_out);
+	}
+
+	void Volume_FM(unsigned __int8 CH)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x40 + 4 * op + CH, this->pCHparam_cur->Volume);
+			}
+		}
+	}
+
+	void Volume_SSG(unsigned __int8 CH) {
+		this->make_data(0x08 + CH, this->pCHparam_cur->Volume);
+	}
+
+	void Tone_select_FM(unsigned __int8 CH) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->pCHparam_cur->T.B = *(this->preset + this->pCHparam_cur->Tone);
+
+		this->make_data(0xB0 + CH, this->pCHparam_cur->T.B.FB_CON);
+
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && (this->pCHparam_cur->T.S.Connect == 7 || this->pCHparam_cur->T.S.Connect > 4 && op || this->pCHparam_cur->T.S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->pCHparam_cur->T.B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
 
 public:
-	VGMdata(void)
+	VGMdata_YM2203(void)
 	{
-		this->vgm_header.fccVGM = FCC_VGM;
-		this->vgm_header.lngVersion = 0x171;
+		this->h_vgm.fccVGM = FCC_VGM;
+		this->h_vgm.lngVersion = 0x171;
 		this->h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
 		this->h_vgm.bytAYType = 0x10;
 		this->h_vgm.bytAYFlagYM2203 = 0x1;
@@ -851,7 +951,7 @@ public:
 			return 0;
 		}
 
-		outfile.write((const char*)&this->vgm_header, sizeof(VGM_HEADER));
+		outfile.write((const char*)&this->h_vgm, sizeof(VGM_HEADER));
 
 		if (this->vgm_extra_len) {
 			outfile.write((const char*)&eh_vgm, sizeof(VGM_HDR_EXTRA));
@@ -869,7 +969,103 @@ public:
 		return sizeof(VGM_HEADER) + this->vgm_body.size();
 	}
 
-	void convert(class EVENTS& in);
+	void convert(class EVENTS& in)
+	{
+		for (auto& eve : in.events) {
+			if (eve.time == SIZE_MAX) {
+				break;
+			}
+			if (eve.time - this->Time_Prev) {
+				// Tqn = 60 / Tempo
+				// TPQN = 48
+				// Ttick = Tqn / 48
+				// c_VGMT = Ttick * src_time * VGM_CLOCK 
+				//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+				//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+				//
+				// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+				// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+				// VAはBIOSが演奏するので調整しない。
+
+				size_t c_VGMT = (eve.time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
+
+				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
+				this->Time_Prev_VGM += d_VGMT;
+				this->Time_Prev_VGM_abs += d_VGMT;
+				this->Time_Prev = eve.time;
+
+				this->make_wait(d_VGMT);
+			}
+
+#if 0
+			if (in.loop_enable && (src - in.event) == in.loop_start) {
+				this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
+				this->vgm_loop_pos = this->vgm_pos;
+				this->loop_start = src;
+				in.loop_enable = false;
+			}
+#endif
+
+			this->pCHparam_cur = &this->CHparam[eve.CH];
+
+			switch (eve.Event) {
+			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+				this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
+				this->Tempo = eve.Param;
+
+				// この後のNAの計算とタイマ割り込みの設定は実際には不要
+				this->Timer_set();
+				break;
+			case 0xF5: // Tone select
+				if (eve.CH < 3) {
+					this->pCHparam_cur->Tone = eve.Param & 0x7F;
+					this->Tone_select_FM(eve.CH);
+				}
+				break;
+			case 0x80: // Note Off
+				if (eve.CH < 3) {
+					this->Note_off_FM(eve.CH);
+				}
+				else {
+					this->Note_off_SSG(eve.CH - 3);
+				}
+				break;
+			case 0xF9: // Volume change @V{0-127}
+				if (eve.CH < 3) {
+					this->pCHparam_cur->Volume = ~eve.Param & 0x7F;
+					this->Volume_FM(eve.CH);
+				}
+				else {
+					this->pCHparam_cur->Volume = (((unsigned)eve.Param - 84) * 16 - 1) / 43;
+					this->Volume_SSG(eve.CH - 3);
+				}
+				break;
+			case 0x90: // Note on
+				if (eve.CH < 3) {
+					this->Note_on_FM(eve.CH);
+				}
+				else {
+					this->Note_on_SSG(eve.CH - 3);
+				}
+				break;
+			case 0x97: // Key_set
+				this->pCHparam_cur->Key = eve.Param;
+				if (eve.CH < 3) {
+					this->Key_set_FM(eve.CH);
+				}
+				else {
+					this->Key_set_SSG(eve.CH - 3);
+				}
+				break;
+			}
+		}
+		this->finish();
+	}
 
 };
 
@@ -962,6 +1158,25 @@ int wmain(int argc, wchar_t** argv)
 		class EVENTS E;
 		E.convert(M);
 //		E.print_all();
+
+		class VGMdata_YM2203 V;
+
+		std::cout << "VGM init"  << std::endl;
+		V.make_init();
+
+		std::cout << "VGM convert" << std::endl;
+		V.convert(E);
+
+		std::cout << "VGM out" << std::endl;
+		size_t outsize = V.out(*argv);
+		if (outsize == 0) {
+			std::wcerr << L"File output failed." << std::endl;
+
+			continue;
+		}
+		else {
+			std::wcout << outsize << L" bytes written." << std::endl;
+		}
 	}
 	return 0;
 }
