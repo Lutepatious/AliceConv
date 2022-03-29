@@ -53,6 +53,7 @@ MAKO2toVGM.exe		MAKO2形式の楽曲データをFM/SSG音源は.vgm、PCM音源�
 MAKO1toVGM.exe		MAKO1形式の楽曲データを.vgmに変換する。
 EOMMLtoVGM.exe		eomml形式の楽曲データを.vgmに変換する。
 PSGtoVGM.exe		MSX用PSGの楽曲データを.vgmに変換する。
+PC88toVGM.exe		PC-8801SR版のMML形式の楽曲データを.vgmに変換する。
 
 廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
 PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
@@ -338,6 +339,19 @@ path>EOMMLtoVGM ファイル
 このプログラムはVGM 1.71の隠れ仕様を前提としています(MAMEのソースコードから派生しているものです)。
 VGMPlay, in_vgmプラグイン, foo_input_vgmプラグインといったソフトなら正しく再生されます。
 MDPlayerでは音が1オクターブ高くなります。
+
+### PC88toVGM.exe ###
+PC-8801SR版のMML形式の楽曲を.vgmに変換します。
+該当するソフトは
+Rance1、Intruder、あぶないてんぐ伝説、D.P.S、リトルヴァンパイア
+以上です。
+
+コマンドラインで
+path>PC88toVGM ファイル
+とします。
+
+PC-88SR版で使われるMMLは「最短音符合わせ法」を使っているため、
+可読性も悪く一部にはバグが見られます。その為、完全な再現を保証できません。
 
 
 現在

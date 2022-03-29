@@ -239,7 +239,6 @@ class MML_decoded_CH {
 public:
 	size_t len = 0;
 	size_t time_total = 0;
-	size_t len_unrolled = 0;
 
 	size_t loop_start = 0;
 	bool mute = false;
@@ -277,8 +276,26 @@ public:
 
 			switch (tolower(*msrc++)) {
 			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
-				if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					unsigned EPeriod = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+					if (EPeriod < 1 || EPeriod > 65535) {
+						wprintf_s(L"T %u: out of range.\n", EPeriod);
+					}
+				}
+				else if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
 					msrc++;
+				}
+				break;
+			case 's': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					unsigned EType = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+					if (EType > 15) {
+						wprintf_s(L"T %u: out of range.\n", EType);
+					}
 				}
 				break;
 			case 't': // Tempo
@@ -473,7 +490,7 @@ public:
 			case '*':
 				this->time_total = block_len_total + block_len_master[block++] + INIT_LEN;
 				block_len_total = this->time_total;
-				this->loop_start = this->E.size();
+				this->loop_start = this->E.at(this->E.size() - 1).Time;
 				break;
 			default:
 				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
@@ -495,6 +512,11 @@ public:
 		// L ドットが付けられる!
 		while (*msrc) {
 			switch (tolower(*msrc++)) {
+			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
+				if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
+					msrc++;
+				}
+				break;
 			case 'l': // default Length
 				Len = getDefaultLen(&msrc, Len);
 				break;
@@ -680,27 +702,24 @@ struct CH_params {
 	bool NoteOn;
 };
 
+constexpr unsigned __int8 vgm_command_YM2203 = 0x55;
+
 class VGMdata_YM2203 {
 	size_t padsize = 11;
 	size_t vgm_header_len = sizeof(VGM_HEADER);
 	size_t vgm_extra_len = 0;
-	size_t master_clock;
-	size_t vgm_dlen;
 	size_t Tempo = 120;
 	size_t Time_Prev = 0;
 	size_t Time_Prev_VGM = 0;
 	size_t Time_Prev_VGM_abs = 0;
 	size_t Time_Loop_VGM_abs = 0;
-	size_t vgm_loop_pos;
-	unsigned __int8 SSG_out = 0277;
-	unsigned __int8 Ex_Vols_count = 0;
+	size_t vgm_loop_pos = 0;
 	unsigned __int16 FNumber[12];
 	unsigned __int16 TPeriod[97];
+	unsigned __int8 SSG_out = 0277;
+	unsigned __int8 Ex_Vols_count = 0;
 	unsigned __int8 CH_cur = 16;
 
-	struct EVENT* loop_start = NULL;
-
-	const static unsigned __int8 vgm_command = 0x55;
 	std::vector<unsigned __int8> vgm_body;
 	VGM_HEADER h_vgm;
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
@@ -711,7 +730,7 @@ class VGMdata_YM2203 {
 
 	void make_data(unsigned __int8 address, unsigned __int8 data)
 	{
-		vgm_body.push_back(vgm_command);
+		vgm_body.push_back(vgm_command_YM2203);
 		vgm_body.push_back(address);
 		vgm_body.push_back(data);
 	}
@@ -784,7 +803,7 @@ class VGMdata_YM2203 {
 		this->h_vgm.lngExtraOffset = this->vgm_header_len - ((UINT8*)&this->h_vgm.lngExtraOffset - (UINT8*)&this->h_vgm.fccVGM);
 		this->h_vgm.lngEOFOffset = vgm_data_abs + vgm_body.size() - ((UINT8*)&this->h_vgm.lngEOFOffset - (UINT8*)&this->h_vgm.fccVGM);
 
-		if (loop_start != NULL) {
+		if (this->vgm_loop_pos) {
 			this->h_vgm.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
 			this->h_vgm.lngLoopOffset = vgm_data_abs + this->vgm_loop_pos - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
 		}
@@ -828,7 +847,7 @@ class VGMdata_YM2203 {
 
 	void Timer_set(void)
 	{
-		size_t NA = 1024 - (((this->master_clock * 2) / (192LL * this->Tempo) + 1) >> 1);
+		size_t NA = 1024 - (((this->h_vgm.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
 	}
@@ -910,7 +929,7 @@ public:
 	{
 		this->h_vgm.fccVGM = FCC_VGM;
 		this->h_vgm.lngVersion = 0x171;
-		this->h_vgm.lngHzYM2203 = this->master_clock = MASTERCLOCK_NEC_OPN;
+		this->h_vgm.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
 		this->h_vgm.bytAYType = 0x10;
 		this->h_vgm.bytAYFlagYM2203 = 0x1;
 		this->Ex_Vols.Type = 0x86;
@@ -920,13 +939,13 @@ public:
 
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
-			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->master_clock;
+			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->h_vgm.lngHzYM2203;
 			this->FNumber[i] = fFNumber + 0.5;
 		}
 
 		for (size_t i = 0; i < 97; i++) {
 			double Freq = 440.0 * pow(2.0, (-57.0 + i) / 12.0);
-			double fTP = this->master_clock / (64.0 * Freq);
+			double fTP = this->h_vgm.lngHzYM2203 / (64.0 * Freq);
 			this->TPeriod[i] = fTP + 0.5;
 		}
 
@@ -1005,10 +1024,9 @@ public:
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.time == in.loop_start) {
+			if (in.loop_enable && eve.time >= in.loop_start) {
 				this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
-				this->loop_start = &eve;
 				in.loop_enable = false;
 			}
 
@@ -1093,18 +1111,20 @@ int wmain(int argc, wchar_t** argv)
 		infile.close();
 
 		struct PC88_MML_HEADER* h = (struct PC88_MML_HEADER*)&inbuf.at(0);
-		std::wcout << h->Load_Address_End - h->Load_Address_Start + 4 << "/" << inbuf.size() << std::endl;
+//		std::wcout << h->Load_Address_End - h->Load_Address_Start + 4 << "/" << inbuf.size() << std::endl;
 
 		std::vector<unsigned __int16> MMLIndex(CHs);
 		for (size_t ch = 0; ch < CHs; ch++) {
 			MMLIndex.at(ch) = h->CH_Address[ch] - h->CH_Address[0] + 0x10;
 		}
 
+#if 0
 		std::wcout << std::hex;
 		for (auto& i : MMLIndex) {
 			std::wcout << i << " ";
 		}
 		std::wcout << std::endl;
+#endif
 
 		std::vector<std::vector<unsigned __int16>> MMLAddr(CHs);
 		for (size_t ch = 0; ch < CHs; ch++) {
@@ -1134,9 +1154,7 @@ int wmain(int argc, wchar_t** argv)
 					M.CH[i].MML += '|';
 				}
 			}
-#if 0
-			std::cout << M.CH[i].MML << std::endl;
-#endif
+//			std::cout << M.CH[i].MML << std::endl;
 		}
 		M.correct_block_len();
 #if 1
