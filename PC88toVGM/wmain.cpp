@@ -202,6 +202,7 @@ struct MML_Events {
 	size_t Time;
 	unsigned __int8 Type;
 	unsigned __int8 Param;
+	unsigned __int16 Param16;
 };
 
 class MML_decoded_CH {
@@ -283,6 +284,10 @@ public:
 					if (EPeriod < 1 || EPeriod > 65535) {
 						wprintf_s(L"T %u: out of range.\n", EPeriod);
 					}
+					e.Time = this->time_total;
+					e.Type = 0xFA;
+					e.Param16 = EPeriod;
+					this->E.push_back(e);
 				}
 				else if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
 					msrc++;
@@ -296,6 +301,10 @@ public:
 					if (EType > 15) {
 						wprintf_s(L"T %u: out of range.\n", EType);
 					}
+					e.Time = this->time_total;
+					e.Type = 0xFB;
+					e.Param = EType;
+					this->E.push_back(e);
 				}
 				break;
 			case 't': // Tempo
@@ -484,13 +493,35 @@ public:
 			case ' ':
 				break;
 			case '|': // block separator, align block here.
-				this->time_total = block_len_total + block_len_master[block++];
+				size_t block_len;
+				if (block_len_master[block] == 480 && this->block_len[block] == 384) {
+					std::wcout << L"Fix for Intruder applied." << std::endl;
+					this->time_total = block_len_total + 384;
+					block++;
+				}
+				else if (block_len_master[block] == 480 && this->block_len[block] == 360) {
+					std::wcout << L"Fix for Intruder applied." << std::endl;
+					this->time_total = block_len_total + 384;
+					block++;
+				}
+				else if (block_len_master[block] == 576 && this->block_len[block] == 384) {
+					std::wcout << L"Fix for Intruder applied." << std::endl;
+					this->time_total = block_len_total + 384;
+					block++;
+				}
+				else {
+					this->time_total = block_len_total + block_len_master[block++];
+				}
 				block_len_total = this->time_total;
 				break;
 			case '*':
 				this->time_total = block_len_total + block_len_master[block++] + INIT_LEN;
 				block_len_total = this->time_total;
-				this->loop_start = this->E.at(this->E.size() - 1).Time;
+				this->loop_start = this->time_total;
+				if (block_len_master[block + 1] == 192 && this->block_len[block + 1] == 96 && Len == 12) {
+					std::wcout << L"Fix for Rance applied." << Len << std::endl;
+					Len == 24;
+				}
 				break;
 			default:
 				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
@@ -589,6 +620,7 @@ struct EVENT {
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
 	unsigned __int8 Param; // イベントのパラメータ
+	unsigned __int16 Param16; // イベントのパラメータ 16ビット
 
 	bool operator < (const struct EVENT& out) {
 		if (this->time < out.time) {
@@ -668,7 +700,16 @@ public:
 					eve.Type = 2;
 					events.push_back(eve);
 					break;
-				default:;
+				case 0xFB: // Envelope Type
+					eve.Param = e.Param;
+					eve.Type = 3;
+					events.push_back(eve);
+					break;
+				case 0xFA: // Envelope Period
+					eve.Param16 = e.Param16;
+					eve.Type = 3;
+					events.push_back(eve);
+					break;
 				}
 			}
 			struct EVENT end;
@@ -716,9 +757,22 @@ class VGMdata_YM2203 {
 	size_t vgm_loop_pos = 0;
 	unsigned __int16 FNumber[12];
 	unsigned __int16 TPeriod[97];
+	unsigned __int16 EP; // Envelope Period
 	unsigned __int8 SSG_out = 0277;
 	unsigned __int8 Ex_Vols_count = 0;
 	unsigned __int8 CH_cur = 16;
+
+	union {
+		unsigned __int8 B;
+		struct {
+			unsigned __int8 HLD :1;
+			unsigned __int8 ALT :1;
+			unsigned __int8 ATT :1;
+			unsigned __int8 C :1;
+			unsigned __int8 :4;
+
+		} S;
+	} EG_Type;
 
 	std::vector<unsigned __int8> vgm_body;
 	VGM_HEADER h_vgm;
@@ -924,6 +978,24 @@ class VGMdata_YM2203 {
 		}
 	}
 
+	void Envelope_Generator_set_SSG(void)
+	{
+		union {
+			unsigned __int16 W;
+			unsigned __int8 B[2];
+		} U;
+
+		U.W = this->EP;
+
+		this->make_data(0x0C, U.B[1]);
+		this->make_data(0x0B, U.B[0]);
+	}
+
+	void Envelope_Generator_Type_set_SSG(unsigned __int8 CH) {
+		this->make_data(0x0D, this->EG_Type.B);
+		this->make_data(0x08 + CH, 0x10);
+	}
+
 public:
 	VGMdata_YM2203(void)
 	{
@@ -1024,7 +1096,7 @@ public:
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.time >= in.loop_start) {
+			if (in.loop_enable && eve.time == in.loop_start) {
 				this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
@@ -1081,7 +1153,22 @@ public:
 					this->Key_set_SSG(eve.CH - 3);
 				}
 				break;
+#if 0
+			case 0xFA:
+				this->EP = eve.Param16;
+				if (eve.CH >= 3) {
+					this->Envelope_Generator_set_SSG();
+				}
+				break;
+			case 0xFB:
+				this->EG_Type.B = eve.Param;
+				if (eve.CH >= 3) {
+					this->Envelope_Generator_Type_set_SSG(eve.CH - 3);
+				}
+				break;
+#endif
 			}
+
 		}
 		this->finish();
 	}
@@ -1157,7 +1244,7 @@ int wmain(int argc, wchar_t** argv)
 //			std::cout << M.CH[i].MML << std::endl;
 		}
 		M.correct_block_len();
-#if 1
+#if 0
 		for (size_t i = 0; i < CHs; i++) {
 			for (auto& k : M.CH[i].block_len) {
 				std::cout << k << " ";

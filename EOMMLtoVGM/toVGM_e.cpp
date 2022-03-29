@@ -1030,7 +1030,7 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98)
 		//		h_vgm.bytAYFlagYM2203 = 0x1;
 		Ex_Vols.Type = 0x86;
 		Ex_Vols.Flags = 0;
-		Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)100);
+		Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)200);
 		Ex_Vols_count = 1;
 		wprintf_s(L"PC-8801 mode.\n");
 	}
@@ -1041,7 +1041,7 @@ VGMdata_e::VGMdata_e(size_t elems, enum class Machine M_arch, bool opm98)
 		//		h_vgm.bytAYFlagYM2203 = 0x1;
 		Ex_Vols.Type = 0x86;
 		Ex_Vols.Flags = 0;
-		Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)60);
+		Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)120);
 		Ex_Vols_count = 1;
 		wprintf_s(L"PC-9801 mode.\n");
 	}
