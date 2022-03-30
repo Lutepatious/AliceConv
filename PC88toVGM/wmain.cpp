@@ -519,7 +519,7 @@ public:
 				block_len_total = this->time_total;
 				this->loop_start = this->time_total;
 				if (block_len_master[block + 1] == 192 && this->block_len[block + 1] == 96 && Len == 12) {
-					std::wcout << L"Fix for Rance applied." << Len << std::endl;
+					std::wcout << L"Fix for Rance applied." << std::endl;
 					Len == 24;
 				}
 				break;
