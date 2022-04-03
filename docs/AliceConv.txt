@@ -54,6 +54,7 @@ MAKO1toVGM.exe		MAKO1形式の楽曲データを.vgmに変換する。
 EOMMLtoVGM.exe		eomml形式の楽曲データを.vgmに変換する。
 PSGtoVGM.exe		MSX用PSGの楽曲データを.vgmに変換する。
 PC88toVGM.exe		PC-8801SR版のMML形式の楽曲データを.vgmに変換する。
+MCLtoVGM.exe		MCL形式というかMSXのMML内部形式の楽曲データを.vgmに変換する。
 
 廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
 PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
@@ -354,6 +355,21 @@ PC-88SR版で使われるMMLは「最短音符合わせ法」を使っている�
 可読性も悪く一部にはバグが見られます。その為、完全な再現を保証できません。
 リトルヴァンパイアの3曲目ではSSGでエンベロープを使っていますが、挙動が怪しいため無効にしています。
 Intruderの3曲目ではMMLのブロック長がバラバラであるため、特定の値で位置合わせ処理を変えています。
+
+### MCLtoVGM.exe ###
+MSX2版のX?.MCLファイルを.vgm(ver.1.71)に変換します。
+該当するソフトは
+リトルヴァンパイア、学園戦記
+以上です。
+
+コマンドラインで
+path>MCLtoVGM ファイル
+とします。
+
+このプログラムはVGM 1.71の隠れ仕様を前提としています(MAMEのソースコードから派生しているものです)。
+VGMPlay, in_vgmプラグイン, foo_input_vgmプラグインといったソフトなら正しく再生されます。
+MDPlayerでは音が1オクターブ高くなります。
+
 
 現在
 
