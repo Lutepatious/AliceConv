@@ -33,10 +33,8 @@ int wmain(int argc, wchar_t** argv)
 	bool Old98_Octave = false;
 	while (--argc) {
 		if (**++argv == L'-') {
-			if (*(*argv + 1) == L'8') {
-				M_arch = Machine::PC8801;
-			}
-			else if (*(*argv + 1) == L'9') {
+			if (*(*argv + 1) == L'9') {
+				Old98_Octave = true;
 				M_arch = Machine::PC9801;
 			}
 			else if (*(*argv + 1) == L'T') {

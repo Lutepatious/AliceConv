@@ -4,9 +4,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "stdtype.h"
-#include "VGMFile.h"
-
+#include "VGM.hpp"
 #include "tools.h"
 
 constexpr size_t VGM_CLOCK = 44100;
@@ -999,8 +997,6 @@ class VGMdata_YM2203 {
 public:
 	VGMdata_YM2203(void)
 	{
-		this->h_vgm.fccVGM = FCC_VGM;
-		this->h_vgm.lngVersion = 0x171;
 		this->h_vgm.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
 		this->h_vgm.bytAYType = 0x10;
 		this->h_vgm.bytAYFlagYM2203 = 0x1;

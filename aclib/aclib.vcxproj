@@ -202,6 +202,7 @@
     <ClInclude Include="stdtype.h" />
     <ClInclude Include="tiffrw.h" />
     <ClInclude Include="tools.h" />
+    <ClInclude Include="VGM.hpp" />
     <ClInclude Include="VGMFile.h" />
     <ClInclude Include="wave.h" />
   </ItemGroup>

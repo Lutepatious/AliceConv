@@ -3,9 +3,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "stdtype.h"
-#include "VGMFile.h"
-
+#include "VGM.hpp"
 #include "tools.h"
 
 #pragma pack(1)
@@ -106,8 +104,6 @@ public:
 	VGMdata_YM2149(void)
 	{
 		this->R7.A = 0277;
-		this->vgm_header.fccVGM = FCC_VGM;
-		this->vgm_header.lngVersion = 0x171;
 		this->vgm_header.lngHzAY8910 = 3579545; // doubled 1789772.5Hz
 		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.

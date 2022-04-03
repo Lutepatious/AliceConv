@@ -3,9 +3,7 @@
 #include <fstream>
 #include <algorithm>
 
-#include "stdtype.h"
-#include "VGMFile.h"
-
+#include "VGM.hpp"
 #include "tools.h"
 
 #pragma pack(1)
@@ -136,7 +134,6 @@ public:
 
 constexpr size_t MSX_VSYNC_NTSC = 60;  // Hz
 constexpr size_t VGM_CLOCK = 44100; // Hz
-
 constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC; // must be 735
 
 class PSGVGM {
@@ -154,15 +151,12 @@ class PSGVGM {
 		} B;
 		unsigned __int8 A;
 	} R7;
-	const static unsigned __int8 vgm_command_AY8910 = 0xA0;
 	std::vector<unsigned __int8> vgm_body;
 	VGM_HEADER vgm_header;
 public:
 	PSGVGM(void)
 	{
 		this->R7.A = 0277;
-		this->vgm_header.fccVGM = FCC_VGM;
-		this->vgm_header.lngVersion = 0x171;
 		this->vgm_header.lngHzAY8910 = 3579545; // doubled 1789772.5Hz
 		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
@@ -170,13 +164,12 @@ public:
 
 	void make_data(unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
 	{
-		vgm_body.push_back(command);
-		vgm_body.push_back(address);
-		vgm_body.push_back(data);
 	}
 	void make_data_AY8910(unsigned __int8 address, unsigned __int8 data)
 	{
-		this->make_data(vgm_command_AY8910, address, data);
+		vgm_body.push_back(0xA0);
+		vgm_body.push_back(address);
+		vgm_body.push_back(data);
 	}
 	void Tone_Set_AY8910(const unsigned __int8& CH, const union Tone_Period& TP)
 	{
