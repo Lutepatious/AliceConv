@@ -773,7 +773,7 @@ class VGMdata_YM2203 {
 	} EG_Type;
 
 	std::vector<unsigned __int8> vgm_body;
-	VGM_HEADER h_vgm;
+	VGMHEADER h_vgm;
 	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
 	VGMX_CHIP_DATA16 Ex_Vols = { 0,0,0 };
 	const struct AC_FM_PARAMETER_BYTE* preset = preset_88;

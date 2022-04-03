@@ -152,7 +152,7 @@ class PSGVGM {
 		unsigned __int8 A;
 	} R7;
 	std::vector<unsigned __int8> vgm_body;
-	VGM_HEADER vgm_header;
+	VGMHEADER vgm_header;
 public:
 	PSGVGM(void)
 	{
