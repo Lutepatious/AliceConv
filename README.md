@@ -14,5 +14,7 @@ MAKO2toVGM
 MAKO1toVGM
 EOMMLtoVGM
 PSGtoVGM
+PC98toVGM
+MCLtoVGM
 
 docs/AliceConv.html

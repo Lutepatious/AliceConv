@@ -142,7 +142,7 @@ static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 void eomml_decoded_CH::decode(unsigned __int8* input)
 {
 
-	unsigned Octave = 4; // 1 - 9
+	unsigned Octave = this->Oct98 ? 5 : 4; // 1 - 9
 	unsigned GS = 8; // 1 - 8
 	unsigned Len = 48; // 0-192
 	unsigned Vol = 8; // 0-15
@@ -444,7 +444,7 @@ void eomml_decoded::decode(void)
 			this->block[j++] = ++src;
 		}
 
-		std::string new_mml((const char *)this->block[0]);
+		std::string new_mml((const char*)this->block[0]);
 
 		for (size_t k = 0; k < this->mml_blocks; k++) {
 			size_t index = (this->mml_block + k)->ch[i] + 1;
@@ -460,7 +460,7 @@ void eomml_decoded::decode(void)
 			puts(new_mml.c_str());
 		}
 
-		(this->CH + i)->decode((unsigned char *)new_mml.c_str());
+		(this->CH + i)->decode((unsigned char*)new_mml.c_str());
 
 		new_mml.empty();
 	}
