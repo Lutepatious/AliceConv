@@ -18,14 +18,6 @@ struct MSX_PSG {
 	unsigned __int8 body[];
 };
 
-union Tone_Period { // Tone Period. 0 means note-off
-	unsigned __int16 A;
-	struct {
-		unsigned __int8 L;
-		unsigned __int8 H;
-	} B;
-};
-
 struct PSG_NOTE {
 	unsigned __int8 length;
 	union Tone_Period TP;
@@ -136,7 +128,7 @@ constexpr size_t MSX_VSYNC_NTSC = 60;  // Hz
 constexpr size_t VGM_CLOCK = 44100; // Hz
 constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC; // must be 735
 
-class VGMdata_YM2149 : VGM_YM2149 {
+class VGMdata_YM2149 : public VGM_YM2149 {
 public:
 	VGMdata_YM2149(void)
 	{

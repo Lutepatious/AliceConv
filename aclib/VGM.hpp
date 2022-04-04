@@ -143,8 +143,15 @@ struct VGM {
 	}
 };
 
+union Tone_Period { // Tone Period. 0 means note-off
+	unsigned __int16 A;
+	struct {
+		unsigned __int8 L;
+		unsigned __int8 H;
+	} B;
+};
 
-struct VGM_YM2149 : VGM {
+struct VGM_YM2149 : public VGM {
 	VGM_YM2149()
 	{
 		this->command = 0xA0;
@@ -192,8 +199,6 @@ struct VGM_YM2149 : VGM {
 		outfile.close();
 		return sizeof(VGMHEADER) + this->vgm_body.size();
 	}
-
-
 };
 
 #pragma pack()
