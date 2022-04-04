@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 
+#pragma pack(push)
 #pragma pack(1)
 #include "stdtype.h"
 #include "VGMFile.h"
@@ -71,6 +72,7 @@ public:
 
 struct VGM {
 	size_t time_prev_VGM_abs = 0;
+	size_t time_loop_VGM_abs = 0;
 	size_t vgm_loop_pos = 0;
 	std::vector<unsigned __int8> vgm_body;
 	VGMHEADER vgm_header;
@@ -152,6 +154,8 @@ union Tone_Period { // Tone Period. 0 means note-off
 };
 
 struct VGM_YM2149 : public VGM {
+	unsigned __int8 SSG_out = 0277;
+
 	VGM_YM2149()
 	{
 		this->command = 0xA0;
@@ -159,7 +163,7 @@ struct VGM_YM2149 : public VGM {
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
 	}
 
-	void Tone_Set(const unsigned __int8& CH, const union Tone_Period& TP)
+	void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
 	{
 		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
@@ -172,7 +176,36 @@ struct VGM_YM2149 : public VGM {
 	{
 		this->make_data(7, M);
 	}
-	void finish(void)
+	void Note_on(unsigned __int8 CH)
+	{
+		this->SSG_out &= ~(1 << CH);
+		this->Mixer(this->SSG_out);
+	}
+	void Note_off(unsigned __int8 CH)
+	{
+		this->SSG_out |= (1 << CH);
+		this->Mixer(this->SSG_out);
+	}
+
+	void Envelope_Generator_set(unsigned __int16 EP)
+	{
+		union {
+			unsigned __int16 W;
+			unsigned __int8 B[2];
+		} U;
+
+		U.W = EP;
+
+		this->make_data(0x0C, U.B[1]);
+		this->make_data(0x0B, U.B[0]);
+	}
+
+	void Envelope_Generator_Type_set(unsigned __int8 CH, unsigned __int8 EG_Type) {
+		this->make_data(0x0D, EG_Type);
+		this->make_data(0x08 + CH, 0x10);
+	}
+
+	virtual void finish(void)
 	{
 		this->vgm_body.push_back(0x66);
 
@@ -183,7 +216,7 @@ struct VGM_YM2149 : public VGM {
 		this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
 	}
 
-	size_t out(wchar_t* p)
+	virtual size_t out(wchar_t* p)
 	{
 		this->filename_replace_ext(p, L".vgm");
 		std::ofstream outfile(path, std::ios::binary);
@@ -201,4 +234,150 @@ struct VGM_YM2149 : public VGM {
 	}
 };
 
-#pragma pack()
+#include "VGM_FM.hpp"
+
+struct CH_params {
+	unsigned __int8 Volume = 0;
+	unsigned __int8 Tone = 0;
+	unsigned __int8 Key = 0;
+	union AC_Tone T;
+};
+
+struct OPN {
+	struct CH_params Params[3];
+	struct AC_FM_PARAMETER_BYTE* preset;
+};
+
+struct VGM_YM2203 : public VGM_YM2149, public OPN {
+	OPNSSGVOL ex_vgm;
+	size_t Tempo = 120;
+	unsigned __int16 FNumber[12] = { 0 };
+
+	VGM_YM2203()
+	{
+		this->command = 0x55;
+		this->vgm_header.bytAYType = 0x10;
+		this->vgm_header.bytAYFlagYM2203 = 0x1;
+		this->vgm_header.bytAYFlag = 0;
+	}
+
+	void Timer_set_FM(void)
+	{
+		size_t NA = 1024 - ((((size_t) this->vgm_header.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x24, (NA >> 2) & 0xFF);
+		this->make_data(0x25, NA & 0x03);
+	}
+
+	void Note_on_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->Params[CH].T.S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Note_off_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 0 };
+		this->make_data(0x28, U.B);
+	}
+
+	void Volume_FM(unsigned __int8 CH)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->Params[CH].T.S.Connect == 7 || this->Params[CH].T.S.Connect > 4 && op || this->Params[CH].T.S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x40 + 4 * op + CH, this->Params[CH].Volume);
+			}
+		}
+	}
+
+	void Tone_select_FM(unsigned __int8 CH) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->Params[CH].T.B = *(this->preset + this->Params[CH].Tone);
+
+		this->make_data(0xB0 + CH, this->Params[CH].T.B.FB_CON);
+
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && (this->Params[CH].T.S.Connect == 7 || this->Params[CH].T.S.Connect > 4 && op || this->Params[CH].T.S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Params[CH].T.B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
+
+	void Key_set_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = this->Params[CH].Key / 12;
+		U.S.FNumber = this->FNumber[this->Params[CH].Key % 12];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
+	}
+
+	void finish(void)
+	{
+		this->vgm_body.push_back(0x66);
+
+		this->vgm_header.lngTotalSamples = this->time_prev_VGM_abs;
+		this->vgm_header.lngDataOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) - ((UINT8*)&this->vgm_header.lngDataOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngExtraOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngExtraOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngEOFOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + vgm_body.size() - ((UINT8*)&this->vgm_header.lngEOFOffset - (UINT8*)&this->vgm_header.fccVGM);
+
+		if (this->vgm_loop_pos) {
+			this->vgm_header.lngLoopSamples = this->time_prev_VGM_abs - this->time_loop_VGM_abs;
+			this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
+		}
+	}
+
+	size_t out(wchar_t* p)
+	{
+		this->filename_replace_ext(p, L".vgm");
+		std::ofstream outfile(path, std::ios::binary);
+		if (!outfile) {
+			std::wcerr << L"File " << p << L" open error." << std::endl;
+
+			return 0;
+		}
+
+		outfile.write((const char*)&this->vgm_header, sizeof(VGMHEADER));
+		outfile.write((const char*)&this->ex_vgm, sizeof(OPNSSGVOL));
+		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
+		outfile.close();
+		return sizeof(VGMHEADER) + this->vgm_body.size();
+	}
+};
+
+#pragma pack(pop)

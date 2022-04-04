@@ -6,6 +6,7 @@
 #include "VGM.hpp"
 #include "tools.h"
 
+#pragma pack(push)
 #pragma pack(1)
 struct LEN_TIME {
 	unsigned __int8 timeH : 5; // event time
@@ -85,13 +86,13 @@ public:
 	void make_init(void) {
 		union Tone_Period tp;
 		tp.A = 0x9C9;
-		this->Tone_Set(0, tp);
+		this->Tone_set(0, tp);
 		this->Volume(0, 0);
 		tp.A = 0x9C8;
-		this->Tone_Set(1, tp);
+		this->Tone_set(1, tp);
 		this->Volume(1, 0);
 		tp.A = 0x9CA;
-		this->Tone_Set(2, tp);
+		this->Tone_set(2, tp);
 		this->Volume(2, 0);
 		this->Mixer(0277);
 
@@ -118,13 +119,13 @@ public:
 			}
 
 			this->Volume(i.CH, i.volume);
-			this->Tone_Set(i.CH, i.TP);
+			this->Tone_set(i.CH, i.TP);
 		}
 		this->finish();
 	}
 };
 
-#pragma pack()
+#pragma pack(pop)
 
 int wmain(int argc, wchar_t** argv)
 {
