@@ -738,15 +738,9 @@ struct CH_params {
 	unsigned __int8 Tone;
 	unsigned __int8 Key;
 	union AC_Tone T;
-	bool NoteOn;
 };
 
-constexpr unsigned __int8 vgm_command_YM2203 = 0x55;
-
-class VGMdata_YM2203 {
-	size_t padsize = 11;
-	size_t vgm_header_len = sizeof(VGM_HEADER);
-	size_t vgm_extra_len = 0;
+class VGMdata_YM2203 : VGM {
 	size_t Tempo = 120;
 	size_t Time_Prev = 0;
 	size_t Time_Prev_VGM = 0;
@@ -757,7 +751,6 @@ class VGMdata_YM2203 {
 	unsigned __int16 TPeriod[97];
 	unsigned __int16 EP; // Envelope Period
 	unsigned __int8 SSG_out = 0277;
-	unsigned __int8 Ex_Vols_count = 0;
 	unsigned __int8 CH_cur = 16;
 
 	union {
@@ -772,92 +765,24 @@ class VGMdata_YM2203 {
 		} S;
 	} EG_Type;
 
-	std::vector<unsigned __int8> vgm_body;
-	VGMHEADER h_vgm;
-	VGM_HDR_EXTRA eh_vgm = { sizeof(VGM_HDR_EXTRA), 0, sizeof(unsigned __int32) };
-	VGMX_CHIP_DATA16 Ex_Vols = { 0,0,0 };
+	OPNSSGVOL ex_vgm;
+
 	const struct AC_FM_PARAMETER_BYTE* preset = preset_88;
 	struct CH_params CHparam[CHs];
 	struct CH_params* pCHparam_cur = NULL;
-
-	void make_data(unsigned __int8 address, unsigned __int8 data)
-	{
-		vgm_body.push_back(vgm_command_YM2203);
-		vgm_body.push_back(address);
-		vgm_body.push_back(data);
-	}
-
-	void make_wait(size_t wait)
-	{
-		while (wait) {
-			const size_t wait0 = 0xFFFF;
-			const size_t wait1 = 882;
-			const size_t wait2 = 735;
-			const size_t wait3 = 16;
-
-			if (wait >= wait0) {
-				union {
-					unsigned __int16 W;
-					unsigned __int8 B[2];
-				} u;
-				this->vgm_body.push_back(0x61);
-				u.W = wait0;
-				this->vgm_body.push_back(u.B[0]);
-				this->vgm_body.push_back(u.B[1]);
-				wait -= wait0;
-			}
-			else if (wait == wait1 * 2 || wait == wait1 + wait2 || (wait <= wait1 + wait3 && wait >= wait1)) {
-				this->vgm_body.push_back(0x63);
-				wait -= wait1;
-			}
-			else if (wait == wait2 * 2 || (wait <= wait2 + wait3 && wait >= wait2)) {
-				this->vgm_body.push_back(0x62);
-				wait -= wait2;
-			}
-			else if (wait <= wait3 * 2 && wait >= wait3) {
-				this->vgm_body.push_back(0x7F);
-				wait -= wait3;
-			}
-			else if (wait < wait3) {
-				this->vgm_body.push_back(0x70 | (wait - 1));
-				wait = 0;
-			}
-			else {
-				union {
-					unsigned __int16 W;
-					unsigned __int8 B[2];
-				} u;
-				this->vgm_body.push_back(0x61);
-				u.W = wait;
-				this->vgm_body.push_back(u.B[0]);
-				this->vgm_body.push_back(u.B[1]);
-				wait = 0;
-			}
-		}
-	}
-
-	unsigned __int16 make_VGM_Ex_Vol(unsigned __int8 percent)
-	{
-		return (unsigned)(256.0 * percent / 100.0 + 0.5);
-	}
 
 	void finish(void)
 	{
 		this->vgm_body.push_back(0x66);
 
-		if (this->Ex_Vols_count) {
-			this->vgm_extra_len = sizeof(VGM_HDR_EXTRA) + 1 + sizeof(VGMX_CHIP_DATA16) + this->padsize;
-		}
-
-		size_t vgm_data_abs = this->vgm_header_len + this->vgm_extra_len;
-		this->h_vgm.lngTotalSamples = this->Time_Prev_VGM_abs;
-		this->h_vgm.lngDataOffset = vgm_data_abs - ((UINT8*)&this->h_vgm.lngDataOffset - (UINT8*)&this->h_vgm.fccVGM);
-		this->h_vgm.lngExtraOffset = this->vgm_header_len - ((UINT8*)&this->h_vgm.lngExtraOffset - (UINT8*)&this->h_vgm.fccVGM);
-		this->h_vgm.lngEOFOffset = vgm_data_abs + vgm_body.size() - ((UINT8*)&this->h_vgm.lngEOFOffset - (UINT8*)&this->h_vgm.fccVGM);
+		this->vgm_header.lngTotalSamples = this->Time_Prev_VGM_abs;
+		this->vgm_header.lngDataOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) - ((UINT8*)&this->vgm_header.lngDataOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngExtraOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngExtraOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngEOFOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + vgm_body.size() - ((UINT8*)&this->vgm_header.lngEOFOffset - (UINT8*)&this->vgm_header.fccVGM);
 
 		if (this->vgm_loop_pos) {
-			this->h_vgm.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
-			this->h_vgm.lngLoopOffset = vgm_data_abs + this->vgm_loop_pos - ((UINT8*)&this->h_vgm.lngLoopOffset - (UINT8*)&this->h_vgm.fccVGM);
+			this->vgm_header.lngLoopSamples = this->Time_Prev_VGM_abs - this->Time_Loop_VGM_abs;
+			this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
 		}
 	}
 
@@ -899,7 +824,7 @@ class VGMdata_YM2203 {
 
 	void Timer_set(void)
 	{
-		size_t NA = 1024 - (((this->h_vgm.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		size_t NA = 1024 - (((this->vgm_header.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
 	}
@@ -997,26 +922,23 @@ class VGMdata_YM2203 {
 public:
 	VGMdata_YM2203(void)
 	{
-		this->h_vgm.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
-		this->h_vgm.bytAYType = 0x10;
-		this->h_vgm.bytAYFlagYM2203 = 0x1;
-		this->Ex_Vols.Type = 0x86;
-		this->Ex_Vols.Flags = 0;
-		this->Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol((unsigned __int8)200);
-		this->Ex_Vols_count = 1;
+		this->command = 0x55;
+		this->vgm_header.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
+		this->vgm_header.bytAYType = 0x10;
+		this->vgm_header.bytAYFlagYM2203 = 0x1;
+		this->ex_vgm.SetSSGVol(200);
 
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
-			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->h_vgm.lngHzYM2203;
+			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->vgm_header.lngHzYM2203;
 			this->FNumber[i] = fFNumber + 0.5;
 		}
 
 		for (size_t i = 0; i < 97; i++) {
 			double Freq = 440.0 * pow(2.0, (-57.0 + i) / 12.0);
-			double fTP = this->h_vgm.lngHzYM2203 / (64.0 * Freq);
+			double fTP = this->vgm_header.lngHzYM2203 / (64.0 * Freq);
 			this->TPeriod[i] = fTP + 0.5;
 		}
-
 	}
 
 	void make_init(void) {
@@ -1026,37 +948,21 @@ public:
 		vgm_body.insert(vgm_body.begin(), Init_YM2203.begin(), Init_YM2203.end());
 	}
 
-	void SetSSGVol(unsigned __int8 vol)
-	{
-		Ex_Vols.Data = 0x8000 | this->make_VGM_Ex_Vol(vol);
-	}
-
 	size_t out(wchar_t* p)
 	{
-		wchar_t* outpath = filename_replace_ext(p, L".vgm");
-		std::ofstream outfile(outpath, std::ios::binary);
+		this->filename_replace_ext(p, L".vgm");
+		std::ofstream outfile(path, std::ios::binary);
 		if (!outfile) {
 			std::wcerr << L"File " << p << L" open error." << std::endl;
 
 			return 0;
 		}
 
-		outfile.write((const char*)&this->h_vgm, sizeof(VGM_HEADER));
-
-		if (this->vgm_extra_len) {
-			outfile.write((const char*)&eh_vgm, sizeof(VGM_HDR_EXTRA));
-			if (this->Ex_Vols_count) {
-				outfile.write((const char*)&this->Ex_Vols_count, 1);
-				outfile.write((const char*)&this->Ex_Vols, sizeof(VGMX_CHIP_DATA16) * this->Ex_Vols_count);
-			}
-			UINT8 PADDING[15] = { 0 };
-			outfile.write((const char*)PADDING, this->padsize);
-		}
-
+		outfile.write((const char*)&this->vgm_header, sizeof(VGMHEADER));
+		outfile.write((const char*)&this->ex_vgm, sizeof(OPNSSGVOL));
 		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
-
 		outfile.close();
-		return sizeof(VGM_HEADER) + this->vgm_body.size();
+		return sizeof(VGMHEADER) + this->vgm_body.size();
 	}
 
 	void convert(class EVENTS& in)

@@ -136,140 +136,47 @@ constexpr size_t MSX_VSYNC_NTSC = 60;  // Hz
 constexpr size_t VGM_CLOCK = 44100; // Hz
 constexpr size_t WAIT_BASE = VGM_CLOCK / MSX_VSYNC_NTSC; // must be 735
 
-class PSGVGM {
-	size_t vgm_loop_pos = 0;
-	union {
-		struct {
-			unsigned __int8 Tone_A : 1;
-			unsigned __int8 Tone_B : 1;
-			unsigned __int8 Tone_C : 1;
-			unsigned __int8 Noise_A : 1;
-			unsigned __int8 Noise_B : 1;
-			unsigned __int8 Noise_C : 1;
-			unsigned __int8 IO_A : 1;
-			unsigned __int8 IO_B : 1;
-		} B;
-		unsigned __int8 A;
-	} R7;
-	std::vector<unsigned __int8> vgm_body;
-	VGMHEADER vgm_header;
+class VGMdata_YM2149 : VGM_YM2149 {
 public:
-	PSGVGM(void)
+	VGMdata_YM2149(void)
 	{
-		this->R7.A = 0277;
 		this->vgm_header.lngHzAY8910 = 3579545; // doubled 1789772.5Hz
-		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
-		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
-	}
-
-	void make_data(unsigned __int8 command, unsigned __int8 address, unsigned __int8 data)
-	{
-	}
-	void make_data_AY8910(unsigned __int8 address, unsigned __int8 data)
-	{
-		vgm_body.push_back(0xA0);
-		vgm_body.push_back(address);
-		vgm_body.push_back(data);
-	}
-	void Tone_Set_AY8910(const unsigned __int8& CH, const union Tone_Period& TP)
-	{
-		this->make_data_AY8910(CH * 2, TP.B.L);
-		this->make_data_AY8910(CH * 2 + 1, TP.B.H);
-	}
-	void Volume_AY8910(const unsigned __int8& CH, const unsigned __int8& Vol)
-	{
-		this->make_data_AY8910(CH + 8, Vol);
-	}
-	void Mixer_AY8910(unsigned __int8 M)
-	{
-		this->R7.A = M;
-		this->make_data_AY8910(7, this->R7.A);
 	}
 
 	void make_init(const unsigned __int8(&V)[3]) {
 		union Tone_Period tp;
 		tp.A = 0x9C9;
-		this->Tone_Set_AY8910(0, tp);
-		this->Volume_AY8910(0, 0);
+		this->Tone_Set(0, tp);
+		this->Volume(0, 0);
 		tp.A = 0x9C8;
-		this->Tone_Set_AY8910(1, tp);
-		this->Volume_AY8910(1, 0);
+		this->Tone_Set(1, tp);
+		this->Volume(1, 0);
 		tp.A = 0x9CA;
-		this->Tone_Set_AY8910(2, tp);
-		this->Volume_AY8910(2, 0);
-		this->Mixer_AY8910(0277);
+		this->Tone_Set(2, tp);
+		this->Volume(2, 0);
+		this->Mixer(0277);
 
 		tp.A = 0;
-		this->Tone_Set_AY8910(0, tp);
-		this->Tone_Set_AY8910(1, tp);
-		this->Tone_Set_AY8910(2, tp);
-		this->Volume_AY8910(0, V[0]);
-		this->Volume_AY8910(1, V[1]);
-		this->Volume_AY8910(2, V[2]);
-		this->Mixer_AY8910(0270);
+		this->Tone_Set(0, tp);
+		this->Tone_Set(1, tp);
+		this->Tone_Set(2, tp);
+		this->Volume(0, V[0]);
+		this->Volume(1, V[1]);
+		this->Volume(2, V[2]);
+		this->Mixer(0270);
 
 		this->vgm_loop_pos = this->vgm_body.size();
 	}
-	void make_wait(size_t wait)
-	{
-		while (wait) {
-			const size_t wait0 = 0xFFFF;
-			const size_t wait1 = 882;
-			const size_t wait2 = 735;
-			const size_t wait3 = 16;
-
-			if (wait >= wait0) {
-				union {
-					unsigned __int16 W;
-					unsigned __int8 B[2];
-				} u;
-				this->vgm_body.push_back(0x61);
-				u.W = wait0;
-				this->vgm_body.push_back(u.B[0]);
-				this->vgm_body.push_back(u.B[1]);
-				wait -= wait0;
-			}
-			else if (wait == wait1 * 2 || wait == wait1 + wait2 || (wait <= wait1 + wait3 && wait >= wait1)) {
-				this->vgm_body.push_back(0x63);
-				wait -= wait1;
-			}
-			else if (wait == wait2 * 2 || (wait <= wait2 + wait3 && wait >= wait2)) {
-				this->vgm_body.push_back(0x62);
-				wait -= wait2;
-			}
-			else if (wait <= wait3 * 2 && wait >= wait3) {
-				this->vgm_body.push_back(0x7F);
-				wait -= wait3;
-			}
-			else if (wait < wait3) {
-				this->vgm_body.push_back(0x70 | (wait - 1));
-				wait = 0;
-			}
-			else {
-				union {
-					unsigned __int16 W;
-					unsigned __int8 B[2];
-				} u;
-				this->vgm_body.push_back(0x61);
-				u.W = wait;
-				this->vgm_body.push_back(u.B[0]);
-				this->vgm_body.push_back(u.B[1]);
-				wait = 0;
-			}
-		}
-	}
-
 	void convert(std::vector<struct NOTE>& in, const unsigned __int8 Mag)
 	{
 		size_t time_prev = 0;
-		size_t time_prev_VGM_abs = 0;
 		for (const auto& i : in) {
 			size_t wait = i.time_abs - time_prev;
 			if (wait) {
 				wait *= WAIT_BASE * Mag;
 
 				time_prev = i.time_abs;
-				time_prev_VGM_abs += wait;
+				this->time_prev_VGM_abs += wait;
 				this->make_wait(wait);
 			}
 
@@ -277,33 +184,9 @@ public:
 				break;
 			}
 
-			this->Tone_Set_AY8910(i.CH, i.TP);
+			this->Tone_Set(i.CH, i.TP);
 		}
-		this->vgm_body.push_back(0x66);
-
-		this->vgm_header.lngTotalSamples = time_prev_VGM_abs;
-		this->vgm_header.lngLoopSamples = time_prev_VGM_abs;
-		this->vgm_header.lngDataOffset = sizeof(VGM_HEADER) - ((UINT8*)&this->vgm_header.lngDataOffset - (UINT8*)&this->vgm_header.fccVGM);
-		this->vgm_header.lngEOFOffset = sizeof(VGM_HEADER) + this->vgm_body.size() - ((UINT8*)&this->vgm_header.lngEOFOffset - (UINT8*)&this->vgm_header.fccVGM);
-		this->vgm_header.lngLoopOffset = sizeof(VGM_HEADER) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
-
-	}
-
-	size_t out(wchar_t* p)
-	{
-		wchar_t* outpath = filename_replace_ext(p, L".vgm");
-		std::ofstream outfile(outpath, std::ios::binary);
-		if (!outfile) {
-			std::wcerr << L"File " << p << L" open error." << std::endl;
-
-			return 0;
-		}
-
-		outfile.write((const char*)&this->vgm_header, sizeof(VGM_HEADER));
-		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
-
-		outfile.close();
-		return sizeof(VGM_HEADER) + this->vgm_body.size();
+		this->finish();
 	}
 };
 
@@ -346,7 +229,7 @@ int wmain(int argc, wchar_t** argv)
 		p.MakeEvents();
 
 
-		class PSGVGM v;
+		class VGMdata_YM2149 v;
 		v.make_init(in->Volume);
 		v.convert(p.Events, in->WaitMagnitude);
 
