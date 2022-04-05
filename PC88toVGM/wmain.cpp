@@ -668,8 +668,8 @@ public:
 				}
 				break;
 			case 0x97: // Key_set
-				this->Params[eve.CH].Key = eve.Param;
 				if (eve.CH < 3) {
+					this->Params[eve.CH].Key = eve.Param;
 					this->Key_set_FM(eve.CH);
 				}
 				else {
