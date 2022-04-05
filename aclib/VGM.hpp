@@ -236,15 +236,8 @@ struct VGM_YM2149 : public VGM {
 
 #include "VGM_FM.hpp"
 
-struct CH_params {
-	unsigned __int8 Volume = 0;
-	unsigned __int8 Tone = 0;
-	unsigned __int8 Key = 0;
-	union AC_Tone T;
-};
-
 struct OPN {
-	struct CH_params Params[3];
+	union AC_Tone Tone[3];
 	struct AC_FM_PARAMETER_BYTE* preset;
 };
 
@@ -279,7 +272,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 			unsigned __int8 B;
 		} U;
 
-		U.S = { CH, this->Params[CH].T.S.OPR_MASK };
+		U.S = { CH, this->Tone[CH].S.OPR_MASK };
 		this->make_data(0x28, U.B);
 	}
 
@@ -298,33 +291,33 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->make_data(0x28, U.B);
 	}
 
-	void Volume_FM(unsigned __int8 CH)
+	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
-			if (this->Params[CH].T.S.Connect == 7 || this->Params[CH].T.S.Connect > 4 && op || this->Params[CH].T.S.Connect > 3 && op >= 2 || op == 3) {
-				this->make_data(0x40 + 4 * op + CH, this->Params[CH].Volume);
+			if (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x40 + 4 * op + CH, Volume);
 			}
 		}
 	}
 
-	void Tone_select_FM(unsigned __int8 CH) {
+	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone) {
 		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
-		this->Params[CH].T.B = *(this->preset + this->Params[CH].Tone);
+		this->Tone[CH].B = *(this->preset + Tone);
 
-		this->make_data(0xB0 + CH, this->Params[CH].T.B.FB_CON);
+		this->make_data(0xB0 + CH, this->Tone[CH].B.FB_CON);
 
 		for (size_t op = 0; op < 4; op++) {
 			for (size_t j = 0; j < 6; j++) {
-				if (j == 1 && (this->Params[CH].T.S.Connect == 7 || this->Params[CH].T.S.Connect > 4 && op || this->Params[CH].T.S.Connect > 3 && op == 1 || op == 3)) {
+				if (j == 1 && (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op == 1 || op == 3)) {
 				}
 				else {
-					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Params[CH].T.B.Op[op].DT_MULTI + j));
+					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Tone[CH].B.Op[op].DT_MULTI + j));
 				}
 			}
 		}
 	}
 
-	void Key_set_FM(unsigned __int8 CH)
+	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
 	{
 		union {
 			struct {
@@ -335,8 +328,8 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 			unsigned __int8 B[2];
 		} U;
 
-		unsigned __int8 Octave = this->Params[CH].Key / 12;
-		U.S.FNumber = this->FNumber[this->Params[CH].Key % 12];
+		unsigned __int8 Octave = Key / 12;
+		U.S.FNumber = this->FNumber[Key % 12];
 		if (Octave == 8) {
 			U.S.FNumber <<= 1;
 			Octave = 7;

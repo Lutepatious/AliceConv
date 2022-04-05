@@ -638,8 +638,7 @@ public:
 				break;
 			case 0xF5: // Tone select
 				if (eve.CH < 3) {
-					this->Params[eve.CH].Tone = eve.Param & 0x7F;
-					this->Tone_select_FM(eve.CH);
+					this->Tone_select_FM(eve.CH, eve.Param & 0x7F);
 				}
 				break;
 			case 0x80: // Note Off
@@ -652,8 +651,7 @@ public:
 				break;
 			case 0xF9: // Volume change @V{0-127}
 				if (eve.CH < 3) {
-					this->Params[eve.CH].Volume = ~eve.Param & 0x7F;
-					this->Volume_FM(eve.CH);
+					this->Volume_FM(eve.CH, ~eve.Param & 0x7F);
 				}
 				else {
 					this->Volume(eve.CH - 3, (((unsigned)eve.Param - 84) * 16 - 1) / 43);
@@ -669,8 +667,7 @@ public:
 				break;
 			case 0x97: // Key_set
 				if (eve.CH < 3) {
-					this->Params[eve.CH].Key = eve.Param;
-					this->Key_set_FM(eve.CH);
+					this->Key_set_FM(eve.CH, eve.Param);
 				}
 				else {
 					union Tone_Period tp;
