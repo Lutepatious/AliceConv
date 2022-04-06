@@ -165,7 +165,7 @@ void eomml_decoded_CH::decode(unsigned __int8* input)
 	// “¬_“ss‚Å‚Í‰¹No.80‚©‚ç81‰¹‚ÉOPM98.DAT‚ğ“Ç‚İ‚ŞB(80-160‚ªOPM98.DAT‚Ì‰¹‚É‚È‚é)
 	while (*msrc) {
 		unsigned RLen, NLen;
-		unsigned Key;
+		unsigned Key = 0;
 		unsigned time_on, time_off;
 
 		switch (tolower(*msrc++)) {

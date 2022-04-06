@@ -7,7 +7,6 @@
 #include "VGM.hpp"
 #include "tools.h"
 
-constexpr size_t VGM_CLOCK = 44100;
 constexpr size_t INIT_LEN = 1;
 
 #pragma pack(push)
@@ -557,11 +556,6 @@ public:
 constexpr size_t MASTERCLOCK_NEC_OPN = 3993600;
 
 class VGMdata_YM2203 : public VGM_YM2203 {
-	size_t Time_Prev = 0;
-	size_t Time_Prev_VGM = 0;
-	unsigned __int16 TPeriod[97];
-	unsigned __int8 CH_cur = 16;
-
 public:
 	VGMdata_YM2203(void)
 	{
@@ -583,19 +577,21 @@ public:
 	}
 
 	void make_init(void) {
-		const static std::vector<unsigned char> Init_YM2203 = {
+		const static std::vector<unsigned char> Init = {
 			0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
 			0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
-		vgm_body.insert(vgm_body.begin(), Init_YM2203.begin(), Init_YM2203.end());
+		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
 	}
 
 	void convert(class EVENTS& in)
 	{
+		size_t Time_Prev = 0;
+		size_t Time_Prev_VGM = 0;
 		for (auto& eve : in.events) {
 			if (eve.time == SIZE_MAX) {
 				break;
 			}
-			if (eve.time - this->Time_Prev) {
+			if (eve.time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -612,12 +608,12 @@ public:
 				// VAはBIOSが演奏するので調整しない。
 
 				size_t c_VGMT = (eve.time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
-				size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
+				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
-				this->Time_Prev_VGM += d_VGMT;
+				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
-				this->Time_Prev = eve.time;
+				Time_Prev = eve.time;
 
 				this->make_wait(d_VGMT);
 			}
@@ -630,7 +626,7 @@ public:
 
 			switch (eve.Event) {
 			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-				this->Time_Prev_VGM = ((this->Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
+				Time_Prev_VGM = ((Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
 				this->Tempo = eve.Param;
 
 				// この後のNAの計算とタイマ割り込みの設定は実際には不要
@@ -670,9 +666,7 @@ public:
 					this->Key_set_FM(eve.CH, eve.Param);
 				}
 				else {
-					union Tone_Period tp;
-					tp.A = TPeriod[eve.Param];
-					this->Tone_set(eve.CH - 3, tp);
+					this->Key_set(eve.CH - 3, eve.Param);
 				}
 				break;
 #if 0

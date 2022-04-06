@@ -7,6 +7,8 @@
 #include "stdtype.h"
 #include "VGMFile.h"
 
+constexpr size_t VGM_CLOCK = 44100;
+
 class VGMHEADER : public VGM_HEADER {
 public:
 	VGMHEADER(void)
@@ -155,6 +157,7 @@ union Tone_Period { // Tone Period. 0 means note-off
 
 struct VGM_YM2149 : public VGM {
 	unsigned __int8 SSG_out = 0277;
+	unsigned __int16 TPeriod[97] = { 0 };
 
 	VGM_YM2149()
 	{
@@ -165,6 +168,14 @@ struct VGM_YM2149 : public VGM {
 
 	void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
 	{
+		this->make_data(CH * 2, TP.B.L);
+		this->make_data(CH * 2 + 1, TP.B.H);
+	}
+	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
+	{
+		union Tone_Period TP;
+		TP.A = TPeriod[Key];
+
 		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
 	}
@@ -256,7 +267,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 
 	void Timer_set_FM(void)
 	{
-		size_t NA = 1024 - ((((size_t) this->vgm_header.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
 	}
@@ -367,6 +378,151 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 
 		outfile.write((const char*)&this->vgm_header, sizeof(VGMHEADER));
 		outfile.write((const char*)&this->ex_vgm, sizeof(OPNSSGVOL));
+		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
+		outfile.close();
+		return sizeof(VGMHEADER) + this->vgm_body.size();
+	}
+};
+
+struct OPM {
+	union AC_Tone_OPM Tone[8];
+	bool L[8];
+	bool R[8];
+	struct AC_FM_PARAMETER_BYTE_OPM* preset;
+};
+
+struct VGM_YM2151 : public VGM, public OPM {
+	size_t Tempo = 120;
+
+	VGM_YM2151()
+	{
+		this->command = 0x54;
+		for (size_t i = 0; i < 8; i++) {
+			this->L[i] = true;
+			this->R[i] = true;
+		}
+	}
+
+	void Note_on_FM(unsigned __int8 CH) {
+		union {
+			struct {
+				unsigned __int8 CH : 3;
+				unsigned __int8 Op_mask : 4;
+				unsigned __int8 : 1;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->Tone[CH].S.OPR_MASK };
+		this->make_data(0x08, U.B);
+	}
+	void Note_off_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 3;
+				unsigned __int8 Op_mask : 4;
+				unsigned __int8 : 1;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 0 };
+		this->make_data(0x08, U.B);
+	}
+	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x60 + 8 * op + CH, ~Volume & 0x7F);
+			}
+		}
+	}
+	void Timer_set_FM(void)
+	{
+		size_t NA = 1024 - (((3 * (size_t)this->vgm_header.lngHzYM2151 * 2) / (512LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x10, (NA >> 2) & 0xFF);
+		this->make_data(0x11, NA & 0x03);
+	}
+	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone)
+	{
+		static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
+		this->Tone[CH].B = this->preset[Tone - 1];
+		this->Tone[CH].S.L = this->L[CH];
+		this->Tone[CH].S.R = this->R[CH];
+
+		this->make_data(0x20 + CH, this->Tone[CH].B.FB_CON);
+		this->make_data(0x38 + CH, this->Tone[CH].B.PMS_AMS);
+		this->make_data(0x18, this->Tone[CH].B.LFRQ);
+		this->make_data(0x19, this->Tone[CH].B.PMD);
+		this->make_data(0x19, this->Tone[CH].B.AMD);
+		this->make_data(0x1B, this->Tone[CH].B.CT_WAVE);
+		for (size_t j = 0; j < 6; j++) {
+			for (size_t op = 0; op < 4; op++) {
+				this->make_data(0x40 + 0x20 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Tone[CH].B.Op[op].DT_MULTI + j));
+			}
+		}
+	}
+	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
+	{
+		if (Key < 3) {
+			wprintf_s(L"%2u: Very low key %2u\n", CH, Key);
+			Key += 12;
+		}
+		Key -= 3;
+		union {
+			struct {
+				unsigned __int8 note : 4;
+				unsigned __int8 oct : 3;
+				unsigned __int8 : 1;
+			} S;
+			unsigned __int8 KC;
+		} U;
+		U.KC = 0;
+
+		unsigned pre_note = Key % 12;
+		U.S.note = (pre_note << 2) / 3;
+		U.S.oct = Key / 12;
+		this->make_data(0x28 + CH, U.KC);
+
+		union {
+			struct {
+				unsigned __int8 : 2;
+				unsigned __int8 Frac : 6;
+			} S;
+			unsigned __int8 KF;
+		} V;
+
+		V.S.Frac = 5;
+		this->make_data(0x30 + CH, V.KF);
+	}
+
+	void finish(void)
+	{
+		this->vgm_body.push_back(0x66);
+
+		this->vgm_header.lngTotalSamples = this->time_prev_VGM_abs;
+		this->vgm_header.lngDataOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngDataOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngExtraOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngExtraOffset - (UINT8*)&this->vgm_header.fccVGM);
+		this->vgm_header.lngEOFOffset = sizeof(VGMHEADER) + vgm_body.size() - ((UINT8*)&this->vgm_header.lngEOFOffset - (UINT8*)&this->vgm_header.fccVGM);
+
+		if (this->vgm_loop_pos) {
+			this->vgm_header.lngLoopSamples = this->time_prev_VGM_abs - this->time_loop_VGM_abs;
+			this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
+		}
+	}
+
+	size_t out(wchar_t* p)
+	{
+		this->filename_replace_ext(p, L".vgm");
+		std::ofstream outfile(path, std::ios::binary);
+		if (!outfile) {
+			std::wcerr << L"File " << p << L" open error." << std::endl;
+
+			return 0;
+		}
+
+		outfile.write((const char*)&this->vgm_header, sizeof(VGMHEADER));
 		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
 		outfile.close();
 		return sizeof(VGMHEADER) + this->vgm_body.size();

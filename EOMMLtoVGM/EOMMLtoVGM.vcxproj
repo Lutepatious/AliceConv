@@ -165,15 +165,11 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EOMML.cpp" />
-    <ClCompile Include="event_e.cpp" />
-    <ClCompile Include="toVGM_e.cpp" />
     <ClCompile Include="wmain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="EOMML.h" />
     <ClInclude Include="EOMMLtoVGM.h" />
-    <ClInclude Include="event_e.h" />
-    <ClInclude Include="toVGM_e.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
