@@ -66,7 +66,7 @@ public:
 	bool is_mute(void) {
 		return this->mute;
 	}
-	void decode(std::string &s)
+	void decode(std::string& s)
 	{
 		unsigned Octave = (this->M_arch == Machine::PC9801) ? 5 : 4; // 1 - 9
 		unsigned GS = 8; // 1 - 8
@@ -364,7 +364,7 @@ struct MML_decoded {
 		}
 	}
 
-	void decode(std::string (&s)[6])
+	void decode(std::string(&s)[6])
 	{
 		bool debug = false;
 		for (size_t i = 0; i < channels; i++) {
@@ -419,7 +419,7 @@ struct MML_decoded {
 				// ループ回数分のイベントの複写
 				std::vector<struct MML_Events> t = this->CH[i].MML;
 				for (size_t m = 0; m < times - 1; m++) {
-					for (auto& e: t) {
+					for (auto& e : t) {
 						e.Time += this->CH[i].time_total;
 					}
 					this->CH[i].MML.insert(this->CH[i].MML.end(), t.begin(), t.end());
@@ -492,7 +492,7 @@ struct EVENT {
 };
 
 class EVENTS {
-	enum class Machine Arch;
+	enum class Machine Arch = Machine::NONE;
 
 public:
 	std::vector<struct EVENT> events;
@@ -515,7 +515,7 @@ public:
 				i = j;
 			}
 
-			for (auto &in: MMLs.CH[i].MML) {
+			for (auto& in : MMLs.CH[i].MML) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
 					this->loop_enable = true;
 				}
@@ -596,8 +596,6 @@ public:
 		}
 		std::sort(this->events.begin(), this->events.end());
 		this->events.resize(length);
-
-		wprintf_s(L"Event Length %8zu Loop from %zu\n", length, this->loop_start);
 	}
 	void print_all(void)
 	{
@@ -1020,17 +1018,16 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		struct MML_decoded MMLs;
-		
+
 		MMLs.init(Tones_tousin, M_arch);
 		MMLs.decode(MML_FullBody);
 		MMLs.unroll_loop();
 
 		if (!MMLs.end_time) {
-			wprintf_s(L"No Data. skip.\n");
+			std::wcerr << L"No Data. skip." << std::endl;
 			continue;
 		}
 
-		wprintf_s(L"Make Sequential events\n");
 		// 得られた展開データからイベント列を作る。
 		class EVENTS events;
 		events.init(M_arch);
