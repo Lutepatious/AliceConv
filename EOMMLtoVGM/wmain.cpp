@@ -5,26 +5,457 @@
 #include <sstream>
 #include <algorithm>
 #include <filesystem>
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
-#include <cwchar>
-#include <cctype>
-#include <cstring>
 #include <limits>
 #include <sys/types.h>
 
-#include "gc_cpp.h"
+enum class Machine { NONE = 0, X68000, PC9801 };
+constexpr size_t channels = 6;
 
-#include "EOMMLtoVGM.h"
-#include "EOMML.h"
+struct MML_Events {
+	size_t Time;
+	unsigned __int8 Type;
+	unsigned __int8 Param;
+	unsigned __int16 Param16;
+};
 
+class MML_decoded_CH {
+	bool mute = true;
+
+	static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
+	{
+		unsigned NLen, NLen_d;
+		char* tpos;
+
+		if (isdigit(**pmsrc)) {
+			unsigned TLen = strtoul((const char*)(*pmsrc), &tpos, 10);
+
+			*pmsrc = (unsigned __int8*)tpos;
+			if (TLen == 0 || TLen > 65) {
+				wprintf_s(L"L %u: out of range.\n", TLen);
+			}
+			if (192 % TLen) {
+				wprintf_s(L"L %u: out of range.\n", TLen);
+				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(*pmsrc - 3), *(*pmsrc - 2), *(*pmsrc - 1), **pmsrc, *(*pmsrc + 1));
+
+			}
+			NLen_d = 192 / TLen;
+		}
+		else {
+			NLen_d = Len;
+		}
+		NLen = NLen_d;
+		while (**pmsrc == '.') {
+			(*pmsrc)++;
+			NLen_d >>= 1;
+			NLen += NLen_d;
+		}
+		return NLen;
+	}
+
+public:
+	std::vector<struct MML_Events> MML;
+	size_t time_total = 0;
+	bool x68tt = false;
+	enum Machine M_arch = Machine::NONE;
+
+	void init(bool opm98, enum Machine arch)
+	{
+		this->x68tt = opm98;
+		this->M_arch = arch;
+	}
+	bool is_mute(void) {
+		return this->mute;
+	}
+	void decode(std::string &s)
+	{
+		unsigned Octave = (this->M_arch == Machine::PC9801) ? 5 : 4; // 1 - 9
+		unsigned GS = 8; // 1 - 8
+		unsigned Len = 48; // 0-192
+		unsigned Vol = 8; // 0-15
+		unsigned XVol = 80; // 0-127
+		unsigned Tempo = 120;
+		unsigned Tone = 0;
+		unsigned Key_order[] = { 9, 11, 0, 2, 4, 5, 7 };
+		unsigned __int8* msrc = (unsigned __int8*)s.c_str();
+		unsigned Octave_t;
+		unsigned VoltoXVol[16] = { 85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125 };
+		unsigned Panpot = 3;
+
+		// eomml 覚書
+		// < 1オクターブ下げ
+		// > 1オクターブ上げ
+		// O デフォルト4 O4のAがA4と同じで440Hz
+		// L ドットが付けられる!
+		// X68000版の取り扱い
+		// 闘神都市では音No.80から81音にOPM98.DATを読み込む。(80-160がOPM98.DATの音になる)
+		while (*msrc) {
+			unsigned RLen, NLen;
+			unsigned Key = 0;
+			unsigned time_on, time_off;
+			struct MML_Events e;
+			e.Time = this->time_total;
+
+			switch (tolower(*msrc++)) {
+			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
+				if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
+					msrc++;
+				}
+				break;
+			case 'p': // Panpot
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					Panpot = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+				}
+				if (Panpot > 3) {
+					wprintf_s(L"P %u: out of range.\n", Panpot);
+				}
+				// wprintf_s(L"Panpot %u\n", Panpot);
+				e.Type = 0xEB;
+				e.Param = Panpot;
+				this->MML.push_back(e);
+				break;
+			case 't': // Tempo
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					Tempo = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+				}
+				if (Tempo < 32 || Tempo > 200) {
+					wprintf_s(L"T %u: out of range.\n", Tempo);
+				}
+				// wprintf_s(L"Tempo %u\n", Tempo);
+				e.Type = 0xF4;
+				e.Param = Tempo;
+				this->MML.push_back(e);
+				break;
+			case '@':
+				if (tolower(*msrc) == 'o') {
+					if (isdigit(*++msrc)) {
+						unsigned __int8* tpos;
+						Octave = strtoul((const char*)msrc, (char**)&tpos, 10);
+						msrc = tpos;
+					}
+					if (Octave > 8) {
+						wprintf_s(L"O %u: out of range.\n", Octave);
+					}
+				}
+				if (tolower(*msrc) == 'v') {
+					if (isdigit(*++msrc)) {
+						unsigned __int8* tpos;
+						XVol = strtoul((const char*)msrc, (char**)&tpos, 10);
+						msrc = tpos;
+					}
+					if (XVol > 127) {
+						wprintf_s(L"@V %u: out of range.\n", XVol);
+					}
+					// wprintf_s(L"XVol %u\n", XVol);
+					e.Type = 0xF9;
+					e.Param = XVol;
+					this->MML.push_back(e);
+				}
+				else {
+					if (isdigit(*msrc)) {
+						unsigned __int8* tpos;
+						Tone = strtoul((const char*)msrc, (char**)&tpos, 10);
+						msrc = tpos;
+					}
+					//	wprintf_s(L"Tone %u\n", Tone);
+					e.Type = 0xF5;
+					e.Param = Tone;
+					this->MML.push_back(e);
+				}
+				break;
+			case 'q':
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					GS = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+				}
+				if (GS == 0 || GS > 8) {
+					wprintf_s(L"Q %u: out of range.\n", GS);
+				}
+				// wprintf_s(L"GS %u\n", GS);
+				break;
+			case 'v': // Volume
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					Vol = strtoul((const char*)msrc, (char**)&tpos, 10);
+					msrc = tpos;
+				}
+				if (Vol > 15) {
+					wprintf_s(L"V %u: out of range.\n", Vol);
+					if (Vol < 128) {
+						wprintf_s(L"Assume @V\n");
+						e.Type = 0xF9;
+						e.Param = Vol;
+						this->MML.push_back(e);
+					}
+				}
+				else {
+					// wprintf_s(L"Vol %u\n", Vol);
+					e.Type = 0xF9;
+					e.Param = Vol * 8 / 3 + 85;
+					this->MML.push_back(e);
+				}
+				break;
+			case 'o': // Octave
+				if (isdigit(*msrc)) {
+					unsigned __int8* tpos;
+					Octave = strtoul((const char*)msrc, (char**)&tpos, 10);
+					if (this->M_arch == Machine::PC9801) {
+						Octave--;
+					}
+					msrc = tpos;
+				}
+				if (Octave > 8) {
+					wprintf_s(L"O %u: out of range.\n", Octave);
+				}
+				// wprintf_s(L"Octave %u\n", Octave);
+				break;
+			case '>': // Octave up
+				if (this->x68tt) {
+					Octave--;
+				}
+				else {
+					Octave++;
+				}
+				if (Octave > 8) {
+					wprintf_s(L">:result %u out of range.\n", Octave);
+				}
+				// wprintf_s(L"Octave %u\n", Octave);
+				break;
+			case '<': // Octave down
+				if (this->x68tt) {
+					Octave++;
+				}
+				else {
+					Octave--;
+				}
+				if (Octave > 8) {
+					wprintf_s(L"<:result %u out of range.\n", Octave);
+				}
+				// wprintf_s(L"Octave %u\n", Octave);
+				break;
+			case 'l': // de fault Length
+				Len = getDefaultLen(&msrc, Len);
+				// wprintf_s(L"Len %u\n", Len);
+				break;
+			case 'r': // Rest
+				RLen = getDefaultLen(&msrc, Len);
+				// wprintf_s(L"Rest %u\n", RLen);
+				e.Type = 0x80;
+				this->MML.push_back(e);
+				this->time_total += RLen;
+				break;
+			case '^': // Note continue
+				NLen = getDefaultLen(&msrc, Len);
+				if (GS == 8) {
+					time_on = NLen - 1;
+				}
+				else {
+					time_on = NLen * GS >> 3;
+					if (time_on == 0) {
+						time_on = 1;
+					}
+				}
+				time_off = NLen - time_on;
+
+				e.Type = 0x90;
+				e.Param = Key; // 0 - 95 (MIDI Note No.12 - 107)
+				this->MML.push_back(e);
+				e.Type = 0x80;
+				e.Time += time_on;
+				this->MML.push_back(e);
+				this->time_total += NLen;
+				this->mute = false;
+				break;
+			case 'a': // Note key A
+			case 'b': // Note key B
+			case 'c': // Note key C
+			case 'd': // Note key D
+			case 'e': // Note key E
+			case 'f': // Note key F
+			case 'g': // Note key G
+				Key = Key_order[tolower(*(msrc - 1)) - 'a'];
+				Octave_t = Octave;
+				if (*msrc == '#' || *msrc == '+') { // Sharp?
+					if (Key == 11) {
+						Key = 0;
+						Octave_t++;
+					}
+					else {
+						Key++;
+					}
+					msrc++;
+				}
+				else if (*msrc == '-') { // flat?
+					if (Key == 0) {
+						Key = 11;
+						Octave_t--;
+					}
+					else {
+						Key--;
+					}
+					msrc++;
+				}
+				else if (*msrc == ' ') {
+					msrc++;
+				}
+				Key += Octave_t * 12;
+				NLen = getDefaultLen(&msrc, Len);
+				// wprintf_s(L"Note %u %u\n", Key, NLen);
+				if (*msrc == '&') {
+					msrc++;
+					time_on = NLen;
+				}
+				else if (*msrc == '^') {
+					time_on = NLen;
+				}
+				else if (NLen == 1)
+				{
+					time_on = 1;
+				}
+				else if (GS == 8) {
+					time_on = NLen - 1;
+				}
+				else {
+					time_on = NLen * GS >> 3;
+					if (time_on == 0) {
+						time_on = 1;
+					}
+				}
+				time_off = NLen - time_on;
+
+				e.Type = 0x90;
+				e.Param = Key; // 0 - 95 (MIDI Note No.12 - 107)
+				this->MML.push_back(e);
+				if (time_off) {
+					e.Type = 0x80;
+					e.Time += time_on;
+					this->MML.push_back(e);
+				}
+				this->time_total += NLen;
+				this->mute = false;
+
+				break;
+			case '|':
+			case '!':
+			case ' ':
+				break;
+			default:
+				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
+			}
+		}
+	}
+
+};
+
+struct MML_decoded {
+	class MML_decoded_CH CH[channels];
+
+	size_t end_time = 0;
+	size_t loop_start_time = 0;
+
+	void init(bool opm98, enum Machine M)
+	{
+		for (auto& c : this->CH) {
+			c.init(opm98, M);
+		}
+	}
+
+	void decode(std::string (&s)[6])
+	{
+		bool debug = false;
+		for (size_t i = 0; i < channels; i++) {
+			this->CH[i].decode(s[i]);
+		}
+	}
+
+	void unroll_loop(void) {
+		// ループを展開し、全チャネルが同一長のループになるように調整する。
+		bool debug = false;
+		size_t max_time = 0;
+		size_t delta_time_LCM = 1;
+		bool no_loop = true;
+
+		// 各ループ時間の最小公倍数をとる
+		for (size_t i = 0; i < channels; i++) {
+			// ループなしの最長時間割り出し
+			if (max_time < this->CH[i].time_total) {
+				max_time = this->CH[i].time_total;
+			}
+
+			// 全チャンネルが非ループかチェック
+			no_loop &= this->CH[i].is_mute();
+			// そもそもループしないチャネルはスキップ
+			if (this->CH[i].is_mute() || this->CH[i].time_total == 0) {
+				continue;
+			}
+			delta_time_LCM = this->LCM(delta_time_LCM, this->CH[i].time_total);
+		}
+		// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
+		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
+		// 全チャンネルがループしないのならループ処理自体が不要
+		if (no_loop) {
+			wprintf_s(L"Loop: NONE %zu %zu\n", max_time, delta_time_LCM);
+			this->end_time = max_time;
+			this->loop_start_time = SIZE_MAX;
+		}
+		else {
+			wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
+			this->end_time = delta_time_LCM;
+			for (size_t i = 0; i < channels; i++) {
+				// そもそもループしないチャネルはスキップ
+				if (this->CH[i].is_mute() || this->CH[i].time_total == 0) {
+					continue;
+				}
+				size_t time_extra = this->end_time;
+				size_t times = time_extra / this->CH[i].time_total + !!(time_extra % this->CH[i].time_total);
+				if (debug) {
+					wprintf_s(L"%2zu: %9zu -> %9zu (x %zu)\n", i, this->CH[i].time_total, delta_time_LCM, delta_time_LCM / this->CH[i].time_total);
+				}
+
+				// ループ回数分のイベントの複写
+				std::vector<struct MML_Events> t = this->CH[i].MML;
+				for (size_t m = 0; m < times - 1; m++) {
+					for (auto& e: t) {
+						e.Time += this->CH[i].time_total;
+					}
+					this->CH[i].MML.insert(this->CH[i].MML.end(), t.begin(), t.end());
+				}
+			}
+		}
+	}
+
+	size_t LCM(size_t a, size_t b)
+	{
+		size_t L, S;
+		if (a == b) {
+			return a;
+		}
+		else if (a > b) {
+			L = a;
+			S = b;
+		}
+		else {
+			L = b;
+			S = a;
+		}
+		while (S != 0) {
+			size_t mod = L % S;
+			L = S;
+			S = mod;
+		}
+		return a * b / L;
+	}
+};
 
 // イベント順序
 // 80 F4 F5 F9 90
 
 struct EVENT {
-	size_t time;
+	size_t Time;
 	size_t Count;
 	unsigned __int8 CH; //
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
@@ -33,10 +464,10 @@ struct EVENT {
 
 	bool operator < (const struct EVENT& out) {
 		unsigned CH_weight[16] = { 0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15 };
-		if (this->time < out.time) {
+		if (this->Time < out.Time) {
 			return true;
 		}
-		else if (this->time > out.time) {
+		else if (this->Time > out.Time) {
 			return false;
 		}
 		else if (this->Type < out.Type) {
@@ -61,164 +492,117 @@ struct EVENT {
 };
 
 class EVENTS {
-	size_t counter;
-	size_t time_end = SIZE_MAX;
 	enum class Machine Arch;
 
 public:
 	std::vector<struct EVENT> events;
-	size_t length = 0;
 	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
-	EVENTS(size_t elems, size_t end, enum class Machine M_arch)
+	void init(enum class Machine M_arch)
 	{
-		this->time_end = end;
 		this->Arch = M_arch;
-
-		counter = 0;
 	}
 
-	void convert(struct eomml_decoded& MMLs)
+	void convert(struct MML_decoded& MMLs)
 	{
+		size_t time_end = MMLs.end_time;
+		size_t counter = 0;
 		this->loop_enable = false;
 
-		for (size_t j = 0; j < MMLs.CHs; j++) {
-			size_t i = MMLs.CHs - 1 - j;
+		for (size_t j = 0; j < channels; j++) {
+			size_t i = channels - 1 - j;
 			if (Arch == Machine::X68000) {
 				i = j;
 			}
 
-			size_t time = 0;
-			size_t len = 0;
-			while (len < (MMLs.CH + i)->len_unrolled) {
-				unsigned __int8* src = (MMLs.CH + i)->MML + len;
+			for (auto &in: MMLs.CH[i].MML) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
 					this->loop_enable = true;
 				}
-				while (src >= (MMLs.CH + i)->MML + (MMLs.CH + i)->len) {
-					src -= (MMLs.CH + i)->len;
-				}
-
-				unsigned __int8* src_orig = src;
-				size_t len_On, len_Off;
 
 				struct EVENT e;
+				e.Count = counter++;
+				e.Event = in.Type;
+				e.Time = in.Time;
+				e.CH = i;
 
-				switch (*src) {
+				switch (in.Type) {
 				case 0x80: // Note off
-					e.Count = counter++;
-					e.Event = *src++;
-					e.time = time;
 					e.Type = 0;
-					e.CH = i;
 					this->events.push_back(e);
-					len_Off = *src++;
-					time += len_Off;
 					break;
 				case 0xF5: // Tone select
 				case 0xEB: // Panpot
-					e.Count = counter++;
-					e.Event = *src++;
-					e.Param = *src++;
-					e.time = time;
+					e.Param = in.Param;
 					e.Type = 2;
-					e.CH = i;
 					this->events.push_back(e);
 					break;
 				case 0xF9: // Volume change (0-127)
-					e.Count = counter++;
-					e.Event = *src++;
-					e.Param = *src++;
-					e.time = time;
+					e.Param = in.Param;
 					e.Type = 3;
-					e.CH = i;
 					this->events.push_back(e);
 					break;
 				case 0xF4: // Tempo
-					e.Count = counter++;
-					e.Event = *src++;
-					e.Param = *src++;
-					e.time = time;
+					e.Param = in.Param;
 					e.Type = 1;
-					e.CH = i;
 					this->events.push_back(e);
 					break;
 				case 0x90: // Note on
-					e.Count = counter++;
-					e.Event = *src++;
-					e.time = time;
-					e.Type = 9;
-					e.CH = i;
+					e.Type = 8;
 					this->events.push_back(e);
-
-					e.Count = counter++;
 					e.Event = 0x97;
-					e.Param = *src++;
-					e.time = time;
+					e.Param = in.Param;
 					e.Type = 2;
-					e.CH = i;
 					this->events.push_back(e);
-					len_On = *src++;
-					len_Off = *src++;
-
-					time += len_On;
-
-					e.Count = counter++;
-					e.Event = 0x80;
-					e.time = time;
-					e.Type = 0;
-					e.CH = i;
-					this->events.push_back(e);
-
-					time += len_Off;
-
 					break;
 				default:
-					wprintf_s(L"%zu: %2zu: How to reach ? %02X %02X %02X %02X %02X %02X %02X %02X,%02X %02X\n", src - (MMLs.CH + i)->MML, i, *(src - 8), *(src - 7), *(src - 6), *(src - 5), *(src - 4), *(src - 3), *(src - 2), *(src - 1), *src, *(src + 1));
+					wprintf_s(L"%u: %2zu: How to reach ? \n", in.Type, i);
 					break;
 				}
-				len += src - src_orig;
 			}
 		}
 
 		// 出来上がった列の末尾に最大時間のマークをつける
 		struct EVENT end;
-		end.time = SIZE_MAX;
+		end.Type = 9;
+		end.Event = 0xFF;
+		end.Time = SIZE_MAX;
 		this->events.push_back(end);
 
 		// イベント列をソートする
 		std::sort(this->events.begin(), this->events.end());
 
+		size_t length = 0;
 		// イベント列の長さを測る。
-		while (this->events[this->length].time < this->time_end) {
+		while (this->events[length].Time < time_end) {
 			if (this->loop_start == SIZE_MAX) {
-				this->loop_start = this->length;
+				this->loop_start = length;
 			}
-			this->length++;
+			length++;
 		}
 
 		// 重複イベントを削除し、ソートしなおす
-		size_t length_work = this->length;
+		size_t length_work = length;
 		for (size_t i = 0; i < length_work - 1; i++) {
-			if (this->events[i].time == this->events[i + 1].time && this->events[i].Event == this->events[i + 1].Event) {
+			if (this->events[i].Time == this->events[i + 1].Time && this->events[i].Event == this->events[i + 1].Event) {
 				if (this->events[i].Event == 0xF4 && this->events[i].Param == this->events[i + 1].Param) {
-					this->events[i].time = SIZE_MAX;
+					this->events[i].Time = SIZE_MAX;
 					if (i < this->loop_start) {
 						this->loop_start--;
 					}
-					this->length--;
+					length--;
 				}
 			}
 		}
 		std::sort(this->events.begin(), this->events.end());
-		this->events.resize(this->length);
+		this->events.resize(length);
 
-		wprintf_s(L"Event Length %8zu Loop from %zu\n", this->length, this->loop_start);
+		wprintf_s(L"Event Length %8zu Loop from %zu\n", length, this->loop_start);
 	}
 	void print_all(void)
 	{
 		for (auto& i : this->events) {
-			wprintf_s(L"%8zu: %2d: %02X\n", i.time, i.CH, i.Event);
+			wprintf_s(L"%8zu: %2d: %02X\n", i.Time, i.CH, i.Event);
 		}
 	}
 };
@@ -233,7 +617,7 @@ public:
 	{
 		this->vgm_header.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
 		this->ex_vgm.SetSSGVol(120);
-		this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_88;
+		this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_98;
 
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
@@ -261,10 +645,10 @@ public:
 		size_t Time_Prev_VGM = 0;
 
 		for (auto& eve : in.events) {
-			if (eve.time == SIZE_MAX) {
+			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.time - Time_Prev) {
+			if (eve.Time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -280,18 +664,18 @@ public:
 				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 				// VAはBIOSが演奏するので調整しない。
 
-				size_t c_VGMT = (eve.time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
-				Time_Prev = eve.time;
+				Time_Prev = eve.Time;
 
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.time == in.loop_start) {
+			if (in.loop_enable && eve.Time == in.loop_start) {
 				this->time_loop_VGM_abs = time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
@@ -376,7 +760,7 @@ public:
 			0x54, 0x14, 0x00, 0x54, 0x10, 0x64, 0x54, 0x11, 0x00 };
 		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
 	}
-	
+
 	void set_opm98(void)
 	{
 		memcpy_s((void*)&this->preset[0x4F], sizeof(struct AC_FM_PARAMETER_BYTE_OPM) * (200 - 0x4F), preset_x68_opm98, sizeof(struct AC_FM_PARAMETER_BYTE_OPM) * 82);
@@ -388,10 +772,10 @@ public:
 		size_t Time_Prev_VGM = 0;
 
 		for (auto& eve : in.events) {
-			if (eve.time == SIZE_MAX) {
+			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.time - Time_Prev) {
+			if (eve.Time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -407,18 +791,18 @@ public:
 				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 				// VAはBIOSが演奏するので調整しない。
 
-				size_t c_VGMT = (eve.time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
-				Time_Prev = eve.time;
+				Time_Prev = eve.Time;
 
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.time == in.loop_start) {
+			if (in.loop_enable && eve.Time == in.loop_start) {
 				this->time_loop_VGM_abs = time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
@@ -483,11 +867,9 @@ int wmain(int argc, wchar_t** argv)
 	unsigned __int8 SSG_Volume = 0;
 	enum Machine M_arch = Machine::X68000;
 	bool Tones_tousin = false;
-	bool Old98_Octave = false;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'9') {
-				Old98_Octave = true;
 				M_arch = Machine::PC9801;
 			}
 			else if (*(*argv + 1) == L'T') {
@@ -521,15 +903,18 @@ int wmain(int argc, wchar_t** argv)
 		infile.close();
 
 		std::wcout << inbuf.size() << std::endl;
-		std::vector<__int8> buffer;
-		std::vector<__int8>* in = NULL;
+		std::vector <unsigned __int8> MML_Table[channels];
+		std::vector <std::string> MML_Body[channels];
+		std::string master_tune;
+
 		if (inbuf[0] == '"') {
 			M_arch = Machine::PC9801;
-			Old98_Octave = true;
 			std::string instr(&inbuf[0]);
 			std::stringstream instr_s(instr);
 			std::string line;
 			bool header = true;
+			bool master = false;
+			size_t linecounter = 0;
 			while (std::getline(instr_s, line)) {
 				//				std::cout << line << std::endl;
 				line.erase(line.end() - 1); // remove CR
@@ -537,52 +922,107 @@ int wmain(int argc, wchar_t** argv)
 				const std::string domac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[domac]\",\"[eomac]\",\"[eomac]\"");
 				if (line == eomac || line == domac) {
 					header = false;
-					//					std::cout << "Header end." << std::endl;
-					buffer.push_back(0xff);
+					master = true;
 				}
 				else if (header) {
 					std::string col;
 					std::stringstream line_s(line);
+					size_t CH = 0;
 					while (std::getline(line_s, col, ',')) {
 						unsigned long v = std::stoul(col.substr(1, col.size() - 2));
 						//						std::cout << v << std::endl;
-						buffer.push_back((unsigned __int8)v);
+						MML_Table[CH++].push_back((unsigned __int8)v);
 					}
 					col.empty();
 				}
-				else if (line.size() > 1) {
-					buffer.insert(buffer.end(), line.begin() + 1, line.end() - 1);
-					buffer.push_back(0x0d);
+				else if (master) {
+					master_tune = line.substr(1, line.size() - 2);
+					master_tune.push_back('|');
+					master = false;
 				}
-				in = &buffer;
+				else if (line.size() > 1) {
+					std::string eomml_sig("[eomml");
+					std::string::size_type s_end = line.find(eomml_sig);
+					if (s_end != std::string::npos) {
+						linecounter++;
+					}
+					else {
+						std::string s = line.substr(1, line.size() - 2);
+						s.push_back('|');
+						MML_Body[linecounter].emplace_back(s);
+					}
+				}
 			}
-			line.empty();
 
-#if 0
-			for (size_t i = 0; i < buffer.size(); i++) {
-				printf_s("%02X ", buffer[i]);
-			}
-#endif
 		}
-		else if (inbuf[0] != 0x00) {
-			continue;
+		else if (inbuf[0] == 0x00) {
+			std::vector<__int8>::iterator Table_end = std::find(inbuf.begin(), inbuf.end(), '\xff');
+			size_t CH_counter = 0;
+			for (std::vector <__int8>::iterator Table_pos = inbuf.begin(); Table_pos < Table_end; Table_pos++) {
+				MML_Table[CH_counter % channels].push_back(*Table_pos);
+				CH_counter++;
+			}
+
+			std::string eomml_sig("[eomml");
+			std::string cblacket_sig("]");
+
+			std::string instr(&inbuf.at(Table_end - inbuf.begin() + 1));
+			std::string::size_type m_end = instr.find(std::string("\r"));
+			master_tune = instr.substr(0, m_end);
+			master_tune.push_back('|');
+			std::string  n1 = instr.substr(m_end + 1, instr.size());
+
+			for (size_t CH = 0; CH < channels; CH++) {
+				std::string::size_type s_end = n1.find(eomml_sig);
+				std::string s = n1.substr(0, s_end);
+				std::stringstream s0(s);
+				std::string ss;
+				while (std::getline(s0, ss, '\r')) {
+					ss.push_back('|');
+					MML_Body[CH].emplace_back(ss);
+				}
+
+				if (CH < channels - 1) {
+					std::string n0 = n1.substr(s_end + 1, n1.size());
+					std::string::size_type s_begin = n0.find(cblacket_sig);
+					n1 = n0.substr(s_begin + 2, n0.size());
+				}
+			}
 		}
 		else {
-			in = &inbuf;
+			continue;
 		}
-
-		std::wcout << in->size() << std::endl;
-		struct eomml_decoded MMLs((unsigned __int8*)&in->at(0), in->size(), Tones_tousin, Old98_Octave);
-
-		MMLs.decode();
-
-		buffer.empty();
-		inbuf.empty();
 
 		if (debug) {
-			MMLs.print();
+			for (size_t CH = 0; CH < channels; CH++) {
+				for (auto& h : MML_Table[CH]) {
+					std::wcout << h << " ";
+				}
+				std::wcout << std::endl;
+				for (auto& b : MML_Body[CH]) {
+					std::cout << b.c_str() << std::endl;
+				}
+			}
 		}
 
+		std::string MML_FullBody[channels];
+		for (size_t CH = 0; CH < channels; CH++) {
+			MML_FullBody[CH] += master_tune;
+			for (size_t j = 0; j < MML_Table[CH].size(); j++) {
+				MML_FullBody[CH] += MML_Body[CH][MML_Table[CH][j]];
+			}
+		}
+
+		if (debug) {
+			for (size_t CH = 0; CH < channels; CH++) {
+				std::cout << MML_FullBody[CH].c_str() << std::endl;
+			}
+		}
+
+		struct MML_decoded MMLs;
+		
+		MMLs.init(Tones_tousin, M_arch);
+		MMLs.decode(MML_FullBody);
 		MMLs.unroll_loop();
 
 		if (!MMLs.end_time) {
@@ -592,22 +1032,13 @@ int wmain(int argc, wchar_t** argv)
 
 		wprintf_s(L"Make Sequential events\n");
 		// 得られた展開データからイベント列を作る。
-		class EVENTS events(MMLs.end_time * 2, MMLs.end_time, M_arch);
+		class EVENTS events;
+		events.init(M_arch);
 		events.convert(MMLs);
 		if (debug) {
 			events.print_all();
 		}
-
-		if (M_arch == Machine::X68000) {
-			class VGMdata_YM2151 v2151;
-			v2151.make_init();
-			if (Tones_tousin) {
-				v2151.set_opm98();
-			}
-			v2151.convert(events);
-			v2151.out(*argv);
-		}
-		else {
+		if (M_arch == Machine::PC9801) {
 			class VGMdata_YM2203 v2203;
 			v2203.make_init();
 			v2203.convert(events);
@@ -615,6 +1046,15 @@ int wmain(int argc, wchar_t** argv)
 				v2203.ex_vgm.SetSSGVol(SSG_Volume);
 			}
 			v2203.out(*argv);
+		}
+		else {
+			class VGMdata_YM2151 v2151;
+			v2151.make_init();
+			if (Tones_tousin) {
+				v2151.set_opm98();
+			}
+			v2151.convert(events);
+			v2151.out(*argv);
 		}
 	}
 }

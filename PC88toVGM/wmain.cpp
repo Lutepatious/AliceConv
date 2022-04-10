@@ -434,7 +434,7 @@ public:
 // 80 F4 F5 F9 90
 
 struct EVENT {
-	size_t time;
+	size_t Time;
 	size_t count;
 	unsigned __int8 CH; //
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
@@ -443,10 +443,10 @@ struct EVENT {
 	unsigned __int16 Param16; // イベントのパラメータ 16ビット
 
 	bool operator < (const struct EVENT& out) {
-		if (this->time < out.time) {
+		if (this->Time < out.Time) {
 			return true;
 		}
-		else if (this->time > out.time) {
+		else if (this->Time > out.Time) {
 			return false;
 		}
 		else if (this->Type < out.Type) {
@@ -489,7 +489,7 @@ public:
 				struct EVENT eve;
 				eve.count = counter++;
 				eve.CH = i;
-				eve.time = e.Time;
+				eve.Time = e.Time;
 				eve.Event = e.Type;
 
 				switch (e.Type) {
@@ -536,7 +536,7 @@ public:
 
 			end.count = counter++;
 			end.CH = i;
-			end.time = MMLs.CH[i].time_total;
+			end.Time = MMLs.CH[i].time_total;
 			end.Event = 0xFF;
 			end.Type = 9;
 			events.push_back(end);
@@ -548,7 +548,7 @@ public:
 	void print_all(void)
 	{
 		for (auto& e : this->events) {
-			wprintf_s(L"%8zu: %2d: %02X\n", e.time, e.CH, e.Event);
+			wprintf_s(L"%8zu: %2d: %02X\n", e.Time, e.CH, e.Event);
 		}
 	}
 };
@@ -588,10 +588,10 @@ public:
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
 		for (auto& eve : in.events) {
-			if (eve.time == SIZE_MAX) {
+			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.time - Time_Prev) {
+			if (eve.Time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
 				// Ttick = Tqn / 48
@@ -607,18 +607,18 @@ public:
 				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 				// VAはBIOSが演奏するので調整しない。
 
-				size_t c_VGMT = (eve.time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
-				Time_Prev = eve.time;
+				Time_Prev = eve.Time;
 
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.time == in.loop_start) {
+			if (in.loop_enable && eve.Time == in.loop_start) {
 				this->time_loop_VGM_abs = time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
