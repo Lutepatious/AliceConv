@@ -5,7 +5,6 @@
 #include <algorithm>
 
 #include "VGM.hpp"
-#include "tools.h"
 
 constexpr size_t INIT_LEN = 1;
 
@@ -18,6 +17,11 @@ struct PC88_MML_HEADER {
 	unsigned __int16 CH_Address[CHs];
 };
 
+class MML_Extract {
+
+};
+
+
 struct MML_Events {
 	size_t Time;
 	unsigned __int8 Type;
@@ -26,6 +30,7 @@ struct MML_Events {
 };
 
 class MML_decoded_CH {
+	std::string MML;
 	static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 	{
 		unsigned NLen, NLen_d;
@@ -63,10 +68,13 @@ public:
 
 	size_t loop_start = 0;
 	bool mute = false;
-	std::string MML;
 	std::vector<struct MML_Events> E;
 	std::vector<size_t> block_len;
 
+	void init(std::string& s)
+	{
+		this->MML = s;
+	}
 	void decode(std::vector<size_t>& block_len_master)
 	{
 		unsigned Octave = 5; // 1 - 9
@@ -356,11 +364,6 @@ public:
 		unsigned Len = 48; // 0-192
 		unsigned __int8* msrc = (unsigned __int8*)this->MML.c_str();
 		size_t block_time = 0;
-		// eomml 覚書
-		// < 1オクターブ下げ
-		// > 1オクターブ上げ
-		// O デフォルト4 O4のAがA4と同じで440Hz
-		// L ドットが付けられる!
 		while (*msrc) {
 			switch (tolower(*msrc++)) {
 			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
@@ -394,7 +397,6 @@ public:
 				this->block_len.push_back(block_time);
 				block_time = 0;
 				break;
-			default:;
 			}
 		}
 	}
@@ -406,6 +408,18 @@ public:
 	size_t max_blocks = 0;
 	std::vector<size_t> master_block_len;
 
+	void init(std::string(&s)[CHs])
+	{
+		for (size_t i = 0; i < CHs; i++) {
+			this->CH[i].init(s[i]);
+		}
+	}
+	void decode(void)
+	{
+		for (size_t i = 0; i < CHs; i++) {
+			this->CH[i].decode(master_block_len);
+		}
+	}
 	void correct_block_len()
 	{
 		for (auto& i : CH) {
@@ -740,22 +754,25 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		class MML_decoded M;
+		std::string MML_FullBody[CHs];
 
 		for (size_t i = 0; i < CHs; i++) {
 			for (auto& j : MMLAddr[i]) {
 				if (j == 0xFFFF) {
-					M.CH[i].MML += '*';
+					MML_FullBody[i] += '*';
 				}
 				else {
 					for (unsigned __int16 k = j; inbuf.at(k) != (char)0xFF; k++) {
-						M.CH[i].MML += inbuf.at(k);
+						MML_FullBody[i] += inbuf.at(k);
 					}
-					M.CH[i].MML += '|';
+					MML_FullBody[i] += '|';
 				}
 			}
-			//			std::cout << M.CH[i].MML << std::endl;
+			//			std::cout << MML_FullBody[i] << std::endl;
 		}
+
+		class MML_decoded M;
+		M.init(MML_FullBody);
 		M.correct_block_len();
 #if 0
 		for (size_t i = 0; i < CHs; i++) {
@@ -770,9 +787,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		std::cout << std::endl;
 #endif
-		for (size_t i = 0; i < CHs; i++) {
-			M.CH[i].decode(M.master_block_len);
-		}
+		M.decode();
 		class EVENTS E;
 		E.convert(M);
 		//		E.print_all();

@@ -9,7 +9,133 @@
 #include <sys/types.h>
 
 enum class Machine { NONE = 0, X68000, PC9801 };
-constexpr size_t channels = 6;
+constexpr size_t CHs = 6;
+
+class MML_Extract {
+	std::vector <unsigned __int8> MML_Table[CHs];
+	std::vector <std::string> MML_Body[CHs];
+	std::string master_tune;
+
+public:
+	std::string MML_FullBody[CHs];
+
+	void input(std::vector<__int8>& in, enum class Machine& arch)
+	{
+		bool debug = false;
+		if (in[0] == '"') {
+			arch = Machine::PC9801;
+			std::string instr(&in[0]);
+			std::stringstream instr_s(instr);
+			std::string line;
+			bool header = true;
+			bool master = false;
+			size_t linecounter = 0;
+			while (std::getline(instr_s, line)) {
+				//				std::cout << line << std::endl;
+				line.erase(line.end() - 1); // remove CR
+				const std::string eomac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\"");
+				const std::string domac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[domac]\",\"[eomac]\",\"[eomac]\"");
+				if (line == eomac || line == domac) {
+					header = false;
+					master = true;
+				}
+				else if (header) {
+					std::string col;
+					std::stringstream line_s(line);
+					size_t CH = 0;
+					while (std::getline(line_s, col, ',')) {
+						unsigned long v = std::stoul(col.substr(1, col.size() - 2));
+						//						std::cout << v << std::endl;
+						this->MML_Table[CH++].push_back((unsigned __int8)v);
+					}
+					col.empty();
+				}
+				else if (master) {
+					this->master_tune = line.substr(1, line.size() - 2);
+					this->master_tune.push_back('|');
+					master = false;
+				}
+				else if (line.size() > 1) {
+					std::string eomml_sig("[eomml");
+					std::string::size_type s_end = line.find(eomml_sig);
+					if (s_end != std::string::npos) {
+						linecounter++;
+					}
+					else {
+						std::string s = line.substr(1, line.size() - 2);
+						s.push_back('|');
+						this->MML_Body[linecounter].emplace_back(s);
+					}
+				}
+			}
+
+		}
+		else if (in[0] == 0x00) {
+			std::vector<__int8>::iterator Table_end = std::find(in.begin(), in.end(), '\xff');
+			size_t CH_counter = 0;
+			for (std::vector <__int8>::iterator Table_pos = in.begin(); Table_pos < Table_end; Table_pos++) {
+				this->MML_Table[CH_counter % CHs].push_back(*Table_pos);
+				CH_counter++;
+			}
+
+			std::string eomml_sig("[eomml");
+			std::string cblacket_sig("]");
+
+			std::string instr(&in.at(Table_end - in.begin() + 1));
+			std::string::size_type m_end = instr.find(std::string("\r"));
+			this->master_tune = instr.substr(0, m_end);
+			this->master_tune.push_back('|');
+			std::string  n1 = instr.substr(m_end + 1, instr.size());
+
+			for (size_t CH = 0; CH < CHs; CH++) {
+				std::string::size_type s_end = n1.find(eomml_sig);
+				std::string s = n1.substr(0, s_end);
+				std::stringstream s0(s);
+				std::string ss;
+				while (std::getline(s0, ss, '\r')) {
+					ss.push_back('|');
+					this->MML_Body[CH].emplace_back(ss);
+				}
+
+				if (CH < CHs - 1) {
+					std::string n0 = n1.substr(s_end + 1, n1.size());
+					std::string::size_type s_begin = n0.find(cblacket_sig);
+					n1 = n0.substr(s_begin + 2, n0.size());
+				}
+			}
+		}
+		else {
+			return;
+		}
+
+		if (debug) {
+			for (size_t CH = 0; CH < CHs; CH++) {
+				for (auto& h : this->MML_Table[CH]) {
+					std::wcout << h << " ";
+				}
+				std::wcout << std::endl;
+				for (auto& b : this->MML_Body[CH]) {
+					std::cout << b.c_str() << std::endl;
+				}
+			}
+		}
+
+		for (size_t CH = 0; CH < CHs; CH++) {
+			this->MML_FullBody[CH] += this->master_tune;
+			for (size_t j = 0; j < MML_Table[CH].size(); j++) {
+				this->MML_FullBody[CH] += this->MML_Body[CH][this->MML_Table[CH][j]];
+			}
+		}
+
+		if (debug) {
+			for (size_t CH = 0; CH < CHs; CH++) {
+				std::cout << this->MML_FullBody[CH].c_str() << std::endl;
+			}
+		}
+	}
+
+};
+
 
 struct MML_Events {
 	size_t Time;
@@ -20,6 +146,7 @@ struct MML_Events {
 
 class MML_decoded_CH {
 	bool mute = true;
+	std::string MML;
 
 	static unsigned getDefaultLen(unsigned __int8** pmsrc, unsigned Len)
 	{
@@ -31,12 +158,11 @@ class MML_decoded_CH {
 
 			*pmsrc = (unsigned __int8*)tpos;
 			if (TLen == 0 || TLen > 65) {
-				wprintf_s(L"L %u: out of range.\n", TLen);
+				std::wcerr << L"L " << TLen << L" % u: out of range." << std::endl;
 			}
 			if (192 % TLen) {
-				wprintf_s(L"L %u: out of range.\n", TLen);
-				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(*pmsrc - 3), *(*pmsrc - 2), *(*pmsrc - 1), **pmsrc, *(*pmsrc + 1));
-
+				std::wcerr << L"L " << TLen << L" % u: out of range." << std::endl;
+				std::wcerr << L"Something wrong. " << *(*pmsrc - 3) << *(*pmsrc - 2) << L"[" << *(*pmsrc - 1) << L"]" << **pmsrc << *(*pmsrc + 1) << std::endl;
 			}
 			NLen_d = 192 / TLen;
 		}
@@ -53,20 +179,22 @@ class MML_decoded_CH {
 	}
 
 public:
-	std::vector<struct MML_Events> MML;
+	std::vector<struct MML_Events> E;
 	size_t time_total = 0;
 	bool x68tt = false;
 	enum Machine M_arch = Machine::NONE;
+	std::vector<size_t> block_len;
 
-	void init(bool opm98, enum Machine arch)
+	void init(std::string &s, bool opm98, enum Machine arch)
 	{
+		this->MML = s;
 		this->x68tt = opm98;
 		this->M_arch = arch;
 	}
 	bool is_mute(void) {
 		return this->mute;
 	}
-	void decode(std::string& s)
+	void decode(void)
 	{
 		unsigned Octave = (this->M_arch == Machine::PC9801) ? 5 : 4; // 1 - 9
 		unsigned GS = 8; // 1 - 8
@@ -76,7 +204,7 @@ public:
 		unsigned Tempo = 120;
 		unsigned Tone = 0;
 		unsigned Key_order[] = { 9, 11, 0, 2, 4, 5, 7 };
-		unsigned __int8* msrc = (unsigned __int8*)s.c_str();
+		unsigned __int8* msrc = (unsigned __int8*)MML.c_str();
 		unsigned Octave_t;
 		unsigned VoltoXVol[16] = { 85, 87, 90, 93, 95, 98, 101, 103, 106, 109, 111, 114, 117, 119, 122, 125 };
 		unsigned Panpot = 3;
@@ -110,10 +238,9 @@ public:
 				if (Panpot > 3) {
 					wprintf_s(L"P %u: out of range.\n", Panpot);
 				}
-				// wprintf_s(L"Panpot %u\n", Panpot);
 				e.Type = 0xEB;
 				e.Param = Panpot;
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				break;
 			case 't': // Tempo
 				if (isdigit(*msrc)) {
@@ -124,10 +251,9 @@ public:
 				if (Tempo < 32 || Tempo > 200) {
 					wprintf_s(L"T %u: out of range.\n", Tempo);
 				}
-				// wprintf_s(L"Tempo %u\n", Tempo);
 				e.Type = 0xF4;
 				e.Param = Tempo;
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				break;
 			case '@':
 				if (tolower(*msrc) == 'o') {
@@ -149,10 +275,9 @@ public:
 					if (XVol > 127) {
 						wprintf_s(L"@V %u: out of range.\n", XVol);
 					}
-					// wprintf_s(L"XVol %u\n", XVol);
 					e.Type = 0xF9;
 					e.Param = XVol;
-					this->MML.push_back(e);
+					this->E.push_back(e);
 				}
 				else {
 					if (isdigit(*msrc)) {
@@ -160,10 +285,9 @@ public:
 						Tone = strtoul((const char*)msrc, (char**)&tpos, 10);
 						msrc = tpos;
 					}
-					//	wprintf_s(L"Tone %u\n", Tone);
 					e.Type = 0xF5;
 					e.Param = Tone;
-					this->MML.push_back(e);
+					this->E.push_back(e);
 				}
 				break;
 			case 'q':
@@ -175,7 +299,6 @@ public:
 				if (GS == 0 || GS > 8) {
 					wprintf_s(L"Q %u: out of range.\n", GS);
 				}
-				// wprintf_s(L"GS %u\n", GS);
 				break;
 			case 'v': // Volume
 				if (isdigit(*msrc)) {
@@ -189,14 +312,13 @@ public:
 						wprintf_s(L"Assume @V\n");
 						e.Type = 0xF9;
 						e.Param = Vol;
-						this->MML.push_back(e);
+						this->E.push_back(e);
 					}
 				}
 				else {
-					// wprintf_s(L"Vol %u\n", Vol);
 					e.Type = 0xF9;
 					e.Param = Vol * 8 / 3 + 85;
-					this->MML.push_back(e);
+					this->E.push_back(e);
 				}
 				break;
 			case 'o': // Octave
@@ -211,7 +333,6 @@ public:
 				if (Octave > 8) {
 					wprintf_s(L"O %u: out of range.\n", Octave);
 				}
-				// wprintf_s(L"Octave %u\n", Octave);
 				break;
 			case '>': // Octave up
 				if (this->x68tt) {
@@ -223,7 +344,6 @@ public:
 				if (Octave > 8) {
 					wprintf_s(L">:result %u out of range.\n", Octave);
 				}
-				// wprintf_s(L"Octave %u\n", Octave);
 				break;
 			case '<': // Octave down
 				if (this->x68tt) {
@@ -235,17 +355,14 @@ public:
 				if (Octave > 8) {
 					wprintf_s(L"<:result %u out of range.\n", Octave);
 				}
-				// wprintf_s(L"Octave %u\n", Octave);
 				break;
 			case 'l': // de fault Length
 				Len = getDefaultLen(&msrc, Len);
-				// wprintf_s(L"Len %u\n", Len);
 				break;
 			case 'r': // Rest
 				RLen = getDefaultLen(&msrc, Len);
-				// wprintf_s(L"Rest %u\n", RLen);
 				e.Type = 0x80;
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				this->time_total += RLen;
 				break;
 			case '^': // Note continue
@@ -263,10 +380,10 @@ public:
 
 				e.Type = 0x90;
 				e.Param = Key; // 0 - 95 (MIDI Note No.12 - 107)
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				e.Type = 0x80;
 				e.Time += time_on;
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				this->time_total += NLen;
 				this->mute = false;
 				break;
@@ -329,11 +446,11 @@ public:
 
 				e.Type = 0x90;
 				e.Param = Key; // 0 - 95 (MIDI Note No.12 - 107)
-				this->MML.push_back(e);
+				this->E.push_back(e);
 				if (time_off) {
 					e.Type = 0x80;
 					e.Time += time_on;
-					this->MML.push_back(e);
+					this->E.push_back(e);
 				}
 				this->time_total += NLen;
 				this->mute = false;
@@ -349,26 +466,70 @@ public:
 		}
 	}
 
-};
-
-struct MML_decoded {
-	class MML_decoded_CH CH[channels];
-
-	size_t end_time = 0;
-	size_t loop_start_time = 0;
-
-	void init(bool opm98, enum Machine M)
+	void check_block_len(void)
 	{
-		for (auto& c : this->CH) {
-			c.init(opm98, M);
+		this->block_len.clear();
+		unsigned Len = 48; // 0-192
+		unsigned __int8* msrc = (unsigned __int8*)MML.c_str();
+		size_t block_time = 0;
+		while (*msrc) {
+			switch (tolower(*msrc++)) {
+			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
+				if (tolower(*msrc) == 'b' || tolower(*msrc) == 'f') {
+					msrc++;
+				}
+				break;
+			case 'l': // default Length
+				Len = getDefaultLen(&msrc, Len);
+				break;
+			case 'r': // Rest
+				block_time += getDefaultLen(&msrc, Len);
+				break;
+			case 'a': // Note key A
+			case 'b': // Note key B
+			case 'c': // Note key C
+			case 'd': // Note key D
+			case 'e': // Note key E
+			case 'f': // Note key F
+			case 'g': // Note key G
+				if (*msrc == '#' || *msrc == '+') { // Sharp?
+					msrc++;
+				}
+				else if (*msrc == '-') { // flat?
+					msrc++;
+				}
+				block_time += getDefaultLen(&msrc, Len);
+				break;
+			case '|': // Block Separator
+			case '*':
+				this->block_len.push_back(block_time);
+				block_time = 0;
+				break;
+			}
 		}
 	}
 
-	void decode(std::string(&s)[6])
+};
+
+struct MML_decoded {
+	class MML_decoded_CH CH[CHs];
+
+	size_t end_time = 0;
+	size_t loop_start_time = 0;
+	size_t max_blocks = 0;
+	std::vector<size_t> master_block_len;
+
+	void init(std::string(&s)[CHs], bool opm98, enum Machine M)
 	{
-		bool debug = false;
-		for (size_t i = 0; i < channels; i++) {
-			this->CH[i].decode(s[i]);
+		for (size_t i = 0; i < CHs; i++) {
+			this->CH[i].init(s[i], opm98, M);
+		}
+	}
+
+	void decode(void)
+	{
+		for (size_t i = 0; i < CHs; i++) {
+			this->CH[i].decode();
 		}
 	}
 
@@ -380,7 +541,7 @@ struct MML_decoded {
 		bool no_loop = true;
 
 		// 各ループ時間の最小公倍数をとる
-		for (size_t i = 0; i < channels; i++) {
+		for (size_t i = 0; i < CHs; i++) {
 			// ループなしの最長時間割り出し
 			if (max_time < this->CH[i].time_total) {
 				max_time = this->CH[i].time_total;
@@ -405,7 +566,7 @@ struct MML_decoded {
 		else {
 			wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
 			this->end_time = delta_time_LCM;
-			for (size_t i = 0; i < channels; i++) {
+			for (size_t i = 0; i < CHs; i++) {
 				// そもそもループしないチャネルはスキップ
 				if (this->CH[i].is_mute() || this->CH[i].time_total == 0) {
 					continue;
@@ -417,12 +578,35 @@ struct MML_decoded {
 				}
 
 				// ループ回数分のイベントの複写
-				std::vector<struct MML_Events> t = this->CH[i].MML;
+				std::vector<struct MML_Events> t = this->CH[i].E;
 				for (size_t m = 0; m < times - 1; m++) {
 					for (auto& e : t) {
 						e.Time += this->CH[i].time_total;
 					}
-					this->CH[i].MML.insert(this->CH[i].MML.end(), t.begin(), t.end());
+					this->CH[i].E.insert(this->CH[i].E.end(), t.begin(), t.end());
+				}
+			}
+		}
+	}
+
+	void correct_block_len(void)
+	{
+		for (auto& i : CH) {
+			i.check_block_len();
+			if (this->max_blocks < i.block_len.size()) {
+				this->max_blocks = i.block_len.size();
+			}
+		}
+		for (auto& i : CH) {
+			if (this->max_blocks != i.block_len.size()) {
+				i.block_len.resize(this->max_blocks);
+			}
+		}
+		this->master_block_len.resize(this->max_blocks, 0);
+		for (size_t i = 0; i < this->max_blocks; i++) {
+			for (size_t j = 0; j < CHs; j++) {
+				if (this->master_block_len[i] < this->CH[j].block_len[i]) {
+					this->master_block_len[i] = this->CH[j].block_len[i];
 				}
 			}
 		}
@@ -509,54 +693,51 @@ public:
 		size_t counter = 0;
 		this->loop_enable = false;
 
-		for (size_t j = 0; j < channels; j++) {
-			size_t i = channels - 1 - j;
+		for (size_t j = 0; j < CHs; j++) {
+			size_t i = CHs - 1 - j;
 			if (Arch == Machine::X68000) {
 				i = j;
 			}
 
-			for (auto& in : MMLs.CH[i].MML) {
+			for (auto& e : MMLs.CH[i].E) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
 					this->loop_enable = true;
 				}
 
-				struct EVENT e;
-				e.Count = counter++;
-				e.Event = in.Type;
-				e.Time = in.Time;
-				e.CH = i;
+				struct EVENT eve;
+				eve.Count = counter++;
+				eve.Event = e.Type;
+				eve.Time = e.Time;
+				eve.CH = i;
 
-				switch (in.Type) {
+				switch (e.Type) {
 				case 0x80: // Note off
-					e.Type = 0;
-					this->events.push_back(e);
+					eve.Type = 0;
+					this->events.push_back(eve);
 					break;
 				case 0xF5: // Tone select
 				case 0xEB: // Panpot
-					e.Param = in.Param;
-					e.Type = 2;
-					this->events.push_back(e);
+					eve.Param = e.Param;
+					eve.Type = 2;
+					this->events.push_back(eve);
 					break;
 				case 0xF9: // Volume change (0-127)
-					e.Param = in.Param;
-					e.Type = 3;
-					this->events.push_back(e);
+					eve.Param = e.Param;
+					eve.Type = 3;
+					this->events.push_back(eve);
 					break;
 				case 0xF4: // Tempo
-					e.Param = in.Param;
-					e.Type = 1;
-					this->events.push_back(e);
+					eve.Param = e.Param;
+					eve.Type = 1;
+					this->events.push_back(eve);
 					break;
 				case 0x90: // Note on
-					e.Type = 8;
-					this->events.push_back(e);
-					e.Event = 0x97;
-					e.Param = in.Param;
-					e.Type = 2;
-					this->events.push_back(e);
-					break;
-				default:
-					wprintf_s(L"%u: %2zu: How to reach ? \n", in.Type, i);
+					eve.Type = 8;
+					this->events.push_back(eve);
+					eve.Event = 0x97;
+					eve.Param = e.Param;
+					eve.Type = 2;
+					this->events.push_back(eve);
 					break;
 				}
 			}
@@ -858,7 +1039,7 @@ int wmain(int argc, wchar_t** argv)
 {
 	bool debug = false;
 	if (argc < 2) {
-		wprintf_s(L"Usage: %s file ...\n", *argv);
+		std::wcerr << L"Usage: " << *argv << L" [-9 | -T] [-s<num>] file..." << std::endl;
 		exit(-1);
 	}
 
@@ -895,134 +1076,23 @@ int wmain(int argc, wchar_t** argv)
 
 			continue;
 		}
+
 		std::vector<__int8> inbuf{ std::istreambuf_iterator<__int8>(infile), std::istreambuf_iterator<__int8>() };
 
 		infile.close();
 
-		std::wcout << inbuf.size() << std::endl;
-		std::vector <unsigned __int8> MML_Table[channels];
-		std::vector <std::string> MML_Body[channels];
-		std::string master_tune;
+//		std::wcout << inbuf.size() << std::endl;
 
-		if (inbuf[0] == '"') {
-			M_arch = Machine::PC9801;
-			std::string instr(&inbuf[0]);
-			std::stringstream instr_s(instr);
-			std::string line;
-			bool header = true;
-			bool master = false;
-			size_t linecounter = 0;
-			while (std::getline(instr_s, line)) {
-				//				std::cout << line << std::endl;
-				line.erase(line.end() - 1); // remove CR
-				const std::string eomac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[eomac]\"");
-				const std::string domac("\"[eomac]\",\"[eomac]\",\"[eomac]\",\"[domac]\",\"[eomac]\",\"[eomac]\"");
-				if (line == eomac || line == domac) {
-					header = false;
-					master = true;
-				}
-				else if (header) {
-					std::string col;
-					std::stringstream line_s(line);
-					size_t CH = 0;
-					while (std::getline(line_s, col, ',')) {
-						unsigned long v = std::stoul(col.substr(1, col.size() - 2));
-						//						std::cout << v << std::endl;
-						MML_Table[CH++].push_back((unsigned __int8)v);
-					}
-					col.empty();
-				}
-				else if (master) {
-					master_tune = line.substr(1, line.size() - 2);
-					master_tune.push_back('|');
-					master = false;
-				}
-				else if (line.size() > 1) {
-					std::string eomml_sig("[eomml");
-					std::string::size_type s_end = line.find(eomml_sig);
-					if (s_end != std::string::npos) {
-						linecounter++;
-					}
-					else {
-						std::string s = line.substr(1, line.size() - 2);
-						s.push_back('|');
-						MML_Body[linecounter].emplace_back(s);
-					}
-				}
-			}
+		class MML_Extract ME;
+		ME.input(inbuf, M_arch);
 
-		}
-		else if (inbuf[0] == 0x00) {
-			std::vector<__int8>::iterator Table_end = std::find(inbuf.begin(), inbuf.end(), '\xff');
-			size_t CH_counter = 0;
-			for (std::vector <__int8>::iterator Table_pos = inbuf.begin(); Table_pos < Table_end; Table_pos++) {
-				MML_Table[CH_counter % channels].push_back(*Table_pos);
-				CH_counter++;
-			}
+		struct MML_decoded M;
 
-			std::string eomml_sig("[eomml");
-			std::string cblacket_sig("]");
+		M.init(ME.MML_FullBody, Tones_tousin, M_arch);
+		M.decode();
+		M.unroll_loop();
 
-			std::string instr(&inbuf.at(Table_end - inbuf.begin() + 1));
-			std::string::size_type m_end = instr.find(std::string("\r"));
-			master_tune = instr.substr(0, m_end);
-			master_tune.push_back('|');
-			std::string  n1 = instr.substr(m_end + 1, instr.size());
-
-			for (size_t CH = 0; CH < channels; CH++) {
-				std::string::size_type s_end = n1.find(eomml_sig);
-				std::string s = n1.substr(0, s_end);
-				std::stringstream s0(s);
-				std::string ss;
-				while (std::getline(s0, ss, '\r')) {
-					ss.push_back('|');
-					MML_Body[CH].emplace_back(ss);
-				}
-
-				if (CH < channels - 1) {
-					std::string n0 = n1.substr(s_end + 1, n1.size());
-					std::string::size_type s_begin = n0.find(cblacket_sig);
-					n1 = n0.substr(s_begin + 2, n0.size());
-				}
-			}
-		}
-		else {
-			continue;
-		}
-
-		if (debug) {
-			for (size_t CH = 0; CH < channels; CH++) {
-				for (auto& h : MML_Table[CH]) {
-					std::wcout << h << " ";
-				}
-				std::wcout << std::endl;
-				for (auto& b : MML_Body[CH]) {
-					std::cout << b.c_str() << std::endl;
-				}
-			}
-		}
-
-		std::string MML_FullBody[channels];
-		for (size_t CH = 0; CH < channels; CH++) {
-			MML_FullBody[CH] += master_tune;
-			for (size_t j = 0; j < MML_Table[CH].size(); j++) {
-				MML_FullBody[CH] += MML_Body[CH][MML_Table[CH][j]];
-			}
-		}
-
-		if (debug) {
-			for (size_t CH = 0; CH < channels; CH++) {
-				std::cout << MML_FullBody[CH].c_str() << std::endl;
-			}
-		}
-
-		struct MML_decoded MMLs;
-
-		MMLs.init(Tones_tousin, M_arch);
-		MMLs.decode(MML_FullBody);
-		MMLs.unroll_loop();
-
-		if (!MMLs.end_time) {
+		if (!M.end_time) {
 			std::wcerr << L"No Data. skip." << std::endl;
 			continue;
 		}
@@ -1030,7 +1100,7 @@ int wmain(int argc, wchar_t** argv)
 		// 得られた展開データからイベント列を作る。
 		class EVENTS events;
 		events.init(M_arch);
-		events.convert(MMLs);
+		events.convert(M);
 		if (debug) {
 			events.print_all();
 		}
