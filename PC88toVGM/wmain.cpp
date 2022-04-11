@@ -700,7 +700,6 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		std::ifstream infile(*++argv, std::ios::binary);
-
 		if (!infile) {
 			std::wcerr << L"File " << *argv << L" open error." << std::endl;
 

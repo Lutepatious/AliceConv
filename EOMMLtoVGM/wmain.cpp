@@ -889,15 +889,14 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		size_t fsize = std::filesystem::file_size(*argv);
-		std::vector<__int8> inbuf(fsize);
 		std::ifstream infile(*argv, std::ios::binary);
 		if (!infile) {
 			std::wcerr << L"File " << *argv << L" open error." << std::endl;
 
 			continue;
 		}
-		infile.read(&inbuf.at(0), fsize);
+		std::vector<__int8> inbuf{ std::istreambuf_iterator<__int8>(infile), std::istreambuf_iterator<__int8>() };
+
 		infile.close();
 
 		std::wcout << inbuf.size() << std::endl;
