@@ -1108,6 +1108,7 @@ int wmain(int argc, wchar_t** argv)
 		if (debug) {
 			events.print_all();
 		}
+		size_t outsize;
 		if (M_arch == Machine::PC9801) {
 			class VGMdata_YM2203 v2203;
 			v2203.make_init();
@@ -1115,7 +1116,7 @@ int wmain(int argc, wchar_t** argv)
 			if (SSG_Volume) {
 				v2203.ex_vgm.SetSSGVol(SSG_Volume);
 			}
-			v2203.out(*argv);
+			outsize = v2203.out(*argv);
 		}
 		else {
 			class VGMdata_YM2151 v2151;
@@ -1124,7 +1125,15 @@ int wmain(int argc, wchar_t** argv)
 				v2151.set_opm98();
 			}
 			v2151.convert(events);
-			v2151.out(*argv);
+			outsize = v2151.out(*argv);
+		}
+		if (outsize == 0) {
+			std::wcerr << L"File output failed." << std::endl;
+
+			continue;
+		}
+		else {
+			std::wcout << outsize << L" bytes written." << std::endl;
 		}
 	}
 }
