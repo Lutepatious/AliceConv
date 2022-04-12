@@ -19,7 +19,7 @@ class MML_Extract {
 public:
 	std::string MML_FullBody[CHs];
 
-	void input(std::vector<__int8>& in, enum class Machine& arch)
+	bool input(std::vector<__int8>& in, enum class Machine& arch)
 	{
 		bool debug = false;
 		if (in[0] == '"') {
@@ -105,7 +105,7 @@ public:
 			}
 		}
 		else {
-			return;
+			return true;
 		}
 
 		if (debug) {
@@ -132,6 +132,8 @@ public:
 				std::cout << this->MML_FullBody[CH].c_str() << std::endl;
 			}
 		}
+
+		return false;
 	}
 
 };
@@ -734,7 +736,7 @@ public:
 				case 0x90: // Note on
 					eve.Type = 8;
 					this->events.push_back(eve);
-					eve.Event = 0x97;
+					eve.Event = 0x98;
 					eve.Param = e.Param;
 					eve.Type = 2;
 					this->events.push_back(eve);
@@ -897,7 +899,7 @@ public:
 					this->Note_on(eve.CH - 3);
 				}
 				break;
-			case 0x97: // Key_set
+			case 0x98: // Key_set
 				if (eve.CH < 3) {
 					this->Key_set_FM(eve.CH, eve.Param);
 				}
@@ -1023,7 +1025,7 @@ public:
 			case 0xF9: // Volume change @V{0-127}
 				this->Volume_FM(eve.CH, eve.Param);
 				break;
-			case 0x97:
+			case 0x98:
 				this->Key_set_FM(eve.CH, eve.Param);
 				break;
 			case 0x90: // Note on
@@ -1084,7 +1086,9 @@ int wmain(int argc, wchar_t** argv)
 //		std::wcout << inbuf.size() << std::endl;
 
 		class MML_Extract ME;
-		ME.input(inbuf, M_arch);
+		if (ME.input(inbuf, M_arch)) {
+			continue;
+		}
 
 		struct MML_decoded M;
 

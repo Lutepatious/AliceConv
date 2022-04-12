@@ -18,6 +18,63 @@ struct PC88_MML_HEADER {
 };
 
 class MML_Extract {
+	struct PC88_MML_HEADER {
+		unsigned __int16 Load_Address_Start;
+		unsigned __int16 Load_Address_End; // Fllesize =  Load_Address_End - Load_Address_Start + 1 + 3
+		unsigned __int16 CH_Address[CHs];
+	} *header;
+public:
+	std::string MML_FullBody[CHs];
+
+	void input(std::vector<__int8>& in)
+	{
+		bool debug = false;
+		header = (struct PC88_MML_HEADER*)&in.at(0);
+
+		unsigned __int16 MMLIndex[CHs];
+		for (size_t ch = 0; ch < CHs; ch++) {
+			MMLIndex[ch] = header->CH_Address[ch] - header->CH_Address[0] + 0x10;
+		}
+
+		if (debug) {
+			std::wcout << std::hex;
+			for (size_t ch = 0; ch < CHs; ch++) {
+				std::wcout << MMLIndex[ch] << " ";
+			}
+			std::wcout << std::endl;
+		}
+
+		std::vector<unsigned __int16> MMLAddr[CHs];
+		for (size_t ch = 0; ch < CHs; ch++) {
+			unsigned __int16* a = (unsigned __int16*)&in.at(MMLIndex[ch]);
+			while (*a != 0) {
+				if (*a != 0xFFFF) {
+					MMLAddr[ch].push_back(*a - header->CH_Address[0] + 0x10);
+				}
+				else {
+					MMLAddr[ch].push_back(0xFFFF);
+				}
+				a++;
+			}
+		}
+
+		for (size_t i = 0; i < CHs; i++) {
+			for (auto& j : MMLAddr[i]) {
+				if (j == 0xFFFF) {
+					this->MML_FullBody[i] += '*';
+				}
+				else {
+					for (unsigned __int16 k = j; in.at(k) != (char)0xFF; k++) {
+						this->MML_FullBody[i] += in.at(k);
+					}
+					this->MML_FullBody[i] += '|';
+				}
+			}
+			if (debug) {
+				std::cout << this->MML_FullBody[i] << std::endl;
+			}
+		}
+	}
 
 };
 
@@ -529,7 +586,7 @@ public:
 				case 0x90: // Note on
 					eve.Type = 8;
 					events.push_back(eve);
-					eve.Event = 0x97;
+					eve.Event = 0x98;
 					eve.Param = e.Param;
 					eve.Type = 2;
 					events.push_back(eve);
@@ -675,7 +732,7 @@ public:
 					this->Note_on(eve.CH - 3);
 				}
 				break;
-			case 0x97: // Key_set
+			case 0x98: // Key_set
 				if (eve.CH < 3) {
 					this->Key_set_FM(eve.CH, eve.Param);
 				}
@@ -724,55 +781,11 @@ int wmain(int argc, wchar_t** argv)
 
 		infile.close();
 
-		struct PC88_MML_HEADER* h = (struct PC88_MML_HEADER*)&inbuf.at(0);
-		//		std::wcout << h->Load_Address_End - h->Load_Address_Start + 4 << "/" << inbuf.size() << std::endl;
-
-		std::vector<unsigned __int16> MMLIndex(CHs);
-		for (size_t ch = 0; ch < CHs; ch++) {
-			MMLIndex.at(ch) = h->CH_Address[ch] - h->CH_Address[0] + 0x10;
-		}
-
-#if 0
-		std::wcout << std::hex;
-		for (auto& i : MMLIndex) {
-			std::wcout << i << " ";
-		}
-		std::wcout << std::endl;
-#endif
-
-		std::vector<std::vector<unsigned __int16>> MMLAddr(CHs);
-		for (size_t ch = 0; ch < CHs; ch++) {
-			unsigned __int16* a = (unsigned __int16*)&inbuf.at(MMLIndex.at(ch));
-			while (*a != 0) {
-				if (*a != 0xFFFF) {
-					MMLAddr[ch].push_back(*a - h->CH_Address[0] + 0x10);
-				}
-				else {
-					MMLAddr[ch].push_back(0xFFFF);
-				}
-				a++;
-			}
-		}
-
-		std::string MML_FullBody[CHs];
-
-		for (size_t i = 0; i < CHs; i++) {
-			for (auto& j : MMLAddr[i]) {
-				if (j == 0xFFFF) {
-					MML_FullBody[i] += '*';
-				}
-				else {
-					for (unsigned __int16 k = j; inbuf.at(k) != (char)0xFF; k++) {
-						MML_FullBody[i] += inbuf.at(k);
-					}
-					MML_FullBody[i] += '|';
-				}
-			}
-			//			std::cout << MML_FullBody[i] << std::endl;
-		}
+		class MML_Extract ME;
+		ME.input(inbuf);
 
 		class MML_decoded M;
-		M.init(MML_FullBody);
+		M.init(ME.MML_FullBody);
 		M.correct_block_len();
 #if 0
 		for (size_t i = 0; i < CHs; i++) {
