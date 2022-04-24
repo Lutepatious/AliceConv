@@ -522,6 +522,7 @@ public:
 		this->finish();
 	}
 };
+
 class VGMdata_YM2203_PC88VA : public VGMdata_YM2203 {
 public:
 	VGMdata_YM2203_PC88VA(void)
@@ -640,10 +641,53 @@ public:
 		}
 	}
 	void make_init(void) {
-		const static std::vector<unsigned char> Init{
-			0x52, 0x27, 0x30, 0x52, 0x90, 0x00, 0x52, 0x91, 0x00, 0x52, 0x92, 0x00, 0x52, 0x24, 0x70, 0x52, 0x25, 0x00,
-			0x52, 0xB4, 0x80, 0x52, 0xB5, 0xC0, 0x52, 0xB6, 0x40, 0x53, 0xB4, 0x80, 0x53, 0xB5, 0xC0, 0x53, 0xB6, 0x40 };
-		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
+		this->make_data(0x27, 0x30);
+		this->make_data(0x90, 0);
+		this->make_data(0x91, 0);
+		this->make_data(0x92, 0);
+		this->make_data(0x24, 0x70);
+		this->make_data(0x25, 0);
+
+		this->Panpot_set(0, 1, 0);
+		this->Panpot_set(1, 1, 1);
+		this->Panpot_set(2, 0, 1);
+		this->Panpot_set(3, 1, 0);
+		this->Panpot_set(4, 1, 1);
+		this->Panpot_set(5, 0, 1);
+
+		for (size_t CH = 0; CH < 3; CH++) {
+			static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+			Tone[CH].B = Default_TOWNS;
+			this->make_data(0xB0 + CH, this->Tone[CH].B.FB_CON);
+
+			for (size_t op = 0; op < 4; op++) {
+				for (size_t j = 0; j < 6; j++) {
+					if (j == 1 && (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op == 1 || op == 3)) {
+					}
+					else {
+						this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Tone[CH].B.Op[op].DT_MULTI + j));
+					}
+				}
+			}
+
+		}
+
+		for (size_t CH = 0; CH < 3; CH++) {
+			static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+			Tone2[CH].B = Default_TOWNS;
+			this->make_data2(0xB0 + CH, this->Tone2[CH].B.FB_CON);
+
+			for (size_t op = 0; op < 4; op++) {
+				for (size_t j = 0; j < 6; j++) {
+					if (j == 1 && (this->Tone2[CH].S.Connect == 7 || this->Tone2[CH].S.Connect > 4 && op || this->Tone2[CH].S.Connect > 3 && op == 1 || op == 3)) {
+					}
+					else {
+						this->make_data2(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Tone2[CH].B.Op[op].DT_MULTI + j));
+					}
+				}
+			}
+
+		}
 	}
 	void convert(class EVENTS& in)
 	{
@@ -795,17 +839,17 @@ int wmain(int argc, wchar_t** argv)
 			&& pM1HDR->CH[2].Address + pM1HDR->CH[2].Length == pM1HDR->CH[3].Address
 			&& pM1HDR->CH[3].Address + pM1HDR->CH[3].Length == pM1HDR->CH[4].Address
 			&& pM1HDR->CH[4].Address + pM1HDR->CH[4].Length == pM1HDR->CH[5].Address
-			&& inbuf[pM1HDR->CH[1].Address - 1] == 0xFF
-			&& inbuf[pM1HDR->CH[2].Address - 1] == 0xFF
-			&& inbuf[pM1HDR->CH[3].Address - 1] == 0xFF
-			&& inbuf[pM1HDR->CH[4].Address - 1] == 0xFF
-			&& inbuf[pM1HDR->CH[5].Address - 1] == 0xFF
-			&& inbuf[pM1HDR->CH[5].Address + pM1HDR->CH[5].Length - 1] == 0xFF) {
+			&& inbuf[pM1HDR->CH[1].Address - 1] == '\xff'
+			&& inbuf[pM1HDR->CH[2].Address - 1] == '\xff'
+			&& inbuf[pM1HDR->CH[3].Address - 1] == '\xff'
+			&& inbuf[pM1HDR->CH[4].Address - 1] == '\xff'
+			&& inbuf[pM1HDR->CH[5].Address - 1] == '\xff'
+			&& inbuf[pM1HDR->CH[5].Address + pM1HDR->CH[5].Length - 1] == '\xff') {
 		}
 		else {
 			continue;
 		}
-		std::wcout << *argv << L" is MAKO1 format. " << pM1HDR->CH[5].Address + pM1HDR->CH[5].Length << L"bytes." << std::endl;
+//		std::wcout << *argv << L" is MAKO1 format. " << pM1HDR->CH[5].Address + pM1HDR->CH[5].Length << L"bytes." << std::endl;
 
 		struct MML_decoded MMLs;
 		MMLs.decode(inbuf, pM1HDR);
@@ -816,7 +860,7 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		wprintf_s(L"Make Sequential events\n");
+		std::wcout << L"Make Sequential events." << std::endl;
 		// 得られた展開データからイベント列を作る。
 		class EVENTS events;
 		events.convert(MMLs);
@@ -824,14 +868,39 @@ int wmain(int argc, wchar_t** argv)
 			events.print_all();
 		}
 
-#if 0
-		class VGMdata1 vgmdata(MMLs.end_time, M_arch);
-		vgmdata.make_init();
-		vgmdata.convert(events);
-		if (SSG_Volume) {
-			vgmdata.SetSSGVol(SSG_Volume);
+		size_t outsize;
+		if (M_arch == Machine::PC9801) {
+			class VGMdata_YM2203_PC9801 v2203;
+			v2203.make_init();
+			v2203.convert(events);
+			if (SSG_Volume) {
+				v2203.ex_vgm.SetSSGVol(SSG_Volume);
+			}
+			outsize = v2203.out(*argv);
 		}
-		vgmdata.out(*argv);
-#endif
+		else if (M_arch == Machine::PC88VA) {
+			class VGMdata_YM2203_PC88VA v2203;
+			v2203.make_init();
+			v2203.convert(events);
+			if (SSG_Volume) {
+				v2203.ex_vgm.SetSSGVol(SSG_Volume);
+			}
+			outsize = v2203.out(*argv);
+		}
+		else if (M_arch == Machine::FMTOWNS) {
+			class VGMdata_YM2612 v2612;
+			v2612.make_init();
+			v2612.convert(events);
+			outsize = v2612.out(*argv);
+		}
+		if (outsize == 0) {
+			std::wcerr << L"File output failed." << std::endl;
+
+			continue;
+		}
+		else {
+			std::wcout << outsize << L" bytes written." << std::endl;
+		}
+
 	}
 }

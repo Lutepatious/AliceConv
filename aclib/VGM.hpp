@@ -384,8 +384,21 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 	}
 };
 
+
+
+
 struct OPNA {
 	union AC_Tone Tone2[3];
+	union {
+		struct {
+			unsigned __int8 PMS : 3;
+			unsigned __int8 : 1;
+			unsigned __int8 AMS : 2;
+			unsigned __int8 R : 1;
+			unsigned __int8 L : 1;
+		} S;
+		unsigned __int8 B;
+	} LR_AMS_PMS[6];
 };
 
 struct VGM_YM2608 : public VGM_YM2203, public OPNA {
@@ -402,6 +415,12 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		this->vgm_header.bytAYFlagYM2203 = 0;
 		this->vgm_header.bytAYFlagYM2608 = 0x1;
 		this->vgm_header.bytAYFlag = 0;
+		this->LR_AMS_PMS[0].B = 0;
+		this->LR_AMS_PMS[1].B = 0;
+		this->LR_AMS_PMS[2].B = 0;
+		this->LR_AMS_PMS[3].B = 0;
+		this->LR_AMS_PMS[4].B = 0;
+		this->LR_AMS_PMS[5].B = 0;
 	}
 
 	void make_data2(unsigned __int8 address, unsigned __int8 data)
@@ -416,6 +435,19 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2608 * 2) / (192LL * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
+	}
+
+	void Panpot_set(unsigned __int8 CH, bool L, bool R)
+	{
+		this->LR_AMS_PMS[CH].S.L = L;
+		this->LR_AMS_PMS[CH].S.R = R;
+
+		if (CH < 3) {
+			this->make_data(0xB4 + CH, this->LR_AMS_PMS[CH].B);
+		}
+		else if (CH < 6){
+			this->make_data2(0xB4 + CH - 3, this->LR_AMS_PMS[CH].B);
+		}
 	}
 
 	void Note_on_FM2(unsigned __int8 CH)
