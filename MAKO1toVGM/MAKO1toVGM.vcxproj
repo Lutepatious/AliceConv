@@ -153,15 +153,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="event1.cpp" />
-    <ClCompile Include="MAKO1MML.cpp" />
     <ClCompile Include="toVGM1.cpp" />
     <ClCompile Include="wmain.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="event1.h" />
-    <ClInclude Include="MAKO1MML.h" />
-    <ClInclude Include="MAKO1toVGM.h" />
     <ClInclude Include="toVGM1.h" />
   </ItemGroup>
   <ItemGroup>

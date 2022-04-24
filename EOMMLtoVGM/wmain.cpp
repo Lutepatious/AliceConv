@@ -4,9 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-#include <filesystem>
 #include <limits>
-#include <sys/types.h>
 
 enum class Machine { NONE = 0, X68000, PC9801 };
 constexpr size_t CHs = 6;
@@ -238,7 +236,7 @@ public:
 					msrc = tpos;
 				}
 				if (Panpot > 3) {
-					wprintf_s(L"P %u: out of range.\n", Panpot);
+					std::wcout << L"Out of range. P: " << Panpot << std::endl;
 				}
 				e.Type = 0xEB;
 				e.Param = Panpot;
@@ -251,7 +249,7 @@ public:
 					msrc = tpos;
 				}
 				if (Tempo < 32 || Tempo > 200) {
-					wprintf_s(L"T %u: out of range.\n", Tempo);
+					std::wcout << L"Out of range. T: " << Tempo << std::endl;
 				}
 				e.Type = 0xF4;
 				e.Param = Tempo;
@@ -265,7 +263,7 @@ public:
 						msrc = tpos;
 					}
 					if (Octave > 8) {
-						wprintf_s(L"O %u: out of range.\n", Octave);
+						std::wcout << L"Out of range. O: " << Octave << std::endl;
 					}
 				}
 				if (tolower(*msrc) == 'v') {
@@ -275,7 +273,7 @@ public:
 						msrc = tpos;
 					}
 					if (XVol > 127) {
-						wprintf_s(L"@V %u: out of range.\n", XVol);
+						std::wcout << L"Out of range. @V: " << XVol << std::endl;
 					}
 					e.Type = 0xF9;
 					e.Param = XVol;
@@ -299,7 +297,7 @@ public:
 					msrc = tpos;
 				}
 				if (GS == 0 || GS > 8) {
-					wprintf_s(L"Q %u: out of range.\n", GS);
+					std::wcout << L"Out of range. Q: " << GS << std::endl;
 				}
 				break;
 			case 'v': // Volume
@@ -309,9 +307,9 @@ public:
 					msrc = tpos;
 				}
 				if (Vol > 15) {
-					wprintf_s(L"V %u: out of range.\n", Vol);
+					std::wcout << L"Out of range. V: " << Vol << std::endl;
 					if (Vol < 128) {
-						wprintf_s(L"Assume @V\n");
+						std::wcout << L"Assume @V" << std::endl;
 						e.Type = 0xF9;
 						e.Param = Vol;
 						this->E.push_back(e);
@@ -333,7 +331,7 @@ public:
 					msrc = tpos;
 				}
 				if (Octave > 8) {
-					wprintf_s(L"O %u: out of range.\n", Octave);
+					std::wcout << L"Out of range. O: " << Octave << std::endl;
 				}
 				break;
 			case '>': // Octave up
@@ -344,7 +342,7 @@ public:
 					Octave++;
 				}
 				if (Octave > 8) {
-					wprintf_s(L">:result %u out of range.\n", Octave);
+					std::wcout << L"Out of range. >: " << Octave << std::endl;
 				}
 				break;
 			case '<': // Octave down
@@ -355,7 +353,7 @@ public:
 					Octave--;
 				}
 				if (Octave > 8) {
-					wprintf_s(L"<:result %u out of range.\n", Octave);
+					std::wcout << L"Out of range. <: " << Octave << std::endl;
 				}
 				break;
 			case 'l': // de fault Length
@@ -423,7 +421,6 @@ public:
 				}
 				Key += Octave_t * 12;
 				NLen = getDefaultLen(&msrc, Len);
-				// wprintf_s(L"Note %u %u\n", Key, NLen);
 				if (*msrc == '&') {
 					msrc++;
 					time_on = NLen;
@@ -463,7 +460,7 @@ public:
 			case ' ':
 				break;
 			default:
-				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
+				std::wcout << L"Something wrong. " << *(msrc - 3) << *(msrc - 2) << L"[" << *(msrc - 1) << L"]" << *msrc << *(msrc + 1) << std::endl;
 			}
 		}
 	}
@@ -561,12 +558,12 @@ struct MML_decoded {
 		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
 		// 全チャンネルがループしないのならループ処理自体が不要
 		if (no_loop) {
-			wprintf_s(L"Loop: NONE %zu %zu\n", max_time, delta_time_LCM);
+			std::wcout << L"Loop: NONE " << max_time << std::endl;
 			this->end_time = max_time;
 			this->loop_start_time = SIZE_MAX;
 		}
 		else {
-			wprintf_s(L"Loop: Yes %zu\n", delta_time_LCM);
+			std::wcout << L"Loop: Yes " << delta_time_LCM << std::endl;
 			this->end_time = delta_time_LCM;
 			for (size_t i = 0; i < CHs; i++) {
 				// そもそもループしないチャネルはスキップ
@@ -576,7 +573,7 @@ struct MML_decoded {
 				size_t time_extra = this->end_time;
 				size_t times = time_extra / this->CH[i].time_total + !!(time_extra % this->CH[i].time_total);
 				if (debug) {
-					wprintf_s(L"%2zu: %9zu -> %9zu (x %zu)\n", i, this->CH[i].time_total, delta_time_LCM, delta_time_LCM / this->CH[i].time_total);
+					std::wcout << i << L": " << this->CH[i].time_total << L" -> " << delta_time_LCM << L"(x" << delta_time_LCM / this->CH[i].time_total << L")" << std::endl;
 				}
 
 				// ループ回数分のイベントの複写
@@ -678,28 +675,18 @@ struct EVENT {
 };
 
 class EVENTS {
-	enum class Machine Arch = Machine::NONE;
-
 public:
 	std::vector<struct EVENT> events;
 	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
-	void init(enum class Machine M_arch)
-	{
-		this->Arch = M_arch;
-	}
 
 	void convert(struct MML_decoded& MMLs)
 	{
-		size_t time_end = MMLs.end_time;
 		size_t counter = 0;
 		this->loop_enable = false;
 
 		for (size_t j = 0; j < CHs; j++) {
 			size_t i = CHs - 1 - j;
-			if (Arch == Machine::X68000) {
-				i = j;
-			}
 
 			for (auto& e : MMLs.CH[i].E) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
@@ -757,7 +744,7 @@ public:
 
 		size_t length = 0;
 		// イベント列の長さを測る。
-		while (this->events[length].Time < time_end) {
+		while (this->events[length].Time < MMLs.end_time) {
 			if (this->loop_start == SIZE_MAX) {
 				this->loop_start = length;
 			}
@@ -782,8 +769,8 @@ public:
 	}
 	void print_all(void)
 	{
-		for (auto& i : this->events) {
-			wprintf_s(L"%8zu: %2d: %02X\n", i.Time, i.CH, i.Event);
+		for (auto& e : this->events) {
+			std::wcout << e.Time << L": " << e.CH << L": " << e.Event << std::endl;
 		}
 	}
 };
@@ -848,7 +835,6 @@ public:
 				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
-				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
 				Time_Prev = eve.Time;
@@ -975,7 +961,6 @@ public:
 				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
-				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
 				Time_Prev = eve.Time;
@@ -1103,7 +1088,6 @@ int wmain(int argc, wchar_t** argv)
 
 		// 得られた展開データからイベント列を作る。
 		class EVENTS events;
-		events.init(M_arch);
 		events.convert(M);
 		if (debug) {
 			events.print_all();

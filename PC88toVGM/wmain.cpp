@@ -98,12 +98,11 @@ class MML_decoded_CH {
 
 			*pmsrc = (unsigned __int8*)tpos;
 			if (TLen == 0 || TLen > 65) {
-				wprintf_s(L"L %u: out of range.\n", TLen);
+				std::wcerr << L"L " << TLen << L" % u: out of range." << std::endl;
 			}
 			if (192 % TLen) {
-				wprintf_s(L"L %u: out of range.\n", TLen);
-				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(*pmsrc - 3), *(*pmsrc - 2), *(*pmsrc - 1), **pmsrc, *(*pmsrc + 1));
-
+				std::wcerr << L"L " << TLen << L" % u: out of range." << std::endl;
+				std::wcerr << L"Something wrong. " << *(*pmsrc - 3) << *(*pmsrc - 2) << L"[" << *(*pmsrc - 1) << L"]" << **pmsrc << *(*pmsrc + 1) << std::endl;
 			}
 			NLen_d = 192 / TLen;
 		}
@@ -159,6 +158,7 @@ public:
 			unsigned Key;
 			unsigned time_on, time_off;
 			struct MML_Events e;
+			e.Time = this->time_total;
 
 			switch (tolower(*msrc++)) {
 			case 'm': // EOMMLの2文字命令はmbのみ? 念のためmfも組み込む
@@ -167,9 +167,8 @@ public:
 					unsigned EPeriod = strtoul((const char*)msrc, (char**)&tpos, 10);
 					msrc = tpos;
 					if (EPeriod < 1 || EPeriod > 65535) {
-						wprintf_s(L"T %u: out of range.\n", EPeriod);
+						std::wcout << L"Out of range. M: " << EPeriod << std::endl;
 					}
-					e.Time = this->time_total;
 					e.Type = 0xFA;
 					e.Param16 = EPeriod;
 					this->E.push_back(e);
@@ -184,9 +183,8 @@ public:
 					unsigned EType = strtoul((const char*)msrc, (char**)&tpos, 10);
 					msrc = tpos;
 					if (EType > 15) {
-						wprintf_s(L"T %u: out of range.\n", EType);
+						std::wcout << L"Out of range. S: " << EType << std::endl;
 					}
-					e.Time = this->time_total;
 					e.Type = 0xFB;
 					e.Param = EType;
 					this->E.push_back(e);
@@ -199,10 +197,9 @@ public:
 					msrc = tpos;
 				}
 				if (Tempo < 32 || Tempo > 200) {
-					wprintf_s(L"T %u: out of range.\n", Tempo);
+					std::wcout << L"Out of range. T: " << Tempo << std::endl;
 				}
 
-				e.Time = this->time_total;
 				e.Type = 0xF4;
 				e.Param = Tempo;
 				this->E.push_back(e);
@@ -215,10 +212,9 @@ public:
 						msrc = tpos;
 					}
 					if (XVol > 127) {
-						wprintf_s(L"@V %u: out of range.\n", XVol);
+						std::wcout << L"Out of range. @V: " << XVol << std::endl;
 					}
 
-					e.Time = this->time_total;
 					e.Type = 0xF9;
 					e.Param = XVol;
 					this->E.push_back(e);
@@ -230,7 +226,6 @@ public:
 						msrc = tpos;
 					}
 
-					e.Time = this->time_total;
 					e.Type = 0xF5;
 					e.Param = Tone;
 					this->E.push_back(e);
@@ -243,7 +238,7 @@ public:
 					msrc = tpos;
 				}
 				if (GS == 0 || GS > 8) {
-					wprintf_s(L"Q %u: out of range.\n", GS);
+					std::wcout << L"Out of range. Q: " << GS << std::endl;
 				}
 				break;
 			case 'v': // Volume
@@ -253,11 +248,9 @@ public:
 					msrc = tpos;
 				}
 				if (Vol > 15) {
-					wprintf_s(L"V %u: out of range.\n", Vol);
+					std::wcout << L"Out of range. V: " << Vol << std::endl;
 					if (Vol < 128) {
-						wprintf_s(L"Assume @V\n");
-
-						e.Time = this->time_total;
+						std::wcout << L"Assume @V" << std::endl;
 						e.Type = 0xF9;
 						e.Param = Vol;
 						this->E.push_back(e);
@@ -266,7 +259,6 @@ public:
 				else {
 					XVol = Vol * 8 / 3 + 85;
 
-					e.Time = this->time_total;
 					e.Type = 0xF9;
 					e.Param = XVol;
 					this->E.push_back(e);
@@ -279,19 +271,19 @@ public:
 					msrc = tpos;
 				}
 				if (Octave > 8) {
-					wprintf_s(L"O %u: out of range.\n", Octave);
+					std::wcout << L"Out of range. O: " << Octave << std::endl;
 				}
 				break;
 			case '>': // Octave up
 				Octave++;
 				if (Octave > 8) {
-					wprintf_s(L">:result %u out of range.\n", Octave);
+					std::wcout << L"Out of range. >: " << Octave << std::endl;
 				}
 				break;
 			case '<': // Octave down
 				Octave--;
 				if (Octave > 8) {
-					wprintf_s(L"<:result %u out of range.\n", Octave);
+					std::wcout << L"Out of range. <: " << Octave << std::endl;
 				}
 				break;
 			case 'l': // default Length
@@ -339,7 +331,6 @@ public:
 				}
 				Key += Octave_t * 12;
 				NLen = getDefaultLen(&msrc, Len);
-				// wprintf_s(L"Note %u %u\n", Key, NLen);
 				if (*msrc == '&') {
 					msrc++;
 					time_on = NLen;
@@ -409,7 +400,7 @@ public:
 				}
 				break;
 			default:
-				wprintf_s(L"Something wrong. %c%c[%c]%c%c\n", *(msrc - 3), *(msrc - 2), *(msrc - 1), *msrc, *(msrc + 1));
+				std::wcout << L"Something wrong. " << *(msrc - 3) << *(msrc - 2) << L"[" << *(msrc - 1) << L"]" << *msrc << *(msrc + 1) << std::endl;
 			}
 		}
 		this->len = this->E.size();
@@ -506,7 +497,7 @@ public:
 
 struct EVENT {
 	size_t Time;
-	size_t count;
+	size_t Count;
 	unsigned __int8 CH; //
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
@@ -514,6 +505,7 @@ struct EVENT {
 	unsigned __int16 Param16; // イベントのパラメータ 16ビット
 
 	bool operator < (const struct EVENT& out) {
+		unsigned CH_weight[16] = { 0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15 };
 		if (this->Time < out.Time) {
 			return true;
 		}
@@ -526,17 +518,14 @@ struct EVENT {
 		else if (this->Type > out.Type) {
 			return false;
 		}
-		else if (this->CH < out.CH) {
+		else if (CH_weight[this->CH] > CH_weight[out.CH]) {
 			return true;
 		}
-		else if (this->CH > out.CH) {
+		else if (CH_weight[this->CH] < CH_weight[out.CH]) {
 			return false;
 		}
-		else if (this->count < out.count) {
+		else if (this->Count < out.Count) {
 			return true;
-		}
-		else if (this->count > out.count) {
-			return false;
 		}
 		else {
 			return false;
@@ -552,13 +541,14 @@ public:
 	size_t length = 0;
 	size_t loop_start = INIT_LEN;
 	bool loop_enable = true;
+
 	void convert(class MML_decoded& MMLs)
 	{
 		size_t counter = 0;
 		for (size_t i = 0; i < CHs; i++) {
 			for (auto& e : MMLs.CH[i].E) {
 				struct EVENT eve;
-				eve.count = counter++;
+				eve.Count = counter++;
 				eve.CH = i;
 				eve.Time = e.Time;
 				eve.Event = e.Type;
@@ -605,7 +595,7 @@ public:
 			}
 			struct EVENT end;
 
-			end.count = counter++;
+			end.Count = counter++;
 			end.CH = i;
 			end.Time = MMLs.CH[i].time_total;
 			end.Event = 0xFF;
@@ -619,7 +609,7 @@ public:
 	void print_all(void)
 	{
 		for (auto& e : this->events) {
-			wprintf_s(L"%8zu: %2d: %02X\n", e.Time, e.CH, e.Event);
+			std::wcout << e.Time << L": " << e.CH << L": " << e.Event << std::endl;
 		}
 	}
 };
@@ -681,7 +671,6 @@ public:
 				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
-				// wprintf_s(L"%8zu: %10zd %6zd %10zd\n", src->time, c_VGMT, d_VGMT, Time_Prev_VGM);
 				Time_Prev_VGM += d_VGMT;
 				this->time_prev_VGM_abs += d_VGMT;
 				Time_Prev = eve.Time;

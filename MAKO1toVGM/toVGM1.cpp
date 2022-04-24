@@ -4,9 +4,9 @@
 #include <cwchar>
 #include <limits>
 
+enum class Machine { NONE = 0, PC88VA, FMTOWNS, PC9801 };
 #include "gc_cpp.h"
 
-#include "MAKO1toVGM.h"
 #include "event1.h"
 #include "toVGM1.h"
 #include "tools.h"

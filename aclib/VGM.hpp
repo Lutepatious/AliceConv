@@ -166,12 +166,12 @@ struct VGM_YM2149 : public VGM {
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
 	}
 
-	void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
+	virtual void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
 	{
 		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
 	}
-	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
+	virtual void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
 	{
 		union Tone_Period TP;
 		TP.A = TPeriod[Key];
@@ -179,26 +179,26 @@ struct VGM_YM2149 : public VGM {
 		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
 	}
-	void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
+	virtual void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
 	{
 		this->make_data(CH + 8, Vol);
 	}
-	void Mixer(unsigned __int8 M)
+	virtual void Mixer(unsigned __int8 M)
 	{
 		this->make_data(7, M);
 	}
-	void Note_on(unsigned __int8 CH)
+	virtual void Note_on(unsigned __int8 CH)
 	{
 		this->SSG_out &= ~(1 << CH);
 		this->Mixer(this->SSG_out);
 	}
-	void Note_off(unsigned __int8 CH)
+	virtual void Note_off(unsigned __int8 CH)
 	{
 		this->SSG_out |= (1 << CH);
 		this->Mixer(this->SSG_out);
 	}
 
-	void Envelope_Generator_set(unsigned __int16 EP)
+	virtual void Envelope_Generator_set(unsigned __int16 EP)
 	{
 		union {
 			unsigned __int16 W;
@@ -211,7 +211,7 @@ struct VGM_YM2149 : public VGM {
 		this->make_data(0x0B, U.B[0]);
 	}
 
-	void Envelope_Generator_Type_set(unsigned __int8 CH, unsigned __int8 EG_Type) {
+	virtual void Envelope_Generator_Type_set(unsigned __int8 CH, unsigned __int8 EG_Type) {
 		this->make_data(0x0D, EG_Type);
 		this->make_data(0x08 + CH, 0x10);
 	}
@@ -265,7 +265,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->vgm_header.bytAYFlag = 0;
 	}
 
-	void Timer_set_FM(void)
+	virtual void Timer_set_FM(void)
 	{
 		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2203 * 2) / (192LL * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
@@ -381,6 +381,175 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		outfile.write((const char*)&this->vgm_body.at(0), this->vgm_body.size());
 		outfile.close();
 		return sizeof(VGMHEADER) + this->vgm_body.size();
+	}
+};
+
+struct OPNA {
+	union AC_Tone Tone2[3];
+};
+
+struct VGM_YM2608 : public VGM_YM2203, public OPNA {
+	OPNSSGVOL ex_vgm;
+	size_t Tempo = 120;
+	unsigned __int16 FNumber[12] = { 0 };
+	unsigned __int8 command2 = 0;
+
+	VGM_YM2608()
+	{
+		this->command = 0x56;
+		this->command2 = 0x57;
+		this->vgm_header.bytAYType = 0x10;
+		this->vgm_header.bytAYFlagYM2203 = 0;
+		this->vgm_header.bytAYFlagYM2608 = 0x1;
+		this->vgm_header.bytAYFlag = 0;
+	}
+
+	void make_data2(unsigned __int8 address, unsigned __int8 data)
+	{
+		vgm_body.push_back(command2);
+		vgm_body.push_back(address);
+		vgm_body.push_back(data);
+	}
+
+	virtual void Timer_set_FM(void)
+	{
+		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2608 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x24, (NA >> 2) & 0xFF);
+		this->make_data(0x25, NA & 0x03);
+	}
+
+	void Note_on_FM2(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 Second : 1;
+				unsigned __int8 : 1;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 1, this->Tone2[CH].S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Note_off_FM2(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 Second : 1;
+				unsigned __int8 : 1;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 1, 0 };
+		this->make_data(0x28, U.B);
+	}
+
+	void Volume_FM2(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->Tone2[CH].S.Connect == 7 || this->Tone2[CH].S.Connect > 4 && op || this->Tone2[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data2(0x40 + 4 * op + CH, Volume);
+			}
+		}
+	}
+
+	void Tone_select_FM2(unsigned __int8 CH, unsigned __int8 Tone) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->Tone2[CH].B = *(this->preset + Tone);
+
+		this->make_data2(0xB0 + CH, this->Tone2[CH].B.FB_CON);
+
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && (this->Tone2[CH].S.Connect == 7 || this->Tone2[CH].S.Connect > 4 && op || this->Tone2[CH].S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data2(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->Tone2[CH].B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
+
+	void Key_set_FM2(unsigned __int8 CH, unsigned __int8 Key)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = Key / 12;
+		U.S.FNumber = this->FNumber[Key % 12];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data2(0xA4 + CH, U.B[1]);
+		this->make_data2(0xA0 + CH, U.B[0]);
+	}
+
+};
+
+struct VGM_YM2612 : public VGM_YM2608 {
+	VGM_YM2612()
+	{
+		this->command = 0x52;
+		this->command2 = 0x53;
+		this->vgm_header.bytAYType = 0;
+		this->vgm_header.bytAYFlagYM2203 = 0;
+		this->vgm_header.bytAYFlagYM2608 = 0;
+		this->vgm_header.bytAYFlag = 0;
+	}
+
+	void Timer_set_FM(void)
+	{
+		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2612 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x24, (NA >> 2) & 0xFF);
+		this->make_data(0x25, NA & 0x03);
+	}
+
+	void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Mixer(unsigned __int8 M)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Note_on(unsigned __int8 CH)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Note_off(unsigned __int8 CH)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Envelope_Generator_set(unsigned __int16 EP)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
+	}
+	void Envelope_Generator_Type_set(unsigned __int8 CH, unsigned __int8 EG_Type)
+	{
+		std::wcerr << L"Invalid. The chip have not this feautre." << std::endl;
 	}
 };
 
