@@ -403,8 +403,6 @@ struct OPNA {
 
 struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 	OPNSSGVOL ex_vgm;
-	size_t Tempo = 120;
-	unsigned __int16 FNumber[12] = { 0 };
 	unsigned __int8 command2 = 0;
 
 	VGM_YM2608()

@@ -400,9 +400,6 @@ public:
 	VGMdata_YM2203(void)
 	{
 		this->vgm_header.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
-		this->ex_vgm.SetSSGVol(120);
-		this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_98;
-
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
 			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->vgm_header.lngHzYM2203;
@@ -493,12 +490,12 @@ public:
 					this->Note_off(eve.CH - 3);
 				}
 				break;
-			case 0xF9: // Volume change @V{0-127}
+			case 0xF9:
 				if (eve.CH < 3) {
 					this->Volume_FM(eve.CH, ~eve.Param & 0x7F);
 				}
 				else {
-					this->Volume(eve.CH - 3, (((unsigned)eve.Param - 84) * 16 - 1) / 43);
+					this->Volume(eve.CH - 3, eve.Param & 0x7F);
 				}
 				break;
 			case 0x90: // Note on
@@ -592,12 +589,12 @@ public:
 					this->Note_off(eve.CH - 3);
 				}
 				break;
-			case 0xF9: // Volume change @V{0-127}
+			case 0xF9:
 				if (eve.CH < 3) {
 					this->Volume_FM(eve.CH, ~eve.Param & 0x7F);
 				}
 				else {
-					this->Volume(eve.CH - 3, (((unsigned)eve.Param - 84) * 16 - 1) / 43);
+					this->Volume(eve.CH - 3, eve.Param & 0x7F);
 				}
 				break;
 			case 0x90: // Note on
@@ -714,7 +711,7 @@ public:
 				// MAKO2‚Í’·‚³‚ð9/10‚Æ‚µ‚Ä’²®‚µ‚½‚ªAMAKO1‚Å‚Í6/5‚Æ‚·‚é(“¬_“sŽs PC-9801”Å‚ÌMAKO1‚ÆMAKO2‚Ì”äŠr‚©‚çŠ„‚èo‚µ)
 				// VA‚ÍBIOS‚ª‰‰‘t‚·‚é‚Ì‚Å’²®‚µ‚È‚¢B
 
-				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				size_t c_VGMT = (6ULL * eve.Time * 60 * VGM_CLOCK * 2 / (5ULL * 48 * this->Tempo) + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				Time_Prev_VGM += d_VGMT;
@@ -754,7 +751,7 @@ public:
 					this->Note_off_FM2(eve.CH - 3);
 				}
 				break;
-			case 0xF9: // Volume change @V{0-127}
+			case 0xF9:
 				if (eve.CH < 3) {
 					this->Volume_FM(eve.CH, ~eve.Param & 0x7F);
 				}
@@ -772,10 +769,10 @@ public:
 				break;
 			case 0x98: // Key_set
 				if (eve.CH < 3) {
-					this->Key_set_FM(eve.CH, eve.Param);
+					this->Key_set_FM(eve.CH, eve.Param & 0x7F);
 				}
 				else {
-					this->Key_set_FM2(eve.CH - 3, eve.Param);
+					this->Key_set_FM2(eve.CH - 3, eve.Param & 0x7F);
 				}
 				break;
 			}
@@ -794,12 +791,13 @@ int wmain(int argc, wchar_t** argv)
 		exit(-1);
 	}
 
-	unsigned __int8 SSG_Volume = 0;
+	unsigned __int8 SSG_Volume = 120;
 	enum Machine M_arch = Machine::PC9801;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'v') {
 				M_arch = Machine::PC88VA;
+				SSG_Volume = 200;
 			}
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
