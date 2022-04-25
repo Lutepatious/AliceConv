@@ -4,14 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <algorithm>
-
-#include <cstdio>
-#include <cstdlib>
-#include <cerrno>
-#include <cwchar>
 #include <limits>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 enum class Machine { NONE = 0, PC88VA, FMTOWNS, PC9801 };
 constexpr size_t CHs = 6;
@@ -249,6 +242,8 @@ struct MML_decoded {
 	}
 };
 
+// イベント順序
+// 80 F4 F5 F9 90
 
 struct EVENT {
 	size_t Time;
@@ -257,7 +252,6 @@ struct EVENT {
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
 	unsigned __int8 Param; // イベントのパラメータ
-	unsigned __int16 Param16; // イベントのパラメータ 16ビット
 
 	bool operator < (const struct EVENT& out) {
 		unsigned CH_weight[16] = { 0, 1, 2, 6, 7, 8, 3, 4, 5, 9, 10, 11, 12, 13, 14, 15 };
@@ -288,23 +282,20 @@ struct EVENT {
 	}
 };
 
-
 class EVENTS {
 public:
 	std::vector<struct EVENT> events;
 	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
 
-	void convert(struct MML_decoded& MMLs) {
-		size_t time_end = MMLs.end_time;
+	void convert(struct MML_decoded& MMLs)
+	{
 		size_t counter = 0;
 		this->loop_enable = false;
 
 		for (size_t j = 0; j < CHs; j++) {
 			size_t i = CHs - 1 - j;
 
-			size_t time = 0;
-			size_t len = 0;
 			for (auto& e : MMLs.CH[i].E) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
 					this->loop_enable = true;
@@ -351,6 +342,7 @@ public:
 
 		// 出来上がった列の末尾に最大時間のマークをつける
 		struct EVENT end;
+		end.Count = counter;
 		end.Type = 9;
 		end.Event = 0xFF;
 		end.Time = SIZE_MAX;
@@ -396,6 +388,8 @@ public:
 constexpr size_t MASTERCLOCK_NEC_OPN = 3993600;
 
 class VGMdata_YM2203 : public VGM_YM2203 {
+	enum Machine M_arch = Machine::NONE;
+
 public:
 	VGMdata_YM2203(void)
 	{
@@ -413,21 +407,32 @@ public:
 		}
 	}
 
+	void setup(enum Machine arch)
+	{
+		this->M_arch = arch;
+		if (arch == Machine::PC88VA) {
+			this->ex_vgm.SetSSGVol(200);
+			this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_88;
+		}
+		else {
+			this->ex_vgm.SetSSGVol(120);
+			this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_98;
+		}
+	}
+
 	void make_init(void) {
-		const static std::vector<unsigned char> Init{
-			0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
-			0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
-		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
+		this->make_data(0, 'W');
+		this->make_data(0, 'A');
+		this->make_data(0, 'O');
+		this->Mixer(0277);
+		this->make_data(0x27, 0x30);
+		this->make_data(0x90, 0);
+		this->make_data(0x91, 0);
+		this->make_data(0x92, 0);
+		this->make_data(0x24, 0x70);
+		this->make_data(0x25, 0);
 	}
 
-};
-class VGMdata_YM2203_PC9801 : public VGMdata_YM2203 {
-public:
-	VGMdata_YM2203_PC9801(void)
-	{
-		this->ex_vgm.SetSSGVol(120);
-		this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_98;
-	}
 	void convert(class EVENTS& in)
 	{
 		size_t Time_Prev = 0;
@@ -453,7 +458,13 @@ public:
 				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 				// VAはBIOSが演奏するので調整しない。
 
-				size_t c_VGMT = (6ULL * eve.Time * 60 * VGM_CLOCK * 2 / (5ULL * 48 * this->Tempo) + 1) >> 1;
+				size_t c_VGMT;
+				if (this->M_arch == Machine::PC88VA) {
+					c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+				}
+				else {
+					c_VGMT = (6ULL * eve.Time * 60 * VGM_CLOCK * 2 / (5ULL * 48 * this->Tempo) + 1) >> 1;
+				}
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				Time_Prev_VGM += d_VGMT;
@@ -518,105 +529,7 @@ public:
 		}
 		this->finish();
 	}
-};
 
-class VGMdata_YM2203_PC88VA : public VGMdata_YM2203 {
-public:
-	VGMdata_YM2203_PC88VA(void)
-	{
-		this->ex_vgm.SetSSGVol(200);
-		this->preset = (struct AC_FM_PARAMETER_BYTE*)preset_88;
-	}
-	void convert(class EVENTS& in)
-	{
-		size_t Time_Prev = 0;
-		size_t Time_Prev_VGM = 0;
-
-		for (auto& eve : in.events) {
-			if (eve.Time == SIZE_MAX) {
-				break;
-			}
-			if (eve.Time - Time_Prev) {
-				// Tqn = 60 / Tempo
-				// TPQN = 48
-				// Ttick = Tqn / 48
-				// c_VGMT = Ttick * src_time * VGM_CLOCK 
-				//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
-				//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
-				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
-				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
-				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
-				//
-				// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
-				// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
-				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
-				// VAはBIOSが演奏するので調整しない。
-
-				size_t c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
-				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
-
-				Time_Prev_VGM += d_VGMT;
-				this->time_prev_VGM_abs += d_VGMT;
-				Time_Prev = eve.Time;
-
-				this->make_wait(d_VGMT);
-			}
-
-			if (in.loop_enable && eve.Time == in.loop_start) {
-				this->time_loop_VGM_abs = time_prev_VGM_abs;
-				this->vgm_loop_pos = vgm_body.size();
-				in.loop_enable = false;
-			}
-
-			switch (eve.Event) {
-			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
-				Time_Prev_VGM = ((Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
-				this->Tempo = eve.Param;
-
-				// この後のNAの計算とタイマ割り込みの設定は実際には不要
-				this->Timer_set_FM();
-				break;
-			case 0xF5: // Tone select
-				if (eve.CH < 3) {
-					this->Tone_select_FM(eve.CH, eve.Param & 0x7F);
-				}
-				break;
-			case 0x80: // Note Off
-				if (eve.CH < 3) {
-					this->Note_off_FM(eve.CH);
-				}
-				else {
-					this->Note_off(eve.CH - 3);
-				}
-				break;
-			case 0xF9:
-				if (eve.CH < 3) {
-					this->Volume_FM(eve.CH, ~eve.Param & 0x7F);
-				}
-				else {
-					this->Volume(eve.CH - 3, eve.Param & 0x7F);
-				}
-				break;
-			case 0x90: // Note on
-				if (eve.CH < 3) {
-					this->Note_on_FM(eve.CH);
-				}
-				else {
-					this->Note_on(eve.CH - 3);
-				}
-				break;
-			case 0x98: // Key_set
-				if (eve.CH < 3) {
-					this->Key_set_FM(eve.CH, eve.Param);
-				}
-				else {
-					this->Key_set(eve.CH - 3, eve.Param);
-				}
-				break;
-			}
-		}
-		this->finish();
-	}
 };
 
 constexpr size_t MASTERCLOCK_FMTOWNS_OPN2 = 7200000;
@@ -791,13 +704,12 @@ int wmain(int argc, wchar_t** argv)
 		exit(-1);
 	}
 
-	unsigned __int8 SSG_Volume = 120;
+	unsigned __int8 SSG_Volume = 0;
 	enum Machine M_arch = Machine::PC9801;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'v') {
 				M_arch = Machine::PC88VA;
-				SSG_Volume = 200;
 			}
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
@@ -847,7 +759,7 @@ int wmain(int argc, wchar_t** argv)
 		else {
 			continue;
 		}
-//		std::wcout << *argv << L" is MAKO1 format. " << pM1HDR->CH[5].Address + pM1HDR->CH[5].Length << L"bytes." << std::endl;
+		//		std::wcout << *argv << L" is MAKO1 format. " << pM1HDR->CH[5].Address + pM1HDR->CH[5].Length << L"bytes." << std::endl;
 
 		struct MML_decoded MMLs;
 		MMLs.decode(inbuf, pM1HDR);
@@ -867,17 +779,9 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		size_t outsize;
-		if (M_arch == Machine::PC9801) {
-			class VGMdata_YM2203_PC9801 v2203;
-			v2203.make_init();
-			v2203.convert(events);
-			if (SSG_Volume) {
-				v2203.ex_vgm.SetSSGVol(SSG_Volume);
-			}
-			outsize = v2203.out(*argv);
-		}
-		else if (M_arch == Machine::PC88VA) {
-			class VGMdata_YM2203_PC88VA v2203;
+		if (M_arch == Machine::PC9801 || M_arch == Machine::PC88VA) {
+			class VGMdata_YM2203 v2203;
+			v2203.setup(M_arch);
 			v2203.make_init();
 			v2203.convert(events);
 			if (SSG_Volume) {

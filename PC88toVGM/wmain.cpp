@@ -549,61 +549,61 @@ public:
 			for (auto& e : MMLs.CH[i].E) {
 				struct EVENT eve;
 				eve.Count = counter++;
-				eve.CH = i;
 				eve.Time = e.Time;
 				eve.Event = e.Type;
+				eve.CH = i;
 
 				switch (e.Type) {
 				case 0x80: // Note off
 					eve.Type = 0;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0xF5: // Tone select
 					eve.Param = e.Param;
 					eve.Type = 2;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0xF9: // Volume change (0-127)
 					eve.Param = e.Param;
 					eve.Type = 3;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0xF4: // Tempo
 					eve.Param = e.Param;
 					eve.Type = 1;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0x90: // Note on
 					eve.Type = 8;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					eve.Event = 0x98;
 					eve.Param = e.Param;
 					eve.Type = 2;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0xFB: // Envelope Type
 					eve.Param = e.Param;
 					eve.Type = 3;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				case 0xFA: // Envelope Period
 					eve.Param16 = e.Param16;
 					eve.Type = 3;
-					events.push_back(eve);
+					this->events.push_back(eve);
 					break;
 				}
 			}
-			struct EVENT end;
 
+			struct EVENT end;
 			end.Count = counter++;
 			end.CH = i;
 			end.Time = MMLs.CH[i].time_total;
 			end.Event = 0xFF;
 			end.Type = 9;
-			events.push_back(end);
+			this->events.push_back(end);
 		}
 
-		std::sort(events.begin(), events.end());
+		std::sort(this->events.begin(), this->events.end());
 	}
 
 	void print_all(void)
@@ -638,10 +638,16 @@ public:
 	}
 
 	void make_init(void) {
-		const static std::vector<unsigned char> Init = {
-			0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
-			0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
-		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
+		this->make_data(0, 'W');
+		this->make_data(0, 'A');
+		this->make_data(0, 'O');
+		this->Mixer(0277);
+		this->make_data(0x27, 0x30);
+		this->make_data(0x90, 0);
+		this->make_data(0x91, 0);
+		this->make_data(0x92, 0);
+		this->make_data(0x24, 0x70);
+		this->make_data(0x25, 0);
 	}
 
 	void convert(class EVENTS& in)

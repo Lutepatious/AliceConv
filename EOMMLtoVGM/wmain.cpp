@@ -532,7 +532,8 @@ struct MML_decoded {
 		}
 	}
 
-	void unroll_loop(void) {
+	void unroll_loop(void)
+	{
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
 		bool debug = false;
 		size_t max_time = 0;
@@ -583,29 +584,6 @@ struct MML_decoded {
 						e.Time += this->CH[i].time_total;
 					}
 					this->CH[i].E.insert(this->CH[i].E.end(), t.begin(), t.end());
-				}
-			}
-		}
-	}
-
-	void correct_block_len(void)
-	{
-		for (auto& i : CH) {
-			i.check_block_len();
-			if (this->max_blocks < i.block_len.size()) {
-				this->max_blocks = i.block_len.size();
-			}
-		}
-		for (auto& i : CH) {
-			if (this->max_blocks != i.block_len.size()) {
-				i.block_len.resize(this->max_blocks);
-			}
-		}
-		this->master_block_len.resize(this->max_blocks, 0);
-		for (size_t i = 0; i < this->max_blocks; i++) {
-			for (size_t j = 0; j < CHs; j++) {
-				if (this->master_block_len[i] < this->CH[j].block_len[i]) {
-					this->master_block_len[i] = this->CH[j].block_len[i];
 				}
 			}
 		}
@@ -734,6 +712,7 @@ public:
 
 		// 出来上がった列の末尾に最大時間のマークをつける
 		struct EVENT end;
+		end.Count = counter;
 		end.Type = 9;
 		end.Event = 0xFF;
 		end.Time = SIZE_MAX;
@@ -801,10 +780,16 @@ public:
 	}
 
 	void make_init(void) {
-		const static std::vector<unsigned char> Init{
-			0x55, 0x00, 'W', 0x55, 0x00, 'A', 0x55, 0x00, 'O', 0x55, 0x27, 0x30, 0x55, 0x07, 0xBF,
-			0x55, 0x90, 0x00, 0x55, 0x91, 0x00, 0x55, 0x92, 0x00, 0x55, 0x24, 0x70, 0x55, 0x25, 0x00 };
-		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
+		this->make_data(0, 'W');
+		this->make_data(0, 'A');
+		this->make_data(0, 'O');
+		this->Mixer(0277);
+		this->make_data(0x27, 0x30);
+		this->make_data(0x90, 0);
+		this->make_data(0x91, 0);
+		this->make_data(0x92, 0);
+		this->make_data(0x24, 0x70);
+		this->make_data(0x25, 0);
 	}
 
 	void convert(class EVENTS& in)

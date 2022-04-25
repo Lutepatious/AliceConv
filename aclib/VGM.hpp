@@ -384,9 +384,6 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 	}
 };
 
-
-
-
 struct OPNA {
 	union AC_Tone Tone2[3];
 	union {
