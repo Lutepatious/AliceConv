@@ -96,6 +96,9 @@ int wmain(int argc, wchar_t** argv)
 		if (pM2HDR->ver == 1 && pM2HDR->chiptune_addr == 0x34UL) {
 			mako2form = pM2HDR->ver;
 		}
+		if (pM2HDR->ver == 1 && pM2HDR->chiptune_addr == 0x44UL) {
+			mako2form = pM2HDR->ver;
+		}
 		if (pM2HDR->ver == 2 && pM2HDR->chiptune_addr == 0x44UL) {
 			chip = CHIP::YM2608;
 			mako2form = pM2HDR->ver;
