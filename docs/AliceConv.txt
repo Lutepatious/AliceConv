@@ -376,7 +376,6 @@ MDPlayerでは音が1オクターブ高くなります。
 X68000版あゆみちゃん物語ヒントディスク
 FM TOWNS版Rance IIヒントディスク
 FM TOWNS版闘神都市IIグラフィックディスク
-PC-88VA版Rance II
 PC-88VA版Rance IIヒントディスク
 
 が未入手&動作未確認です。皆様のご協力をお願いします。
