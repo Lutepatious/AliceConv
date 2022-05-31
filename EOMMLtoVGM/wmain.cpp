@@ -198,7 +198,7 @@ public:
 	{
 		unsigned Octave = (this->M_arch == Machine::PC9801) ? 5 : 4; // 1 - 9
 		unsigned GS = 8; // 1 - 8
-		unsigned Len = 48; // 0-192
+		unsigned Len = 24; // 0-192
 		unsigned Vol = 8; // 0-15
 		unsigned XVol = 80; // 0-127
 		unsigned Tempo = 120;
@@ -468,7 +468,7 @@ public:
 	void check_block_len(void)
 	{
 		this->block_len.clear();
-		unsigned Len = 48; // 0-192
+		unsigned Len = 24; // 0-192
 		unsigned __int8* msrc = (unsigned __int8*)MML.c_str();
 		size_t block_time = 0;
 		while (*msrc) {
@@ -529,6 +529,13 @@ struct MML_decoded {
 	{
 		for (size_t i = 0; i < CHs; i++) {
 			this->CH[i].decode();
+		}
+	}
+
+	void correct_block_len()
+	{
+		for (auto& i : CH) {
+			i.check_block_len();
 		}
 	}
 
@@ -1063,6 +1070,20 @@ int wmain(int argc, wchar_t** argv)
 		struct MML_decoded M;
 
 		M.init(ME.MML_FullBody, Tones_tousin, M_arch);
+		M.correct_block_len();
+#if 1
+		for (size_t i = 0; i < CHs; i++) {
+			for (auto& k : M.CH[i].block_len) {
+				std::cout << k << " ";
+			}
+			std::cout << std::endl;
+		}
+		std::cout << "-----" << std::endl;
+		for (auto& k : M.master_block_len) {
+			std::cout << k << " ";
+		}
+		std::cout << std::endl;
+#endif
 		M.decode();
 		M.unroll_loop();
 
