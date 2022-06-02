@@ -763,6 +763,11 @@ int wmain(int argc, wchar_t** argv)
 
 		struct MML_decoded MMLs;
 		MMLs.decode(inbuf, pM1HDR);
+
+		for (auto &MM : MMLs.CH) {
+			std::cout << MM.time_total << std::endl;
+		}
+
 		MMLs.unroll_loop();
 
 		if (!MMLs.end_time) {

@@ -1085,6 +1085,11 @@ int wmain(int argc, wchar_t** argv)
 		std::cout << std::endl;
 #endif
 		M.decode();
+
+		for (auto& MM : M.CH) {
+			std::cout << MM.time_total << std::endl;
+		}
+
 		M.unroll_loop();
 
 		if (!M.end_time) {
