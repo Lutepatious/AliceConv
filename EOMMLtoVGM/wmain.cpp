@@ -1071,7 +1071,7 @@ int wmain(int argc, wchar_t** argv)
 
 		M.init(ME.MML_FullBody, Tones_tousin, M_arch);
 		M.correct_block_len();
-#if 1
+#if 0
 		for (size_t i = 0; i < CHs; i++) {
 			for (auto& k : M.CH[i].block_len) {
 				std::cout << k << " ";
@@ -1086,10 +1086,11 @@ int wmain(int argc, wchar_t** argv)
 #endif
 		M.decode();
 
+#if 0
 		for (auto& MM : M.CH) {
 			std::cout << MM.time_total << std::endl;
 		}
-
+#endif
 		M.unroll_loop();
 
 		if (!M.end_time) {
