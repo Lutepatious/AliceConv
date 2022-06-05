@@ -142,6 +142,7 @@ struct MML_Events {
 	unsigned __int8 Type;
 	unsigned __int8 Param;
 	unsigned __int16 Param16;
+	bool init;
 };
 
 class MML_decoded_CH {
@@ -216,11 +217,14 @@ public:
 		// L ドットが付けられる!
 		// X68000版の取り扱い
 		// 闘神都市では音No.80から81音にOPM98.DATを読み込む。(80-160がOPM98.DATの音になる)
+		size_t bcount = 0;
+		bool in_init = true;
 		while (*msrc) {
 			unsigned RLen, NLen;
 			unsigned Key = 0;
 			unsigned time_on, time_off;
 			struct MML_Events e;
+			e.init = in_init;
 			e.Time = this->time_total;
 
 			switch (tolower(*msrc++)) {
@@ -456,6 +460,10 @@ public:
 
 				break;
 			case '|':
+				if (++bcount == 2) {
+					in_init = false;
+				}
+				break;
 			case '!':
 			case ' ':
 				break;
@@ -585,7 +593,13 @@ struct MML_decoded {
 				}
 
 				// ループ回数分のイベントの複写
-				std::vector<struct MML_Events> t = this->CH[i].E;
+
+				auto loop_point = this->CH[i].E.begin();
+				while ((*loop_point).init) {
+					loop_point++;
+				}
+
+				std::vector<struct MML_Events> t{ loop_point, this->CH[i].E.end() };
 				for (size_t m = 0; m < times - 1; m++) {
 					for (auto& e : t) {
 						e.Time += this->CH[i].time_total;
@@ -644,10 +658,10 @@ struct EVENT {
 		else if (this->Type > out.Type) {
 			return false;
 		}
-		else if (CH_weight[this->CH] > CH_weight[out.CH]) {
+		else if (CH_weight[this->CH] < CH_weight[out.CH]) {
 			return true;
 		}
-		else if (CH_weight[this->CH] < CH_weight[out.CH]) {
+		else if (CH_weight[this->CH] > CH_weight[out.CH]) {
 			return false;
 		}
 		else if (this->Count < out.Count) {
@@ -670,9 +684,7 @@ public:
 		size_t counter = 0;
 		this->loop_enable = false;
 
-		for (size_t j = 0; j < CHs; j++) {
-			size_t i = CHs - 1 - j;
-
+		for (size_t i = 0; i < CHs; i++) {
 			for (auto& e : MMLs.CH[i].E) {
 				if (MMLs.loop_start_time != SIZE_MAX) {
 					this->loop_enable = true;
@@ -918,6 +930,14 @@ public:
 			0x54, 0x7C, 0x7F, 0x54, 0x7D, 0x7F, 0x54, 0x7E, 0x7F, 0x54, 0x7F, 0x7F,
 			0x54, 0x14, 0x00, 0x54, 0x10, 0x64, 0x54, 0x11, 0x00 };
 		vgm_body.insert(vgm_body.begin(), Init.begin(), Init.end());
+		this->Tone_select_FM(0, 1);
+		this->Tone_select_FM(1, 1);
+		this->Tone_select_FM(2, 1);
+		this->Tone_select_FM(3, 1);
+		this->Tone_select_FM(4, 1);
+		this->Tone_select_FM(5, 1);
+		this->Tone_select_FM(6, 1);
+		this->Tone_select_FM(7, 1);
 	}
 
 	void set_opm98(void)
