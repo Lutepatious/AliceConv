@@ -43,7 +43,7 @@ void mako2_mml_decoded_CH::decode(unsigned __int8* input, unsigned __int32 offs)
 
 
 	unsigned __int16 Octave = 4, Octave_current = 4;
-	unsigned __int16 time_default = 0x40, note;
+	unsigned __int16 time_default = 64, note;
 	__int16 time, time_on, time_off, gate_step = 7;
 	bool flag_gate = false;
 	bool tie = false;

@@ -5,6 +5,7 @@
 #include <limits>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <iostream>
 
 #include "gc_cpp.h"
 
@@ -144,6 +145,10 @@ int wmain(int argc, wchar_t** argv)
 		struct mako2_mml_decoded MMLs(CHs_real);
 		for (size_t i = 0; i < CHs_real; i++) {
 			(MMLs.CH + i)->decode(inbuf, pM2HDR->CH_addr[i]);
+		}
+
+		for (size_t i = 0; i < CHs_real; i++) {
+			std::cout << MMLs.CH[i].Loop_delta_time << std::endl;
 		}
 
 		MMLs.unroll_loop();
