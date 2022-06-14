@@ -1,9 +1,8 @@
 #include <vector>
-#include <string>
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <algorithm>
+#include <numeric>
 #include <limits>
 
 enum class Machine { NONE = 0, PC88VA, FMTOWNS, PC9801 };
@@ -183,7 +182,7 @@ struct MML_decoded {
 			if (this->CH[i].is_mute() || this->CH[i].time_total == 0) {
 				continue;
 			}
-			delta_time_LCM = this->LCM(delta_time_LCM, this->CH[i].time_total);
+			delta_time_LCM = std::lcm(delta_time_LCM, this->CH[i].time_total);
 		}
 		// 物によってはループするごとに微妙にずれていって元に戻るものもあり、極端なループ時間になる。(多分バグ)
 		// あえてそれを回避せずに完全ループを生成するのでバッファはとても大きく取ろう。
@@ -217,28 +216,6 @@ struct MML_decoded {
 				}
 			}
 		}
-	}
-
-	size_t LCM(size_t a, size_t b)
-	{
-		size_t L, S;
-		if (a == b) {
-			return a;
-		}
-		else if (a > b) {
-			L = a;
-			S = b;
-		}
-		else {
-			L = b;
-			S = a;
-		}
-		while (S != 0) {
-			size_t mod = L % S;
-			L = S;
-			S = mod;
-		}
-		return a * b / L;
 	}
 };
 

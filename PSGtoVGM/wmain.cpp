@@ -2,9 +2,9 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <numeric>
 
 #include "VGM.hpp"
-#include "tools.h"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -86,8 +86,8 @@ public:
 		}
 
 		if (cn[0].whole_length != cn[1].whole_length || cn[0].whole_length != cn[2].whole_length) {
-			size_t total_LCM = LCM(cn[0].whole_length, cn[1].whole_length);
-			total_time_LCM = LCM(total_LCM, cn[2].whole_length);
+			size_t total_LCM = std::lcm(cn[0].whole_length, cn[1].whole_length);
+			total_time_LCM = std::lcm(total_LCM, cn[2].whole_length);
 		}
 		else {
 			total_time_LCM = cn[0].whole_length;
