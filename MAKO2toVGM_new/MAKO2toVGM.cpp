@@ -326,6 +326,14 @@ struct MML_decoded {
 			this->CH[i].decode(in, m2h->CH_addr[i]);
 		}
 	}
+
+	void print_delta(void)
+	{
+		for (size_t i = 0; i < this->CH.size(); i++) {
+			std::cout << this->CH[i].Loop_delta_time << std::endl;
+		}
+	}
+
 	void unroll_loop(void)
 	{
 		// ループを展開し、全チャネルが同一長のループになるように調整する。
@@ -388,7 +396,6 @@ struct MML_decoded {
 				if (debug) {
 					std::wcout << i << L": " << t.size() << L"/" << this->CH[i].E.size() << std::endl;
 				}
-
 			}
 		}
 	}
@@ -565,11 +572,8 @@ int wmain(int argc, wchar_t** argv)
 		struct MML_decoded m;
 		m.init(CHs_real);
 		m.decode(inbuf, pM2HDR);
-
 		if (debug) {
-			for (size_t i = 0; i < CHs_real; i++) {
-				std::cout << m.CH[i].Loop_delta_time << std::endl;
-			}
+			m.print_delta();
 		}
 		m.unroll_loop();
 
