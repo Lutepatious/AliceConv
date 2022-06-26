@@ -5,15 +5,54 @@ struct mako2_header {
 	unsigned __int32 ver : 8;
 	unsigned __int32 CH_addr[]; // 12 or 16 Channels
 };
+
+struct LFO_soft_volume_SSG {
+	unsigned __int16 Volume;
+	unsigned __int16 Wait1;
+	unsigned __int16 Delta2;
+	unsigned __int16 Delta_last;
+	unsigned __int16 Delta1;
+};
+
+struct LFO_soft_volume_FM {
+	unsigned __int16 Wait1;
+	unsigned __int16 Wait2;
+	__int16 Delta1;
+	__int16 Limit;
+};
+
+struct LFO_soft_detune {
+	unsigned __int16 Wait1;
+	unsigned __int16 Wait2;
+	__int16 Delta1;
+	__int16 Limit;
+};
+
+struct LFO_YM2608 {
+	unsigned __int8 FREQ;
+	unsigned __int8 PMS;
+	unsigned __int8 AMS;
+};
+
+
 #pragma pack(pop)
 
 struct MML_Events {
 	size_t Time;
+	unsigned __int16 Len_on;
+	unsigned __int16 Len_off;
 	unsigned __int8 Type;
 	unsigned __int8 Key;
-	unsigned __int16 Len;
-	unsigned __int8 Param[10];
+	unsigned __int8 Param;
+	union LFO_params {
+		struct LFO_soft_volume_SSG svSSG;
+		struct LFO_soft_volume_FM svFM;
+		struct LFO_soft_detune sd;
+		struct LFO_YM2608 h2608;
+	} uLFO;
 };
+
+constexpr size_t TIME_MUL = 3ULL;
 
 class MML_decoded_CH {
 	bool mute = false;
@@ -52,10 +91,9 @@ public:
 		size_t Loop_Block = *pBlock_offset_work & 0xFF;
 
 		unsigned __int16 Octave = 4, Octave_current = 4;
-		unsigned __int16 time_default = 64;
+		unsigned __int16 time_default = 64 * TIME_MUL;
 		__int16 gate_step = 7;
 		bool flag_gate = false;
-		bool tie = false;
 
 		this->Loop_start_pos = 0;
 		this->Loop_start_time = 0;
@@ -90,7 +128,7 @@ public:
 				case 0x0B:
 				case 0x0C:
 					note = *src++;
-					time = *src++;
+					time = *src++ * TIME_MUL;
 					makenote = true;
 					break;
 
@@ -108,7 +146,7 @@ public:
 				case 0x18:
 				case 0x19:
 					note = *src++ - 0x0d;
-					time = *((unsigned __int16*)src);
+					time = *((unsigned __int16*)src) * TIME_MUL;
 					src += 2;
 					makenote = true;
 					break;
@@ -177,19 +215,18 @@ public:
 
 				case 0xF3:
 					if (*++src & 0x80) { // 128 - 32767
-						time_default = _byteswap_ushort(*((unsigned __int16*)src)) & 0x7FFF;
+						time_default = (_byteswap_ushort(*((unsigned __int16*)src)) & 0x7FFF) * TIME_MUL;
 						src += 2;
 					}
 					else { // 0 - 127
-						time_default = *src++;
-						if (time_default == 11 || time_default == 21 || time_default == 43) {
+						time_default = *src++ * TIME_MUL;
+						if (time_default == 11 * TIME_MUL || time_default == 21 * TIME_MUL || time_default == 43 * TIME_MUL) {
 							std::wcout << L"Triplets? " << time_default << std::endl;
 						}
 					}
 					break;
 
 				case 0xE9: // Tie
-					tie = true;
 					eve.Type = *src++;
 					E.push_back(eve);
 					break;
@@ -203,29 +240,35 @@ public:
 				case 0xF9: // Volume change
 				case 0xFC: // Detune
 					eve.Type = *src++;
-					eve.Param[0] = *src++;
+					eve.Param = *src++;
 					E.push_back(eve);
 					break;
 
 				case 0xE4: // hLFO
 					eve.Type = *src++;
-					memcpy_s(eve.Param, 3, src, 3);
-					src += 3;
+					eve.uLFO.h2608 = *(struct LFO_YM2608*)src;
+					src += sizeof(struct LFO_YM2608);
+					E.push_back(eve);
+					break;
+
+				case 0xE6:
+					eve.Type = *src++;
+					eve.uLFO.svFM = *(struct LFO_soft_volume_FM*)src;
+					src += sizeof(struct LFO_soft_volume_FM);
 					E.push_back(eve);
 					break;
 
 				case 0xE7:
-				case 0xE6:
 					eve.Type = *src++;
-					memcpy_s(eve.Param, 8, src, 8);
-					src += 8;
+					eve.uLFO.sd = *(struct LFO_soft_detune*)src;
+					src += sizeof(struct LFO_soft_detune);
 					E.push_back(eve);
 					break;
 
 				case 0xE8:
 					eve.Type = *src++;
-					memcpy_s(eve.Param, 10, src, 10);
-					src += 10;
+					eve.uLFO.svSSG = *(struct LFO_soft_volume_SSG*)src;
+					src += sizeof(struct LFO_soft_volume_SSG);
 					E.push_back(eve);
 					break;
 
@@ -249,42 +292,40 @@ public:
 				}
 
 				if (makenote) {
-					if (time == 1) {
-						time_on = 1;
+					if (time == TIME_MUL) {
+						time_on = TIME_MUL;
 					}
 					else if (!flag_gate) {
 						if (gate_step == 8) {
-							time_on = time - 1;
+							time_on = time - TIME_MUL;
 						}
 						else {
-							time_on = (time >> 3) * gate_step;
+							time_on = ((time / TIME_MUL) >> 3) * gate_step * TIME_MUL;
 							if (!time_on) {
-								time_on = 1;
+								time_on = TIME_MUL;
 							}
 							if (time == time_on) {
-								time_on--;
+								time_on -= TIME_MUL;
 							}
 						}
 					}
 					else {
-						time_on = time - gate_step;
+						time_on = time - gate_step * TIME_MUL;
 						if (time_on < 0) {
-							time_on = 1;
+							time_on = TIME_MUL;
 						}
 					}
 					time_off = time - time_on;
 					if (!note || (time_on == 0)) {
 						eve.Type = 0x80;
-						eve.Len = time;
+						eve.Len_off = time;
 						E.push_back(eve);
 					}
 					else {
 						eve.Type = 0x90;
 						eve.Key = Octave_current * 12 + note - 1; // 0 - 95 (MIDI Note No.12 - 107)
-						eve.Len = time_on;
-						E.push_back(eve);
-						eve.Type = 0x80;
-						eve.Len = time_off;
+						eve.Len_on = time_on;
+						eve.Len_off = time_off;
 						E.push_back(eve);
 					}
 					this->time_total += time;

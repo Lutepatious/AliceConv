@@ -149,19 +149,16 @@ __int8 EVENTS::sLFOv_exec_FM(void)
 
 __int8 EVENTS::sLFOv_exec_SSG(void)
 {
+	// sLFOv_SSG.Volume‚ÌÅ‘å’l‚Í‚Í0x4000‚Â‚Ü‚è2^14=16384
+	// ‚±‚ê‚ðVolume_current‚Éæ‚¶‚Ä2^14‚ÅŠ„‚Á‚Ä‚¢‚éB
+
 	if (this->sLFOv_SSG.Mode == 1) { // ‰¹—Ê‘
-		if (this->sLFOv_SSG.Volume >= 0x3FFF) {
+		this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
+		if (this->sLFOv_SSG.Volume >= 0x4000) {
 			this->sLFOv_SSG.Volume = 0x4000;
-			this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
 			this->sLFOv_SSG.Wait = this->sLFOv_SSG.Param.Wait1;
 			this->sLFOv_SSG.Delta = this->sLFOv_SSG.Param.Delta1;
 			this->sLFOv_SSG.Mode = 2;
-		}
-		else {
-			this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
-		}
-		if (this->sLFOv_SSG.Volume > 0x4000) {
-			this->sLFOv_SSG.Volume = 0x4000;
 		}
 	}
 	else if (this->sLFOv_SSG.Mode > 1 && this->sLFOv_SSG.Mode < 5) { // ‰¹—ÊŒ¸

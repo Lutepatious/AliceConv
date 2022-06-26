@@ -272,7 +272,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->make_data(0x25, NA & 0x03);
 	}
 
-	void Note_on_FM(unsigned __int8 CH)
+	virtual void Note_on_FM(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -287,7 +287,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->make_data(0x28, U.B);
 	}
 
-	void Note_off_FM(unsigned __int8 CH)
+	virtual void Note_off_FM(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -302,7 +302,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->make_data(0x28, U.B);
 	}
 
-	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	virtual void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
@@ -311,7 +311,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		}
 	}
 
-	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone) {
+	virtual void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone) {
 		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 		this->Tone[CH].B = *(this->preset + Tone);
 
@@ -440,12 +440,12 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		if (CH < 3) {
 			this->make_data(0xB4 + CH, this->LR_AMS_PMS[CH].B);
 		}
-		else if (CH < 6){
+		else if (CH < 6) {
 			this->make_data2(0xB4 + CH - 3, this->LR_AMS_PMS[CH].B);
 		}
 	}
 
-	void Note_on_FM2(unsigned __int8 CH)
+	virtual void Note_on_FM2(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -461,7 +461,7 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		this->make_data(0x28, U.B);
 	}
 
-	void Note_off_FM2(unsigned __int8 CH)
+	virtual void Note_off_FM2(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -477,7 +477,7 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		this->make_data(0x28, U.B);
 	}
 
-	void Volume_FM2(unsigned __int8 CH, unsigned __int8 Volume)
+	virtual void Volume_FM2(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->Tone2[CH].S.Connect == 7 || this->Tone2[CH].S.Connect > 4 && op || this->Tone2[CH].S.Connect > 3 && op >= 2 || op == 3) {
@@ -486,7 +486,7 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		}
 	}
 
-	void Tone_select_FM2(unsigned __int8 CH, unsigned __int8 Tone) {
+	virtual void Tone_select_FM2(unsigned __int8 CH, unsigned __int8 Tone) {
 		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
 		this->Tone2[CH].B = *(this->preset + Tone);
 
@@ -599,7 +599,13 @@ struct VGM_YM2151 : public VGM, public OPM {
 		}
 	}
 
-	void Note_on_FM(unsigned __int8 CH) {
+	void Timer_set_FM(void)
+	{
+		size_t NA = 1024 - (((3 * (size_t)this->vgm_header.lngHzYM2151 * 2) / (512LL * this->Tempo) + 1) >> 1);
+		this->make_data(0x10, (NA >> 2) & 0xFF);
+		this->make_data(0x11, NA & 0x03);
+	}
+	virtual void Note_on_FM(unsigned __int8 CH) {
 		union {
 			struct {
 				unsigned __int8 CH : 3;
@@ -626,7 +632,7 @@ struct VGM_YM2151 : public VGM, public OPM {
 		U.S = { CH, 0 };
 		this->make_data(0x08, U.B);
 	}
-	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	virtual void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->Tone[CH].S.Connect == 7 || this->Tone[CH].S.Connect > 4 && op || this->Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
@@ -634,13 +640,7 @@ struct VGM_YM2151 : public VGM, public OPM {
 			}
 		}
 	}
-	void Timer_set_FM(void)
-	{
-		size_t NA = 1024 - (((3 * (size_t)this->vgm_header.lngHzYM2151 * 2) / (512LL * this->Tempo) + 1) >> 1);
-		this->make_data(0x10, (NA >> 2) & 0xFF);
-		this->make_data(0x11, NA & 0x03);
-	}
-	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone)
+	virtual void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone)
 	{
 		static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
 		this->Tone[CH].B = this->preset[Tone - 1];
@@ -725,4 +725,80 @@ struct VGM_YM2151 : public VGM, public OPM {
 	}
 };
 
+struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
+	union MAKO2_Tone *M2Tones;
+	union MAKO2_Tone M2_Tone[8];
+	unsigned version;
+
+	void init(union MAKO2_Tone *pM2Tone, unsigned ver)
+	{
+		this->M2Tones = pM2Tone;
+		this->version = ver;
+	}
+
+	void Note_on_FM(unsigned __int8 CH) {
+		union {
+			struct {
+				unsigned __int8 CH : 3;
+				unsigned __int8 Op_mask : 4;
+				unsigned __int8 : 1;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->M2_Tone[CH].S.OPR_MASK };
+		this->make_data(0x08, U.B);
+	}
+
+	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x60 + 8 * op + CH, ~Volume & 0x7F);
+			}
+		}
+	}
+
+	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone)
+	{
+		static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
+		this->M2_Tone[CH] = this->M2Tones[Tone];
+		this->M2_Tone[CH].S.L = this->L[CH];
+		this->M2_Tone[CH].S.R = this->R[CH];
+
+		this->make_data(0x20 + CH, this->M2_Tone[CH].B.FB_CON);
+		for (size_t j = 0; j < 6; j++) {
+			for (size_t op = 0; op < 4; op++) {
+				this->make_data(0x40 + 0x20 * j + Op_index[op] + CH, *((unsigned __int8*)&this->M2_Tone[CH].B.Op[op].DT_MULTI + j));
+			}
+		}
+	}
+
+	void Tone_set_SSG_emulation(unsigned __int8 CH)
+	{
+		static unsigned __int8 Op_index[4] = { 0, 0x10, 8, 0x18 };
+		this->M2_Tone[CH].B = SSG_emulation;
+		this->M2_Tone[CH].S.L = this->L[CH];
+		this->M2_Tone[CH].S.R = this->R[CH];
+
+		this->make_data(0x20 + CH, this->M2_Tone[CH].B.FB_CON);
+		for (size_t j = 0; j < 6; j++) {
+			for (size_t op = 0; op < 4; op++) {
+				this->make_data(0x40 + 0x20 * j + Op_index[op] + CH, *((unsigned __int8*)&this->M2_Tone[CH].B.Op[op].DT_MULTI + j));
+			}
+		}
+	}
+
+};
+
+struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
+	union MAKO2_Tone M2_Tone[3];
+
+};
+
+struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
+	union MAKO2_Tone M2_Tone[3];
+	union MAKO2_Tone M2_Tone2[3];
+
+};
 #pragma pack(pop)
