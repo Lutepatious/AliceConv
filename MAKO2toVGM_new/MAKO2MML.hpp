@@ -401,7 +401,8 @@ struct MML_decoded {
 			this->loop_start_time = SIZE_MAX;
 		}
 		else {
-			wprintf_s(L"Loop: Yes %zu Start %zu\n", delta_time_LCM, this->loop_start_time);
+			std::wcout << L"Loop: Yes from " << this->loop_start_time << L" Length " << delta_time_LCM  << L" Ch. " << this->latest_CH << std::endl;
+
 			this->end_time = this->loop_start_time + delta_time_LCM;
 			for (size_t i = 0; i < this->CH.size(); i++) {
 				// そもそもループしないチャネルはスキップ

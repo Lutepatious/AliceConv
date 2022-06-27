@@ -8,7 +8,7 @@
 
 #include "PCMtoWAVE.hpp"
 #include "MAKO2MML.hpp"
-#include "events.hpp"
+#include "Events.hpp"
 #include "VGM.hpp"
 
 constexpr size_t MASTERCLOCK_NEC_OPN = 3993600;
@@ -73,9 +73,13 @@ public:
 				this->make_wait(d_VGMT);
 			}
 
-			if (in.loop_enable && eve.Time == in.loop_start) {
+			if (in.loop_enable && (eve.Time == in.time_loop_start)) {
+				std::wcout << eve.Time << L":" << in.time_loop_start << std::endl;
 				this->time_loop_VGM_abs = time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
+
+				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
+
 				in.loop_enable = false;
 			}
 

@@ -47,7 +47,6 @@ struct EVENT {
 };
 
 class EVENTS {
-	size_t time_loop_start = 0;
 	size_t time_end = SIZE_MAX;
 	unsigned __int8 Volume_current = 0;
 	unsigned __int8 Volume_prev = 0;
@@ -230,8 +229,8 @@ class EVENTS {
 	}
 
 public:
+	size_t time_loop_start = 0;
 	std::vector<struct EVENT> events;
-	size_t loop_start = SIZE_MAX;
 	bool loop_enable = false;
 
 	void convert(struct MML_decoded& MMLs)
@@ -250,6 +249,7 @@ public:
 			size_t time = 0;
 			for (auto& e : MMLs.CH[i].E) {
 				if ((MMLs.latest_CH == i) && (&e == &MMLs.CH[i].E.at(MMLs.CH[i].Loop_start_pos)) && (MMLs.loop_start_time != SIZE_MAX)) {
+					std::wcout << i << ":" << time << std::endl;
 					this->time_loop_start = time;
 					this->loop_enable = true;
 				}
@@ -454,31 +454,29 @@ public:
 		end.Time = SIZE_MAX;
 		this->events.push_back(end);
 
+
 		// イベント列をソートする
 		std::sort(this->events.begin(), this->events.end());
 		size_t length = 0;
 		// イベント列の長さを測る。
 		while (this->events[length].Time < MMLs.end_time) {
-			if (this->loop_start == SIZE_MAX) {
-				this->loop_start = length;
-			}
 			length++;
 		}
 
+#if 0
 		// 重複イベントを削除し、ソートしなおす
 		size_t length_work = length;
 		for (size_t i = 0; i < length_work - 1; i++) {
 			if (this->events[i].Time == this->events[i + 1].Time && this->events[i].Event == this->events[i + 1].Event) {
 				if (this->events[i].Event == 0xF4 && this->events[i].Param == this->events[i + 1].Param) {
 					this->events[i].Time = SIZE_MAX;
-					if (i < this->loop_start) {
-						this->loop_start--;
-					}
 					length--;
 				}
 			}
 		}
+
 		std::sort(this->events.begin(), this->events.end());
+#endif
 		this->events.resize(length);
 	}
 

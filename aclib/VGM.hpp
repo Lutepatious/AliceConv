@@ -704,7 +704,7 @@ struct VGM_YM2151 : public VGM, public OPM {
 
 		if (this->vgm_loop_pos) {
 			this->vgm_header.lngLoopSamples = this->time_prev_VGM_abs - this->time_loop_VGM_abs;
-			this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + sizeof(OPNSSGVOL) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
+			this->vgm_header.lngLoopOffset = sizeof(VGMHEADER) + this->vgm_loop_pos - ((UINT8*)&this->vgm_header.lngLoopOffset - (UINT8*)&this->vgm_header.fccVGM);
 		}
 	}
 
