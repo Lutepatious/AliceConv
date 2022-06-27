@@ -699,7 +699,6 @@ struct VGM_YM2151 : public VGM, public OPM {
 
 		this->vgm_header.lngTotalSamples = this->time_prev_VGM_abs;
 		this->vgm_header.lngDataOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngDataOffset - (UINT8*)&this->vgm_header.fccVGM);
-		this->vgm_header.lngExtraOffset = sizeof(VGMHEADER) - ((UINT8*)&this->vgm_header.lngExtraOffset - (UINT8*)&this->vgm_header.fccVGM);
 		this->vgm_header.lngEOFOffset = sizeof(VGMHEADER) + vgm_body.size() - ((UINT8*)&this->vgm_header.lngEOFOffset - (UINT8*)&this->vgm_header.fccVGM);
 
 		if (this->vgm_loop_pos) {
