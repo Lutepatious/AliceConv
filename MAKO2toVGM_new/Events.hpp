@@ -249,7 +249,7 @@ public:
 			size_t time = 0;
 			for (auto& e : MMLs.CH[i].E) {
 				if ((MMLs.latest_CH == i) && (&e == &MMLs.CH[i].E.at(MMLs.CH[i].Loop_start_pos)) && (MMLs.loop_start_time != SIZE_MAX)) {
-					std::wcout << i << ":" << time << std::endl;
+//					std::wcout << i << ":" << time << std::endl;
 					this->time_loop_start = time;
 					this->loop_enable = true;
 				}

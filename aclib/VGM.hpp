@@ -287,7 +287,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->make_data(0x28, U.B);
 	}
 
-	virtual void Note_off_FM(unsigned __int8 CH)
+	void Note_off_FM(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -328,7 +328,7 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		}
 	}
 
-	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
+	virtual void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
 	{
 		union {
 			struct {
@@ -410,12 +410,12 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		this->vgm_header.bytAYFlagYM2203 = 0;
 		this->vgm_header.bytAYFlagYM2608 = 0x1;
 		this->vgm_header.bytAYFlag = 0;
-		this->LR_AMS_PMS[0].B = 0;
-		this->LR_AMS_PMS[1].B = 0;
-		this->LR_AMS_PMS[2].B = 0;
-		this->LR_AMS_PMS[3].B = 0;
-		this->LR_AMS_PMS[4].B = 0;
-		this->LR_AMS_PMS[5].B = 0;
+		this->LR_AMS_PMS[0].B = 0300;
+		this->LR_AMS_PMS[1].B = 0300;
+		this->LR_AMS_PMS[2].B = 0300;
+		this->LR_AMS_PMS[3].B = 0300;
+		this->LR_AMS_PMS[4].B = 0300;
+		this->LR_AMS_PMS[5].B = 0300;
 	}
 
 	void make_data2(unsigned __int8 address, unsigned __int8 data)
@@ -445,6 +445,19 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		}
 	}
 
+	void PMS_AMS_set(unsigned __int8 CH, unsigned __int8 PMS, unsigned __int8 AMS)
+	{
+		this->LR_AMS_PMS[CH].S.PMS = PMS;
+		this->LR_AMS_PMS[CH].S.AMS = AMS;
+
+		if (CH < 3) {
+			this->make_data(0xB4 + CH, this->LR_AMS_PMS[CH].B);
+		}
+		else if (CH < 6) {
+			this->make_data2(0xB4 + CH - 3, this->LR_AMS_PMS[CH].B);
+		}
+	}
+
 	virtual void Note_on_FM2(unsigned __int8 CH)
 	{
 		union {
@@ -461,7 +474,7 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		this->make_data(0x28, U.B);
 	}
 
-	virtual void Note_off_FM2(unsigned __int8 CH)
+	void Note_off_FM2(unsigned __int8 CH)
 	{
 		union {
 			struct {
@@ -503,7 +516,7 @@ struct VGM_YM2608 : public VGM_YM2203, public OPNA {
 		}
 	}
 
-	void Key_set_FM2(unsigned __int8 CH, unsigned __int8 Key)
+	virtual void Key_set_FM2(unsigned __int8 CH, unsigned __int8 Key)
 	{
 		union {
 			struct {
@@ -725,14 +738,17 @@ struct VGM_YM2151 : public VGM, public OPM {
 };
 
 struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
-	union MAKO2_Tone *M2Tones;
+	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[8];
+	__int8 Detune[8];
 	unsigned version;
+	bool old_SSG_detune;
 
-	void init(union MAKO2_Tone *pM2Tone, unsigned ver)
+	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
 	{
 		this->M2Tones = pM2Tone;
 		this->version = ver;
+		this->old_SSG_detune = Detune_old;
 	}
 
 	void Note_on_FM(unsigned __int8 CH) {
@@ -791,13 +807,186 @@ struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
 };
 
 struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
+	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[3];
+	__int16 Detune[6];
+	unsigned version;
+	bool old_SSG_detune;
 
+	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
+	{
+		this->M2Tones = pM2Tone;
+		this->version = ver;
+		this->old_SSG_detune = Detune_old;
+	}
+
+	void Note_on_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->M2_Tone[CH].S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x40 + 4 * op + CH, Volume);
+			}
+		}
+	}
+
+	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->M2_Tone[CH] = this->M2Tones[Tone];
+
+		this->make_data(0xB0 + CH, this->M2_Tone[CH].B.FB_CON);
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && this->version >= 3 && (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->M2_Tone[CH].B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
+
+	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
+	{
+		union Tone_Period TP;
+		TP.A = TPeriod[Key] + this->old_SSG_detune ? -this->Detune[CH] : -this->Detune[CH] >> 2;
+
+		this->make_data(CH * 2, TP.B.L);
+		this->make_data(CH * 2 + 1, TP.B.H);
+	}
+
+	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = Key / 12;
+		U.S.FNumber = this->FNumber[Key % 12] + this->Detune[CH];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
+	}
 };
 
 struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
+	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[3];
 	union MAKO2_Tone M2_Tone2[3];
+	__int8 Detune[9];
+	unsigned version;
+	bool old_SSG_detune;
 
+	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
+	{
+		this->M2Tones = pM2Tone;
+		this->version = ver;
+		this->old_SSG_detune = Detune_old;
+	}
+
+	void Note_on_FM(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 : 2;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, this->M2_Tone[CH].S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Note_on_FM2(unsigned __int8 CH)
+	{
+		union {
+			struct {
+				unsigned __int8 CH : 2;
+				unsigned __int8 Second : 1;
+				unsigned __int8 : 1;
+				unsigned __int8 Op_mask : 4;
+			} S;
+			unsigned __int8 B;
+		} U;
+
+		U.S = { CH, 1, this->M2_Tone2[CH].S.OPR_MASK };
+		this->make_data(0x28, U.B);
+	}
+
+	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data(0x40 + 4 * op + CH, Volume);
+			}
+		}
+	}
+
+	void Volume_FM2(unsigned __int8 CH, unsigned __int8 Volume)
+	{
+		for (size_t op = 0; op < 4; op++) {
+			if (this->M2_Tone2[CH].S.Connect == 7 || this->M2_Tone2[CH].S.Connect > 4 && op || this->M2_Tone2[CH].S.Connect > 3 && op >= 2 || op == 3) {
+				this->make_data2(0x40 + 4 * op + CH, Volume);
+			}
+		}
+	}
+
+	void Tone_select_FM(unsigned __int8 CH, unsigned __int8 Tone) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->M2_Tone[CH] = this->M2Tones[Tone];
+
+		this->make_data(0xB0 + CH, this->M2_Tone[CH].B.FB_CON);
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && this->version >= 3 && (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->M2_Tone[CH].B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
+
+	void Tone_select_FM2(unsigned __int8 CH, unsigned __int8 Tone) {
+		static unsigned __int8 Op_index[4] = { 0, 8, 4, 0xC };
+		this->M2_Tone2[CH] = this->M2Tones[Tone];
+
+		this->make_data2(0xB0 + CH, this->M2_Tone2[CH].B.FB_CON);
+		for (size_t op = 0; op < 4; op++) {
+			for (size_t j = 0; j < 6; j++) {
+				if (j == 1 && this->version >= 3 && (this->M2_Tone2[CH].S.Connect == 7 || this->M2_Tone2[CH].S.Connect > 4 && op || this->M2_Tone2[CH].S.Connect > 3 && op == 1 || op == 3)) {
+				}
+				else {
+					this->make_data2(0x30 + 0x10 * j + Op_index[op] + CH, *((unsigned __int8*)&this->M2_Tone2[CH].B.Op[op].DT_MULTI + j));
+				}
+			}
+		}
+	}
 };
 #pragma pack(pop)

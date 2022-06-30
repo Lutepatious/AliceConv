@@ -74,11 +74,11 @@ public:
 			}
 
 			if (in.loop_enable && (eve.Time == in.time_loop_start)) {
-				std::wcout << eve.Time << L":" << in.time_loop_start << std::endl;
+//				std::wcout << eve.Time << L":" << in.time_loop_start << std::endl;
 				this->time_loop_VGM_abs = time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 
-				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
+//				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
 
 				in.loop_enable = false;
 			}
@@ -139,8 +139,174 @@ public:
 	}
 };
 
-enum class CHIP { NONE = 0, YM2203, YM2608, YM2151 };
+class VGMdata_YM2203 : public VGM_YM2203_MAKO2 {
+public:
+	VGMdata_YM2203(void)
+	{
+		this->preset = NULL;
+		this->vgm_header.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
+		for (size_t i = 0; i < 12; i++) {
+			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
+			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->vgm_header.lngHzYM2203;
+			this->FNumber[i] = fFNumber + 0.5;
+		}
 
+		for (size_t i = 0; i < 97; i++) {
+			double Freq = 440.0 * pow(2.0, (-57.0 + i) / 12.0);
+			double fTP = this->vgm_header.lngHzYM2203 / (64.0 * Freq);
+			this->TPeriod[i] = fTP + 0.5;
+		}
+	}
+
+	void make_init(void) {
+		this->make_data(0, 'W');
+		this->make_data(0, 'A');
+		this->make_data(0, 'O');
+		this->Mixer(0277);
+		this->make_data(0x27, 0x30);
+		this->make_data(0x90, 0);
+		this->make_data(0x91, 0);
+		this->make_data(0x92, 0);
+		this->make_data(0x24, 0x70);
+		this->make_data(0x25, 0);
+	}
+
+	void convert(class EVENTS& in)
+	{
+		unsigned __int8 Volume[6] = { 0 };
+		size_t Time_Prev = 0;
+		size_t Time_Prev_VGM = 0;
+
+		for (auto& eve : in.events) {
+			if (eve.Time == SIZE_MAX) {
+				break;
+			}
+			if (eve.CH >= 3) {
+				continue;
+			}
+			if (eve.Time - Time_Prev) {
+				// Tqn = 60 / Tempo
+				// TPQN = 48
+				// Ttick = Tqn / 48
+				// c_VGMT = Ttick * src_time * VGM_CLOCK 
+				//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+				//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+				//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+				//
+				// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+				// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+				// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+				// VAはBIOSが演奏するので調整しない。
+
+				constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
+				size_t N_VGMT = eve.Time * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
+				size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+
+				size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+				Time_Prev_VGM += d_VGMT;
+				this->time_prev_VGM_abs += d_VGMT;
+				Time_Prev = eve.Time;
+
+				this->make_wait(d_VGMT);
+			}
+
+			if (in.loop_enable && (eve.Time == in.time_loop_start)) {
+				//				std::wcout << eve.Time << L":" << in.time_loop_start << std::endl;
+				this->time_loop_VGM_abs = time_prev_VGM_abs;
+				this->vgm_loop_pos = vgm_body.size();
+
+				//				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
+
+				in.loop_enable = false;
+			}
+
+			switch (eve.Event) {
+			case 0xF4: // Tempo 注意!! ここが変わると累積時間も変わる!! 必ず再計算せよ!!
+				Time_Prev_VGM = ((Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
+				this->Tempo = eve.Param;
+
+				// この後のNAの計算とタイマ割り込みの設定は実際には不要
+				this->Timer_set_FM();
+				break;
+			case 0xFC: // Detune
+				this->Detune[eve.CH] = (__int16)((__int8)eve.Param);
+				break;
+
+			case 0xEB: // Panpot NOT FOR YM2203
+				break;
+
+			case 0xF5: // Tone select
+				this->Tone_select_FM(eve.CH, eve.Param);
+				break;
+			case 0x80: // Note Off
+				if (eve.CH < 3) {
+					this->Note_off_FM(eve.CH);
+				}
+				else {
+					this->Note_off(eve.CH - 3);
+				}
+				break;
+			case 0xF9: // Volume change @V{0-127}
+				Volume[eve.CH] = eve.Param;
+				if (eve.CH < 3) {
+					this->Volume_FM(eve.CH, Volume[eve.CH]);
+				}
+				else {
+					this->Volume(eve.CH - 3, Volume[eve.CH]);
+				}
+				break;
+			case 0xE1: // Velocity
+				Volume[eve.CH] += eve.Param;
+				Volume[eve.CH] &= 0x7F;
+				if (eve.CH < 3) {
+					this->Volume_FM(eve.CH, Volume[eve.CH]);
+				}
+				else {
+					this->Volume(eve.CH - 3, Volume[eve.CH]);
+				}
+				break;
+			case 0xD0:
+				if (eve.CH < 3) {
+					this->Key_set_FM(eve.CH, eve.Param);
+				}
+				else {
+					this->Key_set(eve.CH - 3, eve.Param);
+				}
+				break;
+			case 0x90: // Note on
+				if (eve.CH < 3) {
+					this->Note_on_FM(eve.CH);
+				}
+				else {
+					this->Note_on(eve.CH - 3);
+				}
+				break;
+			case 0xD1: // sLFOd
+				if (eve.CH < 3) {
+					this->sLFOd_FM(eve.CH, eve.LFO_Detune);
+				}
+				else {
+					this->sLFOd(eve.CH - 3, eve.LFO_Detune);
+				}
+				break;
+			}
+
+#if 0
+			switch (eve.Event) {
+			}
+#endif
+
+		}
+		this->finish();
+	}
+
+};
+
+enum class CHIP { NONE = 0, YM2203, YM2608, YM2151 };
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -317,7 +483,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 		else if (chip == CHIP::YM2151) {
 			class VGMdata_YM2151 v2151;
-			v2151.init((union MAKO2_Tone*) &inbuf.at(pM2HDR->chiptune_addr), mako2form);
+			v2151.init((union MAKO2_Tone*) &inbuf.at(pM2HDR->chiptune_addr), mako2form, early_detune);
 			v2151.make_init();
 			v2151.convert(events);
 			outsize = v2151.out(*argv);
