@@ -145,6 +145,7 @@ public:
 	{
 		this->preset = NULL;
 		this->vgm_header.lngHzYM2203 = MASTERCLOCK_NEC_OPN;
+		this->ex_vgm.SetSSGVol(120);
 		for (size_t i = 0; i < 12; i++) {
 			double Freq = 440.0 * pow(2.0, (-9.0 + i) / 12.0);
 			double fFNumber = 72.0 * Freq * pow(2.0, 21.0 - 4) / this->vgm_header.lngHzYM2203;
@@ -181,7 +182,7 @@ public:
 			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.CH >= 3) {
+			if (eve.CH >= 6) {
 				continue;
 			}
 			if (eve.Time - Time_Prev) {
@@ -233,14 +234,21 @@ public:
 				this->Timer_set_FM();
 				break;
 			case 0xFC: // Detune
-				this->Detune[eve.CH] = (__int16)((__int8)eve.Param);
+				if (eve.CH < 3) {
+					this->Detune_FM[eve.CH] = (__int16)((__int8)eve.Param);
+				}
+				else {
+					this->Detune[eve.CH - 3] = (__int16)((__int8)eve.Param);
+				}
 				break;
 
 			case 0xEB: // Panpot NOT FOR YM2203
 				break;
 
 			case 0xF5: // Tone select
-				this->Tone_select_FM(eve.CH, eve.Param);
+				if (eve.CH < 3) {
+					this->Tone_select_FM(eve.CH, eve.Param);
+				}
 				break;
 			case 0x80: // Note Off
 				if (eve.CH < 3) {
@@ -269,14 +277,6 @@ public:
 					this->Volume(eve.CH - 3, Volume[eve.CH]);
 				}
 				break;
-			case 0xD0:
-				if (eve.CH < 3) {
-					this->Key_set_FM(eve.CH, eve.Param);
-				}
-				else {
-					this->Key_set(eve.CH - 3, eve.Param);
-				}
-				break;
 			case 0x90: // Note on
 				if (eve.CH < 3) {
 					this->Note_on_FM(eve.CH);
@@ -285,20 +285,24 @@ public:
 					this->Note_on(eve.CH - 3);
 				}
 				break;
-			case 0xD1: // sLFOd
+			case 0xD0: // Key set (Part of Note on)
 				if (eve.CH < 3) {
-					this->sLFOd_FM(eve.CH, eve.LFO_Detune);
+					this->Key_set_FM(eve.CH, eve.Param);
 				}
 				else {
-					this->sLFOd(eve.CH - 3, eve.LFO_Detune);
+					this->Key_set(eve.CH - 3, eve.Param);
+				}
+				break;
+			case 0xD1: // sLFOd
+				if (eve.CH < 3) {
+					this->Key_set_LFO_FM(eve.CH, eve.LFO_Detune);
+				}
+				else {
+					this->Key_set_LFO(eve.CH - 3, eve.LFO_Detune);
 				}
 				break;
 			}
 
-#if 0
-			switch (eve.Event) {
-			}
-#endif
 
 		}
 		this->finish();
@@ -478,6 +482,14 @@ int wmain(int argc, wchar_t** argv)
 
 		size_t outsize = 0;
 		if (chip == CHIP::YM2203) {
+			class VGMdata_YM2203 v2203;
+			v2203.init((union MAKO2_Tone*)&inbuf.at(pM2HDR->chiptune_addr), mako2form, early_detune);
+			v2203.make_init();
+			v2203.convert(events);
+			if (SSG_Volume) {
+				v2203.ex_vgm.SetSSGVol(SSG_Volume);
+			}
+			outsize = v2203.out(*argv);
 		}
 		else if (chip == CHIP::YM2608) {
 		}

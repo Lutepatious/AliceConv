@@ -174,14 +174,14 @@ struct VGM_YM2149 : public VGM {
 	virtual void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
 	{
 		union Tone_Period TP;
-		TP.A = TPeriod[Key];
+		TP.A = this->TPeriod[Key];
 
-		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
+		this->make_data(CH * 2, TP.B.L);
 	}
 	virtual void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
 	{
-		this->make_data(CH + 8, Vol);
+		this->make_data(CH + 8, Vol & 0x0F);
 	}
 	virtual void Mixer(unsigned __int8 M)
 	{
@@ -809,8 +809,11 @@ struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
 struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
 	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[3];
-	__int16 Detune[6];
+	__int16 Detune[3] = { 0 };
+	__int16 Detune_FM[3] = { 0 };
 	unsigned version;
+	unsigned __int8 Key[3];
+	unsigned __int8 Key_FM[3];
 	bool old_SSG_detune;
 
 	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
@@ -835,11 +838,16 @@ struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
 		this->make_data(0x28, U.B);
 	}
 
+	void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
+	{
+		this->make_data(CH + 8, (Vol >> 3) & 0x0F);
+	}
+
 	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
-				this->make_data(0x40 + 4 * op + CH, Volume);
+				this->make_data(0x40 + 4 * op + CH, ~Volume & 0x7F);
 			}
 		}
 	}
@@ -862,15 +870,17 @@ struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
 
 	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
 	{
+		this->Key[CH] = Key;
 		union Tone_Period TP;
-		TP.A = TPeriod[Key] + this->old_SSG_detune ? -this->Detune[CH] : -this->Detune[CH] >> 2;
+		TP.A = this->TPeriod[Key] + (this->old_SSG_detune ? -this->Detune[CH] : -this->Detune[CH] >> 2);
 
-		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
+		this->make_data(CH * 2, TP.B.L);
 	}
 
 	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
 	{
+		this->Key_FM[CH] = Key;
 		union {
 			struct {
 				unsigned __int16 FNumber : 11;
@@ -881,7 +891,39 @@ struct VGM_YM2203_MAKO2 : public VGM_YM2203 {
 		} U;
 
 		unsigned __int8 Octave = Key / 12;
-		U.S.FNumber = this->FNumber[Key % 12] + this->Detune[CH];
+		U.S.FNumber = this->FNumber[Key % 12] + this->Detune_FM[CH];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
+	}
+
+	void Key_set_LFO(const unsigned __int8& CH, __int16 Detune)
+	{
+		union Tone_Period TP;
+		TP.A = this->TPeriod[this->Key[CH]] + (-Detune >> 2);
+
+		this->make_data(CH * 2, TP.B.L);
+		this->make_data(CH * 2 + 1, TP.B.H);
+	}
+
+	void Key_set_LFO_FM(unsigned __int8 CH, __int16 Detune)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = this->Key_FM[CH] / 12;
+		U.S.FNumber = this->FNumber[this->Key_FM[CH] % 12] + Detune;
 		if (Octave == 8) {
 			U.S.FNumber <<= 1;
 			Octave = 7;
@@ -897,8 +939,13 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
 	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[3];
 	union MAKO2_Tone M2_Tone2[3];
-	__int8 Detune[9];
+	__int16 Detune[3] = { 0 };
+	__int16 Detune_FM[3] = { 0 };
+	__int16 Detune_FM2[3] = { 0 };
 	unsigned version;
+	unsigned __int8 Key[3];
+	unsigned __int8 Key_FM[3];
+	unsigned __int8 Key_FM2[3];
 	bool old_SSG_detune;
 
 	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
@@ -939,11 +986,16 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
 		this->make_data(0x28, U.B);
 	}
 
+	void Volume(const unsigned __int8& CH, const unsigned __int8& Vol)
+	{
+		this->make_data(CH + 8, (Vol >> 3) & 0x0F);
+	}
+
 	void Volume_FM(unsigned __int8 CH, unsigned __int8 Volume)
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->M2_Tone[CH].S.Connect == 7 || this->M2_Tone[CH].S.Connect > 4 && op || this->M2_Tone[CH].S.Connect > 3 && op >= 2 || op == 3) {
-				this->make_data(0x40 + 4 * op + CH, Volume);
+				this->make_data(0x40 + 4 * op + CH, ~Volume & 0x7F);
 			}
 		}
 	}
@@ -952,7 +1004,7 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
 	{
 		for (size_t op = 0; op < 4; op++) {
 			if (this->M2_Tone2[CH].S.Connect == 7 || this->M2_Tone2[CH].S.Connect > 4 && op || this->M2_Tone2[CH].S.Connect > 3 && op >= 2 || op == 3) {
-				this->make_data2(0x40 + 4 * op + CH, Volume);
+				this->make_data2(0x40 + 4 * op + CH, ~Volume & 0x7F);
 			}
 		}
 	}
@@ -987,6 +1039,72 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608 {
 				}
 			}
 		}
+	}
+
+	void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
+	{
+		this->Key[CH] = Key;
+		union Tone_Period TP;
+		TP.A = this->TPeriod[Key] + (this->old_SSG_detune ? -this->Detune[CH] : -this->Detune[CH] >> 2);
+
+		this->make_data(CH * 2 + 1, TP.B.H);
+		this->make_data(CH * 2, TP.B.L);
+	}
+
+	void Key_set_FM(unsigned __int8 CH, unsigned __int8 Key)
+	{
+		this->Key_FM[CH] = Key;
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = Key / 12;
+		U.S.FNumber = this->FNumber[Key % 12] + this->Detune_FM[CH];
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
+	}
+
+	void Key_set_LFO(const unsigned __int8& CH, __int16 Detune)
+	{
+		union Tone_Period TP;
+		TP.A = this->TPeriod[this->Key[CH]] + (-Detune >> 2);
+
+		this->make_data(CH * 2, TP.B.L);
+		this->make_data(CH * 2 + 1, TP.B.H);
+	}
+
+	void Key_set_LFO_FM(unsigned __int8 CH, __int16 Detune)
+	{
+		union {
+			struct {
+				unsigned __int16 FNumber : 11;
+				unsigned __int16 Block : 3;
+				unsigned __int16 : 2;
+			} S;
+			unsigned __int8 B[2];
+		} U;
+
+		unsigned __int8 Octave = this->Key_FM[CH] / 12;
+		U.S.FNumber = this->FNumber[this->Key_FM[CH] % 12] + Detune;
+		if (Octave == 8) {
+			U.S.FNumber <<= 1;
+			Octave = 7;
+		}
+		U.S.Block = Octave;
+
+		this->make_data(0xA4 + CH, U.B[1]);
+		this->make_data(0xA0 + CH, U.B[0]);
 	}
 };
 #pragma pack(pop)
