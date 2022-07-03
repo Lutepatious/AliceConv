@@ -447,7 +447,7 @@ public:
 
 		}
 
-		// 出来上がった列の末尾に最大時間のマークをつける
+		// 出来上がった列の末尾に最大時間のマークをつける (実際には必要ない、このマークを検索して後ろを切り捨てる計画だった。)
 		struct EVENT end;
 		end.Count = counter;
 		end.Type = 0;
@@ -465,7 +465,6 @@ public:
 		}
 		this->time_end = MMLs.end_time;
 
-#if 0
 		// 重複イベントを削除し、ソートしなおす
 		size_t length_work = length;
 		for (size_t i = 0; i < length_work - 1; i++) {
@@ -478,7 +477,6 @@ public:
 		}
 
 		std::sort(this->events.begin(), this->events.end());
-#endif
 		this->events.resize(length);
 	}
 

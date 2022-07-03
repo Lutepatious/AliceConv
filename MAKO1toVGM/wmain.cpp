@@ -261,8 +261,9 @@ struct EVENT {
 
 class EVENTS {
 public:
-	std::vector<struct EVENT> events;
+	size_t time_end = SIZE_MAX;
 	size_t loop_start = SIZE_MAX;
+	std::vector<struct EVENT> events;
 	bool loop_enable = false;
 
 	void convert(struct MML_decoded& MMLs)
@@ -308,7 +309,7 @@ public:
 				case 0x90: // Note on
 					eve.Type = 8;
 					this->events.push_back(eve);
-					eve.Event = 0x98;
+					eve.Event = 0xD0;
 					eve.Param = e.Param;
 					eve.Type = 2;
 					this->events.push_back(eve);
@@ -336,6 +337,7 @@ public:
 			}
 			length++;
 		}
+		this->time_end = MMLs.end_time;
 
 		// d•¡ƒCƒxƒ“ƒg‚ðíœ‚µAƒ\[ƒg‚µ‚È‚¨‚·
 		size_t length_work = length;
@@ -435,13 +437,23 @@ public:
 				// MAKO2‚Í’·‚³‚ð9/10‚Æ‚µ‚Ä’²®‚µ‚½‚ªAMAKO1‚Å‚Í6/5‚Æ‚·‚é(“¬_“sŽs PC-9801”Å‚ÌMAKO1‚ÆMAKO2‚Ì”äŠr‚©‚çŠ„‚èo‚µ)
 				// VA‚ÍBIOS‚ª‰‰‘t‚·‚é‚Ì‚Å’²®‚µ‚È‚¢B
 
-				size_t c_VGMT;
+				size_t N_VGMT, D_VGMT;
 				if (this->M_arch == Machine::PC88VA) {
-					c_VGMT = (eve.Time * 60 * VGM_CLOCK * 2 / (48 * this->Tempo) + 1) >> 1;
+					constexpr size_t N = 60 * VGM_CLOCK * 2;
+					constexpr size_t D = 48;
+					constexpr size_t gcd_VGMT = std::gcd(N, D);
+					N_VGMT = eve.Time * N / gcd_VGMT;
+					D_VGMT = this->Tempo * D / gcd_VGMT;
 				}
 				else {
-					c_VGMT = (6ULL * eve.Time * 60 * VGM_CLOCK * 2 / (5ULL * 48 * this->Tempo) + 1) >> 1;
+					constexpr size_t N = 6 * 60 * VGM_CLOCK * 2;
+					constexpr size_t D = 5 * 48;
+					constexpr size_t gcd_VGMT = std::gcd(N, D);
+					N_VGMT = eve.Time * N / gcd_VGMT;
+					D_VGMT = this->Tempo * D / gcd_VGMT;
 				}
+
+				size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				Time_Prev_VGM += d_VGMT;
@@ -494,7 +506,7 @@ public:
 					this->Note_on(eve.CH - 3);
 				}
 				break;
-			case 0x98: // Key_set
+			case 0xD0: // Key_set
 				if (eve.CH < 3) {
 					this->Key_set_FM(eve.CH, eve.Param);
 				}
@@ -503,6 +515,34 @@ public:
 				}
 				break;
 			}
+		}
+
+		size_t remain = in.time_end - Time_Prev;
+		if (remain) {
+			size_t N_VGMT, D_VGMT;
+			if (this->M_arch == Machine::PC88VA) {
+				constexpr size_t N = 60 * VGM_CLOCK * 2;
+				constexpr size_t D = 48;
+				constexpr size_t gcd_VGMT = std::gcd(N, D);
+				N_VGMT = in.time_end * N / gcd_VGMT;
+				D_VGMT = this->Tempo * D / gcd_VGMT;
+			}
+			else {
+				constexpr size_t N = 6 * 60 * VGM_CLOCK * 2;
+				constexpr size_t D = 5 * 48;
+				constexpr size_t gcd_VGMT = std::gcd(N, D);
+				N_VGMT = in.time_end * N / gcd_VGMT;
+				D_VGMT = this->Tempo * D / gcd_VGMT;
+			}
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			Time_Prev = in.time_end;
+
+			this->make_wait(d_VGMT);
 		}
 		this->finish();
 	}
@@ -601,7 +641,13 @@ public:
 				// MAKO2‚Í’·‚³‚ð9/10‚Æ‚µ‚Ä’²®‚µ‚½‚ªAMAKO1‚Å‚Í6/5‚Æ‚·‚é(“¬_“sŽs PC-9801”Å‚ÌMAKO1‚ÆMAKO2‚Ì”äŠr‚©‚çŠ„‚èo‚µ)
 				// VA‚ÍBIOS‚ª‰‰‘t‚·‚é‚Ì‚Å’²®‚µ‚È‚¢B
 
-				size_t c_VGMT = (6ULL * eve.Time * 60 * VGM_CLOCK * 2 / (5ULL * 48 * this->Tempo) + 1) >> 1;
+				constexpr size_t N = 6 * 60 * VGM_CLOCK * 2;
+				constexpr size_t D = 5 * 48;
+				constexpr size_t gcd_VGMT = std::gcd(N, D);
+				size_t N_VGMT = eve.Time * N / gcd_VGMT;
+				size_t D_VGMT = this->Tempo * D / gcd_VGMT;
+
+				size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
 
 				Time_Prev_VGM += d_VGMT;
@@ -657,7 +703,7 @@ public:
 					this->Note_on_FM2(eve.CH - 3);
 				}
 				break;
-			case 0x98: // Key_set
+			case 0xD0: // Key_set
 				if (eve.CH < 3) {
 					this->Key_set_FM(eve.CH, eve.Param & 0x7F);
 				}
@@ -667,10 +713,26 @@ public:
 				break;
 			}
 		}
+		size_t remain = in.time_end - Time_Prev;
+		if (remain) {
+			constexpr size_t N = 6 * 60 * VGM_CLOCK * 2;
+			constexpr size_t D = 5 * 48;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = in.time_end * N / gcd_VGMT;
+			size_t D_VGMT = this->Tempo * D / gcd_VGMT;
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			Time_Prev = in.time_end;
+
+			this->make_wait(d_VGMT);
+		}
 		this->finish();
 	}
 };
-
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -741,11 +803,11 @@ int wmain(int argc, wchar_t** argv)
 		struct MML_decoded MMLs;
 		MMLs.decode(inbuf, pM1HDR);
 
-#if 0
-		for (auto &MM : MMLs.CH) {
-			std::cout << MM.time_total << std::endl;
+		if (debug) {
+			for (auto& MM : MMLs.CH) {
+				std::cout << MM.time_total << std::endl;
+			}
 		}
-#endif
 
 		MMLs.unroll_loop();
 

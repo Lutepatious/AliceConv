@@ -59,9 +59,11 @@ public:
 				// MAKO2‚Í’·‚³‚ð9/10‚Æ‚µ‚Ä’²®‚µ‚½‚ªAMAKO1‚Å‚Í6/5‚Æ‚·‚é(“¬_“sŽs PC-9801”Å‚ÌMAKO1‚ÆMAKO2‚Ì”äŠr‚©‚çŠ„‚èo‚µ)
 				// VA‚ÍBIOS‚ª‰‰‘t‚·‚é‚Ì‚Å’²®‚µ‚È‚¢B
 
-				constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
-				size_t N_VGMT = eve.Time * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
-				size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+				constexpr size_t N = 60 * VGM_CLOCK * 2 * 3;
+				constexpr size_t D = 48 * 10;
+				constexpr size_t gcd_VGMT = std::gcd(N, D);
+				size_t N_VGMT = eve.Time * N / gcd_VGMT;
+				size_t D_VGMT = this->Tempo * D / gcd_VGMT;
 
 				size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
@@ -137,9 +139,11 @@ public:
 		}
 		size_t remain = in.time_end - Time_Prev;
 		if (remain) {
-			constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
-			size_t N_VGMT = in.time_end * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
-			size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+			constexpr size_t N = 60 * VGM_CLOCK * 2 * 3;
+			constexpr size_t D = 48 * 10;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = in.time_end * N / gcd_VGMT;
+			size_t D_VGMT = this->Tempo * D / gcd_VGMT;
 
 			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
@@ -217,9 +221,11 @@ public:
 				// MAKO2‚Í’·‚³‚ð9/10‚Æ‚µ‚Ä’²®‚µ‚½‚ªAMAKO1‚Å‚Í6/5‚Æ‚·‚é(“¬_“sŽs PC-9801”Å‚ÌMAKO1‚ÆMAKO2‚Ì”äŠr‚©‚çŠ„‚èo‚µ)
 				// VA‚ÍBIOS‚ª‰‰‘t‚·‚é‚Ì‚Å’²®‚µ‚È‚¢B
 
-				constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
-				size_t N_VGMT = eve.Time * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
-				size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+				constexpr size_t N = 60 * VGM_CLOCK * 2 * 3;
+				constexpr size_t D = 48 * 10;
+				constexpr size_t gcd_VGMT = std::gcd(N, D);
+				size_t N_VGMT = eve.Time * N / gcd_VGMT;
+				size_t D_VGMT = this->Tempo * D / gcd_VGMT;
 
 				size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 				size_t d_VGMT = c_VGMT - Time_Prev_VGM;
@@ -319,11 +325,14 @@ public:
 				break;
 			}
 		}
+
 		size_t remain = in.time_end - Time_Prev;
 		if (remain) {
-			constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
-			size_t N_VGMT = in.time_end * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
-			size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+			constexpr size_t N = 60 * VGM_CLOCK * 2 * 3;
+			constexpr size_t D = 48 * 10;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = in.time_end * N / gcd_VGMT;
+			size_t D_VGMT = this->Tempo * D / gcd_VGMT;
 
 			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
 			size_t d_VGMT = c_VGMT - Time_Prev_VGM;

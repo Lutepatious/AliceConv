@@ -534,9 +534,8 @@ struct EVENT {
 };
 
 class EVENTS {
-	size_t time_end = SIZE_MAX;
-
 public:
+	size_t time_end = SIZE_MAX;
 	std::vector<struct EVENT> events;
 	size_t length = 0;
 	size_t loop_start = INIT_LEN;
