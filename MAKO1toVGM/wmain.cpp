@@ -400,9 +400,15 @@ public:
 	}
 
 	void make_init(void) {
-		this->make_data(0, 'W');
-		this->make_data(0, 'A');
-		this->make_data(0, 'O');
+		this->make_data(1, 0);
+		this->make_data(0, 0);
+		this->make_data(3, 0);
+		this->make_data(2, 0);
+		this->make_data(5, 0);
+		this->make_data(4, 0);
+		this->Volume(0, 0);
+		this->Volume(1, 0);
+		this->Volume(2, 0);
 		this->Mixer(0277);
 		this->make_data(0x27, 0x30);
 		this->make_data(0x90, 0);
