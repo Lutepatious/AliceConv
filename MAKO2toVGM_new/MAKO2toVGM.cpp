@@ -767,6 +767,10 @@ int wmain(int argc, wchar_t** argv)
 		}
 		m.unroll_loop();
 
+		if (!m.end_time) {
+			continue;
+		}
+
 		class EVENTS events;
 		events.convert(m);
 		if (debug) {
