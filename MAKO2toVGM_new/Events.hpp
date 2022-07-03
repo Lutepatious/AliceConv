@@ -47,7 +47,6 @@ struct EVENT {
 };
 
 class EVENTS {
-	size_t time_end = SIZE_MAX;
 	unsigned __int8 Volume_current = 0;
 	unsigned __int8 Volume_prev = 0;
 	__int16 Detune_current = 0;
@@ -229,6 +228,7 @@ class EVENTS {
 	}
 
 public:
+	size_t time_end = SIZE_MAX;
 	size_t time_loop_start = 0;
 	std::vector<struct EVENT> events;
 	bool loop_enable = false;
@@ -446,12 +446,13 @@ public:
 			}
 
 		}
+
 		// 出来上がった列の末尾に最大時間のマークをつける
 		struct EVENT end;
 		end.Count = counter;
-		end.Type = 9;
+		end.Type = 0;
 		end.Event = 0xFF;
-		end.Time = SIZE_MAX;
+		end.Time = MMLs.end_time;
 		this->events.push_back(end);
 
 
@@ -462,6 +463,7 @@ public:
 		while (this->events[length].Time < MMLs.end_time) {
 			length++;
 		}
+		this->time_end = MMLs.end_time;
 
 #if 0
 		// 重複イベントを削除し、ソートしなおす

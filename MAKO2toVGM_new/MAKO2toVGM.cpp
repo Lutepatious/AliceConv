@@ -135,6 +135,22 @@ public:
 				break;
 			}
 		}
+		size_t remain = in.time_end - Time_Prev;
+		if (remain) {
+			constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
+			size_t N_VGMT = in.time_end * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
+			size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			Time_Prev = in.time_end;
+
+			this->make_wait(d_VGMT);
+		}
+
 		this->finish();
 	}
 };
@@ -302,9 +318,23 @@ public:
 				}
 				break;
 			}
-
-
 		}
+		size_t remain = in.time_end - Time_Prev;
+		if (remain) {
+			constexpr size_t gcd_VGMT = std::gcd(60 * VGM_CLOCK * 2 * 3, 48 * 10);
+			size_t N_VGMT = in.time_end * 60 * VGM_CLOCK * 2 * 3 / gcd_VGMT;
+			size_t D_VGMT = 48 * this->Tempo * 10 / gcd_VGMT;
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			Time_Prev = in.time_end;
+
+			this->make_wait(d_VGMT);
+		}
+
 		this->finish();
 	}
 
