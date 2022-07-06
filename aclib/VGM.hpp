@@ -427,7 +427,7 @@ struct VGM_YM2608 : public virtual VGM_YM2203, public OPNA {
 
 	virtual void Timer_set_FM(void)
 	{
-		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2608 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2608 * 2) / (192LL * 2 * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
 	}
@@ -554,7 +554,7 @@ struct VGM_YM2612 : public VGM_YM2608 {
 
 	void Timer_set_FM(void)
 	{
-		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2612 * 2) / (192LL * this->Tempo) + 1) >> 1);
+		size_t NA = 1024 - ((((size_t)this->vgm_header.lngHzYM2612 * 2) / (192LL * 2 * this->Tempo) + 1) >> 1);
 		this->make_data(0x24, (NA >> 2) & 0xFF);
 		this->make_data(0x25, NA & 0x03);
 	}
@@ -891,7 +891,7 @@ struct VGM_YM2203_MAKO2 : public virtual VGM_YM2203, public OPN_MAKO2 {
 				unsigned __int16 : 2;
 			} S;
 			unsigned __int8 B[2];
-		} U;
+		} U{};
 
 		unsigned __int8 Octave = Key / 12;
 		U.S.FNumber = this->FNumber[Key % 12] + this->Detune_FM[CH];
@@ -910,8 +910,8 @@ struct VGM_YM2203_MAKO2 : public virtual VGM_YM2203, public OPN_MAKO2 {
 		union Tone_Period TP;
 		TP.A = this->TPeriod[this->Key[CH]] + (-Detune >> 2);
 
-		this->make_data(CH * 2, TP.B.L);
 		this->make_data(CH * 2 + 1, TP.B.H);
+		this->make_data(CH * 2, TP.B.L);
 	}
 
 	void Key_set_LFO_FM(unsigned __int8 CH, __int16 Detune)
@@ -923,7 +923,7 @@ struct VGM_YM2203_MAKO2 : public virtual VGM_YM2203, public OPN_MAKO2 {
 				unsigned __int16 : 2;
 			} S;
 			unsigned __int8 B[2];
-		} U;
+		} U{};
 
 		unsigned __int8 Octave = this->Key_FM[CH] / 12;
 		U.S.FNumber = this->FNumber[this->Key_FM[CH] % 12] + Detune;
@@ -998,7 +998,7 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608, public VGM_YM2203_MAKO2, public OPN
 				unsigned __int16 : 2;
 			} S;
 			unsigned __int8 B[2];
-		} U;
+		} U{};
 
 		unsigned __int8 Octave = Key / 12;
 		U.S.FNumber = this->FNumber[Key % 12] + this->Detune_FM2[CH];
@@ -1021,7 +1021,7 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608, public VGM_YM2203_MAKO2, public OPN
 				unsigned __int16 : 2;
 			} S;
 			unsigned __int8 B[2];
-		} U;
+		} U{};
 
 		unsigned __int8 Octave = this->Key_FM2[CH] / 12;
 		U.S.FNumber = this->FNumber[this->Key_FM2[CH] % 12] + Detune;

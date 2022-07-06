@@ -102,7 +102,6 @@ class VGMdata {
 	unsigned __int8 Ex_Vols_count = 0;
 	size_t vgm_dlen = 0;
 	size_t vgm_extra_len = 0;
-	size_t padsize = 11;
 	bool dt_mode;
 
 	unsigned __int16 FNumber[12];

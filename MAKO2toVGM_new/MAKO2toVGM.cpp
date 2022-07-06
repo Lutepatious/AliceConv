@@ -411,9 +411,6 @@ public:
 			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.CH >= 9) {
-				continue;
-			}
 			if (eve.Time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
@@ -444,6 +441,9 @@ public:
 				Time_Prev = eve.Time;
 
 				this->make_wait(d_VGMT);
+			}
+			if (eve.CH >= 9) {
+				continue;
 			}
 
 			if (in.loop_enable && (eve.Time == in.time_loop_start)) {

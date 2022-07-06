@@ -38,9 +38,8 @@ struct LFO_YM2608 {
 #pragma pack(pop)
 
 struct MML_Events {
-	size_t Time;
-	unsigned __int16 Len_on;
-	unsigned __int16 Len_off;
+	size_t Len_on;
+	size_t Len_off;
 	unsigned __int8 Type;
 	unsigned __int8 Key;
 	unsigned __int8 Param;
@@ -91,7 +90,7 @@ public:
 		size_t Loop_Block = *pBlock_offset_work & 0xFF;
 
 		unsigned __int16 Octave = 4, Octave_current = 4;
-		unsigned __int16 time_default = 64 * TIME_MUL;
+		size_t time_default = 64 * TIME_MUL;
 		__int16 gate_step = 7;
 		bool flag_gate = false;
 

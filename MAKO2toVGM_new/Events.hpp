@@ -302,7 +302,7 @@ public:
 					eve.Type = 2;
 					eve.Param = e.Param;
 					this->events.push_back(eve);
-					this->Detune_current = eve.Param;
+					this->Detune_current = (__int8)eve.Param;
 					break;
 
 				case 0xE1: // Velocity
