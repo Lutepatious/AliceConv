@@ -169,9 +169,7 @@ class EVENTS {
 			}
 		}
 
-		int V = ((int)this->Volume_current * (int)this->sLFOv_SSG.Volume) >> 14;
-
-		return  V;
+		return  (int)this->Volume_current * this->sLFOv_SSG.Volume >> 14;
 	}
 
 	__int16 sLFOd_exec(void)
@@ -246,12 +244,9 @@ public:
 		this->loop_enable = false;
 
 		for (size_t j = 0; j < MMLs.CH.size(); j++) {
+			Disable_LFO_init = false;
 			this->init();
 			size_t i = MMLs.CH.size() - 1 - j;
-			this->Volume_current = 0;
-			this->Detune_current = 0;
-			this->Volume_prev = 0;
-			this->Detune_prev = 0;
 
 			size_t time = 0;
 			for (auto& e : MMLs.CH[i].E) {
@@ -307,21 +302,21 @@ public:
 
 				case 0xE1: // Velocity
 					if (this->sLFOv_ready) {
-						this->Volume_current += e.Param;
+						this->Volume_current += (__int8) e.Param;
 						this->Volume_current &= 0x7F;
 					}
 					else {
 						eve.Type = 2;
-						eve.Param = e.Param;
+						eve.Param = (__int8) e.Param;
 						this->events.push_back(eve);
 					}
 					break;
 
 				case 0xF9: // Volume change
-					this->Volume_current = e.Param;
+					this->Volume_current = (__int8) e.Param;
 					if (!this->sLFOv_ready) {
 						eve.Type = 2;
-						eve.Param = e.Param;
+						eve.Param = (__int8) e.Param;
 						this->events.push_back(eve);
 					}
 					break;
@@ -386,6 +381,7 @@ public:
 						}
 						else {
 							this->sLFOv_setup_SSG();
+							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
 						}
 					}
 
@@ -412,7 +408,7 @@ public:
 							}
 							else {
 								Volume = this->sLFOv_exec_SSG();
-								//							wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
+//								wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
 							}
 							if (this->Volume_prev != Volume) {
 								this->Volume_prev = Volume;

@@ -123,7 +123,7 @@ public:
 				this->Volume_FM(eve.CH, Volume[eve.CH]);
 				break;
 			case 0xE1: // Velocity
-				Volume[eve.CH] += eve.Param;
+				Volume[eve.CH] += (__int8) eve.Param;
 				Volume[eve.CH] &= 0x7F;
 				this->Volume_FM(eve.CH, Volume[eve.CH]);
 				break;
@@ -296,7 +296,7 @@ public:
 				}
 				break;
 			case 0xE1: // Velocity
-				Volume[eve.CH] += eve.Param;
+				Volume[eve.CH] += (__int8) eve.Param;
 				Volume[eve.CH] &= 0x7F;
 				if (eve.CH < 3) {
 					this->Volume_FM(eve.CH, Volume[eve.CH]);
@@ -533,7 +533,7 @@ public:
 				}
 				break;
 			case 0xE1: // Velocity
-				Volume[eve.CH] += eve.Param;
+				Volume[eve.CH] += (__int8) eve.Param;
 				Volume[eve.CH] &= 0x7F;
 				if (eve.CH < 3) {
 					this->Volume_FM(eve.CH, Volume[eve.CH]);
