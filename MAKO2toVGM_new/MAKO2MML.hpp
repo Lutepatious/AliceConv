@@ -108,7 +108,7 @@ public:
 				struct MML_Events eve;
 
 				unsigned __int8 key = 0, note;
-				unsigned __int16 time, time_on, time_off;
+				int time = 0, time_on = 0, time_off = 0;
 				bool makenote = false;
 				bool len_full = false;
 
@@ -291,8 +291,8 @@ public:
 				}
 
 				if (makenote) {
-					if (time == TIME_MUL) {
-						time_on = TIME_MUL;
+					if (time <= TIME_MUL) {
+						time_on = time;
 					}
 					else if (!flag_gate) {
 						if (gate_step == 8) {
@@ -359,7 +359,18 @@ struct MML_decoded {
 	void print_delta(void)
 	{
 		for (size_t i = 0; i < this->CH.size(); i++) {
-			std::cout << this->CH[i].Loop_delta_time << std::endl;
+			std::wcout << this->CH[i].Loop_delta_time << std::endl;
+		}
+	}
+
+	void print_mml(void)
+	{
+		std::wcout << std::hex;
+		for (auto &i: this->CH) {
+			for (auto& j : i.E) {
+				std::wcout << j.Type << L" ";
+			}
+			std::wcout << std::endl;
 		}
 	}
 

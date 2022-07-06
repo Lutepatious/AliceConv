@@ -765,6 +765,10 @@ int wmain(int argc, wchar_t** argv)
 		if (debug) {
 			m.print_delta();
 		}
+
+		if (debug) {
+			m.print_mml();
+		}
 		m.unroll_loop();
 
 		if (!m.end_time) {
