@@ -240,7 +240,6 @@ public:
 		bool Disable_note_off = false;
 		bool Disable_LFO_init = false;
 
-
 		this->loop_enable = false;
 
 		for (size_t j = 0; j < MMLs.CH.size(); j++) {
@@ -381,7 +380,7 @@ public:
 						}
 						else {
 							this->sLFOv_setup_SSG();
-							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
+//							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
 						}
 					}
 
