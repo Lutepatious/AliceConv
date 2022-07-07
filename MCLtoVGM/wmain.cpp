@@ -83,15 +83,11 @@ public:
 	}
 
 	void make_init(void) {
-		union Tone_Period tp;
-		tp.A = 0x9C9;
-		this->Tone_set(0, tp);
+		this->Tone_set(0, 0);
+		this->Tone_set(1, 0);
+		this->Tone_set(2, 0);
 		this->Volume(0, 0);
-		tp.A = 0x9C8;
-		this->Tone_set(1, tp);
 		this->Volume(1, 0);
-		tp.A = 0x9CA;
-		this->Tone_set(2, tp);
 		this->Volume(2, 0);
 		this->Mixer(0277);
 
@@ -118,7 +114,7 @@ public:
 			}
 
 			this->Volume(i.CH, i.volume);
-			this->Tone_set(i.CH, i.TP);
+			this->Tone_set(i.CH, i.TP.A);
 		}
 		this->finish();
 	}

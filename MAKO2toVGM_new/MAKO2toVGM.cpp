@@ -37,7 +37,6 @@ public:
 	{
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
-		unsigned __int8 Volume[8] = { 0 };
 
 		for (auto& eve : in.events) {
 			if (eve.Time == SIZE_MAX) {
@@ -119,13 +118,7 @@ public:
 				this->Note_off_FM(eve.CH);
 				break;
 			case 0xF9: // Volume change @V{0-127}
-				Volume[eve.CH] = eve.Param;
-				this->Volume_FM(eve.CH, Volume[eve.CH]);
-				break;
-			case 0xE1: // Velocity
-				Volume[eve.CH] += (__int8) eve.Param;
-				Volume[eve.CH] &= 0x7F;
-				this->Volume_FM(eve.CH, Volume[eve.CH]);
+				this->Volume_FM(eve.CH, eve.Volume);
 				break;
 			case 0xD0:
 				this->Key_set_FM(eve.CH, eve.Param);
@@ -200,7 +193,6 @@ public:
 
 	void convert(class EVENTS& in)
 	{
-		unsigned __int8 Volume[6] = { 0 };
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
 
@@ -287,22 +279,11 @@ public:
 				}
 				break;
 			case 0xF9: // Volume change @V{0-127}
-				Volume[eve.CH] = eve.Param;
 				if (eve.CH < 3) {
-					this->Volume_FM(eve.CH, Volume[eve.CH]);
+					this->Volume_FM(eve.CH, eve.Volume);
 				}
 				else {
-					this->Volume(eve.CH - 3, Volume[eve.CH]);
-				}
-				break;
-			case 0xE1: // Velocity
-				Volume[eve.CH] += (__int8) eve.Param;
-				Volume[eve.CH] &= 0x7F;
-				if (eve.CH < 3) {
-					this->Volume_FM(eve.CH, Volume[eve.CH]);
-				}
-				else {
-					this->Volume(eve.CH - 3, Volume[eve.CH]);
+					this->Volume(eve.CH - 3, eve.Volume);
 				}
 				break;
 			case 0x90: // Note on
@@ -403,7 +384,6 @@ public:
 
 	void convert(class EVENTS& in)
 	{
-		unsigned __int8 Volume[9] = { 0 };
 		size_t Time_Prev = 0;
 		size_t Time_Prev_VGM = 0;
 
@@ -521,28 +501,14 @@ public:
 				}
 				break;
 			case 0xF9: // Volume change @V{0-127}
-				Volume[eve.CH] = eve.Param;
 				if (eve.CH < 3) {
-					this->Volume_FM(eve.CH, Volume[eve.CH]);
+					this->Volume_FM(eve.CH, eve.Volume);
 				}
 				else if (eve.CH > 5) {
-					this->Volume_FM2(eve.CH - 6, Volume[eve.CH]);
+					this->Volume_FM2(eve.CH - 6, eve.Volume);
 				}
 				else {
-					this->Volume(eve.CH - 3, Volume[eve.CH]);
-				}
-				break;
-			case 0xE1: // Velocity
-				Volume[eve.CH] += (__int8) eve.Param;
-				Volume[eve.CH] &= 0x7F;
-				if (eve.CH < 3) {
-					this->Volume_FM(eve.CH, Volume[eve.CH]);
-				}
-				else if (eve.CH > 5) {
-					this->Volume_FM2(eve.CH - 6, Volume[eve.CH]);
-				}
-				else {
-					this->Volume(eve.CH - 3, Volume[eve.CH]);
+					this->Volume(eve.CH - 3, eve.Volume);
 				}
 				break;
 			case 0x90: // Note on

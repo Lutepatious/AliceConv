@@ -166,10 +166,13 @@ struct VGM_YM2149 : public VGM {
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
 	}
 
-	virtual void Tone_set(const unsigned __int8& CH, const union Tone_Period& TP)
+	virtual void Tone_set(const unsigned __int8& CH, const unsigned short Tone)
 	{
-		this->make_data(CH * 2, TP.B.L);
+		union Tone_Period TP;
+		TP.A = Tone;
+
 		this->make_data(CH * 2 + 1, TP.B.H);
+		this->make_data(CH * 2, TP.B.L);
 	}
 	virtual void Key_set(const unsigned __int8& CH, unsigned __int8 Key)
 	{

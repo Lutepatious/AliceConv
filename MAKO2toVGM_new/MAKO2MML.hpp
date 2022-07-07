@@ -62,6 +62,7 @@ public:
 	size_t Loop_start_pos = 0;
 	size_t Loop_start_time = 0;
 	size_t Loop_delta_time = 0;
+	size_t version = 0;
 
 	void mute_on(void)
 	{
@@ -219,8 +220,17 @@ public:
 					}
 					else { // 0 - 127
 						time_default = *src++ * TIME_MUL;
-						if (time_default == 11 * TIME_MUL || time_default == 21 * TIME_MUL || time_default == 43 * TIME_MUL) {
+						if (this->version == 1 && (time_default == 11 * TIME_MUL || time_default == 21 * TIME_MUL || time_default == 43 * TIME_MUL)) {
 							std::wcout << L"Triplets? " << time_default << std::endl;
+							if (time_default == 11 * TIME_MUL) {
+								time_default = 32;
+							}
+							else if (time_default == 21 * TIME_MUL) {
+								time_default = 64;
+							}
+							else if (time_default == 43 * TIME_MUL) {
+								time_default = 128;
+							}
 						}
 					}
 					break;
@@ -352,6 +362,7 @@ struct MML_decoded {
 	void decode(std::vector<__int8>& in, struct mako2_header* m2h)
 	{
 		for (size_t i = 0; i < this->CH.size(); i++) {
+			this->CH[i].version = m2h->ver;
 			this->CH[i].decode(in, m2h->CH_addr[i]);
 		}
 	}

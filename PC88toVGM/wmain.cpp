@@ -637,9 +637,12 @@ public:
 	}
 
 	void make_init(void) {
-		this->make_data(0, 'W');
-		this->make_data(0, 'A');
-		this->make_data(0, 'O');
+		this->Tone_set(0, 0);
+		this->Tone_set(1, 0);
+		this->Tone_set(2, 0);
+		this->Volume(0, 0);
+		this->Volume(1, 0);
+		this->Volume(2, 0);
 		this->Mixer(0277);
 		this->make_data(0x27, 0x30);
 		this->make_data(0x90, 0);

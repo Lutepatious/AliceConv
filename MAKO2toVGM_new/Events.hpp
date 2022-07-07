@@ -14,6 +14,7 @@ struct EVENT {
 	unsigned __int8 Type; // イベント種をランク付けしソートするためのもの 消音=0, テンポ=1, 音源初期化=2, タイ=8, 発音=9程度で
 	unsigned __int8 Event; // イベント種本体
 	unsigned __int8 Param; // イベントのパラメータ
+	__int8 Volume;
 	struct LFO_YM2608 h2608;
 	__int16 LFO_Detune; // イベントのパラメータ、LFO用のこのプログラムの内部用
 
@@ -250,7 +251,7 @@ public:
 			size_t time = 0;
 			for (auto& e : MMLs.CH[i].E) {
 				if ((MMLs.latest_CH == i) && (&e == &MMLs.CH[i].E.at(MMLs.CH[i].Loop_start_pos)) && (MMLs.loop_start_time != SIZE_MAX)) {
-//					std::wcout << i << ":" << time << std::endl;
+					//					std::wcout << i << ":" << time << std::endl;
 					this->time_loop_start = time;
 					this->loop_enable = true;
 				}
@@ -300,22 +301,22 @@ public:
 					break;
 
 				case 0xE1: // Velocity
-					if (this->sLFOv_ready) {
-						this->Volume_current += (__int8) e.Param;
-						this->Volume_current &= 0x7F;
-					}
-					else {
+					this->Volume_current += (__int8)e.Param;
+					this->Volume_current &= 0x7F;
+					if (!this->sLFOv_ready) {
+						eve.Event = 0xF9;
 						eve.Type = 2;
-						eve.Param = (__int8) e.Param;
+						eve.Volume = this->Volume_current;
 						this->events.push_back(eve);
 					}
 					break;
 
 				case 0xF9: // Volume change
-					this->Volume_current = (__int8) e.Param;
+					this->Volume_current = (__int8)e.Param;
+					this->Volume_current &= 0x7F;
 					if (!this->sLFOv_ready) {
 						eve.Type = 2;
-						eve.Param = (__int8) e.Param;
+						eve.Volume = this->Volume_current;
 						this->events.push_back(eve);
 					}
 					break;
@@ -380,12 +381,12 @@ public:
 						}
 						else {
 							this->sLFOv_setup_SSG();
-//							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
+							//							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
 						}
 					}
 
 					for (size_t k = 0; k < len_On + len_Off; k += TIME_MUL) {
-//						std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
+						//						std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
 
 						if (this->sLFOd_ready) {
 							__int16 Detune = this->Detune_current + this->sLFOd_exec();
@@ -407,7 +408,7 @@ public:
 							}
 							else {
 								Volume = this->sLFOv_exec_SSG();
-//								wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
+								//								wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
 							}
 							if (this->Volume_prev != Volume) {
 								this->Volume_prev = Volume;
