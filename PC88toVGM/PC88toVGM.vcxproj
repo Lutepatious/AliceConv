@@ -155,7 +155,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="wmain.cpp" />
+    <ClCompile Include="PC88toVGM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aclib\aclib.vcxproj">

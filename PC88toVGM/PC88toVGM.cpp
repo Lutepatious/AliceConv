@@ -177,7 +177,7 @@ public:
 					msrc++;
 				}
 				break;
-			case 's': // EOMML‚Ì2•¶š–½—ß‚Ímb‚Ì‚İ? ”O‚Ì‚½‚ßmf‚à‘g‚İ‚Ş
+			case 's':
 				if (isdigit(*msrc)) {
 					unsigned __int8* tpos;
 					unsigned EType = strtoul((const char*)msrc, (char**)&tpos, 10);

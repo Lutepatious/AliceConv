@@ -161,7 +161,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="wmain.cpp" />
+    <ClCompile Include="MAKO1toVGM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aclib\aclib.vcxproj">

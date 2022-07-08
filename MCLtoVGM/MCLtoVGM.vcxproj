@@ -163,7 +163,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="wmain.cpp" />
+    <ClCompile Include="MCLtoVGM.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\aclib\aclib.vcxproj">
