@@ -84,6 +84,10 @@ public:
 				in.loop_enable = false;
 			}
 
+			if (eve.CH >= 8) {
+				continue;
+			}
+
 			switch (eve.Event) {
 			case 0xF4: // Tempo ’ˆÓ!! ‚±‚±‚ª•Ï‚í‚é‚Æ—ÝÏŽžŠÔ‚à•Ï‚í‚é!! •K‚¸ÄŒvŽZ‚¹‚æ!!
 				Time_Prev_VGM = ((Time_Prev_VGM * this->Tempo * 2) / eve.Param + 1) >> 1;
@@ -200,9 +204,7 @@ public:
 			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			if (eve.CH >= 6) {
-				continue;
-			}
+
 			if (eve.Time - Time_Prev) {
 				// Tqn = 60 / Tempo
 				// TPQN = 48
@@ -243,6 +245,10 @@ public:
 				//				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
 
 				in.loop_enable = false;
+			}
+
+			if (eve.CH >= 6) {
+				continue;
 			}
 
 			switch (eve.Event) {
@@ -422,9 +428,6 @@ public:
 
 				this->make_wait(d_VGMT);
 			}
-			if (eve.CH >= 9) {
-				continue;
-			}
 
 			if (in.loop_enable && (eve.Time == in.time_loop_start)) {
 				//				std::wcout << eve.Time << L":" << in.time_loop_start << std::endl;
@@ -434,6 +437,10 @@ public:
 				//				std::wcout << this->time_loop_VGM_abs << L":" << this->vgm_loop_pos << std::endl;
 
 				in.loop_enable = false;
+			}
+
+			if (eve.CH >= 9) {
+				continue;
 			}
 
 			switch (eve.Event) {
