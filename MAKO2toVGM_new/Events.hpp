@@ -381,12 +381,12 @@ public:
 						}
 						else {
 							this->sLFOv_setup_SSG();
-							//							wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume, this->sLFOv_SSG.Param.Volume);
+							// wprintf_s(L"Volume SSG %01zd: %8zu: %04X\n", i, time, this->sLFOv_SSG.Volume);
 						}
 					}
 
-					for (size_t k = 0; k < len_On + len_Off; k += TIME_MUL) {
-						//						std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
+					for (size_t k = 0; k < len_On; k += TIME_MUL) {
+						// std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
 
 						if (this->sLFOd_ready) {
 							__int16 Detune = this->Detune_current + this->sLFOd_exec();
@@ -402,19 +402,19 @@ public:
 						}
 
 						if (this->sLFOv_ready) {
-							__int8 Volume;
+							__int8 lVolume;
 							if (i < 3 || i > 5) {
-								Volume = this->sLFOv_exec_FM();
+								lVolume = this->sLFOv_exec_FM();
 							}
 							else {
-								Volume = this->sLFOv_exec_SSG();
-								//								wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, this->sLFOv_SSG.Volume);
+								lVolume = this->sLFOv_exec_SSG();
+								// wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, Volume);
 							}
-							if (this->Volume_prev != Volume) {
-								this->Volume_prev = Volume;
+							if (this->Volume_prev != lVolume) {
+								this->Volume_prev = lVolume;
 								eve.Count = counter++;
 								eve.Event = 0xF9;
-								eve.Param = Volume;
+								eve.Volume = lVolume;
 								eve.Time = time + k;
 								eve.Type = 2;
 								this->events.push_back(eve);

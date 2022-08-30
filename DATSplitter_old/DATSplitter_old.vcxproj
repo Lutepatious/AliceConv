@@ -78,13 +78,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>wsetargv.obj;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -93,11 +93,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>wsetargv.obj;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -106,11 +106,11 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>wsetargv.obj;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,13 +121,13 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalDependencies>wsetargv.obj;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

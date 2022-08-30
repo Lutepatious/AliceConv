@@ -89,14 +89,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -107,7 +107,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
@@ -116,7 +116,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -125,14 +125,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,7 +143,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
@@ -152,7 +152,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

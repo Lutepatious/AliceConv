@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;"D:\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <IntelJCCErratum>true</IntelJCCErratum>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -115,7 +115,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;D:\repos\bdwgc\out\install\x86-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <IntelJCCErratum>true</IntelJCCErratum>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -135,7 +135,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;"D:\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <IntelJCCErratum>true</IntelJCCErratum>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -157,7 +157,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;D:\repos\bdwgc\out\install\x86-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <IntelJCCErratum>true</IntelJCCErratum>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>

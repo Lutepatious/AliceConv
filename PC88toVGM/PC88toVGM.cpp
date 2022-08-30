@@ -78,7 +78,6 @@ public:
 
 };
 
-
 struct MML_Events {
 	size_t Time;
 	unsigned __int8 Type;

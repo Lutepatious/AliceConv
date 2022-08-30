@@ -101,7 +101,7 @@
       <StringPooling>
       </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x64-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -109,7 +109,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"D:\repos\bdwgc\out\install\x64-Release\lib"</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -126,13 +126,13 @@
       <StringPooling>
       </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"D:\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -149,13 +149,13 @@
       <StringPooling>
       </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x64-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"D:\repos\bdwgc\out\install\x64-Release\lib"</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -174,7 +174,7 @@
       <StringPooling>
       </StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
-      <AdditionalIncludeDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>"D:\repos\bdwgc\out\install\x86-Release\include"</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -182,7 +182,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"C:\Users\kitoh\source\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>"D:\repos\bdwgc\out\install\x86-Release\lib"</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
