@@ -1,5 +1,6 @@
 #pragma pack(push)
 #pragma pack(1)
+
 struct AC_FM_PARAMETER {
 	unsigned __int8 Connect : 3; // CON Connection
 	unsigned __int8 FB : 3; // FL Self-FeedBack
@@ -678,5 +679,15 @@ static const struct MAKO2_FM_PARAMETER_BYTE SSG_emulation = {
 	 {0x06, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
 	 {0x04, 0x28, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00},
 	 {0x02, 0x00, 0x1F, 0x00, 0x00, 0x0F, 0x00, 0x00, 0x00}} };
+
+constexpr size_t WAIT_ADDRESS_SSG = 17;
+constexpr size_t WAIT_FM = 83;
+constexpr size_t WAIT_FM_2608 = 47;
+constexpr size_t WAIT_RYTHM_10 = 576;
+constexpr size_t WAIT_OPL3 = 32;
+constexpr size_t WAIT_OPL_ADDRESS = 12;
+constexpr size_t WAIT_OPL_DATA = 84;
+constexpr size_t WAIT_OPL4_FM = 56;
+constexpr size_t WAIT_OPL4_PCM = 88;
 
 #pragma pack(pop)

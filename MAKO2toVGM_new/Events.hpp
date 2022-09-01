@@ -385,7 +385,7 @@ public:
 						}
 					}
 
-					for (size_t k = 0; k < len_On; k += TIME_MUL) {
+					for (size_t k = 0; k < len_On + len_Off; k += TIME_MUL) {
 						// std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
 
 						if (this->sLFOd_ready) {
