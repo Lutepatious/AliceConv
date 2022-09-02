@@ -76,15 +76,24 @@ struct VGM {
 	size_t time_prev_VGM_abs = 0;
 	size_t time_loop_VGM_abs = 0;
 	size_t vgm_loop_pos = 0;
+	size_t wait_clocks = 0;
+	size_t last_wait_clocks = 0;
+
 	std::vector<unsigned __int8> vgm_body;
 	VGMHEADER vgm_header;
 	unsigned __int8 command = 0;
+
+	virtual void count_wait(unsigned __int8 address)
+	{
+		last_wait_clocks = 0;
+	}
 
 	void make_data(unsigned __int8 address, unsigned __int8 data)
 	{
 		vgm_body.push_back(command);
 		vgm_body.push_back(address);
 		vgm_body.push_back(data);
+		this->count_wait(address);
 	}
 
 	void make_wait(size_t wait)
@@ -155,6 +164,12 @@ union Tone_Period { // Tone Period. 0 means note-off
 	} B;
 };
 
+enum {
+	ADDRESS_SSG = 0, FM, FM_OPNA, RYTHM_10, OPL_ADDRESS, OPL_DATA, OPL4_FM, OPL4_PCM
+} CHIP_WAIT;
+
+size_t chip_wait[] = { 17, 83, 47, 576, 12, 84, 32, 56, 88 };
+
 struct VGM_YM2149 : public VGM {
 	unsigned __int8 SSG_out = 0277;
 	unsigned __int16 TPeriod[97] = { 0 };
@@ -164,6 +179,12 @@ struct VGM_YM2149 : public VGM {
 		this->command = 0xA0;
 		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
+	}
+
+	virtual void count_wait(unsigned __int8 address)
+	{
+		wait_clocks += chip_wait[ADDRESS_SSG];
+		last_wait_clocks = chip_wait[ADDRESS_SSG];
 	}
 
 	virtual void Tone_set(const unsigned __int8& CH, const unsigned short Tone)
@@ -266,6 +287,16 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->vgm_header.bytAYType = 0x10;
 		this->vgm_header.bytAYFlagYM2203 = 0x1;
 		this->vgm_header.bytAYFlag = 0;
+	}
+
+	virtual void count_wait(unsigned __int8 address)
+	{
+		last_wait_clocks = chip_wait[ADDRESS_SSG];
+		wait_clocks += last_wait_clocks;
+		if (address >= 0x20) {
+			last_wait_clocks = chip_wait[FM];
+			wait_clocks += last_wait_clocks;
+		}
 	}
 
 	virtual void Timer_set_FM(void)
@@ -419,6 +450,24 @@ struct VGM_YM2608 : public virtual VGM_YM2203, public OPNA {
 		this->LR_AMS_PMS[3].B = 0300;
 		this->LR_AMS_PMS[4].B = 0300;
 		this->LR_AMS_PMS[5].B = 0300;
+	}
+
+	virtual void count_wait(unsigned __int8 address)
+	{
+		last_wait_clocks = chip_wait[ADDRESS_SSG];
+		wait_clocks += last_wait_clocks;
+		if (address > 0x10 || address < 0xA0) {
+			last_wait_clocks = chip_wait[FM];
+			wait_clocks += last_wait_clocks;
+		}
+		else if (address >= 0xA0) {
+			last_wait_clocks = chip_wait[FM_OPNA];
+			wait_clocks += last_wait_clocks;
+		}
+		else if (address == 0x10) {
+			last_wait_clocks = chip_wait[RYTHM_10];
+			wait_clocks += last_wait_clocks;
+		}
 	}
 
 	void make_data2(unsigned __int8 address, unsigned __int8 data)
@@ -612,6 +661,16 @@ struct VGM_YM2151 : public VGM, public OPM {
 		for (size_t i = 0; i < 8; i++) {
 			this->L[i] = true;
 			this->R[i] = true;
+		}
+	}
+
+	void count_wait(unsigned __int8 address)
+	{
+		last_wait_clocks = chip_wait[ADDRESS_SSG];
+		wait_clocks += last_wait_clocks;
+		if (address >= 0x20) {
+			last_wait_clocks = chip_wait[FM];
+			wait_clocks += last_wait_clocks;
 		}
 	}
 
@@ -818,7 +877,6 @@ struct OPN_MAKO2 {
 	unsigned __int8 Key[3];
 	unsigned __int8 Key_FM[3];
 	bool old_SSG_detune;
-
 
 	void init(union MAKO2_Tone* pM2Tone, unsigned ver, bool Detune_old)
 	{

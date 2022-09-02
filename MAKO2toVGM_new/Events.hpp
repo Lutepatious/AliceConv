@@ -145,6 +145,8 @@ class EVENTS {
 	{
 		// sLFOv_SSG.Volumeの最大値はは0x4000つまり2^14=16384
 		// これをVolume_currentに乗じて2^14で割っている。
+		// ADSR型なのだが、オリジナルでは不完全な導入であるため、
+		// 多少の変更はしたがあまり効果はない。
 
 		if (this->sLFOv_SSG.Mode == 1) { // 音量増
 			this->sLFOv_SSG.Volume += this->sLFOv_SSG.Delta;
@@ -385,10 +387,14 @@ public:
 						}
 					}
 
-					for (size_t k = 0; k < len_On + len_Off; k += TIME_MUL) {
-						// std::wcout << std::dec << len_On << L"," << len_Off << std::endl;
+					if (this->sLFOd_ready) {
+						size_t time_LFO = len_On;
+						if (Disable_note_off) {
+							time_LFO += len_Off;
+						}
 
-						if (this->sLFOd_ready) {
+						for (size_t k = 0; k < time_LFO; k += TIME_MUL) {
+
 							__int16 Detune = this->Detune_current + this->sLFOd_exec();
 							if (this->Detune_prev != Detune) {
 								this->Detune_prev = Detune;
@@ -400,15 +406,21 @@ public:
 								this->events.push_back(eve);
 							}
 						}
+					}
 
-						if (this->sLFOv_ready) {
+					if (this->sLFOv_ready) {
+						size_t time_LFO = len_On;
+						if (Disable_note_off) {
+							time_LFO += len_Off;
+						}
+
+						for (size_t k = 0; k < time_LFO; k += TIME_MUL) {
 							__int8 lVolume;
 							if (i < 3 || i > 5) {
 								lVolume = this->sLFOv_exec_FM();
 							}
 							else {
 								lVolume = this->sLFOv_exec_SSG();
-								// wprintf_s(L"Volume %01zd: %8zu+%8zu: %04X\n", i, time, k, Volume);
 							}
 							if (this->Volume_prev != lVolume) {
 								this->Volume_prev = lVolume;
@@ -444,9 +456,7 @@ public:
 					std::wcout << L"How to reach? :" << e.Type << L"," << e.Param << std::endl;
 					break;
 				}
-
 			}
-
 		}
 
 		// 出来上がった列の末尾に最大時間のマークをつける (実際には必要ない、このマークを検索して後ろを切り捨てる計画だった。)
