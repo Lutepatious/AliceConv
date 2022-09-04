@@ -840,7 +840,7 @@ public:
 			}
 
 			if (in.loop_enable && eve.Time == in.loop_start) {
-				this->time_loop_VGM_abs = time_prev_VGM_abs;
+				this->time_loop_VGM_abs = this->time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
 			}
@@ -983,7 +983,7 @@ public:
 			}
 
 			if (in.loop_enable && eve.Time == in.loop_start) {
-				this->time_loop_VGM_abs = time_prev_VGM_abs;
+				this->time_loop_VGM_abs = this->time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
 				in.loop_enable = false;
 			}

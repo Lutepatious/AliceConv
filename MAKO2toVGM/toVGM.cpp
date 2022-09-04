@@ -985,7 +985,7 @@ void VGMdata::convert(class EVENTS& in)
 		}
 
 		if (in.loop_enable && (src - in.event) == in.loop_start) {
-			this->Time_Loop_VGM_abs = Time_Prev_VGM_abs;
+			this->Time_Loop_VGM_abs = this->Time_Prev_VGM_abs;
 			this->vgm_loop_pos = this->vgm_pos;
 			this->loop_start = src;
 			in.loop_enable = false;
