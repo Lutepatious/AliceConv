@@ -51,8 +51,6 @@ struct MML_Events {
 	} uLFO;
 };
 
-constexpr size_t TIME_MUL = 3ULL;
-
 class MML_decoded_CH {
 	bool mute = false;
 

@@ -4,7 +4,6 @@
 #include <algorithm>
 
 #include "VGM.hpp"
-#include "tools.h"
 
 #pragma pack(push)
 #pragma pack(1)

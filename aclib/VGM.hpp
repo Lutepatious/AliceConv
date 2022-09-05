@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <numeric>
 
 #pragma pack(push)
 #pragma pack(1)
@@ -93,7 +94,6 @@ struct VGM {
 		vgm_body.push_back(command);
 		vgm_body.push_back(address);
 		vgm_body.push_back(data);
-		this->count_wait(address);
 	}
 
 	void make_wait(size_t wait)
@@ -179,12 +179,6 @@ struct VGM_YM2149 : public VGM {
 		this->command = 0xA0;
 		this->vgm_header.bytAYType = 0x10; // AY2149 for double clock mode.
 		this->vgm_header.bytAYFlag = 0x11; // 0x10 means double clock.
-	}
-
-	virtual void count_wait(unsigned __int8 address)
-	{
-		wait_clocks += chip_wait[ADDRESS_SSG];
-		last_wait_clocks = chip_wait[ADDRESS_SSG];
 	}
 
 	virtual void Tone_set(const unsigned __int8& CH, const unsigned short Tone)
@@ -277,9 +271,11 @@ struct OPN {
 };
 
 struct VGM_YM2203 : public VGM_YM2149, public OPN {
-	OPNSSGVOL ex_vgm;
 	size_t Tempo = 120;
+	size_t Time_Prev = 0;
+	size_t Time_Prev_VGM = 0;
 	unsigned __int16 FNumber[12] = { 0 };
+	OPNSSGVOL ex_vgm;
 
 	VGM_YM2203()
 	{
@@ -289,13 +285,75 @@ struct VGM_YM2203 : public VGM_YM2149, public OPN {
 		this->vgm_header.bytAYFlag = 0;
 	}
 
-	virtual void count_wait(unsigned __int8 address)
+	void Calc_VGM_Time(size_t event_Time)
 	{
-		last_wait_clocks = chip_wait[ADDRESS_SSG];
-		wait_clocks += last_wait_clocks;
-		if (address >= 0x20) {
-			last_wait_clocks = chip_wait[FM];
-			wait_clocks += last_wait_clocks;
+		if (event_Time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+		// TPQN = 48
+		// Ttick = Tqn / 48
+		// c_VGMT = Ttick * src_time * VGM_CLOCK 
+		//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+		//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+		//
+		// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+		// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+		// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+		// VAはBIOSが演奏するので調整しない。
+
+		// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 110250)
+			constexpr size_t N = 60 * VGM_CLOCK * 2;
+			constexpr size_t D = 48;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = event_Time * (N / gcd_VGMT);
+			size_t D_VGMT = this->Tempo * (D / gcd_VGMT);
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			this->Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			this->Time_Prev = event_Time;
+
+			this->make_wait(d_VGMT);
+		}
+	}
+
+	void Calc_VGM_Time_120(size_t event_Time)
+	{
+		if (event_Time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+		// TPQN = 48
+		// Ttick = Tqn / 48
+		// c_VGMT = Ttick * src_time * VGM_CLOCK 
+		//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+		//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+		//
+		// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+		// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+		// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+		// VAはBIOSが演奏するので調整しない。
+
+		// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 132300)
+			constexpr size_t N = 6 * 60 * VGM_CLOCK * 2;
+			constexpr size_t D = 5 * 48;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = event_Time * (N / gcd_VGMT);
+			size_t D_VGMT = this->Tempo * (D / gcd_VGMT);
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			this->Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			this->Time_Prev = event_Time;
+
+			this->make_wait(d_VGMT);
 		}
 	}
 
@@ -450,24 +508,6 @@ struct VGM_YM2608 : public virtual VGM_YM2203, public OPNA {
 		this->LR_AMS_PMS[3].B = 0300;
 		this->LR_AMS_PMS[4].B = 0300;
 		this->LR_AMS_PMS[5].B = 0300;
-	}
-
-	virtual void count_wait(unsigned __int8 address)
-	{
-		last_wait_clocks = chip_wait[ADDRESS_SSG];
-		wait_clocks += last_wait_clocks;
-		if (address > 0x10 || address < 0xA0) {
-			last_wait_clocks = chip_wait[FM];
-			wait_clocks += last_wait_clocks;
-		}
-		else if (address >= 0xA0) {
-			last_wait_clocks = chip_wait[FM_OPNA];
-			wait_clocks += last_wait_clocks;
-		}
-		else if (address == 0x10) {
-			last_wait_clocks = chip_wait[RYTHM_10];
-			wait_clocks += last_wait_clocks;
-		}
 	}
 
 	void make_data2(unsigned __int8 address, unsigned __int8 data)
@@ -654,6 +694,8 @@ struct OPM {
 
 struct VGM_YM2151 : public VGM, public OPM {
 	size_t Tempo = 120;
+	size_t Time_Prev = 0;
+	size_t Time_Prev_VGM = 0;
 
 	VGM_YM2151()
 	{
@@ -664,13 +706,39 @@ struct VGM_YM2151 : public VGM, public OPM {
 		}
 	}
 
-	void count_wait(unsigned __int8 address)
+	void Calc_VGM_Time(size_t event_Time)
 	{
-		last_wait_clocks = chip_wait[ADDRESS_SSG];
-		wait_clocks += last_wait_clocks;
-		if (address >= 0x20) {
-			last_wait_clocks = chip_wait[FM];
-			wait_clocks += last_wait_clocks;
+		if (event_Time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+		// TPQN = 48
+		// Ttick = Tqn / 48
+		// c_VGMT = Ttick * src_time * VGM_CLOCK 
+		//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+		//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+		//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+		//
+		// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+		// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+		// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+		// VAはBIOSが演奏するので調整しない。
+
+		// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 132300)
+			constexpr size_t N = 60 * VGM_CLOCK * 2;
+			constexpr size_t D = 48;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+			size_t N_VGMT = event_Time * (N / gcd_VGMT);
+			size_t D_VGMT = this->Tempo * (D / gcd_VGMT);
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - Time_Prev_VGM;
+
+			this->Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			this->Time_Prev = event_Time;
+
+			this->make_wait(d_VGMT);
 		}
 	}
 
@@ -799,6 +867,8 @@ struct VGM_YM2151 : public VGM, public OPM {
 	}
 };
 
+#ifdef MAKO2
+
 struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
 	union MAKO2_Tone* M2Tones;
 	union MAKO2_Tone M2_Tone[8];
@@ -811,6 +881,43 @@ struct VGM_YM2151_MAKO2 : public VGM_YM2151 {
 		this->M2Tones = pM2Tone;
 		this->version = ver;
 		this->old_SSG_detune = Detune_old;
+	}
+
+	void Calc_VGM_Time_090(size_t event_Time)
+	{
+		if (event_Time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+			// TPQN = 48
+			// Ttick = Tqn / 48
+			// c_VGMT = Ttick * src_time * VGM_CLOCK 
+			//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+			//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+			//
+			// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+			// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+			// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+			// VAはBIOSが演奏するので調整しない。
+
+			// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 33075)
+			constexpr size_t N = 60 * VGM_CLOCK * 9 * 2;
+			constexpr size_t D = 48 * 10 * TIME_MUL;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+
+			size_t N_VGMT = event_Time * (N / gcd_VGMT);
+			size_t D_VGMT = this->Tempo * (D / gcd_VGMT);
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
+
+			this->Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			this->Time_Prev = event_Time;
+
+			this->make_wait(d_VGMT);
+		}
 	}
 
 	void Note_on_FM(unsigned __int8 CH) {
@@ -887,6 +994,43 @@ struct OPN_MAKO2 {
 };
 
 struct VGM_YM2203_MAKO2 : public virtual VGM_YM2203, public OPN_MAKO2 {
+	void Calc_VGM_Time_090(size_t event_Time)
+	{
+		if (event_Time - this->Time_Prev) {
+			// Tqn = 60 / Tempo
+			// TPQN = 48
+			// Ttick = Tqn / 48
+			// c_VGMT = Ttick * src_time * VGM_CLOCK 
+			//        = 60 / Tempo / 48 * ticks * VGM_CLOCK
+			//        = 60 * VGM_CLOCK * ticks / (48 * tempo)
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (192 * (1024 - NA)) (OPN) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock / (384 * (1024 - NA)) (OPNA) 
+			//        = 60 * VGM_CLOCK * ticks / (48 * master_clock * 3 / (512 * (1024 - NA)) (OPM) 
+			//
+			// 本来、更にNAの整数演算に伴う計算誤差を加味すれば正確になるが、20分鳴らして2-4秒程度なので無視する事とした。
+			// 一度はそうしたコードも書いたのでレポジトリの履歴を追えば見つかる。
+			// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
+			// VAはBIOSが演奏するので調整しない。
+
+			// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 33075)
+			constexpr size_t N = 60 * VGM_CLOCK * 9 * 2;
+			constexpr size_t D = 48 * 10 * TIME_MUL;
+			constexpr size_t gcd_VGMT = std::gcd(N, D);
+
+			size_t N_VGMT = event_Time * (N / gcd_VGMT);
+			size_t D_VGMT = this->Tempo * (D / gcd_VGMT);
+
+			size_t c_VGMT = (N_VGMT / D_VGMT + 1) >> 1;
+			size_t d_VGMT = c_VGMT - this->Time_Prev_VGM;
+
+			this->Time_Prev_VGM += d_VGMT;
+			this->time_prev_VGM_abs += d_VGMT;
+			this->Time_Prev = event_Time;
+
+			this->make_wait(d_VGMT);
+		}
+	}
+
 	void Note_on_FM(unsigned __int8 CH)
 	{
 		union {
@@ -1096,4 +1240,5 @@ struct VGM_YM2608_MAKO2 : public VGM_YM2608, public VGM_YM2203_MAKO2, public OPN
 		this->make_data2(0xA0 + CH, U.B[0]);
 	}
 };
+#endif
 #pragma pack(pop)
