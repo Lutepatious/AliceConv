@@ -780,7 +780,7 @@ class VGMdata_YM2203 : public VGM_YM2203 {
 		// MAKO2は長さを9/10として調整したが、MAKO1では6/5とする(闘神都市 PC-9801版のMAKO1とMAKO2の比較から割り出し)
 		// VAはBIOSが演奏するので調整しない。
 
-		// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 132300)
+		// ここの定数部分は故意にわかりやすくするために約分せずに記述し、C++17のstd::gcdを通している。(N / D = 110250)
 			constexpr size_t N = 60 * VGM_CLOCK * 2;
 			constexpr size_t D = 48;
 			constexpr size_t gcd_VGMT = std::gcd(N, D);
