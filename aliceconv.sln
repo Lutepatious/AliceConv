@@ -84,6 +84,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PC88toVGM", "PC88toVGM\PC88
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MCLtoVGM", "MCLtoVGM\MCLtoVGM.vcxproj", "{DA5076AF-6403-4A09-9CFC-D7C194344A4B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MAKO2toVGM", "MAKO2toVGM\MAKO2toVGM.vcxproj", "{E7B2623E-4720-42C1-A922-38A7D1E9BA85}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -308,6 +310,14 @@ Global
 		{DA5076AF-6403-4A09-9CFC-D7C194344A4B}.Release|x64.Build.0 = Release|x64
 		{DA5076AF-6403-4A09-9CFC-D7C194344A4B}.Release|x86.ActiveCfg = Release|Win32
 		{DA5076AF-6403-4A09-9CFC-D7C194344A4B}.Release|x86.Build.0 = Release|Win32
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Debug|x64.ActiveCfg = Debug|x64
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Debug|x64.Build.0 = Debug|x64
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Debug|x86.ActiveCfg = Debug|Win32
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Debug|x86.Build.0 = Debug|Win32
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Release|x64.ActiveCfg = Release|x64
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Release|x64.Build.0 = Release|x64
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Release|x86.ActiveCfg = Release|Win32
+		{E7B2623E-4720-42C1-A922-38A7D1E9BA85}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

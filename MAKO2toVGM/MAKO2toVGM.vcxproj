@@ -21,10 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{cb87a1d3-4004-4b9f-865d-3abf0b3ebc65}</ProjectGuid>
+    <ProjectGuid>{e7b2623e-4720-42c1-a922-38a7d1e9ba85}</ProjectGuid>
     <RootNamespace>MAKO2toVGM</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>MAKO2toVGM_old</ProjectName>
+    <ProjectName>MAKO2toVGM</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -89,14 +89,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wsetargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -107,7 +108,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x86-Release\include;../aclib</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
@@ -115,8 +118,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x86-Release\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wsetargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -125,14 +127,15 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wsetargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -143,7 +146,9 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>D:\repos\bdwgc\out\install\x64-Release\include;../aclib</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
     </ClCompile>
     <Link>
@@ -151,28 +156,16 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>wsetargv.obj;gccpp.lib;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>wsetargv.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="event.cpp" />
-    <ClCompile Include="MAKO2MML.cpp" />
-    <ClCompile Include="PCMtoWAVE.cpp" />
-    <ClCompile Include="toVGM.cpp" />
-    <ClCompile Include="wmain.cpp" />
+    <ClCompile Include="MAKO2toVGM.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="event.h" />
-    <ClInclude Include="MAKO2MML.h" />
-    <ClInclude Include="MAKO2toVGM.h" />
-    <ClInclude Include="PCMtoWAVE.h" />
-    <ClInclude Include="toVGM.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\aclib\aclib.vcxproj">
-      <Project>{7421ff63-eafe-42d2-acc7-43ff244cfef6}</Project>
-    </ProjectReference>
+    <ClInclude Include="Events.hpp" />
+    <ClInclude Include="MAKO2MML.hpp" />
+    <ClInclude Include="PCMtoWAVE.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
