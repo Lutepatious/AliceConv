@@ -312,7 +312,7 @@ local void tr_static_init()
 }
 
 /* ===========================================================================
- * Genererate the file trees.h describing the static trees.
+ * Generate the file trees.h describing the static trees.
  */
 #ifdef GEN_TREES_H
 #  ifndef ZLIB_DEBUG
@@ -1017,9 +1017,9 @@ int ZLIB_INTERNAL _tr_tally (s, dist, lc)
     unsigned dist;  /* distance of matched string */
     unsigned lc;    /* match length-MIN_MATCH or unmatched char (if dist==0) */
 {
-    s->sym_buf[s->sym_next++] = dist;
-    s->sym_buf[s->sym_next++] = dist >> 8;
-    s->sym_buf[s->sym_next++] = lc;
+    s->sym_buf[s->sym_next++] = (uch)dist;
+    s->sym_buf[s->sym_next++] = (uch)(dist >> 8);
+    s->sym_buf[s->sym_next++] = (uch)lc;
     if (dist == 0) {
         /* lc is the unmatched char */
         s->dyn_ltree[lc].Freq++;
