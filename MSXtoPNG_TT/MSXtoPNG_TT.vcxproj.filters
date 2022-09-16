@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MSXtoPNG_ToushinToshi.c">
+    <ClCompile Include="MSXtoPNG_TT.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

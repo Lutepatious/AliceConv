@@ -23,7 +23,7 @@
     <ProjectGuid>{7290007E-2AEA-406C-9847-CF4F17552B2F}</ProjectGuid>
     <RootNamespace>MSXtoPNGvsp</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>MSXtoPNG_ToushinToshi</ProjectName>
+    <ProjectName>MSXtoPNG_TT</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -174,7 +174,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="MSXtoPNG_ToushinToshi.c" />
+    <ClCompile Include="MSXtoPNG_TT.c" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
