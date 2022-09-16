@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{F656510E-3327-4412-BEC5-B4E9BC00515E}</ProjectGuid>
-    <RootNamespace>MSXtoPNGNoPal</RootNamespace>
+    <RootNamespace>MSXtoPNGIntruder</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>MSXtoPNG_Intruder</ProjectName>
   </PropertyGroup>
