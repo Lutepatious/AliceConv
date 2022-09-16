@@ -1,17 +1,17 @@
 #include "tiffio.h"
 
 struct TIFF_Palette {
-	uint16 R[256];
-	uint16 G[256];
-	uint16 B[256];
+	unsigned __int16 R[256];
+	unsigned __int16 G[256];
+	unsigned __int16 B[256];
 };
 
 struct fTIFF {
 	unsigned __int8 *image;
-	uint32 Rows;
-	uint32 Cols;
-	uint16 depth;
-	uint16 Format;
+	unsigned __int32 Rows;
+	unsigned __int32 Cols;
+	unsigned __int16 depth;
+	unsigned __int16 Format;
 	struct TIFF_Palette Pal;
 };
 

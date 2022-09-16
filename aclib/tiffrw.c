@@ -24,8 +24,8 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 		return NULL;
 	}
 	
-	uint16 Samples_per_Pixel;
-	uint32 Rows_per_Strip;
+	unsigned __int16 Samples_per_Pixel;
+	unsigned __int32 Rows_per_Strip;
 	TIFFGetField(pTi, TIFFTAG_IMAGEWIDTH, &pimg->Cols);
 	TIFFGetField(pTi, TIFFTAG_IMAGELENGTH, &pimg->Rows);
 	TIFFGetField(pTi, TIFFTAG_BITSPERSAMPLE, &pimg->depth);
@@ -40,7 +40,7 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 		return NULL;
 	}
 
-	for (uint32 l = 0; l < pimg->Rows; l += Rows_per_Strip) {
+	for (unsigned __int32 l = 0; l < pimg->Rows; l += Rows_per_Strip) {
 		size_t read_rows = (l + Rows_per_Strip > pimg->Rows) ? pimg->Rows - l : Rows_per_Strip;
 		if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &pimg->image[(size_t) pimg->Cols * Samples_per_Pixel * l], (size_t) pimg->Cols * read_rows * Samples_per_Pixel)) {
 			fwprintf_s(stderr, L"File read error.\n");
@@ -50,11 +50,11 @@ struct fTIFF* tiff_read(const wchar_t* infile)
 	}
 
 	if (pimg->Format == PHOTOMETRIC_PALETTE) {
-		uint16* PalR, * PalG, * PalB;
+		unsigned __int16* PalR, * PalG, * PalB;
 		TIFFGetField(pTi, TIFFTAG_COLORMAP, &PalR, &PalG, &PalB);
-		memcpy_s(pimg->Pal.R, sizeof(pimg->Pal.R), PalR, sizeof(uint16) * (1LL << pimg->depth));
-		memcpy_s(pimg->Pal.G, sizeof(pimg->Pal.G), PalG, sizeof(uint16) * (1LL << pimg->depth));
-		memcpy_s(pimg->Pal.B, sizeof(pimg->Pal.B), PalB, sizeof(uint16) * (1LL << pimg->depth));
+		memcpy_s(pimg->Pal.R, sizeof(pimg->Pal.R), PalR, sizeof(unsigned __int16) * (1LL << pimg->depth));
+		memcpy_s(pimg->Pal.G, sizeof(pimg->Pal.G), PalG, sizeof(unsigned __int16) * (1LL << pimg->depth));
+		memcpy_s(pimg->Pal.B, sizeof(pimg->Pal.B), PalB, sizeof(unsigned __int16) * (1LL << pimg->depth));
 	}
 
 	TIFFClose(pTi);
