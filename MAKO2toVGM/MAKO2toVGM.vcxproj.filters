@@ -1,0 +1,27 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="Events.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MAKO2MML.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="PCMtoWAVE.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="ソース ファイル">
+      <UniqueIdentifier>{30fc092f-306c-4993-ad4e-f2c2d746254f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル">
+      <UniqueIdentifier>{8f6c7f14-0585-49aa-aec7-dbeb348e5142}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="MAKO2toVGM.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -97,6 +97,8 @@
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>../zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,6 +119,8 @@
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>../zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,6 +139,8 @@
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>../zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,6 +161,8 @@
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>../zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
