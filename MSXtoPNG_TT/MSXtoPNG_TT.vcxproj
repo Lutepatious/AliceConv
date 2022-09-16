@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{7290007E-2AEA-406C-9847-CF4F17552B2F}</ProjectGuid>
-    <RootNamespace>MSXtoPNGvsp</RootNamespace>
+    <RootNamespace>MSXtoPNGTT</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>MSXtoPNG_TT</ProjectName>
   </PropertyGroup>
