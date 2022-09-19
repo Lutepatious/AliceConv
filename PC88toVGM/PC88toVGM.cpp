@@ -732,6 +732,8 @@ public:
 
 int wmain(int argc, wchar_t** argv)
 {
+	bool debug = false;
+
 	if (argc < 2) {
 		std::wcerr << L"Usage: " << *argv << L" file ..." << std::endl;
 		exit(-1);
@@ -755,23 +757,28 @@ int wmain(int argc, wchar_t** argv)
 		class MML_decoded M;
 		M.init(ME.MML_FullBody);
 		M.correct_block_len();
-#if 0
-		for (size_t i = 0; i < CHs; i++) {
-			for (auto& k : M.CH[i].block_len) {
+
+		if (debug) {
+			for (size_t i = 0; i < CHs; i++) {
+				for (auto& k : M.CH[i].block_len) {
+					std::cout << k << " ";
+				}
+				std::cout << std::endl;
+			}
+			std::cout << "-----" << std::endl;
+			for (auto& k : M.master_block_len) {
 				std::cout << k << " ";
 			}
 			std::cout << std::endl;
 		}
-		std::cout << "-----" << std::endl;
-		for (auto& k : M.master_block_len) {
-			std::cout << k << " ";
-		}
-		std::cout << std::endl;
-#endif
+
 		M.decode();
 		class EVENTS E;
 		E.convert(M);
-		//		E.print_all();
+
+		if (debug) {
+			E.print_all();
+		}
 
 		class VGMdata_YM2203 V;
 
