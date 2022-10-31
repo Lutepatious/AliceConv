@@ -7,6 +7,7 @@
 
 enum class Machine { NONE = 0, PC88VA, FMTOWNS, PC9801 };
 constexpr size_t CHs = 6;
+constexpr size_t MAKO1_TIMER_BASE = 0x5161;
 
 #pragma pack (1)
 struct mako1_header {
@@ -500,6 +501,7 @@ public:
 constexpr size_t MASTERCLOCK_FMTOWNS_OPN2 = 7200000;
 
 class VGMdata_YM2612 : public VGM_YM2612 {
+	bool is_rance = false;
 public:
 	VGMdata_YM2612(void)
 	{
@@ -564,14 +566,19 @@ public:
 		}
 	}
 
-	void convert(class EVENTS& in)
+	void convert(class EVENTS& in, bool r1 = false)
 	{
+		is_rance = r1;
 		for (auto& eve : in.events) {
 			if (eve.Time == SIZE_MAX) {
 				break;
 			}
-			Calc_VGM_Time_120(eve.Time);
-
+			if (is_rance) {
+				Calc_VGM_Time_150(eve.Time);
+			}
+			else {
+				Calc_VGM_Time_120(eve.Time);
+			}
 			if (in.loop_enable && eve.Time == in.loop_start) {
 				this->time_loop_VGM_abs = this->time_prev_VGM_abs;
 				this->vgm_loop_pos = vgm_body.size();
@@ -629,7 +636,12 @@ public:
 			}
 		}
 
-		Calc_VGM_Time_120(in.time_end);
+		if (is_rance) {
+			Calc_VGM_Time_150(in.time_end);
+		}
+		else {
+			Calc_VGM_Time_120(in.time_end);
+		}
 		this->finish();
 	}
 };
@@ -645,6 +657,7 @@ int wmain(int argc, wchar_t** argv)
 
 	unsigned __int8 SSG_Volume = 0;
 	enum Machine M_arch = Machine::PC9801;
+	bool rance_towns = false;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'v') {
@@ -652,6 +665,10 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L't') {
 				M_arch = Machine::FMTOWNS;
+			}
+			else if (*(*argv + 1) == L'r') {
+				M_arch = Machine::FMTOWNS;
+				rance_towns = true;
 			}
 			else if (*(*argv + 1) == L's') {
 				int tVol = _wtoi(*argv + 2);
@@ -738,7 +755,7 @@ int wmain(int argc, wchar_t** argv)
 		else if (M_arch == Machine::FMTOWNS) {
 			class VGMdata_YM2612 v2612;
 			v2612.make_init();
-			v2612.convert(events);
+			v2612.convert(events, rance_towns);
 			outsize = v2612.out(*argv);
 		}
 		if (outsize == 0) {
