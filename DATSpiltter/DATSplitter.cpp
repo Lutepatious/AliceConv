@@ -1,10 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <cstdio>
 #include <cstdlib>
-#include <cwchar>
-#include <cerrno>
 
 #pragma pack (1)
 struct LINKMAP {
@@ -31,7 +28,7 @@ int wmain(int argc, wchar_t** argv)
 
 					continue;
 				}
-
+				lmbuf.clear();
 				lmbuf.insert(lmbuf.end(), std::istreambuf_iterator<__int8>(lmfile), std::istreambuf_iterator<__int8>());
 				lmfile.close();
 
@@ -69,12 +66,13 @@ int wmain(int argc, wchar_t** argv)
 					lmlen = len;
 				}
 				std::wcout << L"Entry " << std::dec << i << L":" << std::hex << *(Addr + i) - 1 << L":" << std::dec << len << std::endl;
-				entries = i + 1;
+				entries = i;
 			}
 		}
 
-		struct LINKMAP* linkmap = (struct LINKMAP*)(&inbuf.at(0) + 0x100LL * (*Addr - 1));
+		struct LINKMAP* linkmap = (struct LINKMAP*)(&inbuf.at(0) + (*Addr - 1) * 0x100);
 		bool have_linkmap = true;
+		bool have_linkmap_other = false;
 		size_t entries_lm = 0;
 
 		wchar_t path[_MAX_PATH];
@@ -95,10 +93,11 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-
 		if (have_linkmap) {
-			if (entries_lm != entries) {
+			std::wcout << entries_lm << L"/" << entries << std::endl;
+			if (entries_lm != entries && entries_lm != entries - 1) {
 				have_linkmap = false;
+				have_linkmap_other = true;
 				std::wcerr << L"File " << *argv << L" has no linkmap for itself." << std::endl;
 				_wmakepath_s(path, _MAX_PATH, drive, dir, L"linkmap", NULL);
 				std::ofstream outfile(path, std::ios::binary);
@@ -113,19 +112,13 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
-		std::wcerr << have_linkmap << L"reach." << std::endl;
-
 		size_t entry_offset = 0;
 		if (use_linkmap) {
-			std::cout << lmbuf.size() << std::endl;
 			linkmap = (struct LINKMAP*)&lmbuf.at(0);
 			lmlen = lmbuf.size();
 			entry_offset = 1;
 			have_linkmap = true;
 		}
-
-		std::wcerr << have_linkmap << L"reach." << std::endl;
-
 
 		wchar_t newdir[_MAX_DIR];
 		wchar_t newfname[_MAX_FNAME];
@@ -144,14 +137,16 @@ int wmain(int argc, wchar_t** argv)
 			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
 				if (arc_ID == (linkmap + i)->ArchiveID) {
 					size_t wsize;
-					if (*(Addr + (linkmap + i)->FileNo + 1 - entry_offset)) {
-						wsize = (size_t)(*(Addr + (linkmap + i)->FileNo + 1 - entry_offset) - *(Addr + (linkmap + i)->FileNo - entry_offset)) * 0x100;
+					size_t index = (linkmap + i)->FileNo;
+					unsigned short *target = Addr + index - entry_offset;
+					if (*(target + 1)) {
+						wsize = (size_t)(*(target + 1) - *target) * 0x100;
 					}
 					else {
-						wsize = inbuf.size() - (size_t)(*(Addr + (linkmap + i)->FileNo - entry_offset) - 1) * 0x100;
+						wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
 					}
 					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03u", i + 1, towupper(*fname), (linkmap + i)->FileNo);
+						swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03zu", i + 1, towupper(*fname), index);
 						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
 
 						std::ofstream outfile(path, std::ios::binary);
@@ -160,7 +155,7 @@ int wmain(int argc, wchar_t** argv)
 							outfile.close();
 							exit(-1);
 						}
-						outfile.write(&inbuf.at(0) + (size_t)(*(Addr + (linkmap + i)->FileNo - entry_offset) - 1) * 0x100, wsize);
+						outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
 
 						outfile.close();
 						std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
@@ -176,21 +171,26 @@ int wmain(int argc, wchar_t** argv)
 			struct __stat64 dpath;
 			if (_wstat64(path, &dpath) && errno == ENOENT) {
 				if (!_wmkdir(path)) {
-					std::wcerr << L"Out path" << path << L"created." << std::endl;
+					std::wcerr << L"Out path " << path << L" created." << std::endl;
 				}
 			}
 
 			for (size_t i = 0; *(Addr + i); i++) {
 				if ((size_t)(*(Addr + i) - 1) * 0x100 < inbuf.size()) {
 					size_t wsize;
-					if (*(Addr + i + 1)) {
-						wsize = (size_t)(*(Addr + i + 1) - *(Addr + i)) * 0x100;
+					unsigned short* target = Addr + i;
+					if (*(target + 1)) {
+						wsize = (size_t)(*(target + 1) - *target) * 0x100;
 					}
 					else {
-						wsize = inbuf.size() - (size_t)(*(Addr + i) - 1) * 0x100;
+						wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
 					}
 					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%s%03zu", fname, i + 1);
+						size_t entry_no = i + 1;
+						if (have_linkmap_other) {
+							entry_no--;
+						}
+						swprintf_s(newfname, _MAX_FNAME, L"%s%03zu", fname, entry_no);
 						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
 
 
@@ -200,141 +200,13 @@ int wmain(int argc, wchar_t** argv)
 							outfile.close();
 							exit(-1);
 						}
-						outfile.write(&inbuf.at(0) + (size_t)(*(Addr + i) - 1) * 0x100, wsize);
+						outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
 
 						outfile.close();
 						std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
 					}
 				}
-#if 0
-
-				size_t F_Addr = 0x100LL * *(Addr + i);
-				if (F_Addr < fs.st_size) {
-					__int16 wblock = *(Addr + i + 1) - *(Addr + i);
-					if (wblock < 0) {
-						wblock = fs.st_size / 0x100 + 1 - *(Addr + i);
-					}
-					size_t wsize = 0x100L * (size_t)wblock;
-					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%s%03d", fname, i + 1);
-						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-						wprintf_s(L"Entry %03u: %06zX %10zu bytes, name %s.\n", i, F_Addr, wsize, path);
-
-						ecode = _wfopen_s(&pFo, path, L"wb");
-						if (ecode) {
-							wprintf_s(L"File open error %s.\n", *argv);
-							exit(ecode);
-						}
-
-						rcount = fwrite(buffer + F_Addr, 1, wsize, pFo);
-						if (rcount != wsize) {
-							wprintf_s(L"File write error %s.\n", *argv);
-							fclose(pFo);
-							exit(-2);
-						}
-
-						fclose(pFo);
-					}
-				}
-#endif
 			}
 		}
-#if 0
-
-		wchar_t path[_MAX_PATH];
-		wchar_t fname[_MAX_FNAME];
-		wchar_t dir[_MAX_DIR];
-		wchar_t drive[_MAX_DRIVE];
-		wchar_t newdir[_MAX_DIR];
-		wchar_t newfname[_MAX_FNAME];
-		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
-		if (have_linkmap) {
-			wprintf_s(L"With link map.\n");
-
-			unsigned __int8 arc_ID = towupper(*fname) - L'A' + 1;
-
-			linkmap = buffer + 0x100LL * *Addr;
-			i = 0;
-			swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname + 1);
-			_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
-			struct __stat64 dpath;
-			if (_wstat64(path, &dpath) && errno == ENOENT)
-			{
-				_wmkdir(path);
-				wprintf_s(L"Out path %s created.\n", path);
-			}
-			while ((linkmap + i)->ArchiveID != 0x1A) {
-				if (arc_ID == (linkmap + i)->ArchiveID) {
-					size_t wsize = 0x100L * ((size_t) * (Addr + (linkmap + i)->FileNo + 1) - (size_t) * (Addr + (linkmap + i)->FileNo));
-
-					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%04d%c%03d", i + 1, towupper(*fname), (linkmap + i)->FileNo);
-						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-						wprintf_s(L"Out size %6zd, name %s.\n", wsize, path);
-
-						ecode = _wfopen_s(&pFo, path, L"wb");
-						if (ecode || !pFo) {
-							wprintf_s(L"File open error %s.\n", *argv);
-							exit(ecode);
-						}
-
-						rcount = fwrite(buffer + 0x100LL * *(Addr + (linkmap + i)->FileNo), 1, wsize, pFo);
-						if (rcount != wsize) {
-							wprintf_s(L"File write error %s.\n", *argv);
-							fclose(pFo);
-							exit(-2);
-						}
-						fclose(pFo);
-					}
-				}
-				i++;
-			}
-
-		}
-		else {
-			wprintf_s(L"No link map.\n");
-			i = 0;
-			swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname);
-			_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
-			struct __stat64 dpath;
-			if (_wstat64(path, &dpath) && errno == ENOENT) {
-				_wmkdir(path);
-				wprintf_s(L"Out path %s created.\n", path);
-			}
-			while (*(Addr + i) || i == 0) {
-				size_t F_Addr = 0x100LL * *(Addr + i);
-				if (F_Addr < fs.st_size) {
-					__int16 wblock = *(Addr + i + 1) - *(Addr + i);
-					if (wblock < 0) {
-						wblock = fs.st_size / 0x100 + 1 - *(Addr + i);
-					}
-					size_t wsize = 0x100L * (size_t)wblock;
-					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%s%03d", fname, i + 1);
-						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-						wprintf_s(L"Entry %03u: %06zX %10zu bytes, name %s.\n", i, F_Addr, wsize, path);
-
-						ecode = _wfopen_s(&pFo, path, L"wb");
-						if (ecode) {
-							wprintf_s(L"File open error %s.\n", *argv);
-							exit(ecode);
-						}
-
-						rcount = fwrite(buffer + F_Addr, 1, wsize, pFo);
-						if (rcount != wsize) {
-							wprintf_s(L"File write error %s.\n", *argv);
-							fclose(pFo);
-							exit(-2);
-						}
-
-						fclose(pFo);
-					}
-				}
-				i++;
-			}
-
-		}
-
-#endif
 	}
 }
