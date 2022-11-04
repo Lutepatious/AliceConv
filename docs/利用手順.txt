@@ -1,0 +1,262 @@
+全体的な使用方法の流れとして
+
+1. 該当するゲームのディスクを入手する。
+2. ディスクイメージを吸いだす。
+
+3. ディスクイメージをRAW形式にする。
+a. KryofluxのRAW stream形式からはSAMDisk (https://simonowen.com/samdisk/)でD88形式に変換。
+b. HxCFloppyEmulator software (https://hxc2001.com/download/floppy_drive_emulator/index.html)のHxCFloppyEmulator_soft.zip内の
+HxCFloppyEmulator.exeを起動し、LoadボタンからD88形式イメージをロードした後、ExportボタンからIMG file (RAW Sector file format)を選んでセーブ。
+
+4a. N88-BASIC系のディスクイメージからはN88Splitter.exeでファイルを抽出。
+4b. MS-DOS系のディスクイメージからは適当な(editdやvficなど)ツールでファイルを抽出
+(一部のディスクでDOSフォーマットじゃないと叱られるのでツールは複数用意すること)。
+4c. DOSのフロッピーがそのまま読めるのならファイルをコピーするだけでよいが、2HDの物理フォーマット違いで読めないものの方が多い。
+
+オリジナルのデータはバックアップしてください。
+
+5. ファイル名を適切なものに変更
+
+[リトルプリンセス]
+CGファイルとして*.MSXファイルをそのまま使います。
+
+[リトルヴァンパイア]
+*MSX2版
+
+BGMファイルとして*.MCLファイルをそのまま使います。
+CGファイルとして
+HAKASE1 -> ACG.DAT
+HAKASE2 -> BCG.DAT
+HAKASE3 -> CCG.DAT
+シナリオデータとして
+SNRO-A -> ADISK.DAT
+SNRO-B -> BDISK.DAT
+SNRO-C -> CDISK.DAT
+
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-8801版
+
+BGMファイルとしてBGM?ファイルをそのまま使います。
+CGファイルとして
+DISK-A -> ACG.DAT
+DISK-B -> BCG.DAT
+DISK-C -> CCG.DAT
+シナリオデータとして
+SNRO.FIL -> ADISK.DAT
+
+とファイル名を変更してください。
+
+>DATSplitter ADISK.DAT -l ?CG.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版
+
+BGMファイルとしてV?ファイルをそのまま使います。
+CGファイルとして
+AディスクのCG.FIL -> ACG.DAT
+BディスクのCG.FIL -> BCG.DAT
+SNRO.FIL -> ADISK.DAT
+
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版 ALICE NET版
+
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+
+[学園戦記]
+*MSX2版
+
+BGMファイルとしてX4.MCLファイルをそのまま使います。
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+CG-D -> DCG.DAT
+CG-E -> ECG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+DISK-D -> DDISK.DAT
+DISK-E -> EDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+[Rance －光をもとめて－]
+*FM TOWNS版
+
+BGMはAMUSVA.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+なお、CディスクのADISK.DATは婦警さんVXのシナリオデータです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+CG-D -> DCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+DISK-D -> DDISK.DAT
+とファイル名を変更してください。
+
+なお、DISK-VXは婦警さんVXのシナリオデータです。
+FUKEI.CGは婦警さんVX用の背景のようです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-8801SR版
+
+BGMファイルとしてran??ファイルをそのまま使います。
+CGファイルとして
+CGG-A -> ACG.DAT
+CGG-B -> BCG.DAT
+CGG-C -> CCG.DAT
+CGG-D -> DCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+DISK-D -> DDISK.DAT
+とファイル名を変更してください。
+
+なお、DISK-A.VXは婦警さんVXのシナリオデータです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版
+
+BGMファイルとして
+RANCE.MUS -> AMUS.DAT
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+CG-D -> DCG.DAT
+MAP-A -> AMAP.DAT
+MON-A -> AMON.DAT
+ANM-B -> AANMB.DAT
+ANB-C -> AANMC.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+DISK-D -> DDISK.DAT
+とファイル名を変更してください。
+
+なお、ﾕｷｺAは婦警さんVXのシナリオデータです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+ここで
+AANMB
+AANMC
+というディレクトリが出来ますが
+
+その中の
+0001A001.DATから0004A004.DAT
+を
+0001A001.DAT -> AANM1.DAT
+0002A002.DAT -> AANM2.DAT
+0003A003.DAT -> AANM3.DAT
+0004A004.DAT -> AANM4.DAT
+とファイル名を変更して
+>DATSplitter *.DAT
+で更にアーカイブ内のファイルが抽出されます。
+
+*X68000/PC-88VA版
+
+BGMはAMUS.DATとAMUSVA.DAT
+CGは?CG.DATと?ANM.DAT
+シナリオデータは?DISK.DATです。
+
+ディスクDに入っているAMUSVA.DATはAMUSVA_D.DAT
+ディスクCに入っているBANIM.DATはBANIM_C.DAT
+とファイル名を変更してください。
+
+ディスクC, Dに入っているADISK.DATは婦警さんVXのシナリオデータです。同じファイルです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+ここで
+ANM
+ANM_C
+というディレクトリが出来ますが
+
+その中の
+0001B001.DATから0004B004.DAT
+を
+0001B001.DAT -> AANM1.DAT
+0002B002.DAT -> AANM2.DAT
+0003B003.DAT -> AANM3.DAT
+0004B004.DAT -> AANM4.DAT
+とファイル名を変更して
+>DATSplitter *.DAT
+で更にアーカイブ内のファイルが抽出されます。
+
+[婦警さんVX]
+*Rance付属
+
+Ranceの項目に示した各機種の婦警さんVXのシナリオデータのADISK.DATにファイル名変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801 ALICE-NET版とPC-9801 PC-9801 朱蓮版
+
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+[Intruder －桜屋敷の探索－]
+*FM TOWNS版 (ALICEの館CD)
+
+BGMはAMUSINT.DAT
+CGはACG.DAT
+シナリオデータは?DISKINT.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+カラーパレットにCOLPALET.DATを必要とします。
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。

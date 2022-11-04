@@ -61,12 +61,12 @@ int wmain(int argc, wchar_t** argv)
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
-		if (wcslen(fname) != 7 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswalpha(fname[3]) || !iswdigit(fname[4]) || !iswdigit(fname[5]) || !iswdigit(fname[6])) {
+		if (wcslen(fname) != 8 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswdigit(fname[3]) || !iswalpha(fname[4]) || !iswdigit(fname[5]) || !iswdigit(fname[6]) || !iswdigit(fname[7])) {
 			wprintf_s(L"Not suitable filename format %s.\n", *argv);
 			continue;
 		}
-		wchar_t path_num[4], *stopscan;
-		wcsncpy_s(path_num, 4, fname, 3);
+		wchar_t path_num[5], *stopscan;
+		wcsncpy_s(path_num, 5, fname, 4);
 		unsigned long num = wcstoul(path_num, &stopscan, 10);
 
 		ecode = _wfopen_s(&pFi_pal, fnpal, L"rb");

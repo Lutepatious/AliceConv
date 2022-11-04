@@ -52,25 +52,33 @@ int wmain(int argc, wchar_t** argv)
 		size_t entries = 0;
 
 		unsigned __int16* Addr = (unsigned __int16*)&inbuf.at(0);
-		for (size_t i = 0; *(Addr + i); i++) {
-			if ((size_t)(*(Addr + i) - 1) * 0x100 < inbuf.size()) {
+
+		size_t j = 0;
+		do 
+		{
+			unsigned __int16* target = Addr + j;
+			if (*target == 0) {
+				continue;
+			}
+
+			if ((size_t)(*target - 1) * 0x100 < inbuf.size()) {
 				size_t len;
-				if (*(Addr + i + 1)) {
-					len = (size_t)(*(Addr + i + 1) - *(Addr + i)) * 0x100;
+				if (*(target + 1)) {
+					len = (size_t)(*(target + 1) - *target) * 0x100;
 				}
 				else {
-					len = inbuf.size() - (size_t)(*(Addr + i) - 1) * 0x100;
+					len = inbuf.size() - (size_t)(*target - 1) * 0x100;
 				}
 
-				if (i == 0) {
+				if (j == 0) {
 					lmlen = len;
 				}
-				std::wcout << L"Entry " << std::dec << i << L":" << std::hex << *(Addr + i) - 1 << L":" << std::dec << len << std::endl;
-				entries = i;
+				std::wcout << L"Entry " << std::dec << j << L":" << std::hex << *target - 1 << L":" << std::dec << len << std::endl;
+				entries = j;
 			}
-		}
+		} while (*(Addr + ++j));
 
-		struct LINKMAP* linkmap = (struct LINKMAP*)(&inbuf.at(0) + (*Addr - 1) * 0x100);
+		struct LINKMAP* linkmap = (struct LINKMAP*)(&inbuf.at(0) + (size_t)(*Addr - 1) * 0x100);
 		bool have_linkmap = true;
 		bool have_linkmap_other = false;
 		size_t entries_lm = 0;
@@ -82,7 +90,7 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		unsigned __int8 arc_ID = towupper(fname[0]) - L'A' + 1;
 
-		for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
+		for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
 			if ((i >= lmlen / sizeof(struct LINKMAP)) || ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63)) {
 				have_linkmap = false;
 				break;
@@ -131,10 +139,10 @@ int wmain(int argc, wchar_t** argv)
 			if (_wstat64(path, &dpath) && errno == ENOENT)
 			{
 				if (!_wmkdir(path)) {
-					std::wcerr << L"Out path" << path << L"created." << std::endl;
+					std::wcerr << L"Out path " << path << L" created." << std::endl;
 				}
 			}
-			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
+			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
 				if (arc_ID == (linkmap + i)->ArchiveID) {
 					size_t wsize;
 					size_t index = (linkmap + i)->FileNo;
@@ -175,10 +183,16 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 
-			for (size_t i = 0; *(Addr + i); i++) {
-				if ((size_t)(*(Addr + i) - 1) * 0x100 < inbuf.size()) {
+			size_t j = 0;
+			do {
+				unsigned short* target = Addr + j;
+				if (*target == 0) {
+					entry_offset = 1;
+					continue;
+				}
+
+				if ((size_t)(*target - 1) * 0x100 < inbuf.size()) {
 					size_t wsize;
-					unsigned short* target = Addr + i;
 					if (*(target + 1)) {
 						wsize = (size_t)(*(target + 1) - *target) * 0x100;
 					}
@@ -186,7 +200,7 @@ int wmain(int argc, wchar_t** argv)
 						wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
 					}
 					if (wsize) {
-						size_t entry_no = i + 1;
+						size_t entry_no = j + 1 - entry_offset;
 						if (have_linkmap_other) {
 							entry_no--;
 						}
@@ -206,7 +220,7 @@ int wmain(int argc, wchar_t** argv)
 						std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
 					}
 				}
-			}
+			} while (*(Addr + ++j));
 		}
 	}
 }
