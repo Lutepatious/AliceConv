@@ -260,3 +260,62 @@ DISK-B -> BDISK.DAT
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
+
+*PC-8801SR版
+
+BGMファイルとしてint0?ファイルをそのまま使います。
+CGファイルとして
+CGG-A -> ACG.DAT
+CGG-B -> BCG.DAT
+CGG-C -> CCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+とファイル名を変更してください。
+
+なお、BGM?はリトルヴァンパイアののBGMです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+[CRESCENT MOON がぁる]
+*FM TOWNS版 (ALICEの館CD)
+
+BGMはAMUSCRS.DAT
+CGはACG.DAT
+シナリオデータは?DISKCRS.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+カラーパレットにCOLPALET.DATを必要とします。
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版
+
+BGMファイルとして
+cres.mus -> AMUS.DAT
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。

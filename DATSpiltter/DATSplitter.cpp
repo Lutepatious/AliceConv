@@ -78,7 +78,12 @@ int wmain(int argc, wchar_t** argv)
 			}
 		} while (*(Addr + ++j));
 
-		struct LINKMAP* linkmap = (struct LINKMAP*)(&inbuf.at(0) + (size_t)(*Addr - 1) * 0x100);
+		struct LINKMAP* linkmap = nullptr;
+
+		if (*Addr) {
+			linkmap = (struct LINKMAP*)(&inbuf.at(0) + (size_t)(*Addr - 1) * 0x100);
+		}
+
 		bool have_linkmap = true;
 		bool have_linkmap_other = false;
 		size_t entries_lm = 0;
@@ -90,14 +95,19 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		unsigned __int8 arc_ID = towupper(fname[0]) - L'A' + 1;
 
-		for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
-			if ((i >= lmlen / sizeof(struct LINKMAP)) || ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63)) {
-				have_linkmap = false;
-				break;
-			}
+		if (linkmap == nullptr) {
+			have_linkmap = false;
+		}
+		else {
+			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
+				if ((i >= lmlen / sizeof(struct LINKMAP)) || ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63)) {
+					have_linkmap = false;
+					break;
+				}
 
-			if (arc_ID == (linkmap + i)->ArchiveID) {
-				entries_lm = (linkmap + i)->FileNo;
+				if (arc_ID == (linkmap + i)->ArchiveID) {
+					entries_lm = (linkmap + i)->FileNo;
+				}
 			}
 		}
 
