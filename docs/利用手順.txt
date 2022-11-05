@@ -332,8 +332,8 @@ CGは?CG.DAT
 *FM TOWNS版 (ALICEの館CD II同梱版も同じ)
 
 BGMはAMUSVA.DAT
-CGはACG.DAT
-シナリオデータは?DISKCRS.DATです。
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
@@ -390,3 +390,58 @@ CGは?CG.DAT
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
 
+[Dream Program System]
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+POPART?.GE7は何らかのCGファイルですが未解読です。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*FM TOWNS版
+
+BGMは?MUSVA.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*X68000/PC-88VA版
+
+BGMはAMUS.DATとAMUSVA.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+※注意 少なくとも3バージョンのディスクを確認しています。
+もしDISK-AというファイルがAディスクにあった時は
+ADISK122.DATとでもして抽出してください(ADISK.DATのVer. 1.22という意味)。
+
+*PC-8801SR版
+
+BGMファイルとしてDPS0?ファイルをそのまま使います。
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版
+
+BGMファイルとして
+DPS1.MUS -> AMUS.DAT
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。

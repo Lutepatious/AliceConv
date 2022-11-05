@@ -13,7 +13,7 @@ struct LINKMAP {
 int wmain(int argc, wchar_t** argv)
 {
 	if (argc < 2) {
-		std::wcerr << L"Usage: " << *argv << L"file ...\n" << std::endl;
+		std::wcerr << L"Usage: " << *argv << L"file ..." << std::endl;
 		exit(-1);
 	}
 
@@ -141,7 +141,7 @@ int wmain(int argc, wchar_t** argv)
 		wchar_t newdir[_MAX_DIR];
 		wchar_t newfname[_MAX_FNAME];
 		if (have_linkmap) {
-			std::wcout << L"With link map.\n" << std::endl;
+			std::wcout << L"With link map." << std::endl;
 
 			swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname + 1);
 			_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
@@ -182,7 +182,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 		else {
-			std::wcout << L"No link map.\n" << std::endl;
+			std::wcout << L"No link map." << std::endl;
 
 			swprintf_s(newdir, _MAX_DIR, L"%s%s", dir, fname);
 			_wmakepath_s(path, _MAX_PATH, drive, newdir, NULL, NULL);
