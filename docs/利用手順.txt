@@ -125,7 +125,7 @@ DISK-D -> DDISK.DAT
 とファイル名を変更してください。
 
 なお、DISK-VXは婦警さんVXのシナリオデータです。
-FUKEI.CGは婦警さんVX用の背景のようです。
+FUKEI.CGは婦警さんVX用のCGの様ですが未解読です。
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
@@ -291,7 +291,6 @@ CGはACG.DAT
 *MSX2版
 
 BGMファイルとしてM??.BINファイルをそのまま使います。
-カラーパレットにCOLPALET.DATを必要とします。
 CGファイルとして
 CG-A -> ACG.DAT
 CG-B -> BCG.DAT
@@ -319,3 +318,75 @@ DISK-C -> CDISK.DAT
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
+
+*X68000/PC-88VA版
+
+BGMはAMUS.DATとAMUSVA.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+[あぶない天狗伝説]
+*FM TOWNS版 (ALICEの館CD II同梱版も同じ)
+
+BGMはAMUSVA.DAT
+CGはACG.DAT
+シナリオデータは?DISKCRS.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+README*.GE7は何らかのCGファイルですが未解読です。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-8801SR版
+
+BGMファイルとしてten0?ファイルをそのまま使います。
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-9801版
+
+BGMファイルとして
+ｱﾌﾞﾅｲ.MUS -> AMUS.DAT
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*X68000/PC-88VA版
+
+BGMはAMUS.DATとAMUSVA.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+

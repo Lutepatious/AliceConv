@@ -95,7 +95,7 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		unsigned __int8 arc_ID = towupper(fname[0]) - L'A' + 1;
 
-		if (linkmap == nullptr) {
+		if (linkmap == nullptr || linkmap->ArchiveID == 0) {
 			have_linkmap = false;
 		}
 		else {
