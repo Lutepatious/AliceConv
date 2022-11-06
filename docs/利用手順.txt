@@ -445,3 +445,78 @@ DISK-A -> ADISK.DAT
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
+
+[ALICEの館]
+*PC-9801版
+
+BGMファイルとして
+ｱﾌﾞﾅｲ.MUS -> AMUS.DAT
+CGファイルとして
+CG-A -> ACG.DAT
+CG-B -> BCG.DAT
+CG-C -> CCG.DAT
+シナリオデータとして
+DISK-A -> ADISK.DAT
+DISK-B -> BDISK.DAT
+DISK-C -> CDISK.DAT
+とファイル名を変更してください。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*X68000/PC-88VA版
+
+BGMはAMUS.DATとAMUSVA.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*FM TOWNS版 (ALICEの館CD)
+
+センチメンタルシーズンは独立して\SENCHIに入っており
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+他のCGは\ALICE_CGにTIFFで
+シナリオデータは\YAKATAに収録されています。
+
+[RanceII －反逆の少女たち－]
+*FM TOWNS版, X68000版, PC-88VA版, PC-9801版
+
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*MSX2版
+
+BGMファイルとしてM??.BINファイルをそのまま使います。
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+*PC-8801SR版
+
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+>DATSplitter *.DAT
+でアーカイブ内のファイルが抽出されます。
+
+※ヒントディスクについて
+PC-9801版とX68000版しか手にしていないのですが
+BGMファイルは本体と同じ
+CGはGCG.DAT
+シナリオデータはGDISK.DATでした。
+
