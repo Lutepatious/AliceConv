@@ -106,7 +106,12 @@ int wmain(int argc, wchar_t** argv)
 				}
 
 				if (arc_ID == (linkmap + i)->ArchiveID) {
-					entries_lm = (linkmap + i)->FileNo;
+					size_t index = (linkmap + i)->FileNo;
+					unsigned short* target = Addr + index;
+					if ((*target - 1) * 0x100LL < inbuf.size())
+					{
+						entries_lm = (linkmap + i)->FileNo;
+					}
 				}
 			}
 		}
