@@ -165,7 +165,7 @@ public:
 				break;
 			}
 
-			this->Tone_set(i.CH, i.TP.A);
+			this->Tone_set(i.CH, i.TP);
 		}
 		this->finish();
 	}
