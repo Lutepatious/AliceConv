@@ -110,7 +110,7 @@ int wmain(int argc, wchar_t** argv)
 					unsigned short* target = Addr + index;
 					if ((*target - 1) * 0x100LL < inbuf.size())
 					{
-						entries_lm = (linkmap + i)->FileNo;
+						entries_lm = std::max(entries_lm, (size_t)(linkmap + i)->FileNo);
 					}
 				}
 			}

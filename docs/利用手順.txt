@@ -521,6 +521,7 @@ CGはGCG.DAT
 シナリオデータはGDISK.DATでした。
 
 [Dream Program System -SG-]
+[Dream Program System -SG- set 2]
 *MSX2版
 **システムディスク
 BGMはM0?.BIN
@@ -536,10 +537,58 @@ CGはBCG.DAT
 
 全てのCGが2枚組になっており、MSX2のインターレースモードを使って倍の解像度になるようになっています。
 
-*PC-9801版, FM TOWNS版, PC-88VA版, X68000版
+MSX2PNGによるPNG変換の後、PNGファイルを奇数-偶数の組にしてMSXCombinePNG.exeによって合成できます。
+
+*PC-9801版, FM TOWNS版, PC-88VA版, X68000版, PC-9801 NOTE版
 カートリッジディスクは共通です。
 **各カートリッジディスク
 CGはBCG.DAT
 シナリオデータはBDISK.DAT
 BGMはBMUS.DAT(PC-9801), BMUS68.DAT(X68000), BMUSTW.DAT(FM TOWNS), BMUSVA.DAT(PC-88VA)です。
 
+**各システムディスク
+CGはACG.DAT
+シナリオデータはADISK.DAT
+BGMはAMUS.DAT(PC-9801), AMUS68.DAT(X68000), AMUSTW.DAT(FM TOWNS), AMUSVA.DAT(PC-88VA)です。
+
+[闘神都市]
+*PC-9801版, FM TOWNS版
+
+マップデータはAMAP.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*MSX2版
+
+マップデータはAMAP.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*X68000版
+
+チップキャラデータは*.SPR
+マップデータはGMAP?.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+[闘神都市ヒントディスク]
+*PC-9801版, FM TOWNS版
+
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+*X68000版
+
+チップキャラデータは*.SPR
+マップデータはGMAP?.DAT
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+[アリスの館CD]
+*FM TOWNS版
+収録されている過去作については該当するゲームを参照のこと。
