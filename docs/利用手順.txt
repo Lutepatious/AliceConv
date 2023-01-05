@@ -592,3 +592,58 @@ CGはACG.DAT
 [アリスの館CD]
 *FM TOWNS版
 収録されている過去作については該当するゲームを参照のこと。
+
+CDのルートディレクトリにある*.SNDはTOWNS GEARタイプの8ビットPCMファイル
+各ディレクトリにある*.TIFは殆どがTOWNS独自のTIFFで8ビットダイレクトカラー
+
+MAIN\ONNANOKOディレクトリにある
+A?MUS.DATはBGM
+A?CG.DATはCG
+A?DISK.DATはシナリオデータです。
+
+[RanceIII －リーザス陥落－]
+*PC-9801版, X68000版
+
+マップデータは?MAP.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*FM TOWNS版
+
+本体は\RANCE3ディレクトリ
+
+マップデータは?MAP.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+その他のCG0?ディレクトリには*.TIFが普通のTIFF形式で入っています。
+
+[RanceIII オプションSET]
+*PC-9801版, X68000版
+
+**ヒントディスク
+マップデータは?MAP.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+**危ない文化祭前夜
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*FM TOWNS版
+
+**ヒントディスク
+マップデータは?MAP.DAT
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+**危ない文化祭前夜
+CGは本体のCDに収録される\CG00ディレクトリのファイルを使います。
+またフロッピー内の*.TIFファイルも使用します。
+BGMは?MUS.DAT
+シナリオデータは?DISK.DATです。
