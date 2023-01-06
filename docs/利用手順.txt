@@ -602,8 +602,14 @@ A?CG.DATはCG
 A?DISK.DATはシナリオデータです。
 
 [RanceIII －リーザス陥落－]
-*PC-9801版, X68000版
+*X68000版
 
+マップデータは?MAP.DAT
+BGMは?MUS68.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*PC-9801版
 マップデータは?MAP.DAT
 BGMは?MUS.DAT
 CGは?CG.DAT
@@ -621,9 +627,22 @@ CGは?CG.DAT
 その他のCG0?ディレクトリには*.TIFが普通のTIFF形式で入っています。
 
 [RanceIII オプションSET]
-*PC-9801版, X68000版
+*X68000版
 
-**ヒントディスク
+**RanceIII ヒントディスク
+マップデータは?MAP.DAT
+BGMは?MUS68.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+**危ない文化祭前夜
+BGMは?MUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*PC-9801版
+
+**RanceIII ヒントディスク
 マップデータは?MAP.DAT
 BGMは?MUS.DAT
 CGは?CG.DAT
@@ -636,7 +655,7 @@ CGは?CG.DAT
 
 *FM TOWNS版
 
-**ヒントディスク
+**RanceIII ヒントディスク
 マップデータは?MAP.DAT
 BGMは?MUS.DAT
 CGは?CG.DAT
@@ -644,6 +663,6 @@ CGは?CG.DAT
 
 **危ない文化祭前夜
 CGは本体のCDに収録される\CG00ディレクトリのファイルを使います。
-またフロッピー内の*.TIFファイルも使用します。
+またフロッピーディスク内の*.TIFファイルも使用します。
 BGMは?MUS.DAT
 シナリオデータは?DISK.DATです。
