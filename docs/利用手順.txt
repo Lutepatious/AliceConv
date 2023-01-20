@@ -522,6 +522,7 @@ CGはGCG.DAT
 
 [Dream Program System -SG-]
 [Dream Program System -SG- set 2]
+[Dream Program System -SG- set 3]
 *MSX2版
 **システムディスク
 BGMはM0?.BIN
@@ -547,6 +548,7 @@ CGはBCG.DAT
 BGMはBMUS.DAT(PC-9801), BMUS68.DAT(X68000), BMUSTW.DAT(FM TOWNS), BMUSVA.DAT(PC-88VA)です。
 
 **各システムディスク
+PC-9801 NOTE版にBGMファイルはありません。
 CGはACG.DAT
 シナリオデータはADISK.DAT
 BGMはAMUS.DAT(PC-9801), AMUS68.DAT(X68000), AMUSTW.DAT(FM TOWNS), AMUSVA.DAT(PC-88VA)です。
@@ -666,3 +668,143 @@ CGは本体のCDに収録される\CG00ディレクトリのファイルを使います。
 またフロッピーディスク内の*.TIFファイルも使用します。
 BGMは?MUS.DAT
 シナリオデータは?DISK.DATです。
+
+[Dr.STOP!]
+*PC-9801版, X68000版
+
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+オープニングで使われるCGはCG003.DATです。DRStoPNGで変換します。
+
+*FM TOWNS版
+
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+*.BMPはWindows系のBMPではありません、DRStoPNG_TOWNSで変換します。
+
+*MSX2版
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+[ALICEの館II]
+*PC-9801版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+Aディスクの\ARTV_CGにArtV形式のCGが収録されています。(フォーマットがわからないので未解読)
+Aディスクの\MUSICに闘神都市のMAKO2版BGMファイルが収録されています。
+
+ACG.DATをDATSplitterで処理してできるCG\0381A022.DATはタイトルで跳ね回るIIのアニメーションデータです。
+AANIM.DATなど適当なAで始まる名前に変えてからもう一度DATSplitterにかけてください。
+
+*X68000版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+ACG.DATをDATSplitterで処理してできるCG\0381A022.DATはタイトルで跳ね回るIIのアニメーションデータです。
+AANIM.DATなど適当なAで始まる名前に変えてからもう一度DATSplitterにかけてください。
+
+*FM TOWNS版 (ALICEの館CDII)
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+音声はAPCM.DATです。
+以上はCDの\ALICEYディレクトリから取り出して下さい。
+
+シナリオデータはADISK.DATです。
+起動用フロッピーディスクのルートディレクトリから取り出して下さい。
+
+ACG.DATをDATSplitterで処理してできるCG\0381B130.DATはタイトルで跳ね回るIIのアニメーションデータです。
+AANIM.DATなど適当なAで始まる名前に変えてからもう一度DATSplitterにかけてください。
+
+[Super D.P.S]
+*FM TOWNS版, X68000版
+**システムディスク
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+**マリアとカンパン
+BGMはBMUS.DAT
+CGはBCG.DAT
+シナリオデータはBDISK.DATです。
+
+**遠野の森, うれしたのし海賊稼業
+BGMはBMUS.DAT
+CGはBCG.DAT, CCG.DAT
+シナリオデータはBDISK.DATです。
+
+*PC-9801版
+**システムディスク
+BGMはAMUS.DAT
+CGはACG.DAT
+16色CGはACG16.DAT
+シナリオデータはADISK.DATです。
+
+\RANCE3にMAKO2版BGMファイルの更新版が収録されています(RANCE3製品版のBGMファイルはその後のMAKO2では不具合が出るため)。
+
+**マリアとカンパン
+BGMはBMUS.DAT
+CGはBCG.DAT
+16色CGはBCG16.DAT, CCG16.DAT
+シナリオデータはBDISK.DATです。
+
+**遠野の森, うれしたのし海賊稼業
+BGMはBMUS.DAT
+CGはBCG.DAT, CCG.DAT
+16色CGはBCG16.DAT, CCG16.DAT
+シナリオデータはBDISK.DATです。
+
+[ALICEの館CDII]
+*FM TOWNS版
+収録されている過去作については該当するゲームを参照のこと。
+
+CDのルートディレクトリにある*.SNDはTOWNS GEARタイプの8ビットPCMファイル
+各ディレクトリにある*.TIFは殆どがTOWNS独自のTIFFで8ビットダイレクトカラー
+
+MAIN\ONNANOKOディレクトリにある
+A?MUS.DATはBGM
+A?CG.DATはCG
+A?DISK.DATはシナリオデータです。
+
+**あゆみちゃん物語プロトタイプ
+\AUMIに収録
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[DALK]
+*PC-9801版, X68000版
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+*FM TOWNS版
+**CD
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+サンプルCGとしてSAMPLE.TIFがルートディレクトリにあります。
+
+ヒントディスクが同梱されており
+マップデータはAMAP.HNT
+BGMはAMUS.HNT
+CGは?CG.HNT
+シナリオデータはADISK.HNTです。
+DATSplitterで処理する際は、本体の*.DATと別のディレクトリに置いてください。ファイル名が衝突します。
+
+**起動用FD
+基本的にはCDのファイルと同じかアップデートです。
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+更に*.PMSが256色データとしてルートディレクトリにあります。
