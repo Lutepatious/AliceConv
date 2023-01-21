@@ -807,4 +807,25 @@ DATSplitterで処理する際は、本体の*.DATと別のディレクトリに置いてください。ファイ
 BGMはAMUS.DAT
 CGはACG.DAT
 シナリオデータはADISK.DATです。
-更に*.PMSが256色データとしてルートディレクトリにあります。
+更に*.PMSがルートディレクトリにあります。これはVSPtoPNGで変換できるVSP256色(旧PMS)形式のファイルです。
+
+[DALK ヒントディスク]
+*PC-9801版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+サンプルCGとしてSAMPLE.MAG, SAMPLE.ARVがAディスクルートディレクトリにあります。
+
+AディスクのDRS_UP.LZHにDr.STOP!のシナリオデータのアップデート差分が
+TOU98UP1.LZHに闘神都市のBGMのアップデートが
+DディスクのDALK_VUP.EXEにDALKのシナリオデータのアップデートが含まれています。
+
+*X68000版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+サンプルCGとしてSAMPLE.MAG, SAMPLE.ARVがAディスクルートディレクトリにあります。
