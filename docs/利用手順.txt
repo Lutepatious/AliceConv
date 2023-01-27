@@ -1012,3 +1012,20 @@ CGは?CG.DAT
 
 ADISK.PATはADISKPAT.DATの様にリネームした方が処理しやすいでしょう。
 これはにせなぐりまくりたわぁのシナリオデータです。
+
+*CD-ROM版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT, AMUS.TW
+CGは?CG.DAT
+シナリオデータはADISK.DAT, ADISK.PATです。
+
+ADISK.PATはADISKPAT.DATの様にリネームした方が処理しやすいでしょう。
+これはにせなぐりまくりたわぁのシナリオデータです。
+
+AMUS.TWはAMUSTW.DATの様にリネームした方が処理しやすいでしょう。
+
+AMUS.DATとAMUS.TWは中身が途中まで同じMAKO2フォーマットですが、
+後ろはPSG-PCM向けPCMファイルか、TOWNS GEARタイプのPCMファイルかの違いがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+\UNITBASE\Y_SYUREN.LZHの中にD.P.S -SG-用のMAKO2フォーマットのBGMファイルが入っています。
