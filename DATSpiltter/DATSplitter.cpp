@@ -100,18 +100,20 @@ int wmain(int argc, wchar_t** argv)
 			have_linkmap = false;
 		}
 		else {
-			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
-				if ((i >= lmlen / sizeof(struct LINKMAP)) || ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63)) {
-					have_linkmap = false;
-					break;
-				}
+			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
+				if ((linkmap + i)->ArchiveID) {
+					if ((i >= lmlen / sizeof(struct LINKMAP)) || ((linkmap + i)->ArchiveID > 0x1A && (linkmap + i)->ArchiveID != 0x63)) {
+						have_linkmap = false;
+						break;
+					}
 
-				if (arc_ID == (linkmap + i)->ArchiveID) {
-					size_t index = (linkmap + i)->FileNo;
-					unsigned short* target = Addr + index;
-					if ((*target - 1) * 0x100LLU < inbuf.size())
-					{
-						entries_lm = std::max(entries_lm, (size_t)(linkmap + i)->FileNo);
+					if (arc_ID == (linkmap + i)->ArchiveID) {
+						size_t index = (linkmap + i)->FileNo;
+						unsigned short* target = Addr + index;
+						if ((*target - 1) * 0x100LLU < inbuf.size())
+						{
+							entries_lm = std::max(entries_lm, (size_t)(linkmap + i)->FileNo);
+						}
 					}
 				}
 			}
@@ -158,31 +160,33 @@ int wmain(int argc, wchar_t** argv)
 					std::wcerr << L"Out path " << path << L" created." << std::endl;
 				}
 			}
-			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A && (linkmap + i)->ArchiveID; i++) {
-				if (arc_ID == (linkmap + i)->ArchiveID) {
-					size_t wsize;
-					size_t index = (linkmap + i)->FileNo;
-					unsigned short *target = Addr + index - entry_offset;
-					if (*(target + 1)) {
-						wsize = (size_t)(*(target + 1) - *target) * 0x100;
-					}
-					else {
-						wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
-					}
-					if (wsize) {
-						swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03zu", i + 1, towupper(*fname), index);
-						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
-
-						std::ofstream outfile(path, std::ios::binary);
-						if (!outfile) {
-							std::wcerr << L"File open error " << path << L"." << std::endl;
-							outfile.close();
-							exit(-1);
+			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
+				if ((linkmap + i)->ArchiveID) {
+					if (arc_ID == (linkmap + i)->ArchiveID) {
+						size_t wsize;
+						size_t index = (linkmap + i)->FileNo;
+						unsigned short* target = Addr + index - entry_offset;
+						if (*(target + 1)) {
+							wsize = (size_t)(*(target + 1) - *target) * 0x100;
 						}
-						outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
+						else {
+							wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
+						}
+						if (wsize) {
+							swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03zu", i + 1, towupper(*fname), index);
+							_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
 
-						outfile.close();
-						std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
+							std::ofstream outfile(path, std::ios::binary);
+							if (!outfile) {
+								std::wcerr << L"File open error " << path << L"." << std::endl;
+								outfile.close();
+								exit(-1);
+							}
+							outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
+
+							outfile.close();
+							std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
+						}
 					}
 				}
 			}

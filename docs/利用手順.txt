@@ -801,6 +801,13 @@ CGは?CG.HNT
 シナリオデータはADISK.HNTです。
 DATSplitterで処理する際は、本体の*.DATと別のディレクトリに置いてください。ファイル名が衝突します。
 
+AMAP.HNT -> AMAPHNT.DAT 
+AMUS.HNT -> AMUSHNT.DAT
+?CG.HNT -> ?CGHNT.DAT
+ADISK.HNT -> ADISKHNT.DAT
+
+の様にリネームする手もあります。
+
 **起動用FD
 基本的にはCDのファイルと同じかアップデートです。
 マップデータはAMAP.DAT
@@ -829,3 +836,169 @@ CGは?CG.DAT
 シナリオデータはADISK.DATです。
 
 サンプルCGとしてSAMPLE.MAG, SAMPLE.ARVがAディスクルートディレクトリにあります。
+
+[あゆみちゃん物語 プロトタイプ]
+*PC-9801版
+16色CGはBCG16.DAT, CCG16.DAT
+シナリオデータはBDISK.DATです。
+
+[ぷろ すちゅーでんとG]
+*PC-9801版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+*X68000版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*FM TOWNS版
+**CD
+BGMはAMUS.DAT
+CGは?CG.DATです。
+更にPRO_MENU.PMSがルートディレクトリにあります。これはVSPtoPNGで変換できるVSP256色(旧PMS)形式のファイルです。
+
+**起動用FD
+シナリオデータはADISK.DATです。
+
+*SYSTEM3CD版
+補足事項などのシナリオデータはAGAME.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[あゆみちゃん物語]
+*PC-9801版, X68000版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*FM TOWNS版
+**CD
+16色CGは?CG.DAT
+256色横640ドットCGは?CG1.DAT
+256色CGは?CG2.DATです。
+
+**起動用FD
+BGMはAMUS.DAT
+16色CGはACG.DAT
+256色横640ドットCGはACG1.DAT
+256色CGはACG2.DAT
+シナリオデータはADISK.DATです。
+
+*PC-9801 256色版, Windows版
+BGMはAMUS.DAT
+16色CGは?CG0.DAT
+256色CGは?CG1.DAT
+256色横640ドットCGは?CG2.DAT
+ヒントディスクCGはACGﾋﾝﾄD.DAT
+シナリオデータはADISK.DATです。
+
+[あゆみちゃん物語ヒントディスク]
+*PC-9801版, FM TOWNS版
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+*X68000版は入手してないのでわかりません。
+
+[RanceIV 教団の遺産 デモンストレーションディスク]
+*PC-9801版
+BGMはAMUS.DAT
+CGはACG.DATです。
+
+[RanceIV 教団の遺産]
+*PC-9801版
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+アニメーションCGは?ANIM.DAT
+シナリオデータはADISK.DATです。
+
+*FM TOWNS版
+**CD
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+アニメーションCGは?ANIM.DAT
+シナリオデータはADISK.DATです。
+\OMAKEディレクトリにJPEG形式とTIFF形式のCGが入っています。
+MINN20.FNTなるフォントファイルがルートディレクトリにあります。
+
+**起動用FD
+CGはICG.DAT
+R4_27_P9.SNDはMAKO2フォーマットのBGMファイルです。
+
+[RanceIV オプションセット]
+*PC-9801版
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+アニメーションCGはAANIM.DAT
+シナリオデータはADISK.DATです。
+
+CディスクのADISK.LZHにRanceIV 教団の遺産のアップデートが入っています。
+
+*FM TOWNS版
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+アニメーションCGはAANIM.DAT
+シナリオデータはADISK.DATです。
+
+[AmbivalenZ －二律背反－]
+*PC-9801版, X68000版, FM TOWNS版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+
+*Windows版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+GAIJI.DATという外字フォントファイルがあります。
+
+[宇宙快盗ファニーBee]
+*PC-9801版, X68000版, FM TOWNS版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータは?DISK.DATです。
+またCG361.VSPというVSP形式のCGファイルが別にあり、
+GAIJI.DATという外字フォントファイルがあります。
+
+FM TOWNS版では起動用FDにもGAIJI.DAT, CG361.VSPが含まれています。
+
+*SYSTEM3CD版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+GAIJI.DATという外字フォントファイルがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+[闘神都市II]
+*PC-9801版
+マップデータは?MAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+*PC-9801/FM TOWNS同梱CD-ROM版
+マップデータは?MAP.DAT
+BGMはAMUS.DATとAMUS.TW
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+AMUS.TWはAMUSTW.DATの様にリネームした方が処理しやすいでしょう。
+
+AMUS.DATとAMUS.TWは中身が途中まで同じMAKO2フォーマットですが、
+後ろはPSG-PCM向けPCMファイルか、TOWNS GEARタイプのPCMファイルかの違いがあります。
+
+[闘神都市II グラフィックディスク]
+*PC-9801版
+BGMはAMUS.DAT
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+FM TOWNS版は持っていないのでわかりません。
