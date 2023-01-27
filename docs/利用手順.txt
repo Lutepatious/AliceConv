@@ -985,7 +985,7 @@ CGは?CG.DAT
 
 *PC-9801/FM TOWNS同梱CD-ROM版
 マップデータは?MAP.DAT
-BGMはAMUS.DATとAMUS.TW
+BGMはAMUS.DAT, AMUS.TW
 CGは?CG.DAT
 シナリオデータはADISK.DATです。
 ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
@@ -1002,3 +1002,13 @@ CGはACG.DAT
 シナリオデータはADISK.DATです。
 
 FM TOWNS版は持っていないのでわかりません。
+
+[ALICEの館3]
+*PC-9801版
+マップデータはAMAP.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DAT, ADISK.PATです。
+
+ADISK.PATはADISKPAT.DATの様にリネームした方が処理しやすいでしょう。
+これはにせなぐりまくりたわぁのシナリオデータです。

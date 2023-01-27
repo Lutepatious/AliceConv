@@ -55,7 +55,7 @@ int wmain(int argc, wchar_t** argv)
 		unsigned __int16* Addr = (unsigned __int16*)&inbuf.at(0);
 
 		size_t j = 0;
-		do 
+		do
 		{
 			unsigned __int16* target = Addr + j;
 			if (*target == 0) {
@@ -96,7 +96,7 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		unsigned __int8 arc_ID = towupper(fname[0]) - L'A' + 1;
 
-		if (linkmap == nullptr || linkmap->ArchiveID == 0) {
+		if (linkmap == nullptr) {
 			have_linkmap = false;
 		}
 		else {
@@ -161,32 +161,30 @@ int wmain(int argc, wchar_t** argv)
 				}
 			}
 			for (size_t i = 0; (linkmap + i)->ArchiveID != 0x1A; i++) {
-				if ((linkmap + i)->ArchiveID) {
-					if (arc_ID == (linkmap + i)->ArchiveID) {
-						size_t wsize;
-						size_t index = (linkmap + i)->FileNo;
-						unsigned short* target = Addr + index - entry_offset;
-						if (*(target + 1)) {
-							wsize = (size_t)(*(target + 1) - *target) * 0x100;
-						}
-						else {
-							wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
-						}
-						if (wsize) {
-							swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03zu", i + 1, towupper(*fname), index);
-							_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
+				if (arc_ID == (linkmap + i)->ArchiveID) {
+					size_t wsize;
+					size_t index = (linkmap + i)->FileNo;
+					unsigned short* target = Addr + index - entry_offset;
+					if (*(target + 1)) {
+						wsize = (size_t)(*(target + 1) - *target) * 0x100;
+					}
+					else {
+						wsize = inbuf.size() - (size_t)(*target - 1) * 0x100;
+					}
+					if (wsize) {
+						swprintf_s(newfname, _MAX_FNAME, L"%04zu%c%03zu", i + 1, towupper(*fname), index);
+						_wmakepath_s(path, _MAX_PATH, drive, newdir, newfname, L".DAT");
 
-							std::ofstream outfile(path, std::ios::binary);
-							if (!outfile) {
-								std::wcerr << L"File open error " << path << L"." << std::endl;
-								outfile.close();
-								exit(-1);
-							}
-							outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
-
+						std::ofstream outfile(path, std::ios::binary);
+						if (!outfile) {
+							std::wcerr << L"File open error " << path << L"." << std::endl;
 							outfile.close();
-							std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
+							exit(-1);
 						}
+						outfile.write(&inbuf.at(0) + (size_t)(*target - 1) * 0x100, wsize);
+
+						outfile.close();
+						std::wcout << L"Out size " << wsize << L", name " << path << L"." << std::endl;
 					}
 				}
 			}
