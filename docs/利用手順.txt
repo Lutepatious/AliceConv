@@ -10,7 +10,7 @@ HxCFloppyEmulator.exeを起動し、LoadボタンからD88形式イメージをロードした後、Expo
 
 4a. N88-BASIC系のディスクイメージからはN88Splitter.exeでファイルを抽出。
 4b. MS-DOS系のディスクイメージからは適当な(editdやvficなど)ツールでファイルを抽出
-(一部のディスクでDOSフォーマットじゃないと叱られるのでツールは複数用意すること)。
+(一部のディスクで「DOSフォーマットじゃない」と叱られるのでツールは複数用意すること)。
 4c. DOSのフロッピーがそのまま読めるのならファイルをコピーするだけでよいが、2HDの物理フォーマット違いで読めないものの方が多い。
 
 オリジナルのデータはバックアップしてください。
@@ -96,6 +96,10 @@ DISK-E -> EDISK.DAT
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
+
+2023年1月現在、CGファイルにおけるパレットの扱いが不明です。
+パレットさえ復元できればCGの変換はできるのですが。
+
 
 [Rance －光をもとめて－]
 *FM TOWNS版
@@ -773,6 +777,8 @@ A?MUS.DATはBGM
 A?CG.DATはCG
 A?DISK.DATはシナリオデータです。
 
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
 **あゆみちゃん物語プロトタイプ
 \AUMIに収録
 CGは?CG.DAT
@@ -1028,4 +1034,150 @@ AMUS.DATとAMUS.TWは中身が途中まで同じMAKO2フォーマットですが、
 後ろはPSG-PCM向けPCMファイルか、TOWNS GEARタイプのPCMファイルかの違いがあります。
 ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
 
-\UNITBASE\Y_SYUREN.LZHの中にD.P.S -SG-用のMAKO2フォーマットのBGMファイルが入っています。
+\UNITBASE\Y_SYUREN.LZHの中のMUS2_SG.LZHにD.P.S -SG-用のMAKO2フォーマットのBGMファイルが入っています。
+
+[夢幻泡影]
+*PC-9801版, CD-ROM版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+*Windows95版に同梱されたWindows3.1版
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[DPS全部]
+BGMはAMUS.DAT
+CGはACG*.DAT
+シナリオデータはADISK*.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+ルートディレクトリと\DPS_ALLディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+[乙女戦記]
+PCMはAMSE.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+
+[ランス4.1 ～お薬工場を救え!～]
+*CD-ROM版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+RANCE41.ICOというアイコンファイルがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+*PC-9801版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+RANCE41.ICOというアイコンファイルがあります。
+
+[ランス4.2 ～エンジェル組～]
+*CD-ROM版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+RANCE42.ICOというアイコンファイルがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+\ONLYDEMO以下に「Only You －世紀末のジュリエットたち－」のデモが入っています。
+PC-9801用PCMはAMSE.DAT
+FM TOWNS用PCMはASND.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+\UNITBASE\AL3MUSUP.LZHに「ALICEの館3」のBGMファイルへのアップデート差分が入っています。
+
+*PC-9801版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+RANCE42.ICOというアイコンファイルがあります。
+
+\UNITBASE\AL3MUSUP.LZHに「ALICEの館3」のBGMファイルへのアップデート差分が入っています。
+
+[走り女II]
+*CD-ROM版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+HASHIRI.ICOというアイコンファイルがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+*PC-9801版
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[闘神都市II そして、それから…]
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+[Only You －世紀末のジュリエットたち－]
+*CD-ROM版
+PC-9801用PCMはAMSE.DAT
+FM TOWNS用PCMはASND.DAT
+Windows 3.1用PCMはAWAV.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+ルートディレクトリにTOWNS.ICNというアイコンファイルがあります。
+
+*PC-9801版
+PCMはAMSE.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+GAIJI.DATという外字フォントファイルがあります。
+
+[学園KING デモ]
+*ALI_GADE版
+CGはACG.DAT
+シナリオデータはADISK.DATです。
+
+*GAKUD版
+PC-9801用PCMはAMSE.DAT
+FM TOWNS用PCMはASND.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[学園KING －日出彦 学校をつくる－]
+*CD-ROM版
+マップデータはAMAP.DAT
+PC-9801用PCMはAMSE.DAT
+FM TOWNS用PCMはASND.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+*PC-9801版
+マップデータはAMAP.DAT
+PCMはAMSE.DAT
+BGMはAMUS.DAT
+CGは?CG.DAT
+シナリオデータはADISK.DATです。
+
+[人魚 －蘿子－]
+*PC-9801版, FM TOWNS版, Windows 3.1版
+CGはACG.DAT
+シナリオデータはADISK.DATです。
