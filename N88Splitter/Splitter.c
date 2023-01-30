@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "gc.h"
+
 #pragma pack (1)
 struct FILE_DIR {
 	unsigned __int8 FileName[6];
@@ -87,7 +87,7 @@ int wmain(int argc, wchar_t** argv)
 			continue;
 		}
 
-		unsigned __int8* buffer = GC_malloc((size_t) N88[Format].Cylinders * N88[Format].Heads * N88[Format].Track_Length);
+		unsigned __int8* buffer = malloc((size_t) N88[Format].Cylinders * N88[Format].Heads * N88[Format].Track_Length);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			fclose(pFi);
