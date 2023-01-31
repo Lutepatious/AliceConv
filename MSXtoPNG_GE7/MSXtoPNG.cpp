@@ -22,42 +22,35 @@ png_byte d3tod8(unsigned __int8 a)
 }
 
 struct fPNGw {
-	wchar_t* outfile = nullptr;
-	png_bytepp image = nullptr;
-	png_colorp Pal = nullptr;
-	png_bytep Trans = nullptr;
+	std::vector<png_color> pal;
+	std::vector<png_byte> trans;
+	std::vector<png_bytep> body;
+
 	png_uint_32 Rows = NULL;
 	png_uint_32 Cols = NULL;
-	int nPal = 0;
-	int nTrans = 0;
 	int depth = 0;
 	int pXY = 0;
 
-	void init(size_t in_x, size_t in_y, int bpp, int in_asp, std::vector<unsigned __int8>& in_body, std::vector<png_color>& in_pal, std::vector<png_byte>& in_trans)
+	void init(png_uint_32 in_x, png_uint_32 in_y, int bpp, int in_asp, std::vector<unsigned __int8>& in_body, std::vector<png_color>& in_pal, std::vector<png_byte>& in_trans)
 	{
-		this->Rows = in_x;
-		this->Cols = in_y;
+		this->Rows = in_y;
+		this->Cols = in_x;
 		this->depth = bpp;
 		this->pXY = in_asp;
-		this->nPal = in_pal.size();
-		this->Pal = this->nPal ? &in_pal.at(0) : nullptr;
-		this->nTrans = in_trans.size();
-		this->Trans = this->nTrans ? &in_trans.at(0) : nullptr;
-
-		std::vector<png_bytep> pimage;
+		this->pal = in_pal;
+		this->trans = in_trans;
 
 		for (size_t i = 0; i < this->Rows; i++) {
-			pimage.push_back((png_bytep)&in_body.at(i * this->Cols));
+			this->body.push_back((png_bytep)&in_body.at(i * this->Cols));
 		}
-		image = &pimage.at(0);
 	}
 
-	int create(void)
+	int create(wchar_t * outfile)
 	{
 		FILE* pFo;
-		errno_t ecode = _wfopen_s(&pFo, this->outfile, L"wb");
+		errno_t ecode = _wfopen_s(&pFo, outfile, L"wb");
 		if (ecode || !pFo) {
-			wprintf_s(L"File open error %s.\n", this->outfile);
+			std::wcerr << L"File open error." << outfile << std::endl;
 			return -1;
 		}
 		png_structp png_ptr = NULL;
@@ -77,17 +70,17 @@ struct fPNGw {
 		}
 		png_init_io(png_ptr, pFo);
 		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-		png_set_IHDR(png_ptr, info_ptr, this->Cols, this->Rows, this->depth, (this->nPal > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		if ((this->Trans != nullptr) && (this->nPal <= 256)) {
-			png_set_tRNS(png_ptr, info_ptr, this->Trans, this->nTrans, NULL);
+		png_set_IHDR(png_ptr, info_ptr, this->Cols, this->Rows, this->depth, (this->pal.size() > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+		if (!this->trans.empty() && (this->pal.size() <= 256)) {
+			png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), this->trans.size(), NULL);
 		}
 		png_set_pHYs(png_ptr, info_ptr, this->pXY == 3 ? DEFAULT_PpM * 4 / 5 : DEFAULT_PpM, this->pXY == 2 ? DEFAULT_PpM / 2 : DEFAULT_PpM, PNG_RESOLUTION_METER);
-		if (this->nPal <= 256) {
-			png_set_PLTE(png_ptr, info_ptr, this->Pal, this->nPal);
+		if (this->pal.size() <= 256) {
+			png_set_PLTE(png_ptr, info_ptr, &this->pal.at(0), this->pal.size());
 		}
 
 		png_write_info(png_ptr, info_ptr);
-		png_write_image(png_ptr, this->image);
+		png_write_image(png_ptr, &this->body.at(0));
 		png_write_end(png_ptr, info_ptr);
 		png_destroy_write_struct(&png_ptr, &info_ptr);
 		fclose(pFo);
@@ -178,7 +171,16 @@ int wmain(int argc, wchar_t** argv)
 		std::vector<png_color> out_palette = buf->decode_palette();
 		std::vector<png_byte> out_trans;
 
+		wchar_t path[_MAX_PATH];
+		wchar_t fname[_MAX_FNAME];
+		wchar_t dir[_MAX_DIR];
+		wchar_t drive[_MAX_DRIVE];
+
+		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
+
 		fPNGw out;
-		out.init(MSX_SCREEN7_COLUMN, MSX_SCREEN7_ROW, 4, 2, out_body, out_palette, out_trans);
+		out.init(MSX_SCREEN7_COLUMN, MSX_SCREEN7_ROW, 8, 2, out_body, out_palette, out_trans);
+		out.create(path);
 	}
 }
