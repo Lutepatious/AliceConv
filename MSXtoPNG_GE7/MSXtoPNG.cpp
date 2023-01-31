@@ -39,13 +39,17 @@ struct fPNGw {
 		this->Cols = in_y;
 		this->depth = bpp;
 		this->pXY = in_asp;
-		this->Pal = this->Pal == nullptr ? nullptr : &in_pal.at(0);
-		this->Trans = this->Trans == nullptr ? nullptr : &in_trans.at(0);
+		this->nPal = in_pal.size();
+		this->Pal = this->nPal ? &in_pal.at(0) : nullptr;
+		this->nTrans = in_trans.size();
+		this->Trans = this->nTrans ? &in_trans.at(0) : nullptr;
 
-		image = (png_bytepp)malloc(sizeof(png_bytep) * this->Rows);
+		std::vector<png_bytep> pimage;
+
 		for (size_t i = 0; i < this->Rows; i++) {
-			*(image + i) = (png_bytep) &in_body.at(i * this->Cols);
+			pimage.push_back((png_bytep)&in_body.at(i * this->Cols));
 		}
+		image = &pimage.at(0);
 	}
 
 	int create(void)
@@ -172,5 +176,9 @@ int wmain(int argc, wchar_t** argv)
 
 		std::vector<unsigned __int8> out_body = buf->decode_body();
 		std::vector<png_color> out_palette = buf->decode_palette();
+		std::vector<png_byte> out_trans;
+
+		fPNGw out;
+		out.init(MSX_SCREEN7_COLUMN, MSX_SCREEN7_ROW, 4, 2, out_body, out_palette, out_trans);
 	}
 }
