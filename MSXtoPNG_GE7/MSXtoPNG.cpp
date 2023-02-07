@@ -9,7 +9,8 @@
 #pragma pack(1)
 constexpr size_t MSX_SCREEN7_V = 212;
 constexpr size_t MSX_SCREEN7_H = 512;
-
+constexpr size_t RES_X = 40000;
+constexpr size_t RES_Y = 25000;
 
 #include "png.h"
 #include "zlib.h"
@@ -21,31 +22,23 @@ png_byte d3tod8(unsigned __int8 a)
 }
 
 struct MSXtoPNG {
-	std::vector<png_color> pal;
+	std::vector<png_color> palette;
 	std::vector<png_byte> trans;
 	std::vector<png_bytep> body;
 
 	png_uint_32 pixels_V = MSX_SCREEN7_V;
 	png_uint_32 pixels_H = MSX_SCREEN7_H;
 	int depth = 8;
-	int res_x = 40000;
-	int res_y = 25000;
-
+	int res_x = RES_X;
+	int res_y = RES_Y;
 
 	void set_size(png_uint_32 in_x, png_uint_32 in_y)
 	{
 		this->pixels_V = in_y;
 		this->pixels_H = in_x;
 
-		res_x = (((size_t)40000ULL * in_x * 2) / MSX_SCREEN7_H + 1) >> 1;
-		res_y = (((size_t)25000ULL * in_y * 2) / MSX_SCREEN7_V + 1) >> 1;
-	}
-
-	void init(std::vector<unsigned __int8>& in_body)
-	{
-		for (size_t i = 0; i < this->pixels_V; i++) {
-			this->body.push_back((png_bytep)&in_body.at(i * this->pixels_H));
-		}
+		res_x = ((RES_X * in_x * 2) / MSX_SCREEN7_H + 1) >> 1;
+		res_y = ((RES_Y * in_y * 2) / MSX_SCREEN7_V + 1) >> 1;
 	}
 
 	int create(wchar_t * outfile)
@@ -73,13 +66,13 @@ struct MSXtoPNG {
 		}
 		png_init_io(png_ptr, pFo);
 		png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-		png_set_IHDR(png_ptr, info_ptr, this->pixels_H, this->pixels_V, this->depth, (this->pal.size() > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-		if (!this->trans.empty() && (this->pal.size() <= 256)) {
+		png_set_IHDR(png_ptr, info_ptr, this->pixels_H, this->pixels_V, this->depth, (this->palette.size() > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
+		if (!this->trans.empty() && (this->palette.size() <= 256)) {
 			png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), this->trans.size(), NULL);
 		}
 		png_set_pHYs(png_ptr, info_ptr, this->res_x, this->res_y, PNG_RESOLUTION_METER);
-		if (this->pal.size() <= 256) {
-			png_set_PLTE(png_ptr, info_ptr, &this->pal.at(0), this->pal.size());
+		if (this->palette.size() <= 256) {
+			png_set_PLTE(png_ptr, info_ptr, &this->palette.at(0), this->palette.size());
 		}
 
 		png_write_info(png_ptr, info_ptr);
@@ -92,14 +85,14 @@ struct MSXtoPNG {
 	}
 };
 
-class GE7 {
+struct format_GE7 {
 	unsigned __int8 Id;
 	unsigned __int16 start;
 	unsigned __int16 length;
 	unsigned __int16 unknown;
 	struct PackedPixel4 {
 		unsigned __int8	L : 4;
-		unsigned __int8 pixels_H : 4;
+		unsigned __int8 H : 4;
 	} body[MSX_SCREEN7_V][MSX_SCREEN7_H / 2];
 	unsigned __int8 unused[0x1C00];
 	unsigned __int8 splite_generator[0x800];
@@ -113,30 +106,39 @@ class GE7 {
 		unsigned __int16 G : 3;
 		unsigned __int16 : 5;
 	} palette[16];
+};
+
+class GE7 {
+	std::vector<unsigned __int8> I;
 
 public:
-	std::vector<unsigned __int8> decode_body(void)
+	format_GE7* buf;
+
+	void decode_body(std::vector<png_bytep> &out_body)
 	{
-		std::vector<unsigned __int8> I;
+		// 失敗談 各ラインがデコードされ次第PNG出力の構造体にアドレスをプッシュするコードにしていたが
+		// std::vectorはpush_backでサイズが変わっていくと再割り当てを行うので最終的にアドレスが変わってしまう。
+		// このことを忘れててデータ壊しまくってた
 		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
 			for (size_t i = 0; i < MSX_SCREEN7_H / 2; i++) {
-				I.push_back(this->body[j][i].pixels_H);
-				I.push_back(this->body[j][i].L);
+				I.push_back(this->buf->body[j][i].H);
+				I.push_back(this->buf->body[j][i].L);
 			}
 		}
-		return I;
+		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
+			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H));
+		}
 	}
 
-	std::vector<png_color> decode_palette(std::vector<png_color> &pal)
+	void decode_palette(std::vector<png_color> &pal)
 	{
 		png_color c;
 		for (size_t i = 0; i < 16; i++) {
-			c.red = d3tod8(this->palette[i].R);
-			c.green = d3tod8(this->palette[i].G);
-			c.blue = d3tod8(this->palette[i].B);
+			c.red = d3tod8(this->buf->palette[i].R);
+			c.green = d3tod8(this->buf->palette[i].G);
+			c.blue = d3tod8(this->buf->palette[i].B);
 			pal.push_back(c);
 		}
-		return pal;
 	}
 };
 
@@ -162,17 +164,18 @@ int wmain(int argc, wchar_t** argv)
 
 		infile.close();
 
-		class GE7* buf = (class GE7*)&inbuf.at(0);
+		GE7 ge7;
+		ge7.buf = (format_GE7*)&inbuf.at(0);
 
-		if (inbuf.size() < sizeof(class GE7)) {
+		if (inbuf.size() < sizeof(GE7)) {
 			std::wcerr << "File too short. " << *argv << std::endl;
 			continue;
 		}
 
 		MSXtoPNG out;
 
-		std::vector<unsigned __int8> out_body = buf->decode_body();
-		buf->decode_palette(out.pal);
+		ge7.decode_palette(out.palette);
+		ge7.decode_body(out.body);
 
 		wchar_t path[_MAX_PATH];
 		wchar_t fname[_MAX_FNAME];
@@ -182,7 +185,6 @@ int wmain(int argc, wchar_t** argv)
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
 
-		out.init(out_body);
 		out.create(path);
 	}
 }
