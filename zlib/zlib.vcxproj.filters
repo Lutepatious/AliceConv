@@ -66,9 +66,6 @@
     <ClCompile Include="iowin32.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="mztools.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="unzip.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -110,22 +107,19 @@
     <ClInclude Include="zutil.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="crypt.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="ioapi.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="iowin32.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="mztools.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="unzip.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="zip.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="crypt.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
