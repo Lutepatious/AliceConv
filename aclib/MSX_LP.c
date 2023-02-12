@@ -62,10 +62,7 @@ struct image_info* decode_MSX_LP(FILE* pFi)
 			repeat = 0;
 			prev = ~*src;
 		}
-		if (*src == 0xFF && *(src + 1) == 0x1A) {
-			break;
-		}
-		else if (repeat) {
+		if (repeat) {
 			repeat = 0;
 			cp_len = *src - 2; // range -2 to 253. Minus cancells previous data. 
 			if (cp_len > 0) {
@@ -88,6 +85,7 @@ struct image_info* decode_MSX_LP(FILE* pFi)
 	}
 
 	size_t lines = (dst - data_decoded) / 0x100;
+	wprintf_s(L"%zu\n", dst - data_decoded);
 	size_t offset_x = 0;
 	if (lines < 150) {
 		len_y = 140;

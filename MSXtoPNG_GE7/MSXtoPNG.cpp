@@ -100,15 +100,23 @@ struct MSXtoPNG {
 	}
 };
 
+struct PackedPixel4 {
+	unsigned __int8	L : 4;
+	unsigned __int8 H : 4;
+};
+
+union uPackedPixel4 {
+	unsigned __int8 B;
+	PackedPixel4 S;
+};
+
+
 struct format_GE7 {
 	unsigned __int8 Id;
 	unsigned __int16 start;
 	unsigned __int16 length;
 	unsigned __int16 unknown;
-	struct PackedPixel4 {
-		unsigned __int8	L : 4;
-		unsigned __int8 H : 4;
-	} body[MSX_SCREEN7_V][MSX_SCREEN7_H / 2];
+	PackedPixel4 body[MSX_SCREEN7_V][MSX_SCREEN7_H / 2];
 	unsigned __int8 unused[0x1C00];
 	unsigned __int8 splite_generator[0x800];
 	unsigned __int8 splite_color[0x200];
@@ -125,9 +133,26 @@ struct format_GE7 {
 
 class GE7 {
 	std::vector<unsigned __int8> I;
+	format_GE7* buf = nullptr;
 
 public:
-	format_GE7* buf = nullptr;
+
+	bool init(std::vector<__int8>& buffer)
+	{
+		if (buffer.size() < sizeof(format_GE7)) {
+			std::wcerr << "File too short." << std::endl;
+			return true;
+		}
+
+		this->buf = (format_GE7*)&buffer.at(0);
+
+		if (this->buf->Id != 0xFE || this->buf->start != 0 || this->buf->length != 0xFAA0 || this->buf->unknown != 0) {
+			std::wcerr << "File type not match." << std::endl;
+			return true;
+		}
+
+		return false;
+	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
@@ -158,11 +183,14 @@ public:
 };
 
 struct format_LP {
-	unsigned __int8 body[][0x100];
+	unsigned __int8 body[][LEN_SECTOR];
 };
 
 class LP {
 	std::vector<unsigned __int8> I;
+	format_LP* buf = nullptr;
+	size_t sectors = 0;
+
 	struct Pal {
 		unsigned __int8 B;
 		unsigned __int8 R;
@@ -172,7 +200,92 @@ class LP {
 	  { 0x7, 0x0, 0x0 }, { 0x7, 0x0, 0x7 }, { 0x7, 0x7, 0x0 }, { 0x7, 0x7, 0x7 } };
 
 public:
-	format_LP* buf = nullptr;
+
+	bool init(std::vector<__int8>& buffer)
+	{
+		if (buffer.size() % LEN_SECTOR) {
+			std::wcerr << L"File size mismatch. " << std::endl;
+			return true;
+		}
+
+		this->buf = (format_LP*)&buffer.at(0);
+		this->sectors = buffer.size() / LEN_SECTOR;
+
+		return false;
+	}
+
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		size_t rows = MSX_SCREEN7_V;
+
+//		std::wcout << this->sectors << L" sectors." << std::endl;
+
+		for (size_t i = 0; i < this->sectors; i++) {
+			if (*((size_t*)&this->buf->body[i][0]) == 0x0101010101010101ULL) {
+//				std::wcout << L"decode end." << std::endl;
+
+				break;
+			}
+
+			bool repeat = false;
+			unsigned __int8 prev = ~this->buf->body[i][0];
+
+			for (size_t j = 0; j < LEN_SECTOR; j++) {
+				if (repeat) {
+					repeat = false;
+					int cp_len = (int)this->buf->body[i][j] - 2; // range -2 to 253. Minus means cancell previous data. 
+					if (cp_len > 0)
+					{
+						uPackedPixel4 u = { prev };
+
+						for (size_t k = 0; k < cp_len; k++) {
+							I.push_back(u.S.H);
+							I.push_back(u.S.L);
+						}
+					}
+					else if (cp_len < 0) {
+						I.erase(I.end() + cp_len * 2, I.end());
+					}
+					prev = ~this->buf->body[i][j + 1];
+				}
+				else {
+					if (this->buf->body[i][j] == prev) {
+						repeat = true;
+					}
+					else {
+						repeat = false;
+					}
+					prev = this->buf->body[i][j];
+					uPackedPixel4 u = { prev };
+
+					I.push_back(u.S.H);
+					I.push_back(u.S.L);
+				}
+			}
+		}
+
+		size_t lines = I.size() / 0x200;
+		if (lines < 150) {
+			rows = 140;
+		}
+		else if (lines < 190) {
+			rows = 180;
+		}
+		else if (lines < 200) {
+			rows = 192;
+		}
+		else {
+			rows = 200;
+		}
+
+		std::wcout << I.size() << L" bytes. "  << rows << L" lines." << std::endl;
+
+#if 0
+		for (size_t j = 0; j < rows; j++) {
+			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H));
+		}
+#endif
+	}
 
 	void decode_palette(std::vector<png_color>& pal)
 	{
@@ -184,7 +297,7 @@ public:
 			pal.push_back(c);
 		}
 	}
-};
+		};
 
 enum class decode_mode {
 	NONE = 0, GE7, LP, LV, GS, R1, I, TT, DRS
@@ -229,24 +342,27 @@ int wmain(int argc, wchar_t** argv)
 
 		MSXtoPNG out;
 		GE7 ge7;
+		LP lp;
 
 		switch (dm) {
 		case decode_mode::GE7:
-			if (inbuf.size() < sizeof(format_GE7)) {
-				std::wcerr << "File too short. " << *argv << std::endl;
+			if (ge7.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
-
-			ge7.buf = (format_GE7*)&inbuf.at(0);
-
-			if (ge7.buf->Id != 0xFE || ge7.buf->start != 0 || ge7.buf->length != 0xFAA0 || ge7.buf->unknown != 0) {
-				std::wcerr << "File type not match. " << *argv << std::endl;
-				continue;
-			}
-
 			ge7.decode_palette(out.palette);
 			ge7.decode_body(out.body);
 			break;
+
+		case decode_mode::LP:
+			if (lp.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			lp.decode_palette(out.palette);
+			lp.decode_body(out.body);
+			break;
+
 		default:
 			break;
 		}
