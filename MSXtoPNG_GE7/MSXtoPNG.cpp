@@ -200,6 +200,8 @@ class LP {
 	  { 0x7, 0x0, 0x0 }, { 0x7, 0x0, 0x7 }, { 0x7, 0x7, 0x0 }, { 0x7, 0x7, 0x7 } };
 
 public:
+	size_t len_x = MSX_SCREEN7_H;
+	size_t len_y = MSX_SCREEN7_V;
 
 	bool init(std::vector<__int8>& buffer)
 	{
@@ -216,13 +218,11 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		size_t rows = MSX_SCREEN7_V;
-
-//		std::wcout << this->sectors << L" sectors." << std::endl;
+		//		std::wcout << this->sectors << L" sectors." << std::endl;
 
 		for (size_t i = 0; i < this->sectors; i++) {
 			if (*((size_t*)&this->buf->body[i][0]) == 0x0101010101010101ULL) {
-//				std::wcout << L"decode end." << std::endl;
+				//				std::wcout << L"decode end." << std::endl;
 
 				break;
 			}
@@ -264,27 +264,23 @@ public:
 			}
 		}
 
-		size_t lines = I.size() / 0x200;
-		if (lines < 150) {
-			rows = 140;
+		len_y = I.size() / MSX_SCREEN7_H;
+
+		std::wcout << I.size() << L" bytes. " << len_y << L" lines." << std::endl;
+
+		size_t offset_x = 0;
+		if (len_y == 139 || len_y == 140) {
+			offset_x = 8;
+			len_x = 352;
 		}
-		else if (lines < 190) {
-			rows = 180;
-		}
-		else if (lines < 200) {
-			rows = 192;
-		}
-		else {
-			rows = 200;
+		if (len_y == 141) {
+			len_y = 140;
+			len_x = 352;
 		}
 
-		std::wcout << I.size() << L" bytes. "  << rows << L" lines." << std::endl;
-
-#if 0
-		for (size_t j = 0; j < rows; j++) {
-			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H));
+		for (size_t j = 0; j < len_y; j++) {
+			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H + offset_x));
 		}
-#endif
 	}
 
 	void decode_palette(std::vector<png_color>& pal)
@@ -297,7 +293,7 @@ public:
 			pal.push_back(c);
 		}
 	}
-		};
+};
 
 enum class decode_mode {
 	NONE = 0, GE7, LP, LV, GS, R1, I, TT, DRS
@@ -361,6 +357,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			lp.decode_palette(out.palette);
 			lp.decode_body(out.body);
+			out.set_size(lp.len_x, lp.len_y);
 			break;
 
 		default:
