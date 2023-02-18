@@ -93,6 +93,7 @@ DISK-C -> CDISK.DAT
 DISK-D -> DDISK.DAT
 DISK-E -> EDISK.DAT
 とファイル名を変更してください。
+どのディスクからでも良いのでRXXファイルをCGファイルと一緒にしておいてください。
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。

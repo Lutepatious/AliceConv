@@ -153,6 +153,17 @@ public:
 		return false;
 	}
 
+	void decode_palette(std::vector<png_color>& pal)
+	{
+		png_color c;
+		for (size_t i = 0; i < 16; i++) {
+			c.red = d3tod8(this->buf->palette[i].R);
+			c.green = d3tod8(this->buf->palette[i].G);
+			c.blue = d3tod8(this->buf->palette[i].B);
+			pal.push_back(c);
+		}
+	}
+
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
 		// 失敗談 各ラインがデコードされ次第PNG出力の構造体にアドレスをプッシュするコードにしていたが
@@ -166,17 +177,6 @@ public:
 		}
 		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
 			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H));
-		}
-	}
-
-	void decode_palette(std::vector<png_color>& pal)
-	{
-		png_color c;
-		for (size_t i = 0; i < 16; i++) {
-			c.red = d3tod8(this->buf->palette[i].R);
-			c.green = d3tod8(this->buf->palette[i].G);
-			c.blue = d3tod8(this->buf->palette[i].B);
-			pal.push_back(c);
 		}
 	}
 };
@@ -213,6 +213,17 @@ public:
 		this->sectors = buffer.size() / LEN_SECTOR;
 
 		return false;
+	}
+
+	void decode_palette(std::vector<png_color>& pal)
+	{
+		png_color c;
+		for (size_t i = 0; i < 8; i++) {
+			c.red = d3tod8(this->palette[i].R);
+			c.green = d3tod8(this->palette[i].G);
+			c.blue = d3tod8(this->palette[i].B);
+			pal.push_back(c);
+		}
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
@@ -263,33 +274,22 @@ public:
 			}
 		}
 
-		len_y = I.size() / MSX_SCREEN7_H;
+		this->len_y = I.size() / MSX_SCREEN7_H;
 
-//		std::wcout << I.size() << L" bytes. " << len_y << L" lines." << std::endl;
+		//		std::wcout << I.size() << L" bytes. " << this->len_y << L" lines." << std::endl;
 
 		size_t offset_x = 0;
-		if (len_y == 139 || len_y == 140) {
+		if (this->len_y == 139 || this->len_y == 140) {
 			offset_x = 8;
-			len_x = 352;
+			this->len_x = 352;
 		}
-		if (len_y == 141) {
-			len_y = 140;
-			len_x = 352;
+		if (this->len_y == 141) {
+			this->len_y = 140;
+			this->len_x = 352;
 		}
 
-		for (size_t j = 0; j < len_y; j++) {
+		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * MSX_SCREEN7_H + offset_x));
-		}
-	}
-
-	void decode_palette(std::vector<png_color>& pal)
-	{
-		png_color c;
-		for (size_t i = 0; i < 8; i++) {
-			c.red = d3tod8(this->palette[i].R);
-			c.green = d3tod8(this->palette[i].G);
-			c.blue = d3tod8(this->palette[i].B);
-			pal.push_back(c);
 		}
 	}
 };
@@ -304,13 +304,13 @@ struct format_LV {
 
 class LV {
 	std::vector<unsigned __int8> I;
-	format_LV *buf = nullptr;
+	format_LV* buf = nullptr;
 
 	struct Pal {
 		unsigned __int8 B;
 		unsigned __int8 R;
 		unsigned __int8 G;
-	} palette[8] = 
+	} palette[8] =
 	{ { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
 	  { 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 } };
 
@@ -327,16 +327,27 @@ public:
 			return true;
 		}
 		if (this->buf->NegCols == 1) {
-			len_x = MSX_SCREEN7_H;
+			this->len_x = MSX_SCREEN7_H;
 		}
 		else {
-			len_x = (256 - this->buf->NegCols) * 2;
+			this->len_x = (256 - this->buf->NegCols) * 2;
 		}
-		len_y = this->buf->len_y;
+		this->len_y = this->buf->len_y;
 
-		std::wcout << len_x << L"," << len_y << std::endl;
+		std::wcout << this->len_x << L"," << this->len_y << std::endl;
 
 		return false;
+	}
+
+	void decode_palette(std::vector<png_color>& pal)
+	{
+		png_color c;
+		for (size_t i = 0; i < 8; i++) {
+			c.red = d3tod8(this->palette[i].R);
+			c.green = d3tod8(this->palette[i].G);
+			c.blue = d3tod8(this->palette[i].B);
+			pal.push_back(c);
+		}
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
@@ -344,7 +355,7 @@ public:
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
 
-		while (*(unsigned __int16 *)src != 0x1AFF) {
+		while (*(unsigned __int16*)src != 0x1AFF) {
 			if ((src - &this->buf->Id) % 0x100 == 0) {
 				repeat = false;
 				prev = ~*src;
@@ -389,24 +400,125 @@ public:
 				src++;
 			}
 		}
-//		std::wcout << I.size() << std::endl;
-		if (len_x == MSX_SCREEN7_H) {
-			len_y = I.size() / MSX_SCREEN7_H;
+		//		std::wcout << I.size() << std::endl;
+		if (this->len_x == MSX_SCREEN7_H) {
+			this->len_y = I.size() / MSX_SCREEN7_H;
 		}
 
-		for (size_t j = 0; j < len_y; j++) {
-			out_body.push_back((png_bytep)&I.at(j * len_x));
+		for (size_t j = 0; j < this->len_y; j++) {
+			out_body.push_back((png_bytep)&I.at(j * this->len_x));
 		}
 	}
+};
 
-	void decode_palette(std::vector<png_color>& pal)
+struct format_GS {
+	unsigned __int8 len_hx; // divided by 2
+	unsigned __int8 len_y;
+	unsigned __int8 body[];
+};
+
+class GS {
+	std::vector<unsigned __int8> I;
+	struct palette_GS {
+		struct sec_palette_GS {
+			struct {
+				unsigned __int8 O[7];
+				unsigned __int8 P[6][3];
+				unsigned __int8 F[12];
+			} Entry[6];
+			unsigned __int8 F[34];
+		} Sector[50];
+	} *pal2 = nullptr;
+	format_GS* buf = nullptr;
+
+	struct Pal {
+		unsigned __int8 B;
+		unsigned __int8 R;
+		unsigned __int8 G;
+	} palette[10] =
+	{ { 0x0, 0x0, 0x0 }, { 0x7, 0x0, 0x0 }, { 0x0, 0x7, 0x0 }, { 0x7, 0x7, 0x0 },
+	  { 0x0, 0x0, 0x7 }, { 0x7, 0x0, 0x7 }, { 0x0, 0x7, 0x7 }, { 0x7, 0x7, 0x7 },
+	  { 0x4, 0x7, 0x6 }, { 0x6, 0x7, 0x6 } };
+
+public:
+	png_uint_32 len_x = MSX_SCREEN7_H;
+	png_uint_32 len_y = MSX_SCREEN7_V;
+
+	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer)
+	{
+		this->buf = (format_GS*)&buffer.at(0);
+		this->pal2 = (palette_GS*)&palette_buffer.at(0);
+
+		this->len_x = this->buf->len_hx ? this->buf->len_hx * 2 : MSX_SCREEN7_H;
+		this->len_y = this->buf->len_y;
+
+		std::wcout << this->len_x << L"," << this->len_y << std::endl;
+
+		return false;
+	}
+
+	void decode_palette(std::vector<png_color>& pal, size_t n)
 	{
 		png_color c;
-		for (size_t i = 0; i < 8; i++) {
+		for (size_t i = 0; i < 10; i++) {
 			c.red = d3tod8(this->palette[i].R);
 			c.green = d3tod8(this->palette[i].G);
 			c.blue = d3tod8(this->palette[i].B);
 			pal.push_back(c);
+		}
+
+		n--;
+
+		for (size_t i = 0; i < 6; i++) {
+			size_t sector = n / 6;
+			size_t entry = n % 6;
+
+			c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][1] - 0x30);
+			c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][2] - 0x30);
+			c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][0] - 0x30);
+			pal.push_back(c);
+		}
+	}
+
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		unsigned __int8* src = this->buf->body, prev = ~*src;
+		bool repeat = false;
+
+		while (I.size() < this->len_x * this->len_y) {
+
+			if (repeat) {
+				repeat = false;
+				int cp_len = *src;
+				if (cp_len > 0) {
+					uPackedPixel4 u = { prev };
+
+					for (size_t k = 0; k < cp_len; k++) {
+						I.push_back(u.S.H);
+						I.push_back(u.S.L);
+					}
+				}
+				src++;
+			}
+			else {
+				if (*src == prev) {
+					repeat = true;
+				}
+				else {
+					repeat = false;
+				}
+				prev = *src;
+				uPackedPixel4 u = { prev };
+
+				I.push_back(u.S.H);
+				I.push_back(u.S.L);
+				src++;
+			}
+		}
+		//		std::wcout << I.size() << std::endl;
+
+		for (size_t j = 0; j < this->len_y; j++) {
+			out_body.push_back((png_bytep)&I.at(j * this->len_x));
 		}
 	}
 };
@@ -438,6 +550,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'v') { // Little Vampire
 				dm = decode_mode::LV;
 			}
+			else if (*(*argv + 1) == L'g') { // Little Vampire
+				dm = decode_mode::GS;
+			}
 			continue;
 		}
 
@@ -456,6 +571,7 @@ int wmain(int argc, wchar_t** argv)
 		GE7 ge7;
 		LP lp;
 		LV lv;
+		GS gs;
 
 		switch (dm) {
 		case decode_mode::GE7:
@@ -487,6 +603,37 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size(lv.len_x, lv.len_y);
 			break;
 
+		case decode_mode::GS:
+		{
+			wchar_t *t;
+			size_t n = wcstoull(*argv, &t, 10);
+			if (n == 0 || n > 300) {
+				std::wcerr << L"Out of palette." << std::endl;
+
+				continue;
+			}
+
+			std::ifstream palettefile("RXX", std::ios::binary);
+			if (!palettefile) {
+				std::wcerr << L"File " << "RXX" << L" open error." << std::endl;
+
+				continue;
+			}
+
+			std::vector<__int8> palbuf{ std::istreambuf_iterator<__int8>(palettefile), std::istreambuf_iterator<__int8>() };
+
+			palettefile.close();
+
+			if (gs.init(inbuf, palbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+
+			gs.decode_palette(out.palette, n);
+			gs.decode_body(out.body);
+			out.set_size(gs.len_x, gs.len_y);
+			break;
+		}
 		default:
 			break;
 		}
