@@ -423,7 +423,11 @@ class GS {
 		struct sec_palette_GS {
 			struct {
 				unsigned __int8 O[7];
-				unsigned __int8 P[6][3];
+				struct {
+					unsigned __int8 B;
+					unsigned __int8 R;
+					unsigned __int8 G;
+				} P[6];
 				unsigned __int8 F[12];
 			} Entry[6];
 			unsigned __int8 F[34];
@@ -453,7 +457,7 @@ public:
 		this->len_x = this->buf->len_hx ? this->buf->len_hx * 2 : MSX_SCREEN7_H;
 		this->len_y = this->buf->len_y;
 
-		std::wcout << this->len_x << L"," << this->len_y << std::endl;
+		//		std::wcout << this->len_x << L"," << this->len_y << std::endl;
 
 		return false;
 	}
@@ -461,7 +465,7 @@ public:
 	void decode_palette(std::vector<png_color>& pal, size_t n)
 	{
 		png_color c;
-		for (size_t i = 0; i < 10; i++) {
+		for (size_t i = 0; i < 16; i++) {
 			c.red = d3tod8(this->palette[i].R);
 			c.green = d3tod8(this->palette[i].G);
 			c.blue = d3tod8(this->palette[i].B);
@@ -469,16 +473,58 @@ public:
 		}
 
 		n--;
+		size_t sector = n / 6;
+		size_t entry = n % 6;
+
+		while (this->pal2->Sector[sector].Entry[entry].P[0].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[0].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[0].B == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[1].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[1].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[1].B == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[2].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[2].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[2].B == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[3].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[3].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[3].B == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[4].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[4].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[4].B == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[5].R == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[5].G == 0x30 &&
+			this->pal2->Sector[sector].Entry[entry].P[5].B == 0x30) {
+			n--;
+			sector = n / 6;
+			entry = n % 6;
+		}
 
 		for (size_t i = 0; i < 6; i++) {
-			size_t sector = n / 6;
-			size_t entry = n % 6;
-
-			c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][1] - 0x30);
-			c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][2] - 0x30);
-			c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i][0] - 0x30);
-			pal.push_back(c);
+			pal[10 + i].red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+			pal[10 + i].green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+			pal[10 + i].blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
 		}
+	}
+
+	void view_palette(void)
+	{
+		for (size_t i = 0; i < 50; i++) {
+			for (size_t j = 0; j < 6; j++) {
+				std::cout << std::setw(3) << i * 6 + j + 1 << "/";
+				for (size_t c = 0; c < 7; c++) {
+					std::cout << this->pal2->Sector[i].Entry[j].O[c];
+				}
+				std::cout << "/";
+				for (size_t c = 0; c < 6; c++) {
+					std::cout << this->pal2->Sector[i].Entry[j].P[c].B << this->pal2->Sector[i].Entry[j].P[c].R << this->pal2->Sector[i].Entry[j].P[c].G << " ";
+				}
+				for (size_t c = 0; c < 12; c++) {
+					std::cout << this->pal2->Sector[i].Entry[j].F[c];
+				}
+				std::cout << std::endl;
+			}
+		}
+
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
@@ -606,10 +652,10 @@ int wmain(int argc, wchar_t** argv)
 
 		case decode_mode::GS:
 		{
-			wchar_t *t;
+			wchar_t* t;
 			size_t n = wcstoull(*argv, &t, 10);
 			if (n == 0 || n > 300) {
-				std::wcerr << L"Out of palette." << std::endl;
+				std::wcerr << L"Out of range." << std::endl;
 
 				continue;
 			}

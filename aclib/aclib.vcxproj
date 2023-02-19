@@ -182,8 +182,6 @@
     <ClCompile Include="MSX_DRS.c" />
     <ClCompile Include="MSX_GL.c" />
     <ClCompile Include="MSX_I.c" />
-    <ClCompile Include="MSX_LP.c" />
-    <ClCompile Include="MSX_LV.c" />
     <ClCompile Include="MSX_TT.c" />
     <ClCompile Include="PMS16.c" />
     <ClCompile Include="PMS8.c" />

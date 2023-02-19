@@ -57,12 +57,6 @@
     <ClCompile Include="MSX_I.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MSX_LV.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="MSX_LP.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="tiffrw.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
