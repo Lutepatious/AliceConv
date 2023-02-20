@@ -422,13 +422,15 @@ class GS {
 	struct palette_GS {
 		struct sec_palette_GS {
 			struct {
-				unsigned __int8 O[7];
+				unsigned __int8 F;
+				unsigned __int8 X[3];
+				unsigned __int8 Y[3];
 				struct {
 					unsigned __int8 B;
 					unsigned __int8 R;
 					unsigned __int8 G;
 				} P[6];
-				unsigned __int8 F[12];
+				unsigned __int8 O[4][3];
 			} Entry[6];
 			unsigned __int8 F[34];
 		} Sector[50];
@@ -465,44 +467,80 @@ public:
 	void decode_palette(std::vector<png_color>& pal, size_t n)
 	{
 		png_color c;
-		for (size_t i = 0; i < 16; i++) {
+		for (size_t i = 0; i < 10; i++) {
 			c.red = d3tod8(this->palette[i].R);
 			c.green = d3tod8(this->palette[i].G);
 			c.blue = d3tod8(this->palette[i].B);
 			pal.push_back(c);
 		}
 
+		switch (n) {
+		case 43:
+			n = 51;
+			break;
+		case 46:
+			n = 52;
+			break;
+		case 57:
+			n = 9;
+			break;
+		case 58:
+			n = 13;
+			break;
+		case 72:
+			n = 38;
+			break;
+		case 73:
+		case 76:
+			n = 75;
+			break;
+		case 74:
+			n = 59;
+			break;
+		case 84:
+			n = 55;
+			break;
+		case 97:
+			n = 96;
+			break;
+		default:
+			break;
+		}
+
 		n--;
 		size_t sector = n / 6;
 		size_t entry = n % 6;
 
-		while (this->pal2->Sector[sector].Entry[entry].P[0].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[0].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[0].B == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[1].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[1].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[1].B == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[2].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[2].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[2].B == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[3].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[3].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[3].B == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[4].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[4].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[4].B == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[5].R == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[5].G == 0x30 &&
-			this->pal2->Sector[sector].Entry[entry].P[5].B == 0x30) {
-			n--;
-			sector = n / 6;
-			entry = n % 6;
-		}
-
-		for (size_t i = 0; i < 6; i++) {
-			pal[10 + i].red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
-			pal[10 + i].green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
-			pal[10 + i].blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
+		unsigned __int8 max_pal = *std::max_element(I.begin(), I.end());
+		if (max_pal >= 10) {
+			if (this->pal2->Sector[sector].Entry[entry].F == 0x30) {
+				if (this->pal2->Sector[sector].Entry[entry].P[0].R != 0x30 || this->pal2->Sector[sector].Entry[entry].P[0].G != 0x30 || this->pal2->Sector[sector].Entry[entry].P[0].B != 0x30) {
+					for (size_t i = 0; i < 6; i++) {
+						c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+						c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+						c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
+						pal.push_back(c);
+					}
+				}
+				else {
+					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
+					for (size_t i = 10; i < 16; i++) {
+						c.red = d3tod8(this->palette[0].R);
+						c.green = d3tod8(this->palette[0].G);
+						c.blue = d3tod8(this->palette[0].B);
+						pal.push_back(c);
+					}
+				}
+			}
+			else {
+				std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
+				for (size_t i = 10; i < 16; i++) {
+					c.red = d3tod8(this->palette[0].R);
+					c.green = d3tod8(this->palette[0].G);
+					c.blue = d3tod8(this->palette[0].B);
+					pal.push_back(c);
+				}
+			}
 		}
 	}
 
@@ -511,15 +549,22 @@ public:
 		for (size_t i = 0; i < 50; i++) {
 			for (size_t j = 0; j < 6; j++) {
 				std::cout << std::setw(3) << i * 6 + j + 1 << "/";
-				for (size_t c = 0; c < 7; c++) {
-					std::cout << this->pal2->Sector[i].Entry[j].O[c];
+				std::cout << this->pal2->Sector[i].Entry[j].F << " ";
+				for (size_t c = 0; c < 3; c++) {
+					std::cout << this->pal2->Sector[i].Entry[j].X[c] << " ";
+				}
+				for (size_t c = 0; c < 3; c++) {
+					std::cout << this->pal2->Sector[i].Entry[j].Y[c] << " ";
 				}
 				std::cout << "/";
 				for (size_t c = 0; c < 6; c++) {
 					std::cout << this->pal2->Sector[i].Entry[j].P[c].B << this->pal2->Sector[i].Entry[j].P[c].R << this->pal2->Sector[i].Entry[j].P[c].G << " ";
 				}
-				for (size_t c = 0; c < 12; c++) {
-					std::cout << this->pal2->Sector[i].Entry[j].F[c];
+				for (size_t c = 0; c < 4; c++) {
+					for (size_t d = 0; d < 3; d++) {
+						std::cout << this->pal2->Sector[i].Entry[j].O[c][d];
+					}
+					std::cout << " ";
 				}
 				std::cout << std::endl;
 			}
@@ -533,7 +578,6 @@ public:
 		bool repeat = false;
 
 		while (I.size() < this->len_x * this->len_y) {
-
 			if (repeat) {
 				repeat = false;
 				int cp_len = *src;
@@ -562,7 +606,9 @@ public:
 				src++;
 			}
 		}
-		//		std::wcout << I.size() << std::endl;
+
+//		std::wcerr << I.size() << L"/" << this->len_x * this->len_y << std::endl;
+		I.resize(this->len_x * this->len_y);
 
 		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * this->len_x));
@@ -676,8 +722,8 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 
-			gs.decode_palette(out.palette, n);
 			gs.decode_body(out.body);
+			gs.decode_palette(out.palette, n);
 			out.set_size(gs.len_x, gs.len_y);
 			break;
 		}
