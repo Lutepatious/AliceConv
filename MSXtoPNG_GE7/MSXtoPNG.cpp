@@ -514,8 +514,7 @@ public:
 		case 110: // verified
 			n = 14;
 			break;
-		case 120:
-		case 123:
+		case 120: // verified
 			n = 20;
 			break;
 		default:
