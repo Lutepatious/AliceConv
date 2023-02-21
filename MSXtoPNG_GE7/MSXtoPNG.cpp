@@ -436,6 +436,7 @@ class GS {
 		} Sector[50];
 	} *pal2 = nullptr;
 	format_GS* buf = nullptr;
+	size_t len_buf = 0;
 
 	struct Pal {
 		unsigned __int8 B;
@@ -454,6 +455,7 @@ public:
 	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer)
 	{
 		this->buf = (format_GS*)&buffer.at(0);
+		this->len_buf = buffer.size();
 		this->pal2 = (palette_GS*)&palette_buffer.at(0);
 
 		this->len_x = this->buf->len_hx ? this->buf->len_hx * 2 : MSX_SCREEN7_H;
@@ -475,33 +477,46 @@ public:
 		}
 
 		switch (n) {
-		case 43:
+		case 43: // verified
 			n = 51;
 			break;
-		case 46:
+		case 46: // verified
 			n = 52;
 			break;
-		case 57:
+		case 57: // verified
 			n = 9;
 			break;
-		case 58:
+		case 58: // verified
 			n = 13;
 			break;
-		case 72:
+		case 72: // verified
 			n = 38;
 			break;
-		case 73:
-		case 76:
-			n = 75;
+		case 73: // verified
+			n = 233;
 			break;
-		case 74:
+		case 74: // verified
 			n = 59;
 			break;
-		case 84:
+		case 76: // verified
+			n = 75;
+			break;
+		case 84: // verified
 			n = 55;
 			break;
 		case 97:
 			n = 96;
+			break;
+		case 99:
+			n = 98;
+			break;
+		case 109: // verified
+		case 110: // verified
+			n = 14;
+			break;
+		case 120:
+		case 123:
+			n = 20;
 			break;
 		default:
 			break;
@@ -524,7 +539,7 @@ public:
 				}
 				else {
 					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
-					for (size_t i = 10; i < 16; i++) {
+					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->palette[0].R);
 						c.green = d3tod8(this->palette[0].G);
 						c.blue = d3tod8(this->palette[0].B);
@@ -534,10 +549,10 @@ public:
 			}
 			else {
 				std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
-				for (size_t i = 10; i < 16; i++) {
-					c.red = d3tod8(this->palette[0].R);
-					c.green = d3tod8(this->palette[0].G);
-					c.blue = d3tod8(this->palette[0].B);
+				for (size_t i = 0; i < 6; i++) {
+					c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+					c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+					c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
 					pal.push_back(c);
 				}
 			}
@@ -572,12 +587,27 @@ public:
 
 	}
 
+	bool is_empty(unsigned __int8* pos) {
+		if (*pos == 0xFF) {
+			size_t remain = this->len_buf - (pos - &this->buf->len_hx);
+
+			while (--remain) {
+				if (*++pos) {
+					return false;
+				}			
+			}
+			return true;
+		}
+
+		return false;
+	}
+
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
 
-		while (I.size() < this->len_x * this->len_y) {
+		while (!this->is_empty(src)) {
 			if (repeat) {
 				repeat = false;
 				int cp_len = *src;
