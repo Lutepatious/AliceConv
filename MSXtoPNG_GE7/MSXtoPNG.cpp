@@ -529,6 +529,21 @@ public:
 		case 157:
 			n = 156;
 			break;
+		case 164:
+			n = 138;
+			break;
+		case 166:
+			n = 218;
+			break;
+		case 197:
+			n = 156;
+			break;
+		case 256:
+		case 257:
+		case 258:
+		case 259:
+			n = 207;
+			break;
 		default:
 			break;
 		}
