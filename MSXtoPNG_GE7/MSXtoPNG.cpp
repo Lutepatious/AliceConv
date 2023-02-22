@@ -477,45 +477,57 @@ public:
 		}
 
 		switch (n) {
-		case 43: // verified
+		case 43:
 			n = 51;
 			break;
-		case 46: // verified
+		case 46:
 			n = 52;
 			break;
-		case 57: // verified
+		case 57:
 			n = 9;
 			break;
-		case 58: // verified
+		case 58:
 			n = 13;
 			break;
-		case 72: // verified
+		case 72:
 			n = 38;
 			break;
-		case 73: // verified
+		case 73:
 			n = 233;
 			break;
-		case 74: // verified
+		case 74:
 			n = 59;
 			break;
-		case 76: // verified
+		case 76:
 			n = 75;
 			break;
-		case 84: // verified
+		case 84:
 			n = 55;
 			break;
 		case 97:
-			n = 96;
+			n = 147;
 			break;
 		case 99:
 			n = 98;
 			break;
-		case 109: // verified
-		case 110: // verified
+		case 109:
+		case 110:
 			n = 14;
 			break;
-		case 120: // verified
+		case 120:
 			n = 20;
+			break;
+		case 124:
+			n = 231;
+			break;
+		case 148:
+			n = 138;
+			break;
+		case 154:
+			n = 17;
+			break;
+		case 157:
+			n = 156;
 			break;
 		default:
 			break;
