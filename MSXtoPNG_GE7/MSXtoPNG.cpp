@@ -544,6 +544,9 @@ public:
 		case 259:
 			n = 207;
 			break;
+		case 281:
+			n = 223;
+			break;
 		default:
 			break;
 		}
@@ -563,6 +566,14 @@ public:
 						pal.push_back(c);
 					}
 				}
+				else if (n == 297 - 1) {
+					for (size_t i = 0; i < 6; i++) {
+						c.red = d3tod8(this->palette[10 + i].R);
+						c.green = d3tod8(this->palette[10 + i].G);
+						c.blue = d3tod8(this->palette[10 + i].B);
+						pal.push_back(c);
+					}
+				}
 				else {
 					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
@@ -574,12 +585,41 @@ public:
 				}
 			}
 			else {
-				std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
-				for (size_t i = 0; i < 6; i++) {
-					c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
-					c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
-					c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
-					pal.push_back(c);
+				if (n == 298 - 1) {
+
+					n = 20 - 1;
+					sector = n / 6;
+					entry = n % 6;
+					for (size_t i = 0; i < 6; i++) {
+						c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+						c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+						c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
+						pal.push_back(c);
+					}
+					n = 26 - 1;
+					sector = n / 6;
+					entry = n % 6;
+					for (size_t i = 0; i < 6; i++) {
+						c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+						c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+						c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
+						pal.push_back(c);
+					}
+
+					for (size_t s = 0; s < I.size(); s++) {
+						if (s % 512 >= 256 && I.at(s) >= 10) {
+							I.at(s) += 6;
+						}
+					}
+				}
+				else {
+					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
+					for (size_t i = 0; i < 6; i++) {
+						c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
+						c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
+						c.blue = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].B - 0x30);
+						pal.push_back(c);
+					}
 				}
 			}
 		}
@@ -613,7 +653,7 @@ public:
 
 	}
 
-	bool is_empty(unsigned __int8* pos) {
+	bool is_end(unsigned __int8* pos) {
 		if (*pos == 0xFF) {
 			size_t remain = this->len_buf - (pos - &this->buf->len_hx);
 
@@ -633,7 +673,7 @@ public:
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
 
-		while (!this->is_empty(src)) {
+		while (!this->is_end(src)) {
 			if (repeat) {
 				repeat = false;
 				int cp_len = *src;
