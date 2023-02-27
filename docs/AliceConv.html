@@ -51,18 +51,26 @@
             FM TOWNS TIFF (256 colors). Format used in Alice no Yakata CD, Alice no Yakata CD II, Rance III FM TOWNS.
             <li>MSXtoPNG</li>
             Converter for MSX2 CG.
-            <li>MSXtoPNG_LP</li>
-            for Little Princess (Champion Soft).
-            <li>MSXtoPNG_LV</li>
-            for Little Vampire (Champion Soft).
             <li>MSXtoPNG_DrSTOP</li>
             for Dr.STOP!.
             <li>MSXtoPNG_TT</li>
             for Tousin Toshi.
             <li>MSXtoPNG_Intruder</li>
             for Intruder. It needs COLPALET.DAT in A disk.
-            <li>MSXtoPNG_GS, MSXtoPNG_GS_TITLE</li>
-            Under development converter for Gakuen Senki (Champion Soft).
+
+            <li>MSXtoPNG_GE7</li>
+            It has 4 options.
+            <ul>
+                <li>-b for MSX Screen7 BSAVE format (Gakuen Senki TITLE, Fukei san VX FUKEI.CG, Abunai Tengu Densetu README*.GE7, Dream Program System POPART?.DAT</li>
+                <li>-l for Little Princess (Champion Soft). </li>
+                <li>-v for for Little Vampire (Champion Soft). </li>
+                <li>-g for Gakuen Senki (Champion Soft).</li>
+            </ul>
+
+            Gakuen Senki needs RXX file on current directory. Please copy from any game disk.
+            It contains palette and location information.
+            Due to bugs and lacked palette, some images use previous image's palette.
+
             <li>DRStoPNG</li>
             Converter for Dr.STOP! opening demo CG (cg003.dat) for PC-9801/X68000.
             <li>DRStoPNG_TOWNS</li>
@@ -118,7 +126,7 @@
             It cannot autodetect machine specific information.
             I decided X68000 as default.
 
-            It has 4 options.
+            It has 3 options.
             <ul>
                 <li>-9 for PC-9801 (YM-2203) musics.</li>
                 <li>-T for ToushinToshi for X68000 (YM-2151) musics. </li>
@@ -143,7 +151,7 @@
             It cannot autodetect machine specific information.
             I decided PC-9801 as default.
 
-            so It has 4 options.
+            It has 4 options.
             <ul>
                 <li>-v for PC-88VA (YM-2203) musics.</li>
                 <li>-t for FM TOWNS (YM-2612) musics. </li>
