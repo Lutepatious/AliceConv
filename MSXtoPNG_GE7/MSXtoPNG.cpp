@@ -448,6 +448,21 @@ class GS {
 	  { 0x4, 0x7, 0x6 }, { 0x6, 0x7, 0x6 }, { 0x4, 0x4, 0x4 }, { 0x6, 0x6, 0x6 },
 	  { 0x1, 0x1, 0x4 }, { 0x5, 0x6, 0x2 }, { 0x5, 0x5, 0x5 }, { 0x7, 0x7, 0x7 } };
 
+	bool is_end(unsigned __int8* pos) {
+		if (*pos == 0xFF) {
+			size_t remain = this->len_buf - (pos - &this->buf->len_hx);
+
+			while (--remain) {
+				if (*++pos) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
+
 public:
 	png_uint_32 len_x = MSX_SCREEN7_H;
 	png_uint_32 len_y = MSX_SCREEN7_V;
@@ -505,7 +520,7 @@ public:
 			n = 55;
 			break;
 		case 97:
-			n = 147;
+			n = 229;
 			break;
 		case 99:
 			n = 98;
@@ -613,7 +628,7 @@ public:
 					}
 				}
 				else {
-					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
+					//					std::cout << n + 1 << "/" << this->pal2->Sector[sector].Entry[entry].F << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].R - 0x30);
 						c.green = d3tod8(this->pal2->Sector[sector].Entry[entry].P[i].G - 0x30);
@@ -623,6 +638,11 @@ public:
 				}
 			}
 		}
+
+		for (size_t i = 0; i < 16; i++) {
+			std::wcout << (int)(pal[i].red >> 5) << (int)(pal[i].green >> 5) << (int)(pal[i].blue >> 5) << " ";
+		}
+		std::cout << std::endl;
 	}
 
 	void view_palette(void)
@@ -653,23 +673,20 @@ public:
 
 	}
 
-	bool is_end(unsigned __int8* pos) {
-		if (*pos == 0xFF) {
-			size_t remain = this->len_buf - (pos - &this->buf->len_hx);
-
-			while (--remain) {
-				if (*++pos) {
-					return false;
-				}			
-			}
-			return true;
-		}
-
-		return false;
-	}
-
-	void decode_body(std::vector<png_bytep>& out_body)
+	void decode_body(std::vector<png_bytep>& out_body, size_t n)
 	{
+		unsigned __int8 offset_xC[4] = { 0, 0, 0, 0 };
+		unsigned __int8 offset_yC[4] = { 0, 0, 0, 0 };
+
+		offset_xC[0] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].X[0];
+		offset_xC[1] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].X[1];
+		offset_xC[2] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].X[2];
+		offset_yC[0] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].Y[0];
+		offset_yC[1] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].Y[1];
+		offset_yC[2] = this->pal2->Sector[(n - 1) / 6].Entry[(n - 1) % 6].Y[2];
+
+		std::cout << std::setw(3) << n << ":" << std::setw(3) << atoi((const char*)offset_xC) << "," << std::setw(3) << atoi((const char*)offset_yC) << " ";
+
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
 
@@ -703,7 +720,7 @@ public:
 			}
 		}
 
-//		std::wcerr << I.size() << L"/" << this->len_x * this->len_y << std::endl;
+		std::wcerr << std::setw(6) << I.size() << L"/" << std::setw(6) << this->len_x * this->len_y << L" ";
 		I.resize(this->len_x * this->len_y);
 
 		for (size_t j = 0; j < this->len_y; j++) {
@@ -818,7 +835,7 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 
-			gs.decode_body(out.body);
+			gs.decode_body(out.body, n);
 			gs.decode_palette(out.palette, n);
 			out.set_size(gs.len_x, gs.len_y);
 			break;
