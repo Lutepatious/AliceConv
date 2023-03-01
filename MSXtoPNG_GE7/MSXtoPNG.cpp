@@ -572,93 +572,92 @@ public:
 			pal.push_back(c);
 		}
 
-		switch (this->color_num) {
+		size_t tnum = this->color_num;
+		switch (tnum) {
 		case 43:
-			this->color_num = 51;
+			tnum = 51;
 			break;
 		case 46:
-			this->color_num = 52;
+			tnum = 52;
 			break;
 		case 57:
-			this->color_num = 9;
+			tnum = 9;
 			break;
 		case 58:
-			this->color_num = 13;
+			tnum = 13;
 			break;
 		case 72:
-			this->color_num = 38;
+			tnum = 38;
 			break;
 		case 73:
-			this->color_num = 233;
+			tnum = 233;
 			break;
 		case 74:
-			this->color_num = 59;
+			tnum = 59;
 			break;
 		case 76:
-			this->color_num = 75;
+			tnum = 75;
 			break;
 		case 84:
-			this->color_num = 55;
+			tnum = 55;
 			break;
 		case 97:
-			this->color_num = 229;
+			tnum = 229;
 			break;
 		case 99:
-			this->color_num = 98;
+			tnum = 98;
 			break;
 		case 109:
 		case 110:
-			this->color_num = 14;
+			tnum = 14;
 			break;
 		case 120:
-			this->color_num = 20;
+			tnum = 20;
 			break;
 		case 124:
-			this->color_num = 231;
+			tnum = 231;
 			break;
 		case 148:
-			this->color_num = 138;
+			tnum = 138;
 			break;
 		case 154:
-			this->color_num = 17;
+			tnum = 17;
 			break;
 		case 157:
-			this->color_num = 156;
+			tnum = 156;
 			break;
 		case 164:
-			this->color_num = 138;
+			tnum = 138;
 			break;
 		case 166:
-			this->color_num = 218;
+			tnum = 218;
 			break;
 		case 197:
-			this->color_num = 156;
+			tnum = 156;
 			break;
 		case 256:
 		case 257:
 		case 258:
 		case 259:
-			this->color_num = 207;
+			tnum = 207;
 			break;
 		case 281:
-			this->color_num = 223;
+			tnum = 223;
 			break;
 		default:
 			break;
 		}
 
-		unsigned __int8 max_pal = *std::max_element(I.begin(), I.end());
-		if (max_pal >= 10) {
-			if (this->R[this->color_num - 1].flag == 0) {
-				if (this->R[this->color_num - 1].palette[0].R || this->R[this->color_num - 1].palette[0].G || this->R[this->color_num - 1].palette[0].B) {
+			if (this->R[tnum - 1].flag == 0) {
+				if (this->R[tnum - 1].palette[0].R || this->R[tnum - 1].palette[0].G || this->R[tnum - 1].palette[0].B) {
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
-						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
-						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
+						c.red = d3tod8(this->R[tnum - 1].palette[i].R);
+						c.green = d3tod8(this->R[tnum - 1].palette[i].G);
+						c.blue = d3tod8(this->R[tnum - 1].palette[i].B);
 						pal.push_back(c);
 					}
 				}
-				else if (this->color_num == 297) {
+				else if (tnum == 297) {
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->palette[10 + i].R);
 						c.green = d3tod8(this->palette[10 + i].G);
@@ -667,7 +666,6 @@ public:
 					}
 				}
 				else {
-					std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->palette[0].R);
 						c.green = d3tod8(this->palette[0].G);
@@ -677,20 +675,20 @@ public:
 				}
 			}
 			else {
-				if (this->color_num == 298) {
+				if (tnum == 298) {
 
-					this->color_num = 20;
+					tnum = 20;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
-						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
-						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
+						c.red = d3tod8(this->R[tnum - 1].palette[i].R);
+						c.green = d3tod8(this->R[tnum - 1].palette[i].G);
+						c.blue = d3tod8(this->R[tnum - 1].palette[i].B);
 						pal.push_back(c);
 					}
-					this->color_num = 26;
+					tnum = 26;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
-						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
-						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
+						c.red = d3tod8(this->R[tnum - 1].palette[i].R);
+						c.green = d3tod8(this->R[tnum - 1].palette[i].G);
+						c.blue = d3tod8(this->R[tnum - 1].palette[i].B);
 						pal.push_back(c);
 					}
 
@@ -701,16 +699,14 @@ public:
 					}
 				}
 				else {
-					// std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
-						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
-						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
+						c.red = d3tod8(this->R[tnum - 1].palette[i].R);
+						c.green = d3tod8(this->R[tnum - 1].palette[i].G);
+						c.blue = d3tod8(this->R[tnum - 1].palette[i].B);
 						pal.push_back(c);
 					}
 				}
 			}
-		}
 		std::cout << std::endl;
 
 		c.red = 0;
@@ -720,6 +716,7 @@ public:
 
 		trans.assign(pal.size() - 1, 0xFF);
 		trans.push_back(0);
+		this->transparent = trans.size() - 1;
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
@@ -770,7 +767,7 @@ public:
 		}
 
 #else
-		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->color_num == 298 ? 22 : 16);
+		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->transparent);
 		for (size_t j = 0; j < this->len_y; j++) {
 			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
 		}
@@ -1044,8 +1041,8 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 
-			gs.decode_body(out.body);
 			gs.decode_palette(out.palette, out.trans);
+			gs.decode_body(out.body);
 			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
 			break;
 		}
