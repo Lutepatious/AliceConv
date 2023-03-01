@@ -34,6 +34,11 @@ struct MSXtoPNG {
 	int depth = 8;
 	int res_x = RES_X;
 	int res_y = RES_Y;
+	unsigned background = 0;
+
+	png_int_32 offset_x = 0;
+	png_int_32 offset_y = 0;
+	bool enable_offset = false;
 
 	void set_size_and_change_resolution(png_uint_32 in_x, png_uint_32 in_y)
 	{
@@ -48,6 +53,13 @@ struct MSXtoPNG {
 	{
 		this->pixels_V = in_y;
 		this->pixels_H = in_x;
+	}
+
+	void set_offset(png_uint_32 offs_x, png_uint_32 offs_y)
+	{
+		this->offset_x = offs_x;
+		this->offset_y = offs_y;
+		this->enable_offset = true;
 	}
 
 	int create(wchar_t* outfile)
@@ -78,12 +90,15 @@ struct MSXtoPNG {
 			png_init_io(png_ptr, pFo);
 			png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
 			png_set_IHDR(png_ptr, info_ptr, this->pixels_H, this->pixels_V, this->depth, (this->palette.size() > 256) ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-			if (!this->trans.empty() && (this->palette.size() <= 256)) {
-				png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), this->trans.size(), NULL);
-			}
+
 			png_set_pHYs(png_ptr, info_ptr, this->res_x, this->res_y, PNG_RESOLUTION_METER);
+
 			if (this->palette.size() <= 256) {
 				png_set_PLTE(png_ptr, info_ptr, &this->palette.at(0), this->palette.size());
+
+				if (!this->trans.empty()) {
+					png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), this->trans.size(), NULL);
+				}
 			}
 
 			png_write_info(png_ptr, info_ptr);
@@ -412,6 +427,7 @@ class GS {
 		unsigned __int8 body[];
 	} *buf = nullptr;
 	size_t len_buf = 0;
+	size_t color_num = 0;
 
 	struct Pal {
 		unsigned __int8 B;
@@ -471,16 +487,22 @@ class GS {
 public:
 	png_uint_32 len_x = MSX_SCREEN7_H;
 	png_uint_32 len_y = MSX_SCREEN7_V;
+	png_int_32 offset_x = 0;
+	png_int_32 offset_y = 0;
 
-	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer)
+	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer, size_t num)
 	{
+		this->color_num = num;
 		this->buf = (format_GS*)&buffer.at(0);
 		this->len_buf = buffer.size();
 		RXx* rxx = (RXx*)&palette_buffer.at(0);
 
-		this->len_x = this->buf->len_hx ? this->buf->len_hx * 2 : MSX_SCREEN7_H;
+		this->len_x = this->buf->len_hx ? (size_t)this->buf->len_hx * 2 : MSX_SCREEN7_H;
 		this->len_y = this->buf->len_y;
 
+		if (this->len_y > 212) {
+			return true;
+		}
 		unsigned __int8 xC[4] = { 0, 0, 0, 0 };
 		unsigned __int8 yC[4] = { 0, 0, 0, 0 };
 		unsigned __int8 C[2] = { 0, 0 };
@@ -531,7 +553,7 @@ public:
 		return false;
 	}
 
-	void decode_palette(std::vector<png_color>& pal, size_t n)
+	void decode_palette(std::vector<png_color>& pal)
 	{
 		png_color c;
 		for (size_t i = 0; i < 10; i++) {
@@ -541,76 +563,76 @@ public:
 			pal.push_back(c);
 		}
 
-		switch (n) {
+		switch (this->color_num) {
 		case 43:
-			n = 51;
+			this->color_num = 51;
 			break;
 		case 46:
-			n = 52;
+			this->color_num = 52;
 			break;
 		case 57:
-			n = 9;
+			this->color_num = 9;
 			break;
 		case 58:
-			n = 13;
+			this->color_num = 13;
 			break;
 		case 72:
-			n = 38;
+			this->color_num = 38;
 			break;
 		case 73:
-			n = 233;
+			this->color_num = 233;
 			break;
 		case 74:
-			n = 59;
+			this->color_num = 59;
 			break;
 		case 76:
-			n = 75;
+			this->color_num = 75;
 			break;
 		case 84:
-			n = 55;
+			this->color_num = 55;
 			break;
 		case 97:
-			n = 229;
+			this->color_num = 229;
 			break;
 		case 99:
-			n = 98;
+			this->color_num = 98;
 			break;
 		case 109:
 		case 110:
-			n = 14;
+			this->color_num = 14;
 			break;
 		case 120:
-			n = 20;
+			this->color_num = 20;
 			break;
 		case 124:
-			n = 231;
+			this->color_num = 231;
 			break;
 		case 148:
-			n = 138;
+			this->color_num = 138;
 			break;
 		case 154:
-			n = 17;
+			this->color_num = 17;
 			break;
 		case 157:
-			n = 156;
+			this->color_num = 156;
 			break;
 		case 164:
-			n = 138;
+			this->color_num = 138;
 			break;
 		case 166:
-			n = 218;
+			this->color_num = 218;
 			break;
 		case 197:
-			n = 156;
+			this->color_num = 156;
 			break;
 		case 256:
 		case 257:
 		case 258:
 		case 259:
-			n = 207;
+			this->color_num = 207;
 			break;
 		case 281:
-			n = 223;
+			this->color_num = 223;
 			break;
 		default:
 			break;
@@ -618,16 +640,16 @@ public:
 
 		unsigned __int8 max_pal = *std::max_element(I.begin(), I.end());
 		if (max_pal >= 10) {
-			if (this->R[n - 1].flag == 0) {
-				if (this->R[n - 1].palette[0].R || this->R[n - 1].palette[0].G || this->R[n - 1].palette[0].B ) {
+			if (this->R[this->color_num - 1].flag == 0) {
+				if (this->R[this->color_num - 1].palette[0].R || this->R[this->color_num - 1].palette[0].G || this->R[this->color_num - 1].palette[0].B) {
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[n - 1].palette[i].R);
-						c.green = d3tod8(this->R[n - 1].palette[i].G);
-						c.blue = d3tod8(this->R[n - 1].palette[i].B);
+						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
+						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
+						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
 						pal.push_back(c);
 					}
 				}
-				else if (n == 297) {
+				else if (this->color_num == 297) {
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->palette[10 + i].R);
 						c.green = d3tod8(this->palette[10 + i].G);
@@ -636,7 +658,7 @@ public:
 					}
 				}
 				else {
-					std::cout << n << "/" << this->R[n - 1].flag << " " << (int)max_pal << std::endl;
+					std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->palette[0].R);
 						c.green = d3tod8(this->palette[0].G);
@@ -646,20 +668,20 @@ public:
 				}
 			}
 			else {
-				if (n == 298) {
+				if (this->color_num == 298) {
 
-					n = 20;
+					this->color_num = 20;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[n - 1].palette[i].R);
-						c.green = d3tod8(this->R[n - 1].palette[i].G);
-						c.blue = d3tod8(this->R[n - 1].palette[i].B);
+						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
+						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
+						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
 						pal.push_back(c);
 					}
-					n = 26;
+					this->color_num = 26;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[n - 1].palette[i].R);
-						c.green = d3tod8(this->R[n - 1].palette[i].G);
-						c.blue = d3tod8(this->R[n - 1].palette[i].B);
+						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
+						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
+						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
 						pal.push_back(c);
 					}
 
@@ -670,11 +692,11 @@ public:
 					}
 				}
 				else {
-					//					std::cout << n << "/" << this->R[n - 1].flag << " " << (int)max_pal << std::endl;
+					//					std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
-						c.red = d3tod8(this->R[n - 1].palette[i].R);
-						c.green = d3tod8(this->R[n - 1].palette[i].G);
-						c.blue = d3tod8(this->R[n - 1].palette[i].B);
+						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
+						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
+						c.blue = d3tod8(this->R[this->color_num - 1].palette[i].B);
 						pal.push_back(c);
 					}
 				}
@@ -687,9 +709,9 @@ public:
 		std::cout << std::endl;
 	}
 
-	void decode_body(std::vector<png_bytep>& out_body, size_t n)
+	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		std::cout << std::setw(3) << n << ":" << std::setw(3) << this->R[n - 1].offset_X << "," << std::setw(3) << this->R[n - 1].offset_Y << " ";
+		std::cout << std::setw(3) << this->color_num << ":" << std::setw(3) << this->R[this->color_num - 1].offset_X << "," << std::setw(3) << this->R[this->color_num - 1].offset_Y << " ";
 
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
@@ -725,7 +747,7 @@ public:
 		}
 
 		std::wcerr << std::setw(6) << I.size() << L"/" << std::setw(6) << this->len_x * this->len_y << L" ";
-		I.resize(this->len_x * this->len_y);
+		I.resize((size_t)this->len_x * this->len_y);
 
 		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * this->len_x));
@@ -733,43 +755,144 @@ public:
 	}
 };
 
-struct format_GL {
-	unsigned __int16 Start;
-	unsigned __int8 Columns; // divided by 2
-	unsigned __int8 Rows;
-	unsigned __int16 Unknown[6];
-	struct {
+class GL {
+	std::vector<unsigned __int8> I;
+	struct Pal_GL {
 		unsigned __int16 B : 4;
 		unsigned __int16 R : 4;
 		unsigned __int16 G : 4;
 		unsigned __int16 : 4;
-	} palette[16];
-	unsigned __int8 body[];
-};
+	};
 
-class GL {
-	std::vector<unsigned __int8> I;
-	format_GL* buf = nullptr;
+	struct format_GL {
+		unsigned __int8 offs_hx; // divided by 2
+		unsigned __int8 offs_y;
+		unsigned __int8 len_hx; // divided by 2
+		unsigned __int8 len_y;
+		unsigned __int8 unk0;
+		__int8 trans; // Transparent color
+		unsigned __int8 Unknown[10];
+		Pal_GL palette[16];
+		unsigned __int8 body[];
+	} *buf = nullptr;
+
 	size_t len_buf = 0;
 
 public:
+	int transparent = -1;
 	png_uint_32 len_x = MSX_SCREEN7_H;
 	png_uint_32 len_y = MSX_SCREEN7_V;
+	png_int_32 offset_x = 0;
+	png_int_32 offset_y = 0;
 
-	void decode_palette(std::vector<png_color>& pal)
+	bool init(std::vector<__int8>& buffer, std::vector<__int8>* palette_buffer)
+	{
+		this->buf = (format_GL*)&buffer.at(0);
+		this->len_buf = buffer.size();
+		this->transparent = this->buf->trans;
+
+		if (palette_buffer != nullptr) {
+			*this->buf->palette = *(Pal_GL*)palette_buffer->at(0);
+		}
+
+		this->len_x = this->buf->len_hx ? (size_t)this->buf->len_hx * 2 : MSX_SCREEN7_H;
+		this->len_y = this->buf->len_y;
+
+		if (this->len_y > 212 || this->buf->unk0 != 0xFF) {
+			return true;
+		}
+
+		this->offset_x = this->buf->offs_hx * 2;
+		this->offset_y = this->buf->offs_y;
+
+		std::wcout << std::setw(3) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" ("
+			<< std::setw(3) << this->len_x << L"*" << std::setw(3) << this->len_y << L") transparent " << std::setw(2) << this->transparent << std::endl;
+
+		return false;
+	}
+
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
 	{
 		png_color c;
-		for (size_t i = 0; i < 10; i++) {
+		for (size_t i = 0; i < 16; i++) {
 			c.red = d3tod8(this->buf->palette[i].R);
 			c.green = d3tod8(this->buf->palette[i].G);
 			c.blue = d3tod8(this->buf->palette[i].B);
 			pal.push_back(c);
+
+			trans.push_back(0xFF);
+		}
+
+		if (this->transparent == -1) {
+			c.red = 0;
+			c.green = 0;
+			c.blue = 0;
+			pal.push_back(c);
+			trans.push_back(0);
+		}
+		else {
+			trans.at(this->transparent) = 0;
+		}
+	}
+
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		const size_t image_size = len_x * len_y;
+		unsigned __int8* src = this->buf->body;
+		size_t count = this->len_buf - sizeof(format_GL);
+		size_t cp_len;
+		uPackedPixel4 u;
+
+		while (count-- && I.size() < image_size) {
+			switch (*src) {
+			case 0x00:
+				cp_len = *(src + 1) ? *(src + 1) : 256;
+				u.B = *(src + 2);
+
+				for (size_t k = 0; k < cp_len; k++) {
+					I.push_back(u.S.H);
+					I.push_back(u.S.L);
+				}
+
+				src += 3;
+				count -= 2;
+				break;
+
+			case 0x01:
+			case 0x02:
+			case 0x03:
+			case 0x04:
+			case 0x05:
+			case 0x06:
+			case 0x07:
+				cp_len = *src;
+				u.B = *(src + 1);
+
+				for (size_t k = 0; k < cp_len; k++) {
+					I.push_back(u.S.H);
+					I.push_back(u.S.L);
+				}
+
+				src += 2;
+				count--;
+				break;
+			default:
+				u.B = *src;
+
+				I.push_back(u.S.H);
+				I.push_back(u.S.L);
+				src++;
+			}
+		}
+
+		for (size_t j = 0; j < this->len_y; j++) {
+			out_body.push_back((png_bytep)&I.at(j * this->len_x));
 		}
 	}
 };
 
 enum class decode_mode {
-	NONE = 0, GE7, LP, LV, GS, R1, I, TT, DRS
+	NONE = 0, GE7, LP, LV, GS, GL, I, TT, DRS
 };
 
 #pragma pack(pop)
@@ -795,8 +918,11 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'v') { // Little Vampire
 				dm = decode_mode::LV;
 			}
-			else if (*(*argv + 1) == L'g') { // Little Vampire
+			else if (*(*argv + 1) == L'g') { // Gakuen Senki
 				dm = decode_mode::GS;
+			}
+			else if (*(*argv + 1) == L'r') { // Rance and other GL
+				dm = decode_mode::GL;
 			}
 			continue;
 		}
@@ -817,6 +943,7 @@ int wmain(int argc, wchar_t** argv)
 		LP lp;
 		LV lv;
 		GS gs;
+		GL gl;
 
 		switch (dm) {
 		case decode_mode::GE7:
@@ -869,16 +996,26 @@ int wmain(int argc, wchar_t** argv)
 
 			palettefile.close();
 
-			if (gs.init(inbuf, palbuf)) {
+			if (gs.init(inbuf, palbuf, n)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
 
-			gs.decode_body(out.body, n);
-			gs.decode_palette(out.palette, n);
+			gs.decode_body(out.body);
+			gs.decode_palette(out.palette);
 			out.set_size(gs.len_x, gs.len_y);
 			break;
 		}
+		case decode_mode::GL:
+			if (gl.init(inbuf, nullptr)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			gl.decode_palette(out.palette, out.trans);
+			gl.decode_body(out.body);
+			out.set_size(gl.len_x, gl.len_y);
+			break;
+
 		default:
 			break;
 		}
