@@ -101,6 +101,13 @@ struct MSXtoPNG {
 				}
 			}
 
+			if (this->enable_offset) {
+				png_color_16 t;
+				t.index = background;
+				png_set_bKGD(png_ptr, info_ptr, &t);
+				png_set_oFFs(png_ptr, info_ptr, this->offset_x, this->offset_y, PNG_OFFSET_PIXEL);
+			}
+
 			png_write_info(png_ptr, info_ptr);
 			png_write_image(png_ptr, &this->body.at(0));
 			png_write_end(png_ptr, info_ptr);
@@ -421,6 +428,7 @@ public:
 
 class GS {
 	std::vector<unsigned __int8> I;
+	std::vector<unsigned __int8> FI;
 	struct format_GS {
 		unsigned __int8 len_hx; // divided by 2
 		unsigned __int8 len_y;
@@ -489,6 +497,7 @@ public:
 	png_uint_32 len_y = MSX_SCREEN7_V;
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
+	int transparent = -1;
 
 	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer, size_t num)
 	{
@@ -553,7 +562,7 @@ public:
 		return false;
 	}
 
-	void decode_palette(std::vector<png_color>& pal)
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
 	{
 		png_color c;
 		for (size_t i = 0; i < 10; i++) {
@@ -692,7 +701,7 @@ public:
 					}
 				}
 				else {
-					//					std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
+					// std::cout << this->color_num << "/" << this->R[this->color_num - 1].flag << " " << (int)max_pal << std::endl;
 					for (size_t i = 0; i < 6; i++) {
 						c.red = d3tod8(this->R[this->color_num - 1].palette[i].R);
 						c.green = d3tod8(this->R[this->color_num - 1].palette[i].G);
@@ -702,16 +711,22 @@ public:
 				}
 			}
 		}
-
-		for (size_t i = 0; i < 16; i++) {
-			std::wcout << (int)(pal[i].red >> 5) << (int)(pal[i].green >> 5) << (int)(pal[i].blue >> 5) << " ";
-		}
 		std::cout << std::endl;
+
+		c.red = 0;
+		c.green = 0;
+		c.blue = 0;
+		pal.push_back(c);
+
+		trans.assign(pal.size() - 1, 0xFF);
+		trans.push_back(0);
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		std::cout << std::setw(3) << this->color_num << ":" << std::setw(3) << this->R[this->color_num - 1].offset_X << "," << std::setw(3) << this->R[this->color_num - 1].offset_Y << " ";
+		this->offset_x = this->R[this->color_num - 1].offset_X;
+		this->offset_y = this->R[this->color_num - 1].offset_Y;
+		std::cout << std::setw(3) << this->color_num << ":" << std::setw(3) << this->offset_x << "," << std::setw(3) << this->offset_y << " ";
 
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
@@ -749,14 +764,27 @@ public:
 		std::wcerr << std::setw(6) << I.size() << L"/" << std::setw(6) << this->len_x * this->len_y << L" ";
 		I.resize((size_t)this->len_x * this->len_y);
 
+#if 0
 		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * this->len_x));
 		}
+
+#else
+		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->color_num == 298 ? 22 : 16);
+		for (size_t j = 0; j < this->len_y; j++) {
+			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+		}
+
+		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
+			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+		}
+#endif
 	}
 };
 
 class GL {
 	std::vector<unsigned __int8> I;
+	std::vector<unsigned __int8> FI;
 	struct Pal_GL {
 		unsigned __int16 B : 4;
 		unsigned __int16 R : 4;
@@ -828,6 +856,7 @@ public:
 			c.green = 0;
 			c.blue = 0;
 			pal.push_back(c);
+			this->transparent = trans.size();
 			trans.push_back(0);
 		}
 		else {
@@ -837,7 +866,7 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		const size_t image_size = len_x * len_y;
+		const size_t image_size = (size_t) this->len_x * this->len_y;
 		unsigned __int8* src = this->buf->body;
 		size_t count = this->len_buf - sizeof(format_GL);
 		size_t cp_len;
@@ -885,9 +914,23 @@ public:
 			}
 		}
 
+#if 0
 		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * this->len_x));
 		}
+
+#else
+		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->transparent);
+		for (size_t j = 0; j < this->len_y; j++) {
+			// Almost all viewer not support png offset feature
+			// memcpy_s(&FI[(j) * MSX_SCREEN7_H], this->len_x, &I[j * this->len_x], this->len_x);
+			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+		}
+
+		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
+			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+		}
+#endif
 	}
 };
 
@@ -1002,8 +1045,8 @@ int wmain(int argc, wchar_t** argv)
 			}
 
 			gs.decode_body(out.body);
-			gs.decode_palette(out.palette);
-			out.set_size(gs.len_x, gs.len_y);
+			gs.decode_palette(out.palette, out.trans);
+			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
 			break;
 		}
 		case decode_mode::GL:
@@ -1013,7 +1056,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			gl.decode_palette(out.palette, out.trans);
 			gl.decode_body(out.body);
-			out.set_size(gl.len_x, gl.len_y);
+			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
+			// Almost all viewer not support png offset feature 
+			// out.set_offset(gl.offset_x, gl.offset_y);
 			break;
 
 		default:
