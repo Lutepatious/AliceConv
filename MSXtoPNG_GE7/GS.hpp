@@ -9,7 +9,7 @@ class GS {
 		unsigned __int8 body[];
 	} *buf = nullptr;
 	size_t len_buf = 0;
-	size_t color_num = 0;
+	size_t image_num = 0;
 
 	struct Pal {
 		unsigned __int8 B;
@@ -79,7 +79,7 @@ public:
 			return true;
 		}
 
-		this->color_num = num;
+		this->image_num = num;
 		this->buf = (format_GS*)&buffer.at(0);
 		this->len_buf = buffer.size();
 		RXx* rxx = (RXx*)&palette_buffer.at(0);
@@ -132,7 +132,7 @@ public:
 					C[0] = rxx->Sector[i].Entry[j].P[k].G;
 					d.palette[k].G = strtoull((const char*)C, &t, 10);
 				}
-				R.push_back(d);
+				this->R.push_back(d);
 			}
 		}
 		//		std::wcout << this->len_x << L"," << this->len_y << std::endl;
@@ -150,7 +150,7 @@ public:
 			pal.push_back(c);
 		}
 
-		size_t tnum = this->color_num;
+		size_t tnum = this->image_num;
 		switch (tnum) {
 		case 43:
 			tnum = 51;
@@ -299,9 +299,9 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		this->offset_x = this->R[this->color_num - 1].offset_X;
-		this->offset_y = this->R[this->color_num - 1].offset_Y;
-		std::cout << std::setw(3) << this->color_num << ":" << std::setw(3) << this->offset_x << "," << std::setw(3) << this->offset_y << " ";
+		this->offset_x = this->R[this->image_num - 1].offset_X;
+		this->offset_y = this->R[this->image_num - 1].offset_Y;
+		std::cout << std::setw(3) << this->image_num << ":" << std::setw(3) << this->offset_x << "," << std::setw(3) << this->offset_y << " ";
 
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;

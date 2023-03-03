@@ -181,6 +181,7 @@
     <ClInclude Include="GE7.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GS.hpp" />
+    <ClInclude Include="Intr.hpp" />
     <ClInclude Include="LP.hpp" />
     <ClInclude Include="LV.hpp" />
     <ClInclude Include="MSXtoPNG.hpp" />

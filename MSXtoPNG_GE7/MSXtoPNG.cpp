@@ -7,59 +7,16 @@
 #include <cstdlib>
 #include <cwchar>
 
-#pragma pack(push)
-#pragma pack(1)
-
 #include "MSXtoPNG.hpp"
 #include "GE7.hpp"
 #include "LP.hpp"
 #include "LV.hpp"
 #include "GS.hpp"
 #include "GL.hpp"
+#include "Intr.hpp"
 
-class Intr {
-	std::vector<unsigned __int8> I;
-	std::vector<unsigned __int8> FI;
-	struct format_Intr {
-		unsigned __int8 len_hx; // divided by 2
-		unsigned __int8 len_y;
-		unsigned __int8 body[];
-	} *buf = nullptr;
-	size_t len_buf = 0;
-	size_t color_num = 0;
-
-	struct Pal {
-		unsigned __int8 B;
-		unsigned __int8 R;
-		unsigned __int8 G;
-	} *pal = nullptr;
-
-public:
-	png_uint_32 len_x = MSX_SCREEN7_H;
-	png_uint_32 len_y = MSX_SCREEN7_V;
-	png_int_32 offset_x = 0;
-	png_int_32 offset_y = 0;
-	int transparent = -1;
-
-	bool init(std::vector<__int8>& buffer, std::vector<__int8>& palette_buffer, size_t num)
-	{
-		if (palette_buffer.size() != 3200) {
-			return true;
-		}
-
-		pal = (Pal*)&palette_buffer.at(0);
-
-		this->buf = (format_Intr*)&buffer.at(0);
-		this->len_buf = buffer.size();
-
-		this->len_x = this->buf->len_hx ? (size_t)this->buf->len_hx * 2 : MSX_SCREEN7_H;
-		this->len_y = this->buf->len_y;
-
-		if (this->len_y > MSX_SCREEN7_V) {
-			return true;
-		}
-	}
-};
+#pragma pack(push)
+#pragma pack(1)
 
 
 #pragma pack(pop)
@@ -214,8 +171,9 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 
-//			intr.decode_body(out.body);
-//			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
+			intr.decode_palette(out.palette);
+			intr.decode_body(out.body);
+			out.set_size(intr.len_x, intr.len_y);
 			break;
 		}
 
