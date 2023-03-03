@@ -177,6 +177,14 @@
       <Project>{311a38aa-c271-4a8f-9730-d15d661c64df}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GE7.hpp" />
+    <ClInclude Include="GL.hpp" />
+    <ClInclude Include="GS.hpp" />
+    <ClInclude Include="LP.hpp" />
+    <ClInclude Include="LV.hpp" />
+    <ClInclude Include="MSXtoPNG.hpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
