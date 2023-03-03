@@ -2,7 +2,6 @@
 #pragma pack(1)
 class Intr {
 	std::vector<unsigned __int8> I;
-	std::vector<unsigned __int8> FI;
 	struct format_Intr {
 		unsigned __int8 len_hx; // divided by 2
 		unsigned __int8 len_y;
@@ -11,14 +10,7 @@ class Intr {
 	size_t len_buf = 0;
 	size_t image_num = 0;
 
-	struct Pal {
-		unsigned __int16 B : 4;
-		unsigned __int16 R : 4;
-		unsigned __int16 G : 4;
-		unsigned __int16 : 4;
-	};
-
-	Pal(*pal)[16];
+	MSX_Pal(*pal)[16];
 
 public:
 	png_uint_32 len_x = MSX_SCREEN7_H;
@@ -32,7 +24,7 @@ public:
 			return true;
 		}
 
-		this->pal = (Pal(*)[16]) & palette_buffer.at(0);
+		this->pal = (MSX_Pal(*)[16]) & palette_buffer.at(0);
 
 		this->buf = (format_Intr*)&buffer.at(0);
 		this->len_buf = buffer.size();

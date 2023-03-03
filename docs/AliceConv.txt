@@ -161,15 +161,6 @@ FM TOWNS版の同じ画像にはパレット情報があるのでそちらを利
 大まかに言ってVSPtoPNG.exeのMSX2版用です。
 個別のタイトル名がついているものはそのタイトル専用です
 
-MSXtoPNG_Intruder.exeのみパレット情報ファイルが必要です。
-AディスクのCOLPALET.DATをカレントディレクトリに置いてMSXtoPNG_Intruder.exeを実行してください。
-例えば同じディレクトリにIntruderのACG.DAT,BCG.DAT,COLPALET.DATを置いて
-
->DATSplitter ACG.DAT BCG.DAT
->MSXtoPNG_Intruder CG\*.DAT
-
-とすればCGディレクトリにPNGファイルが出来上がります。
-
 ### MSXtoPNG_GE7.exe ###
 MSXtoPNG.exeシリーズを統合するための新ツールです。
 GE7は単にMSXのScreen 7のBSAVEファイル(.GE7形式)対応の為に作ったことがきっかけだからです。
@@ -183,6 +174,8 @@ GE7は単にMSXのScreen 7のBSAVEファイル(.GE7形式)対応の為に作っ�
 -l Little Princess
 -v Little Vampire
 -g 学園戦記
+-r Rance, くれせんとむーんがぁる, あぶない天狗伝説, Dream Program System, RanceII, Dream Program System -SG-
+-i Intruder
 です。
 
 学園戦記ではカレントディレクトリにRXXファイルを置いてください。
@@ -192,6 +185,13 @@ GE7は単にMSXのScreen 7のBSAVEファイル(.GE7形式)対応の為に作っ�
 そもそものファイル自体のバグや、自身のパレット情報がなく前のCGのパレットを流用するといったケースがありました。
 このため、特に第2校舎のCGはどこから移動して来たかでパレットがガラッと変わってしまうという事態になっています。
 
+IntruderではカレントディレクトリにCOLPALET.DATを置いてください。
+例えば同じディレクトリにIntruderのACG.DAT,BCG.DAT,COLPALET.DATを置いて
+
+>DATSplitter ACG.DAT BCG.DAT
+>MSXtoPNG_GE7 -i CG\*.DAT
+
+とすればCGディレクトリにPNGファイルが出来上がります。
 
 ### MSXCombinePNG.exe ###
 MSX版DPS SGの連番ファイル(奇数-偶数順)を合成し、インターレースモードでのCGを再現します。

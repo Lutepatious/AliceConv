@@ -12,14 +12,7 @@ class GE7 {
 		unsigned __int8 splite_generator[0x800];
 		unsigned __int8 splite_color[0x200];
 		unsigned __int8 splite_attribute[32][4];
-		struct Pal4 {
-			unsigned __int16 B : 3;
-			unsigned __int16 : 1;
-			unsigned __int16 R : 3;
-			unsigned __int16 : 1;
-			unsigned __int16 G : 3;
-			unsigned __int16 : 5;
-		} palette[16];
+		MSX_Pal palette[16];
 	} *buf = nullptr;
 
 public:

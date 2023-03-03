@@ -3,12 +3,6 @@
 class GL {
 	std::vector<unsigned __int8> I;
 	std::vector<unsigned __int8> FI;
-	struct Pal {
-		unsigned __int16 B : 4;
-		unsigned __int16 R : 4;
-		unsigned __int16 G : 4;
-		unsigned __int16 : 4;
-	};
 
 	struct format_GL {
 		unsigned __int8 offs_hx; // divided by 2
@@ -18,7 +12,7 @@ class GL {
 		unsigned __int8 unk0;
 		__int8 trans; // Transparent color
 		unsigned __int8 Unknown[10];
-		Pal palette[16];
+		MSX_Pal palette[16];
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
@@ -40,12 +34,12 @@ public:
 		this->len_x = this->buf->len_hx ? (size_t)this->buf->len_hx * 2 : MSX_SCREEN7_H;
 		this->len_y = this->buf->len_y;
 
+		this->offset_x = this->buf->offs_hx * 2;
+		this->offset_y = this->buf->offs_y;
+
 		if (this->len_y > MSX_SCREEN7_V || this->buf->unk0 != 0xFF) {
 			return true;
 		}
-
-		this->offset_x = this->buf->offs_hx * 2;
-		this->offset_y = this->buf->offs_y;
 
 		std::wcout << std::setw(3) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" ("
 			<< std::setw(3) << this->len_x << L"*" << std::setw(3) << this->len_y << L") transparent " << std::setw(2) << this->transparent << std::endl;

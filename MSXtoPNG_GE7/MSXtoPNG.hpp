@@ -113,6 +113,15 @@ struct MSXtoPNG {
 	}
 };
 
+struct MSX_Pal {
+	unsigned __int16 B : 3;
+	unsigned __int16 : 1;
+	unsigned __int16 R : 3;
+	unsigned __int16 : 1;
+	unsigned __int16 G : 3;
+	unsigned __int16 : 5;
+};
+
 struct PackedPixel4 {
 	unsigned __int8	L : 4;
 	unsigned __int8 H : 4;
