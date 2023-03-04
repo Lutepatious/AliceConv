@@ -185,6 +185,7 @@
     <ClInclude Include="LP.hpp" />
     <ClInclude Include="LV.hpp" />
     <ClInclude Include="MSXtoPNG.hpp" />
+    <ClInclude Include="TT_DRS.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -135,4 +135,12 @@ union uPackedPixel4 {
 enum class decode_mode {
 	NONE = 0, GE7, LP, LV, GS, GL, Intr, TT, DRS
 };
+
+#include "GE7.hpp"
+#include "LP.hpp"
+#include "LV.hpp"
+#include "GS.hpp"
+#include "GL.hpp"
+#include "Intr.hpp"
+#include "TT_DRS.hpp"
 #pragma pack(pop)

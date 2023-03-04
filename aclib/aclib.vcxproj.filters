@@ -45,12 +45,6 @@
     <ClCompile Include="VSP256.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MSX_DRS.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="MSX_TT.c">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="tiffrw.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
