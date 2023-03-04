@@ -40,11 +40,13 @@ public:
 	png_uint_32 len_y = MSX_SCREEN7_V;
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
-	bool is_DRS = false;
+	size_t DRS_len_add = 0;
 
 	bool init(std::vector<__int8>& buffer, bool flag_DRS)
 	{
-		this->is_DRS = flag_DRS;
+		if (flag_DRS) {
+			this->DRS_len_add = 1;
+		}
 		this->buf = (format_TT_DRS*)&buffer.at(0);
 		this->len_buf = buffer.size();
 
@@ -89,7 +91,7 @@ public:
 		}
 	}
 
-	void decode_body(std::vector<png_bytep>& out_body)
+	bool decode_body(std::vector<png_bytep>& out_body)
 	{
 		const size_t image_size = (size_t)this->len_x * this->len_y * 2ULL;
 		unsigned __int8* src = this->buf->body;
@@ -100,21 +102,21 @@ public:
 		while (count-- && I.size() < image_size && *(unsigned __int16 *)src != 0) {
 			switch (*src) {
 			case 0x00:
-				cp_len = *(src + 1) * 2ULL;
+				cp_len = (*(src + 1) + this->DRS_len_add) * 2ULL;
 				I.insert(I.end(), I.end() - len_x * 2ULL, I.end() + cp_len - len_x * 2ULL);
 				src += 2;
 				count--;
 				break;
 
 			case 0x01:
-				cp_len = *(src + 1) * 2ULL;
+				cp_len = (*(src + 1) + this->DRS_len_add) * 2ULL;
 				I.insert(I.end(), I.end() - len_x, I.end() + cp_len - len_x);
 				src += 2;
 				count--;
 				break;
 
 			case 0x02:
-				cp_len = *(src + 1);
+				cp_len = *(src + 1) + this->DRS_len_add;
 				u.B = *(src + 2);
 
 				for (size_t k = 0; k < cp_len; k++) {
@@ -143,24 +145,37 @@ public:
 			}
 		}
 
-		std::wcout << image_size / I.size() << L" " << image_size % I.size() << std::endl;
-#if 0
-		for (size_t j = 0; j < this->len_y; j++) {
-			out_body.push_back((png_bytep)&I.at(j * this->len_x));
+		if (image_size % I.size()) {
+			std::wcerr << L"Decode failed." << std::endl;
 		}
+		size_t Aspect = image_size / I.size();
 
-#else
-		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->transparent);
-		for (size_t j = 0; j < this->len_y; j++) {
-			// Almost all viewer not support png offset feature
-			// memcpy_s(&FI[(j) * MSX_SCREEN7_H], this->len_x, &I[j * this->len_x], this->len_x);
-			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+		if (Aspect == 2) {
+			FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->transparent);
+			for (size_t j = 0; j < this->len_y; j++) {
+				memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+			}
+
+			for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
+				out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+			}
+			return false;
 		}
+		else if (Aspect == 1) {
+			FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V * 2ULL, this->transparent);
 
-//		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
-//			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
-//		}
-#endif
+			for (size_t j = 0; j < this->len_y; j++) {
+				memcpy_s(&FI[(this->offset_y + j) * 2 * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+				memcpy_s(&FI[((this->offset_y + j) * 2 + 1) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[(j + this->len_y) * this->len_x], this->len_x);
+			}
+
+			for (size_t j = 0; j < MSX_SCREEN7_V * 2; j++) {
+				out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+			}
+			this->len_y *= 2;
+			return true;
+		}
+		return false;
 	}
 };
 #pragma pack(pop)
@@ -197,6 +212,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L't') { // Toushin Toshi
 				dm = decode_mode::TT;
+			}
+			else if (*(*argv + 1) == L'd') { // Dr.STOP!
+				dm = decode_mode::DRS;
 			}
 			continue;
 		}
@@ -336,8 +354,28 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			td.decode_palette(out.palette, out.trans);
-			td.decode_body(out.body);
-			//			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
+			if (td.decode_body(out.body)) {
+				out.set_size_and_change_resolution(MSX_SCREEN7_H, MSX_SCREEN7_V * 2);
+			}
+			else {
+				out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
+			}
+			// Almost all viewer not support png offset feature 
+			// out.set_offset(gl.offset_x, gl.offset_y);
+			break;
+
+		case decode_mode::DRS:
+			if (td.init(inbuf, true)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			td.decode_palette(out.palette, out.trans);
+			if (td.decode_body(out.body)) {
+				out.set_size_and_change_resolution(MSX_SCREEN7_H, MSX_SCREEN7_V * 2);
+			}
+			else {
+				out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
+			}
 			// Almost all viewer not support png offset feature 
 			// out.set_offset(gl.offset_x, gl.offset_y);
 			break;
