@@ -91,42 +91,41 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		const size_t image_size = (size_t)this->len_x * this->len_y;
+		const size_t image_size = (size_t)this->len_x * this->len_y * 2ULL;
 		unsigned __int8* src = this->buf->body;
 		size_t count = this->len_buf - sizeof(format_TT_DRS);
 		size_t cp_len;
 		uPackedPixel4 u;
 
-		while (count-- && I.size() < image_size) {
+		while (count-- && I.size() < image_size && *(unsigned __int16 *)src != 0) {
 			switch (*src) {
-
-
-#if 0
 			case 0x00:
-				cp_len = *(src + 1);
-				if (cp_len == 0) {
-					break;
-				}
-				memcpy_s(dst, cp_len, dst - len_col * 2, cp_len);
-				dst += cp_len;
+				cp_len = *(src + 1) * 2ULL;
+				I.insert(I.end(), I.end() - len_x * 2ULL, I.end() + cp_len - len_x * 2ULL);
 				src += 2;
 				count--;
 				break;
+
 			case 0x01:
-				cp_len = *(src + 1);
-				memcpy_s(dst, cp_len, dst - len_col, cp_len);
-				dst += cp_len;
+				cp_len = *(src + 1) * 2ULL;
+				I.insert(I.end(), I.end() - len_x, I.end() + cp_len - len_x);
 				src += 2;
 				count--;
 				break;
+
 			case 0x02:
 				cp_len = *(src + 1);
-				memset(dst, *(src + 2), cp_len);
-				dst += cp_len;
+				u.B = *(src + 2);
+
+				for (size_t k = 0; k < cp_len; k++) {
+					I.push_back(u.S.H);
+					I.push_back(u.S.L);
+				}
+
 				src += 3;
 				count -= 2;
 				break;
-#endif
+
 			case 0x03:
 				u.B = *++src;
 
@@ -144,6 +143,7 @@ public:
 			}
 		}
 
+		std::wcout << image_size / I.size() << L" " << image_size % I.size() << std::endl;
 #if 0
 		for (size_t j = 0; j < this->len_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * this->len_x));
@@ -157,9 +157,9 @@ public:
 			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
 		}
 
-		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
-			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
-		}
+//		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
+//			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+//		}
 #endif
 	}
 };
@@ -254,7 +254,10 @@ int wmain(int argc, wchar_t** argv)
 		case decode_mode::GS:
 		{
 			wchar_t* t;
-			size_t n = wcstoull(*argv, &t, 10);
+			wchar_t fname[_MAX_FNAME];
+			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
+			size_t n = wcstoull(fname, &t, 10);
+
 			if (n == 0 || n > 300) {
 				std::wcerr << L"Out of range." << std::endl;
 
@@ -296,7 +299,10 @@ int wmain(int argc, wchar_t** argv)
 		case decode_mode::Intr:
 		{
 			wchar_t* t;
-			size_t n = wcstoull(*argv, &t, 10);
+			wchar_t fname[_MAX_FNAME];
+			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
+			size_t n = wcstoull(fname, &t, 10);
+
 			if (n == 0 || n > 99) {
 				std::wcerr << L"Out of range." << std::endl;
 
@@ -330,10 +336,10 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			td.decode_palette(out.palette, out.trans);
-			//			td.decode_body(out.body);
+			td.decode_body(out.body);
 			//			out.set_size(MSX_SCREEN7_H, MSX_SCREEN7_V);
-						// Almost all viewer not support png offset feature 
-						// out.set_offset(gl.offset_x, gl.offset_y);
+			// Almost all viewer not support png offset feature 
+			// out.set_offset(gl.offset_x, gl.offset_y);
 			break;
 
 		default:
