@@ -4,7 +4,6 @@
 #include <wchar.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "gc.h"
 #include "../aclib/wave.h"
 
 struct WAVE_header waveH;
@@ -105,7 +104,7 @@ int wmain(int argc, wchar_t **argv)
 			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
-		unsigned __int8* buffer = GC_malloc(waveC2.Subchunk2Size);
+		unsigned __int8* buffer = malloc(waveC2.Subchunk2Size);
 		if (buffer == NULL) {
 			wprintf_s(L"Memory allocation error.\n");
 			exit(-2);
@@ -176,6 +175,7 @@ int wmain(int argc, wchar_t **argv)
 				fclose(pFo);
 				exit(-2);
 			}
+			free(buffer);
 			fclose(pFo);
 		}
 	}

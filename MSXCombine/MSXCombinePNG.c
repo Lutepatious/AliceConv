@@ -5,7 +5,6 @@
 #include <errno.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include "gc.h"
 #include "../aclib/pngio.h"
 
 int wmain(int argc, wchar_t** argv)
@@ -111,7 +110,7 @@ int wmain(int argc, wchar_t** argv)
 		struct fPNGw imgw;
 		imgw.outfile = path;
 		imgw.depth = pimg_odd->depth;
-		imgw.image = GC_malloc(sizeof(png_bytep) * pimg_odd->Rows * 2);
+		imgw.image = malloc(sizeof(png_bytep) * pimg_odd->Rows * 2);
 		imgw.Cols = pimg_odd->Cols;
 		imgw.Rows = pimg_odd->Rows * 2;
 		imgw.Pal = pimg_odd->Pal;
@@ -131,5 +130,6 @@ int wmain(int argc, wchar_t** argv)
 		if (res == NULL) {
 			wprintf_s(L"File %s create/write error\n", path);
 		}
+		free(imgw.image);
 	}
 }
