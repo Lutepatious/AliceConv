@@ -157,12 +157,11 @@ FM TOWNS版の同じ画像にはパレット情報があるのでそちらを利
 表示中にパレットをいじるタイプの画像もあります(DPS -SG-やRanceIVデモディスク)。
 単色で何も出ないと思う前に画像編集ソフトでパレットをいじってみましょう。
 
-### MSXtoPNG_GE7.exe ###
-MSXtoPNG.exeシリーズを統合するための新ツールです。
-GE7は単にMSXのScreen 7のBSAVEファイル(.GE7形式)対応の為に作ったことがきっかけだからです。
-Ver.2.0ではこれがMSXtoPNG.exeに変わります。
+### MSXtoPNG.exe ###
+MSXtoPNG.exeシリーズは統合されました。
+MSXConbinePNG.exeの機能を吸収しました。
 
->MSXtoPNG_GE7 オプション 対象ファイル
+>MSXtoPNG オプション 対象ファイル
 
 とします。
 
@@ -173,6 +172,7 @@ Ver.2.0ではこれがMSXtoPNG.exeに変わります。
 -g 学園戦記
 -r Rance, くれせんとむーんがぁる, あぶない天狗伝説, Dream Program System, RanceII, Dream Program System -SG-
 -i Intruder
+-s Dream Program System -SG-のインターレースモードによる縦2倍画像
 -t 闘神都市
 -d Dr.STOP!
 です。
@@ -191,9 +191,6 @@ IntruderではカレントディレクトリにCOLPALET.DATを置いてくださ
 >MSXtoPNG_GE7 -i CG\*.DAT
 
 とすればCGディレクトリにPNGファイルが出来上がります。
-
-### MSXCombinePNG.exe ###
-MSX版DPS SGの連番ファイル(奇数-偶数順)を合成し、インターレースモードでのCGを再現します。
 
 ### TIFFtoPNG_Y1CD.exe ###
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
