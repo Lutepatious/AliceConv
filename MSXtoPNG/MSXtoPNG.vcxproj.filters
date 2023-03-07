@@ -44,5 +44,8 @@
     <ClInclude Include="TT_DRS.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="SG.hpp">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

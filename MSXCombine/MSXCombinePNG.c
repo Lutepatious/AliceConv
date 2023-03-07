@@ -18,55 +18,48 @@ int wmain(int argc, wchar_t** argv)
 		wchar_t path_odd[_MAX_PATH];
 		wchar_t path_even[_MAX_PATH];
 		wchar_t path[_MAX_PATH];
+		wchar_t outpath[_MAX_PATH];
 		wchar_t fname_odd[_MAX_FNAME];
 		wchar_t fname_even[_MAX_FNAME];
 		wchar_t fname[_MAX_FNAME];
+		wchar_t outname[_MAX_FNAME];
 		wchar_t dir[_MAX_DIR];
 		wchar_t drive[_MAX_DRIVE];
 
 		_wsplitpath_s(*++argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
-		if (wcslen(fname) != 7) {
+		if (wcslen(fname) != 8) {
 			wprintf_s(L"Unexpected filename %s.\n", *argv);
 			continue;
 		}
-		if (!iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswalpha(fname[3]) || !iswdigit(fname[4]) || !iswdigit(fname[5]) || !iswdigit(fname[6])) {
-			wprintf_s(L"Not suitable format %s.\n", *argv);
-			continue;
-		}
 
-		wchar_t path_num1[4];
-		wchar_t path_num2[4];
 		wchar_t path_a = fname[3], * stopscan;
 		unsigned long num1, num2;
 		unsigned long num1_odd, num2_odd;
 		unsigned long num1_even, num2_even;
 
-		wcsncpy_s(path_num1, 4, fname, 3);
-		wcsncpy_s(path_num2, 4, &fname[4], 3);
-
-		num1 = wcstoul(path_num1, &stopscan, 10);
-		num2 = wcstoul(path_num2, &stopscan, 10);
+		num1 = wcstoul(fname, &stopscan, 10);
+		num2 = wcstoul(stopscan + 1, &stopscan, 10);
 
 		if (num1 & 1) {
 			num1_odd = num1;
 			num2_odd = num2;
 			num1_even = num1 + 1;
 			num2_even = num2 + 1;
-			swprintf(fname, _MAX_FNAME, L"%03ld-%03ld", num1_odd, num1_even);
+			swprintf(outname, _MAX_FNAME, L"%03ld-%03ld", num1_odd, num1_even);
 		}
 		else {
 			num1_odd = num1 - 1;
 			num2_odd = num2 - 1;
 			num1_even = num1;
 			num2_even = num2;
-			swprintf(fname, _MAX_FNAME, L"%03ld-%03ld", num1_even, num1_odd);
+			swprintf(outname, _MAX_FNAME, L"%03ld-%03ld", num1_even, num1_odd);
 		}
 
 		swprintf(fname_odd, _MAX_FNAME, L"%03ld%c%03ld", num1_odd, path_a, num2_odd);
 		swprintf(fname_even, _MAX_FNAME, L"%03ld%c%03ld", num1_even, path_a, num2_even);
 		_wmakepath_s(path_odd, _MAX_PATH, drive, dir, fname_odd, L".png");
 		_wmakepath_s(path_even, _MAX_PATH, drive, dir, fname_even, L".png");
-		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");
+		_wmakepath_s(outpath, _MAX_PATH, drive, dir, outname, L".png");
 
 		//		wprintf_s(L"Filename %s.\n", path);
 
@@ -108,7 +101,7 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		struct fPNGw imgw;
-		imgw.outfile = path;
+		imgw.outfile = outname;
 		imgw.depth = pimg_odd->depth;
 		imgw.image = malloc(sizeof(png_bytep) * pimg_odd->Rows * 2);
 		imgw.Cols = pimg_odd->Cols;

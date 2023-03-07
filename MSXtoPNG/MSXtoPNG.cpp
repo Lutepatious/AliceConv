@@ -39,6 +39,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'i') { // Intruder
 				dm = decode_mode::Intr;
 			}
+			else if (*(*argv + 1) == L's') { // D.P.S -SG-
+				dm = decode_mode::SG;
+			}
 			else if (*(*argv + 1) == L't') { // Toushin Toshi
 				dm = decode_mode::TT;
 			}
@@ -66,6 +69,7 @@ int wmain(int argc, wchar_t** argv)
 		GS gs;
 		GL gl;
 		Intr intr;
+		Dual_GL sg;
 		TT_DRS td;
 
 		switch (dm) {
@@ -175,6 +179,76 @@ int wmain(int argc, wchar_t** argv)
 			intr.decode_palette(out.palette);
 			intr.decode_body(out.body);
 			out.set_size(intr.len_x, intr.len_y);
+			break;
+		}
+		case decode_mode::SG:
+		{
+			wchar_t drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
+
+			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
+
+			if (wcslen(fname) != 8 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswdigit(fname[3]) ||
+				!iswdigit(fname[5]) || !iswdigit(fname[6]) || !iswdigit(fname[7]) || !iswalpha(fname[4])) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+
+			unsigned image_number, archive_entry;
+			wchar_t archive_volume;
+			bool odd;
+
+			swscanf_s(fname, L"%4u%c%3u", &image_number, &archive_volume, 1, &archive_entry);
+
+			if ((image_number & 1) != (archive_entry & 1)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+			}
+
+			if (image_number & 1) {
+				odd = true;
+			}
+			else {
+				odd = false;
+			}
+
+			if (odd) {
+				image_number++;
+				archive_entry++;
+			}
+			else {
+				image_number--;
+				archive_entry--;
+			}
+
+			wchar_t mate_filename[_MAX_FNAME], mate_file[_MAX_PATH];
+			swprintf_s(mate_filename, _MAX_FNAME, L"%04u%c%03u", image_number, archive_volume, archive_entry);
+			_wmakepath_s(mate_file, _MAX_PATH, drive, dir, mate_filename, ext);
+
+			std::ifstream infile2(mate_file, std::ios::binary);
+			if (!infile2) {
+				std::wcerr << L"File " << mate_file << L" open error." << std::endl;
+				continue;
+			}
+
+			std::vector<__int8> inbuf2{ std::istreambuf_iterator<__int8>(infile2), std::istreambuf_iterator<__int8>() };
+
+			infile2.close();
+
+			if (odd) {
+				if (sg.init(inbuf, inbuf2)) {
+					std::wcerr << L"Wrong file. " << *argv << std::endl;
+					continue;
+				}
+			}
+			else {
+				if (sg.init(inbuf2, inbuf)) {
+					std::wcerr << L"Wrong file. " << *argv << std::endl;
+					continue;
+				}
+			}
+
+			sg.decode_palette(out.palette, out.trans);
+			sg.decode_body(out.body);
+			out.set_size_and_change_resolution(MSX_SCREEN7_H, MSX_SCREEN7_V * 2);
 			break;
 		}
 		case decode_mode::TT:
