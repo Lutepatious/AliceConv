@@ -188,9 +188,12 @@ IntruderではカレントディレクトリにCOLPALET.DATを置いてくださ
 例えば同じディレクトリにIntruderのACG.DAT,BCG.DAT,COLPALET.DATを置いて
 
 >DATSplitter ACG.DAT BCG.DAT
->MSXtoPNG_GE7 -i CG\*.DAT
+>MSXtoPNG -i CG\*.DAT
 
 とすればCGディレクトリにPNGファイルが出来上がります。
+
+Dream Program System -SG-のインターレースモードによる縦2倍画像に対応しましたが、
+Rabbit -P4P-の283/284はデータ自体ががバグって通常のプレイでも表示されないので非対応とします。
 
 ### TIFFtoPNG_Y1CD.exe ###
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。

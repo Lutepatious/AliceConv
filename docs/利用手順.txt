@@ -86,6 +86,7 @@ CG-B -> BCG.DAT
 CG-C -> CCG.DAT
 CG-D -> DCG.DAT
 CG-E -> ECG.DAT
+TITLEはタイトル画面のファイルです。
 シナリオデータとして
 DISK-A -> ADISK.DAT
 DISK-B -> BDISK.DAT
@@ -98,10 +99,6 @@ DISK-E -> EDISK.DAT
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
-
-2023年1月現在、CGファイルにおけるパレットの扱いが不明です。
-パレットさえ復元できればCGの変換はできるのですが。
-
 
 [Rance －光をもとめて－]
 *FM TOWNS版
@@ -131,7 +128,7 @@ DISK-D -> DDISK.DAT
 とファイル名を変更してください。
 
 なお、DISK-VXは婦警さんVXのシナリオデータです。
-FUKEI.CGは婦警さんVX用のCGの様ですが未解読です。
+FUKEI.CGは婦警さんVXのタイトルCGです。
 
 >DATSplitter *.DAT
 でアーカイブ内のファイルが抽出されます。
@@ -543,8 +540,7 @@ CGはBCG.DAT
 でアーカイブ内のファイルが抽出されます。
 
 全てのCGが2枚組になっており、MSX2のインターレースモードを使って倍の解像度になるようになっています。
-
-MSX2PNGによるPNG変換の後、PNGファイルを奇数-偶数の組にしてMSXCombinePNG.exeによって合成できます。
+ただし、Rabbit -P4P-のみ、CGファイルのバグによってメッセージウィンドウ枠がプレイ中に表示できません。
 
 *PC-9801版, FM TOWNS版, PC-88VA版, X68000版, PC-9801 NOTE版
 カートリッジディスクは共通です。

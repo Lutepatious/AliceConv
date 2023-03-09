@@ -35,8 +35,8 @@ public:
 
 		if (this->bufo->trans != this->bufe->trans ||
 			this->bufo->len_hx != this->bufe->len_hx ||
-			this->bufo->len_y != this->bufe->len_y ||
 			this->bufo->offs_hx != this->bufe->offs_hx ||
+			this->bufo->len_y != this->bufe->len_y ||
 			this->bufo->offs_y != this->bufe->offs_y ||
 			this->bufo->unk0 != 0xFF ||
 			this->bufe->unk0 != 0xFF) {
