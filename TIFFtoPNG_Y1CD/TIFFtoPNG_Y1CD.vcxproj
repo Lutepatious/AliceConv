@@ -93,7 +93,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;"D:\repos\bdwgc\out\install\x64-Release\include";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;..\libtiff;C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <IntelJCCErratum>true</IntelJCCErratum>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
@@ -105,7 +105,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>wsetargv.obj;gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>"D:\repos\bdwgc\out\install\x64-Release\lib"</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">

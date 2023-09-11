@@ -140,15 +140,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>..\zlib;..\libpng;D:\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\zlib;..\libpng;C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\repos\bdwgc\out\install\x64-Release\lib
-</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\kitoh\source\repos\bdwgc\out\install\x64-Release\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>gc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
