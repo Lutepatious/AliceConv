@@ -300,4 +300,6 @@ int wmain(int argc, wchar_t** argv)
 			std::wcerr << L"output failed." << std::endl;
 		}
 	}
+
+	return 0;
 }
