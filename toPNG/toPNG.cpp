@@ -19,6 +19,14 @@ static inline png_byte d4tod8(png_byte a)
 	return r;
 }
 
+static inline png_byte d16tod8(png_uint_16 a)
+{
+	//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
+	png_byte r = ((unsigned)a * 255L + 32895L) >> 16;
+	return  r;
+}
+
+
 #pragma pack(push)
 #pragma pack(1)
 
@@ -323,6 +331,9 @@ class TIFFT {
 		unsigned __int16 B[256];
 	} Pal;
 
+	const png_byte table2to8[4] = { 0, 0x7F, 0xBF, 0xFF };
+	const png_byte table3to8[8] = { 0, 0x3F, 0x5F, 0x7F, 0x9F, 0xBF, 0xDF, 0xFF };
+
 	std::vector<unsigned __int8> image;
 	unsigned __int32 Rows;
 	unsigned __int32 Cols;
@@ -372,6 +383,42 @@ public:
 		return false;
 	}
 
+	void decode_palette(std::vector<png_color>& pal)
+	{
+		if (this->Format == PHOTOMETRIC_PALETTE) {
+			for (size_t i = 0; i < 256; i++) {
+				pal.at(i).red = d16tod8(this->Pal.R[i]);
+				pal.at(i).green = d16tod8(this->Pal.G[i]);
+				pal.at(i).blue = d16tod8(this->Pal.B[i]);
+			}
+		}
+		// TOWNS TIFFはグレイスケールであるべきデータを8bitダイレクトカラーとして扱うため、対応する色を集めたパレットを作成して8bitインデックスカラーに修正する
+		else if (this->Format == PHOTOMETRIC_MINISBLACK) {
+			for (size_t i = 0; i < 256; i++) {
+				union {
+					unsigned __int8 a;
+					struct color8 {
+						unsigned __int8 B : 2;
+						unsigned __int8 R : 3;
+						unsigned __int8 G : 3;
+					} c;
+				} u;
+				u.a = i;
+
+				pal.at(i).red = table3to8[u.c.R];
+				pal.at(i).green = table3to8[u.c.G];
+				pal.at(i).blue = table2to8[u.c.B];
+			}
+		}
+		else {
+			wprintf_s(L"Unexpected format.\n");
+			exit(-1);
+		}
+
+
+	}
+
+
 };
 
 enum class decode_mode {
@@ -400,6 +447,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'O') { // Dr.STOP! OPENING FM TOWNS
 				dm = decode_mode::DRS_OPENING_TOWNS;
+			}
+			else if (*(*argv + 1) == L'Y') { // ALICEの館CD他TIFF FM TOWNS
+				dm = decode_mode::TIFF_TOWNS;
 			}
 			continue;
 		}
