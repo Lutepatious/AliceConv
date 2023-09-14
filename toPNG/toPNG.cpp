@@ -84,6 +84,11 @@ struct toPNG {
 		this->enable_offset = true;
 	}
 
+	void set_depth(int in_depth)
+	{
+		this->depth = in_depth;
+	}
+
 	void set_directcolor(void)
 	{
 		this->indexed = false;
@@ -335,12 +340,13 @@ class TIFFT {
 	const png_byte table3to8[8] = { 0, 0x3F, 0x5F, 0x7F, 0x9F, 0xBF, 0xDF, 0xFF };
 
 	std::vector<unsigned __int8> image;
-	unsigned __int32 Rows;
-	unsigned __int32 Cols;
 	unsigned __int16 depth;
 	unsigned __int16 Format;
 
 public:
+	unsigned __int32 Rows;
+	unsigned __int32 Cols;
+
 	bool init(wchar_t *infile)
 	{
 		TIFF* pTi = TIFFOpenW(infile, "r");
@@ -508,6 +514,7 @@ int wmain(int argc, wchar_t** argv)
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
+			tifft.decode_palette(out.palette);
 
 
 			break;
