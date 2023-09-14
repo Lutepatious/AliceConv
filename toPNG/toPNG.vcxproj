@@ -133,7 +133,7 @@
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalIncludeDirectories>../zlib;../libpng;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../zlib;../libpng;../libtiff;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerOutput>All</AssemblerOutput>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
@@ -153,6 +153,9 @@
   <ItemGroup>
     <ProjectReference Include="..\libpng\libpng.vcxproj">
       <Project>{94ba4448-57e7-4b8d-ac15-30f71225ac27}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\libtiff\libtiff.vcxproj">
+      <Project>{1748be76-77f3-4f34-a682-e9969750db40}</Project>
     </ProjectReference>
     <ProjectReference Include="..\zlib\zlib.vcxproj">
       <Project>{311a38aa-c271-4a8f-9730-d15d661c64df}</Project>

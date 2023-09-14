@@ -8,8 +8,9 @@
 #include <cstdlib>
 #include <cwchar>
 
-#include "png.h"
 #include "zlib.h"
+#include "png.h"
+#include "tiffio.h"
 
 static inline png_byte d4tod8(png_byte a)
 {
@@ -22,6 +23,7 @@ static inline png_byte d4tod8(png_byte a)
 #pragma pack(1)
 
 constexpr size_t VGA_V = 480;
+constexpr size_t VGA_H = 640;
 constexpr size_t PC9801_V = 400;
 constexpr size_t PC9801_H = 640;
 constexpr size_t RES = 40000;
@@ -255,7 +257,7 @@ class DRSOPNT {
 	std::vector<unsigned __int8> I;
 
 	struct format_DRSOPNT {
-		unsigned __int8 body[VGA_V][PC9801_H / 2];
+		unsigned __int8 body[VGA_V][VGA_H / 2];
 	} *buf = nullptr;
 
 	const struct Palette_depth4 Pal4[16] = { {0x0, 0x0, 0x0}, {0x0, 0x0, 0x0}, {0xF, 0xF, 0xF}, {0xA, 0xA, 0xA},
@@ -290,7 +292,7 @@ public:
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
 		for (size_t y = 0; y < VGA_V; y++) {
-			for (size_t x = 0; x < PC9801_H / 2; x++) {
+			for (size_t x = 0; x < VGA_H / 2; x++) {
 				union {
 					unsigned __int8 A;
 					struct {
@@ -306,12 +308,71 @@ public:
 		}
 
 		for (size_t j = 0; j < VGA_V; j++) {
-			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
+			out_body.push_back((png_bytep)&I.at(j * VGA_H));
 		}
 	}
 };
 
 
+class TIFFT {
+	std::vector<unsigned __int8> I;
+
+	struct TIFF_Palette {
+		unsigned __int16 R[256];
+		unsigned __int16 G[256];
+		unsigned __int16 B[256];
+	} Pal;
+
+	std::vector<unsigned __int8> image;
+	unsigned __int32 Rows;
+	unsigned __int32 Cols;
+	unsigned __int16 depth;
+	unsigned __int16 Format;
+
+public:
+	bool init(wchar_t *infile)
+	{
+		TIFF* pTi = TIFFOpenW(infile, "r");
+
+		if (pTi == NULL) {
+			wprintf_s(L"File open error. %s\n", infile);
+			TIFFClose(pTi);
+			return true;
+		}
+
+		unsigned __int16 Samples_per_Pixel;
+		unsigned __int32 Rows_per_Strip;
+		TIFFGetField(pTi, TIFFTAG_IMAGEWIDTH, &this->Cols);
+		TIFFGetField(pTi, TIFFTAG_IMAGELENGTH, &this->Rows);
+		TIFFGetField(pTi, TIFFTAG_BITSPERSAMPLE, &this->depth);
+		TIFFGetField(pTi, TIFFTAG_SAMPLESPERPIXEL, &Samples_per_Pixel);
+		TIFFGetFieldDefaulted(pTi, TIFFTAG_ROWSPERSTRIP, &Rows_per_Strip);
+		TIFFGetField(pTi, TIFFTAG_PHOTOMETRIC, &this->Format);
+
+		this->image.resize((size_t)this->Rows * this->Cols * Samples_per_Pixel);
+
+		for (unsigned __int32 l = 0; l < this->Rows; l += Rows_per_Strip) {
+			size_t read_rows = (l + Rows_per_Strip > this->Rows) ? this->Rows - l : Rows_per_Strip;
+			if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &this->image[(size_t)this->Cols * Samples_per_Pixel * l], (size_t)this->Cols * read_rows * Samples_per_Pixel)) {
+				fwprintf_s(stderr, L"File read error.\n");
+				TIFFClose(pTi);
+				return true;
+			}
+		}
+
+		if (this->Format == PHOTOMETRIC_PALETTE) {
+			unsigned __int16* PalR, * PalG, * PalB;
+			TIFFGetField(pTi, TIFFTAG_COLORMAP, &PalR, &PalG, &PalB);
+			memcpy_s(this->Pal.R, sizeof(this->Pal.R), PalR, sizeof(unsigned __int16) * (1LL << this->depth));
+			memcpy_s(this->Pal.G, sizeof(this->Pal.G), PalG, sizeof(unsigned __int16) * (1LL << this->depth));
+			memcpy_s(this->Pal.B, sizeof(this->Pal.B), PalB, sizeof(unsigned __int16) * (1LL << this->depth));
+		}
+
+		TIFFClose(pTi);
+		return false;
+	}
+
+};
 
 enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS
@@ -359,6 +420,7 @@ int wmain(int argc, wchar_t** argv)
 		DRS003 drs;
 		DRS003T drst;
 		DRSOPNT drsot;
+		TIFFT tifft;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -389,6 +451,15 @@ int wmain(int argc, wchar_t** argv)
 			drsot.decode_palette(out.palette);
 			drsot.decode_body(out.body);
 			out.set_size(PC9801_H, VGA_V);
+			break;
+
+		case decode_mode::TIFF_TOWNS:
+			if (tifft.init(*argv)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+
+
 			break;
 
 		default:
