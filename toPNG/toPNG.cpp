@@ -339,13 +339,13 @@ class TIFFT {
 	const png_byte table2to8[4] = { 0, 0x7F, 0xBF, 0xFF };
 	const png_byte table3to8[8] = { 0, 0x3F, 0x5F, 0x7F, 0x9F, 0xBF, 0xDF, 0xFF };
 
-	std::vector<unsigned __int8> image;
-	unsigned __int16 depth;
 	unsigned __int16 Format;
+	unsigned __int16 Samples_per_Pixel;
 
 public:
 	unsigned __int32 Rows;
 	unsigned __int32 Cols;
+	unsigned __int16 depth;
 
 	bool init(wchar_t *infile)
 	{
@@ -357,20 +357,19 @@ public:
 			return true;
 		}
 
-		unsigned __int16 Samples_per_Pixel;
 		unsigned __int32 Rows_per_Strip;
 		TIFFGetField(pTi, TIFFTAG_IMAGEWIDTH, &this->Cols);
 		TIFFGetField(pTi, TIFFTAG_IMAGELENGTH, &this->Rows);
 		TIFFGetField(pTi, TIFFTAG_BITSPERSAMPLE, &this->depth);
-		TIFFGetField(pTi, TIFFTAG_SAMPLESPERPIXEL, &Samples_per_Pixel);
+		TIFFGetField(pTi, TIFFTAG_SAMPLESPERPIXEL, &this->Samples_per_Pixel);
 		TIFFGetFieldDefaulted(pTi, TIFFTAG_ROWSPERSTRIP, &Rows_per_Strip);
 		TIFFGetField(pTi, TIFFTAG_PHOTOMETRIC, &this->Format);
 
-		this->image.resize((size_t)this->Rows * this->Cols * Samples_per_Pixel);
+		this->I.resize((size_t)this->Rows * this->Cols * Samples_per_Pixel);
 
 		for (unsigned __int32 l = 0; l < this->Rows; l += Rows_per_Strip) {
 			size_t read_rows = (l + Rows_per_Strip > this->Rows) ? this->Rows - l : Rows_per_Strip;
-			if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &this->image[(size_t)this->Cols * Samples_per_Pixel * l], (size_t)this->Cols * read_rows * Samples_per_Pixel)) {
+			if (-1 == TIFFReadEncodedStrip(pTi, TIFFComputeStrip(pTi, l, 0), &this->I[(size_t)this->Cols * Samples_per_Pixel * l], (size_t)this->Cols * read_rows * Samples_per_Pixel)) {
 				fwprintf_s(stderr, L"File read error.\n");
 				TIFFClose(pTi);
 				return true;
@@ -393,9 +392,11 @@ public:
 	{
 		if (this->Format == PHOTOMETRIC_PALETTE) {
 			for (size_t i = 0; i < 256; i++) {
-				pal.at(i).red = d16tod8(this->Pal.R[i]);
-				pal.at(i).green = d16tod8(this->Pal.G[i]);
-				pal.at(i).blue = d16tod8(this->Pal.B[i]);
+				png_color t;
+				t.red = d16tod8(this->Pal.R[i]);
+				t.green = d16tod8(this->Pal.G[i]);
+				t.blue = d16tod8(this->Pal.B[i]);
+				pal.push_back(t);
 			}
 		}
 		// TOWNS TIFFはグレイスケールであるべきデータを8bitダイレクトカラーとして扱うため、対応する色を集めたパレットを作成して8bitインデックスカラーに修正する
@@ -411,20 +412,25 @@ public:
 				} u;
 				u.a = i;
 
-				pal.at(i).red = table3to8[u.c.R];
-				pal.at(i).green = table3to8[u.c.G];
-				pal.at(i).blue = table2to8[u.c.B];
+				png_color t;
+				t.red = table3to8[u.c.R];
+				t.green = table3to8[u.c.G];
+				t.blue = table2to8[u.c.B];
+				pal.push_back(t);
 			}
 		}
 		else {
 			wprintf_s(L"Unexpected format.\n");
 			exit(-1);
 		}
-
-
 	}
 
-
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		for (size_t j = 0; j < this->Rows; j++) {
+			out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
+		}
+	}
 };
 
 enum class decode_mode {
@@ -515,8 +521,9 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			tifft.decode_palette(out.palette);
-
-
+			tifft.decode_body(out.body);
+			out.set_depth(tifft.depth);
+			out.set_size(tifft.Cols, tifft.Rows);
 			break;
 
 		default:
