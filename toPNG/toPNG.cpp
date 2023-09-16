@@ -329,6 +329,7 @@ public:
 
 class TIFFT {
 	std::vector<unsigned __int8> I;
+	std::vector<unsigned __int8> nI;
 
 	struct TIFF_Palette {
 		unsigned __int16 R[256];
@@ -347,7 +348,7 @@ public:
 	unsigned __int32 Cols;
 	unsigned __int16 depth;
 
-	bool init(wchar_t *infile)
+	bool init(wchar_t* infile)
 	{
 		TIFF* pTi = TIFFOpenW(infile, "r");
 
@@ -425,10 +426,47 @@ public:
 		}
 	}
 
-	void decode_body(std::vector<png_bytep>& out_body)
+	bool decode_body(std::vector<png_bytep>& out_body)
 	{
-		for (size_t j = 0; j < this->Rows; j++) {
-			out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
+		if (this->Format == PHOTOMETRIC_MINISBLACK) {
+			for (size_t j = 0; j < this->Rows; j++) {
+				out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
+			}
+			return false;
+		}
+		else {
+			union {
+				unsigned __int8 B[8];
+				struct {
+					unsigned __int16 R;
+					unsigned __int16 G;
+					unsigned __int16 B;
+					unsigned __int16 A;
+				} P;
+			} u;
+
+			for (auto& i : I) {
+				u.P.R = this->Pal.R[i];
+				u.P.G = this->Pal.G[i];
+				u.P.B = this->Pal.B[i];
+				u.P.A = 0xFFFF;
+
+				nI.push_back(u.B[1]);
+				nI.push_back(u.B[0]);
+				nI.push_back(u.B[3]);
+				nI.push_back(u.B[2]);
+				nI.push_back(u.B[5]);
+				nI.push_back(u.B[4]);
+				nI.push_back(u.B[7]);
+				nI.push_back(u.B[6]);
+			}
+
+			for (size_t j = 0; j < this->Rows; j++) {
+				out_body.push_back((png_bytep)&nI.at(j * this->Cols * sizeof(u)));
+			}
+
+			this->depth = sizeof(unsigned __int16) * 8;
+			return true;
 		}
 	}
 };
@@ -521,7 +559,9 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			tifft.decode_palette(out.palette);
-			tifft.decode_body(out.body);
+			if (tifft.decode_body(out.body)) {
+				out.set_directcolor();
+			}
 			out.set_depth(tifft.depth);
 			out.set_size(tifft.Cols, tifft.Rows);
 			break;
