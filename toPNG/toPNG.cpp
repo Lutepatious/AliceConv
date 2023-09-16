@@ -391,6 +391,8 @@ public:
 
 	void decode_palette(std::vector<png_color>& pal)
 	{
+		// 実際にはこのブロックは意味を持たない。パレット持ちTIFFは64bit RGBA direct colorのPNGに変換するため。これはindexed color用コードの残骸であえて残す。
+		// 原因はPNGが16bit階調のパレットの仕様を持たないため。
 		if (this->Format == PHOTOMETRIC_PALETTE) {
 			for (size_t i = 0; i < 256; i++) {
 				png_color t;
@@ -428,6 +430,7 @@ public:
 
 	bool decode_body(std::vector<png_bytep>& out_body)
 	{
+		// 16bit階調のパレットを持つTIFFは64bit RGBA direct colorのPNGに変換する。
 		if (this->Format == PHOTOMETRIC_MINISBLACK) {
 			for (size_t j = 0; j < this->Rows; j++) {
 				out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
