@@ -501,6 +501,19 @@ public:
 		} S[128][2][16][4];
 	}  *buf = nullptr;
 
+	bool init(std::vector<__int8>& buffer)
+	{
+		if (buffer.size() < sizeof(format_SPRITE)) {
+			std::wcerr << "File too short." << std::endl;
+			return true;
+		}
+
+		this->buf = (format_SPRITE*)&buffer.at(0);
+
+		return false;
+	}
+
+
 
 	void decode_palette(std::vector<png_color>& pal)
 	{
