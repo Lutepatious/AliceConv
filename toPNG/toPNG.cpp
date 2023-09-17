@@ -19,6 +19,13 @@ static inline png_byte d4tod8(png_byte a)
 	return r;
 }
 
+static inline png_byte d5tod8(png_byte a)
+{
+	//	png_byte r = (double) (a) * 255.0L / 31.0L + 0.5L;
+	png_byte r = ((unsigned)a * 527 + 23) >> 6;
+	return r;
+}
+
 static inline png_byte d16tod8(png_uint_16 a)
 {
 	//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
@@ -43,6 +50,13 @@ struct Palette_depth4 {
 	unsigned __int8 : 4;
 	unsigned __int8 G : 4;
 	unsigned __int8 : 4;
+};
+
+struct Palette_depth5 {
+	unsigned __int16 I : 1;
+	unsigned __int16 B : 5;
+	unsigned __int16 R : 5;
+	unsigned __int16 G : 5;
 };
 
 struct toPNG {
@@ -392,7 +406,7 @@ public:
 	void decode_palette(std::vector<png_color>& pal)
 	{
 		// 実際にはこのブロックは意味を持たない。パレット持ちTIFFは64bit RGBA direct colorのPNGに変換するため。これはindexed color用コードの残骸であえて残す。
-		// 原因はPNGが16bit階調のパレットの仕様を持たないため。
+		// そもそもの原因はPNGが16bit階調のパレットの仕様を持たないため。
 		if (this->Format == PHOTOMETRIC_PALETTE) {
 			for (size_t i = 0; i < 256; i++) {
 				png_color t;
@@ -431,6 +445,7 @@ public:
 	bool decode_body(std::vector<png_bytep>& out_body)
 	{
 		// 16bit階調のパレットを持つTIFFは64bit RGBA direct colorのPNGに変換する。
+		// このif分を恒真にすればindexed colorにできるがパレットの階調が16btiから8bitに下がる。
 		if (this->Format == PHOTOMETRIC_MINISBLACK) {
 			for (size_t j = 0; j < this->Rows; j++) {
 				out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
@@ -452,7 +467,7 @@ public:
 				u.P.R = this->Pal.R[i];
 				u.P.G = this->Pal.G[i];
 				u.P.B = this->Pal.B[i];
-				u.P.A = 0xFFFF;
+				u.P.A = (1U << 16) - 1;
 
 				nI.push_back(u.B[1]);
 				nI.push_back(u.B[0]);
@@ -468,14 +483,48 @@ public:
 				out_body.push_back((png_bytep)&nI.at(j * this->Cols * sizeof(u)));
 			}
 
-			this->depth = sizeof(unsigned __int16) * 8;
+			this->depth = 16;
 			return true;
 		}
 	}
 };
 
+class SPRITE {
+	std::vector<unsigned __int8> I;
+
+public:
+	struct format_SPRITE {
+		unsigned __int16 Pal16BE[16]; // X68000 big endian、バイトスワップの上で色分解する事。
+		struct {
+			unsigned __int8 H: 4;
+			unsigned __int8 L: 4;
+		} S[128][2][16][4];
+	}  *buf = nullptr;
+
+
+	void decode_palette(std::vector<png_color>& pal)
+	{
+		union X68Pal_conv {
+			struct Palette_depth5 Pal5;
+			unsigned __int16 Pin;
+		} P;
+
+		png_color c;
+		for (size_t i = 0; i < 16; i++) {
+			P.Pin = _byteswap_ushort(buf->Pal16BE[i]);
+
+			c.red = d5tod8(P.Pal5.R);
+			c.green = d5tod8(P.Pal5.G);
+			c.blue = d5tod8(P.Pal5.B);
+			pal.push_back(c);
+		}
+	}
+
+};
+
+
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, SPRITE_X68K_A
 };
 
 #pragma pack(pop)
