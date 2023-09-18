@@ -492,7 +492,6 @@ public:
 class SPRITE {
 	std::vector<unsigned __int8> I;
 
-public:
 	struct format_SPRITE {
 		unsigned __int16 Pal16BE[16]; // X68000 big endian、バイトスワップの上で色分解する事。
 		struct {
@@ -501,6 +500,7 @@ public:
 		} S[128][2][16][4];
 	}  *buf = nullptr;
 
+public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_SPRITE)) {
@@ -563,9 +563,31 @@ public:
 
 };
 
+class MASK {
+	std::vector<unsigned __int8> I;
+
+	struct format_MASK {
+		unsigned __int8 M[70][24][5];
+	} *buf = NULL;
+
+public:
+	bool init(std::vector<__int8>& buffer)
+	{
+		if (buffer.size() < sizeof(format_MASK)) {
+			std::wcerr << "File too short." << std::endl;
+			return true;
+		}
+
+		this->buf = (format_MASK*)&buffer.at(0);
+
+		return false;
+	}
+
+};
+
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, SPRITE_X68K_A
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K
 };
 
 #pragma pack(pop)
@@ -594,7 +616,7 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'Y') { // ALICEの館CD他TIFF FM TOWNS
 				dm = decode_mode::TIFF_TOWNS;
 			}
-			else if (*(*argv + 1) == L'b') { // 闘神都市 X68000 BG
+			else if (*(*argv + 1) == L'P') { // 闘神都市 X68000 PCG
 				dm = decode_mode::SPRITE_X68K;
 			}
 			continue;
