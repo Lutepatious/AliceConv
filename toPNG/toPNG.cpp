@@ -496,8 +496,8 @@ public:
 	struct format_SPRITE {
 		unsigned __int16 Pal16BE[16]; // X68000 big endian、バイトスワップの上で色分解する事。
 		struct {
-			unsigned __int8 H: 4;
-			unsigned __int8 L: 4;
+			unsigned __int8 H : 4;
+			unsigned __int8 L : 4;
 		} S[128][2][16][4];
 	}  *buf = nullptr;
 
@@ -513,9 +513,7 @@ public:
 		return false;
 	}
 
-
-
-	void decode_palette(std::vector<png_color>& pal)
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
 	{
 		union X68Pal_conv {
 			struct Palette_depth5 Pal5;
@@ -530,6 +528,36 @@ public:
 			c.green = d5tod8(P.Pal5.G);
 			c.blue = d5tod8(P.Pal5.B);
 			pal.push_back(c);
+			trans.push_back(0xFF);
+		}
+
+		trans.at(0) = 0;
+	}
+
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		const size_t spr_x = 16;
+		const size_t spr_y = 16;
+		const size_t patterns = 128;
+		const size_t blocks = 16;
+
+
+		for (size_t p = 0; p < patterns; p += blocks) {
+			for (size_t Rows = 0; Rows < spr_y; Rows++) {
+				for (size_t b = 0; b < blocks; b++) {
+					for (size_t h = 0; h < 2; h++) {
+						for (size_t c = 0; c < 4; c++) {
+							I.push_back(this->buf->S[p + b][h][Rows][c].L);
+							I.push_back(this->buf->S[p + b][h][Rows][c].H);
+						}
+					}
+				}
+			}
+		}
+
+
+		for (size_t j = 0; j < spr_y * patterns / blocks; j++) {
+			out_body.push_back((png_bytep)&I.at(j * spr_x * blocks));
 		}
 	}
 
@@ -566,6 +594,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'Y') { // ALICEの館CD他TIFF FM TOWNS
 				dm = decode_mode::TIFF_TOWNS;
 			}
+			else if (*(*argv + 1) == L'b') { // 闘神都市 X68000 BG
+				dm = decode_mode::SPRITE_X68K;
+			}
 			continue;
 		}
 
@@ -586,6 +617,7 @@ int wmain(int argc, wchar_t** argv)
 		DRS003T drst;
 		DRSOPNT drsot;
 		TIFFT tifft;
+		SPRITE spr;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -615,7 +647,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			drsot.decode_palette(out.palette);
 			drsot.decode_body(out.body);
-			out.set_size(PC9801_H, VGA_V);
+			out.set_size(VGA_H, VGA_V);
 			break;
 
 		case decode_mode::TIFF_TOWNS:
@@ -629,6 +661,16 @@ int wmain(int argc, wchar_t** argv)
 			}
 			out.set_depth(tifft.depth);
 			out.set_size(tifft.Cols, tifft.Rows);
+			break;
+
+		case decode_mode::SPRITE_X68K:
+			if (spr.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			spr.decode_palette(out.palette, out.trans);
+			spr.decode_body(out.body);
+			out.set_size(16 * 16, 16 * 128 / 16);
 			break;
 
 		default:
