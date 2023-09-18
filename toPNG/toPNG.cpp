@@ -583,6 +583,22 @@ public:
 		return false;
 	}
 
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
+	{
+		png_color c;
+		c.red = 0;
+		c.green = 0;
+		c.blue = 0;
+		pal.push_back(c);
+		c.red = 0xFF;
+		c.green = 0xFF;
+		c.blue = 0xFF;
+		pal.push_back(c);
+
+		trans.push_back(0);
+		trans.push_back(0xFF);
+	}
+
 };
 
 
