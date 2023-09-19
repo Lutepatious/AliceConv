@@ -12,6 +12,13 @@
 #include "png.h"
 #include "tiffio.h"
 
+static inline png_byte d3tod8(png_byte a)
+{
+	//	png_byte r = (double) (a) * 255.0L / 7.0L + 0.5L;
+	png_byte r = ((unsigned)a * 146 + 1) >> 2;
+	return r;
+}
+
 static inline png_byte d4tod8(png_byte a)
 {
 	//	png_byte r = (double) (a) * 255.0L / 15.0L + 0.5L;
@@ -41,7 +48,17 @@ constexpr size_t VGA_V = 480;
 constexpr size_t VGA_H = 640;
 constexpr size_t PC9801_V = 400;
 constexpr size_t PC9801_H = 640;
+constexpr size_t PC8801_V = 100;
+constexpr size_t PC8801_H = 640;
 constexpr size_t RES = 40000;
+
+struct Palette_depth3 {
+	unsigned __int16 B : 3;
+	unsigned __int16 R : 3;
+	unsigned __int16 : 2;
+	unsigned __int16 G : 3;
+	unsigned __int16 : 5;
+};
 
 struct Palette_depth4 {
 	unsigned __int8 B : 4;
@@ -626,6 +643,60 @@ public:
 
 };
 
+class GL {
+	std::vector<unsigned __int8> I;
+	std::vector<unsigned __int8> FI;
+
+	struct format_GL {
+		unsigned __int16 Start; // (big endian表現) PC-8801ベースでのLoad address
+		unsigned __int8 len_x8; // divided by 8
+		unsigned __int8 len_y;
+		unsigned __int32 unk;
+		struct Palette_depth3 Pal3[8];
+		unsigned __int8 body[];
+	} *buf = nullptr;
+
+public:
+	png_uint_32 len_x = PC8801_H;
+	png_uint_32 len_y = PC8801_V;
+	png_int_32 offset_x = 0;
+	png_int_32 offset_y = 0;
+
+	bool init(std::vector<__int8>& buffer)
+	{
+		if (buffer.size() < sizeof(format_GL)) {
+			std::wcerr << "File too short." << std::endl;
+			return true;
+		}
+
+		this->buf = (format_GL*)&buffer.at(0);
+		this->len_x = 8 * this->buf->len_x8;
+		this->len_y = this->buf->len_y;
+		const unsigned start = _byteswap_ushort(this->buf->Start) - 0xC000;
+		this->offset_x = start % 80 * 8;
+		this->offset_y = start / 80;
+
+		return false;
+	}
+
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
+	{
+		png_color c;
+		for (size_t i = 0; i < 8; i++) {
+			c.red = d3tod8(this->buf->Pal3[i].R);
+			c.green = d3tod8(this->buf->Pal3[i].G);
+			c.blue = d3tod8(this->buf->Pal3[i].B);
+			pal.push_back(c);
+			trans.push_back(0xFF);
+		}
+		c.red = 0;
+		c.green = 0;
+		c.blue = 0;
+		pal.push_back(c);
+		trans.push_back(0);
+	}
+};
+
 
 enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K
@@ -662,6 +733,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'M') { // 闘神都市 X68000 Attack effect mask
 				dm = decode_mode::MASK_X68K;
+			}
+			else if (*(*argv + 1) == L'g') { // GL 
+				dm = decode_mode::GL;
 			}
 			continue;
 		}
