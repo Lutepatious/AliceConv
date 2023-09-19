@@ -340,7 +340,6 @@ public:
 	}
 };
 
-
 class TIFFT {
 	std::vector<unsigned __int8> I;
 	std::vector<unsigned __int8> nI;
@@ -599,6 +598,32 @@ public:
 		trans.push_back(0xFF);
 	}
 
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		const size_t spr_x = 5;
+		const size_t spr_y = 24;
+		const size_t patterns = 70;
+		const size_t blocks = 14;
+
+		for (size_t p = 0; p < patterns; p += blocks) {
+			for (size_t y = 0; y < spr_y; y++) {
+				for (size_t b = 0; b < blocks; b++) {
+					for (size_t x = 0; x < spr_x; x++) {
+						for (size_t i = 0; i < 8; i++) {
+							std::bitset<8> t = this->buf->M[p + b][y][x];
+							unsigned a = t[7 - i] ? 1 : 0;
+							I.push_back(a);
+						}
+					}
+				}
+			}
+		}
+
+		for (size_t j = 0; j < spr_y * patterns / blocks; j++) {
+			out_body.push_back((png_bytep)&I.at(j * spr_x * blocks * 8));
+		}
+	}
+
 };
 
 
@@ -620,13 +645,13 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			if (*(*argv + 1) == L's') { // Dr.STOP!
+			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
 			}
-			else if (*(*argv + 1) == L'S') { // Dr.STOP! FM TOWNS
+			else if (*(*argv + 1) == L'S') { // Dr.STOP! FM TOWNS CG003
 				dm = decode_mode::DRS_CG003_TOWNS;
 			}
-			else if (*(*argv + 1) == L'O') { // Dr.STOP! OPENING FM TOWNS
+			else if (*(*argv + 1) == L'O') { // Dr.STOP! FM TOWNS OPENING
 				dm = decode_mode::DRS_OPENING_TOWNS;
 			}
 			else if (*(*argv + 1) == L'Y') { // ALICE‚ÌŠÙCD‘¼TIFF FM TOWNS
@@ -634,6 +659,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'P') { // “¬_“sŽs X68000 PCG
 				dm = decode_mode::SPRITE_X68K;
+			}
+			else if (*(*argv + 1) == L'M') { // “¬_“sŽs X68000 Attack effect mask
+				dm = decode_mode::MASK_X68K;
 			}
 			continue;
 		}
@@ -656,6 +684,7 @@ int wmain(int argc, wchar_t** argv)
 		DRSOPNT drsot;
 		TIFFT tifft;
 		SPRITE spr;
+		MASK mask;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -709,6 +738,16 @@ int wmain(int argc, wchar_t** argv)
 			spr.decode_palette(out.palette, out.trans);
 			spr.decode_body(out.body);
 			out.set_size(16 * 16, 16 * 128 / 16);
+			break;
+
+		case decode_mode::MASK_X68K:
+			if (mask.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			mask.decode_palette(out.palette, out.trans);
+			mask.decode_body(out.body);
+			out.set_size(5 * 8 * 14, 24 * 70 / 14);
 			break;
 
 		default:
