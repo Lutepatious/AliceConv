@@ -656,7 +656,10 @@ class GL {
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
+	size_t len_buf = 0;
+
 public:
+	size_t len_col = 0;
 	png_uint_32 len_x = PC8801_H;
 	png_uint_32 len_y = PC8801_V;
 	png_int_32 offset_x = 0;
@@ -670,6 +673,9 @@ public:
 		}
 
 		this->buf = (format_GL*)&buffer.at(0);
+		this->len_buf = buffer.size();
+
+		this->len_col = this->buf->len_x8;
 		this->len_x = 8 * this->buf->len_x8;
 		this->len_y = this->buf->len_y;
 		const unsigned start = _byteswap_ushort(this->buf->Start) - 0xC000;
@@ -694,6 +700,71 @@ public:
 		c.blue = 0;
 		pal.push_back(c);
 		trans.push_back(0);
+	}
+
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		const unsigned planes = 3;
+		const size_t decode_size = (size_t)this->len_col * this->len_y * planes;
+		const size_t image_size = (size_t)this->len_x * this->len_y;
+		unsigned __int8* src = this->buf->body;
+		size_t count = this->len_buf - sizeof(format_GL);
+
+		std::vector<unsigned __int8> D;
+		while (count-- && D.size() < decode_size) {
+			switch (*src) {
+			case 0x00:
+				if (*(src + 1) & 0x80) {
+					D.insert(D.end(), *(src + 1) & 0x7F, *(D.end() - len_col * planes * 4 + 1));
+					src += 2;
+					count--;
+				}
+				else {
+					D.insert(D.end(), *(src + 1), *(src + 2));
+					src += 3;
+					count -= 2;
+				}
+				break;
+
+			case 0x01:
+			case 0x02:
+			case 0x03:
+			case 0x04:
+			case 0x05:
+			case 0x06:
+			case 0x07:
+				D.insert(D.end(), *src, *(src + 1));
+				src += 2;
+				count--;
+				break;
+
+			case 0x08:
+			case 0x09:
+			case 0x0A:
+			case 0x0B:
+			case 0x0C:
+			case 0x0D:
+			case 0x0E:
+				D.insert(D.end(), *src - 6, *(D.end() - len_col * planes * 4 + 1));
+				src++;
+				break;
+
+			case 0x0F:
+			{
+				size_t target_plane = ((D.size() / len_col) % planes) - ((*(src + 1) & 0x80) ? 1 : 0);
+				auto cp_src = D.end() - len_col * target_plane;
+				D.insert(D.end(), cp_src, cp_src + (*(src + 1) & 0x7F));
+				src += 2;
+				count--;
+				break;
+			}
+
+			default:
+				D.push_back(*src);
+				src++;
+			}
+		}
+		std::wcout << D.size() << L", " << decode_size << "/ " << count << std::endl;
 	}
 };
 
@@ -759,6 +830,7 @@ int wmain(int argc, wchar_t** argv)
 		TIFFT tifft;
 		SPRITE spr;
 		MASK mask;
+		GL gl;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -822,6 +894,16 @@ int wmain(int argc, wchar_t** argv)
 			mask.decode_palette(out.palette, out.trans);
 			mask.decode_body(out.body);
 			out.set_size(5 * 8 * 14, 24 * 70 / 14);
+			break;
+
+		case decode_mode::GL:
+			if (gl.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			gl.decode_palette(out.palette, out.trans);
+			gl.decode_body(out.body);
+			out.set_size(PC8801_H, PC8801_V);
 			break;
 
 		default:
