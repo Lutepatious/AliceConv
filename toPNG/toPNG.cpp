@@ -676,13 +676,26 @@ public:
 		this->buf = (format_GL*)&buffer.at(0);
 		this->len_buf = buffer.size();
 
+		unsigned start = _byteswap_ushort(this->buf->Start);
+		if (start < 0xC000) {
+			std::wcerr << "Wrong start address." << std::endl;
+			return true;
+		}
+
+		start -= 0xC000;
+
 		this->len_col = this->buf->len_x8;
 		this->len_x = 8 * this->buf->len_x8;
 		this->len_y = this->buf->len_y;
-		const unsigned start = _byteswap_ushort(this->buf->Start) - 0xC000;
 		this->offset_x = start % 80 * 8;
 		this->offset_y = start / 80;
 
+		if (((size_t) this->len_x + this->offset_x > PC8801_H) || ((size_t) this->len_y + this->offset_y) > PC8801_V) {
+			std::wcerr << "Wrong size." << std::endl;
+			return true;
+		}
+
+		std::wcout << L"From " << std::setw(4) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" Size " << std::setw(4) << len_x << L"," << std::setw(3) << len_y << std::endl;
 		return false;
 	}
 
@@ -766,10 +779,8 @@ public:
 				src++;
 			}
 		}
-		std::wcout << D.size() << L", " << decode_size << "/ " << count << std::endl;
 
 		std::vector<unsigned __int8> P;
-
 		for (size_t l = 0; l < D.size(); l += Row1_step) {
 			for (size_t c = 0; c < this->len_col; c++) {
 				std::bitset<8> b[3] = { D.at(l + c), D.at(l + c + this->len_col), D.at(l + c + this->len_col * 2) };
@@ -781,20 +792,13 @@ public:
 			}
 		}
 
-		std::wcout << P.size() << L", " << image_size << std::endl;
-
-
 		this->I.insert(this->I.end(), PC8801_H * this->offset_y, this->transparent);
-
 		for (size_t y = 0; y < this->len_y; y++) {
 			this->I.insert(this->I.end(), this->offset_x, this->transparent);
 			this->I.insert(this->I.end(), P.begin() + this->len_x * y, P.begin() + this->len_x * (y + 1));
 			this->I.insert(this->I.end(), PC8801_H - this->offset_x - this->len_x, this->transparent);
 		}
-
 		this->I.insert(I.end(), PC8801_H * (PC8801_V - this->offset_y - this->len_y), this->transparent);
-
-		std::wcout << this->I.size() << L", " << PC8801_H * PC8801_V << std::endl;
 
 		for (size_t j = 0; j < PC8801_V; j++) {
 			out_body.push_back((png_bytep)&I.at(j * PC8801_H));
