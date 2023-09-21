@@ -733,12 +733,12 @@ public:
 		while (count-- && D.size() < decode_size) {
 			switch (*src) {
 			case 0x00:
-				if (*(src + 1) & 0x80) {
+				if (*(src + 1) & 0x80) { // (4行前+8ドット先)の同プレーンのデータ8ドットを末尾に(*(src + 1) & 0x7F)回コピー
 					D.insert(D.end(), *(src + 1) & 0x7F, *(D.end() - Row1_step * 4 + 1));
 					src += 2;
 					count--;
 				}
-				else {
+				else { // *(src + 2)の8ドットデータを末尾に*(src + 1)回コピー
 					D.insert(D.end(), *(src + 1), *(src + 2));
 					src += 3;
 					count -= 2;
@@ -752,6 +752,7 @@ public:
 			case 0x05:
 			case 0x06:
 			case 0x07:
+				// *(src + 1)の8ドットデータを末尾に*src回コピー
 				D.insert(D.end(), *src, *(src + 1));
 				src += 2;
 				count--;
@@ -764,12 +765,14 @@ public:
 			case 0x0C:
 			case 0x0D:
 			case 0x0E:
+				// (4行前+8ドット先)の同プレーンのデータ8ドットを末尾に(*src - 6)回コピー
 				D.insert(D.end(), *src - 6, *(D.end() - Row1_step * 4 + 1));
 				src++;
 				break;
 
 			case 0x0F:
 			{
+				// 別プレーンのデータを(*(src + 1) & 0x7F)*8ドット分末尾にコピー
 				size_t target_plane = ((D.size() / len_col) % planes) - ((*(src + 1) & 0x80) ? 1 : 0);
 				auto cp_src = D.end() - len_col * target_plane;
 				D.insert(D.end(), cp_src, cp_src + (*(src + 1) & 0x7F));
@@ -784,6 +787,7 @@ public:
 			}
 		}
 
+		// 3プレーン表現をインデックスカラーに変換 std::bitsetでより簡潔になった。
 		std::vector<unsigned __int8> P;
 		for (size_t l = 0; l < D.size(); l += Row1_step) {
 			for (size_t c = 0; c < this->len_col; c++) {
@@ -924,12 +928,12 @@ public:
 		while (count-- && D.size() < decode_size) {
 			switch (*src) {
 			case 0x00:
-				if (*(src + 1) & 0x80) {
+				if (*(src + 1) & 0x80) { // (2行前+8ドット先)の同プレーンのデータ8ドットを末尾に(*(src + 1) & 0x7F)回コピー
 					D.insert(D.end(), *(src + 1) & 0x7F, *(D.end() - Row1_step * 2 + 1));
 					src += 2;
 					count--;
 				}
-				else {
+				else { // *(src + 2)の8ドットデータを末尾に*(src + 1)回コピー
 					D.insert(D.end(), *(src + 1), *(src + 2));
 					src += 3;
 					count -= 2;
@@ -943,6 +947,7 @@ public:
 			case 0x05:
 			case 0x06:
 			case 0x07:
+				// *(src + 1)の8ドットデータを末尾に*src回コピー
 				D.insert(D.end(), *src, *(src + 1));
 				src += 2;
 				count--;
@@ -954,12 +959,14 @@ public:
 			case 0x0B:
 			case 0x0C:
 			case 0x0D:
+				// (2行前+8ドット先)の同プレーンのデータ8ドットを末尾に(*src - 6)回コピー
 				D.insert(D.end(), *src - 6, *(D.end() - Row1_step * 2 + 1));
 				src++;
 				break;
 
 			case 0x0E:
 			{
+				// 別プレーンのデータを(*(src + 1) & 0x7F)*8ドット分末尾にコピー
 				size_t target_plane = ((D.size() / len_col) % planes) - 2;
 				auto cp_src = D.end() - len_col * target_plane;
 				size_t cp_len = *(src + 1) & 0x7F;
@@ -972,6 +979,7 @@ public:
 
 			case 0x0F:
 			{
+				// 別プレーンのデータを(*(src + 1) & 0x7F)*8ドット分末尾にコピー
 				size_t target_plane = ((D.size() / len_col) % planes) - ((*(src + 1) & 0x80) ? 1 : 0);
 				auto cp_src = D.end() - len_col * target_plane;
 				size_t cp_len = *(src + 1) & 0x7F;
@@ -988,6 +996,7 @@ public:
 			}
 		}
 
+		// 4プレーン表現をインデックスカラーに変換 std::bitsetでより簡潔になった。
 		std::vector<unsigned __int8> P;
 		for (size_t l = 0; l < D.size(); l += Row1_step) {
 			for (size_t c = 0; c < this->len_col; c++) {
@@ -1010,7 +1019,7 @@ public:
 			this->I.insert(this->I.end(), P.begin() + this->len_x * y, P.begin() + this->len_x * (y + 1));
 			this->I.insert(this->I.end(), PC9801_H - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), PC9801_H * (this->disp_y - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(I.end(), PC9801_H * ((size_t) this->disp_y - this->offset_y - this->len_y), this->transparent);
 
 		for (size_t j = 0; j < this->disp_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
@@ -1020,6 +1029,9 @@ public:
 	}
 };
 
+class VSP { // VSPのVSはVertical Scanの事か? 各プレーンの8ドット(1バイト)を縦にスキャンしてデータが構成されている
+	std::vector<unsigned __int8> I;
+};
 
 enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K
@@ -1039,7 +1051,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			// already used: sSOYPMgh
+			// already used: sSOYPMghv
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -1062,8 +1074,11 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'g') { // GL 
 				dm = decode_mode::GL;
 			}
-			else if (*(*argv + 1) == L'h') { // GL3 
+			else if (*(*argv + 1) == L'h') { // GL3, GM3
 				dm = decode_mode::GL3;
+			}
+			else if (*(*argv + 1) == L'v') { // GL3, GM3
+				dm = decode_mode::VSP;
 			}
 			continue;
 		}
