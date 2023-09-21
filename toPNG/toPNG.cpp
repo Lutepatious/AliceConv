@@ -707,6 +707,7 @@ public:
 		const unsigned planes = 3;
 		const size_t decode_size = (size_t)this->len_col * this->len_y * planes;
 		const size_t image_size = (size_t)this->len_x * this->len_y;
+		const size_t Row1_step = this->len_col * planes;
 		unsigned __int8* src = this->buf->body;
 		size_t count = this->len_buf - sizeof(format_GL);
 
@@ -715,7 +716,7 @@ public:
 			switch (*src) {
 			case 0x00:
 				if (*(src + 1) & 0x80) {
-					D.insert(D.end(), *(src + 1) & 0x7F, *(D.end() - len_col * planes * 4 + 1));
+					D.insert(D.end(), *(src + 1) & 0x7F, *(D.end() - Row1_step * 4 + 1));
 					src += 2;
 					count--;
 				}
@@ -745,7 +746,7 @@ public:
 			case 0x0C:
 			case 0x0D:
 			case 0x0E:
-				D.insert(D.end(), *src - 6, *(D.end() - len_col * planes * 4 + 1));
+				D.insert(D.end(), *src - 6, *(D.end() - Row1_step * 4 + 1));
 				src++;
 				break;
 
@@ -765,6 +766,21 @@ public:
 			}
 		}
 		std::wcout << D.size() << L", " << decode_size << "/ " << count << std::endl;
+
+		std::vector<unsigned __int8> P;
+
+		for (size_t l = 0; l < D.size(); l += Row1_step) {
+			for (size_t c = 0; c < this->len_col; c++) {
+				std::bitset<8> b[3] = { D.at(l + c), D.at(l + c + this->len_col), D.at(l + c + this->len_col * 2) };
+
+				for (size_t i = 0; i < 8; i++) {
+					unsigned __int8 a = (b[0][7 - i] ? 1 : 0) | (b[1][7 - i] ? 2 : 0) | (b[2][7 - i] ? 4 : 0);
+					P.push_back(a);
+				}
+			}
+		}
+
+		std::wcout << P.size() << L", " << image_size << std::endl;
 	}
 };
 
