@@ -102,6 +102,11 @@ struct toPNG {
 		res_y = ((RES * in_y * 2) / PC9801_V + 1) >> 1;
 	}
 
+	void change_resolution_halfy(void)
+	{
+		res_y >>= 1;
+	}
+
 	void set_size(png_uint_32 in_x, png_uint_32 in_y)
 	{
 		this->pixels_V = in_y;
@@ -816,7 +821,14 @@ class GL3 {
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
+	struct Palette_depth4 Pal4_GM3[16] =
+	{ { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
+	  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF },
+	  { 0x0, 0x0, 0x0 }, { 0xF, 0x0, 0x0 }, { 0x0, 0xF, 0x0 }, { 0xF, 0xF, 0x0 },
+	  { 0x0, 0x0, 0xF }, { 0xF, 0x0, 0xF }, { 0x0, 0xF, 0xF }, { 0xF, 0xF, 0xF } };
+
 	size_t len_buf = 0;
+	bool is_GM3 = false;
 
 public:
 	size_t len_col = 0;
@@ -825,12 +837,27 @@ public:
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
 	unsigned transparent = 16;
+	png_uint_32 disp_y = PC9801_V;
 
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_GL3)) {
 			std::wcerr << "File too short." << std::endl;
 			return true;
+		}
+
+		unsigned __int8 t = 0;
+		for (int i = 0; i < 0x30; i++) {
+			t |= buffer.at(i);
+		}
+
+		if (t >= 0x10) {
+			std::wcerr << "Wrong palette." << std::endl;
+			return false;
+		}
+
+		if (t == 0) {
+			this->is_GM3 = true;
 		}
 
 		this->buf = (format_GL3*)&buffer.at(0);
@@ -862,10 +889,18 @@ public:
 	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
 	{
 		png_color c;
+
 		for (size_t i = 0; i < 16; i++) {
-			c.red = d4tod8(this->buf->Pal4[i].R);
-			c.green = d4tod8(this->buf->Pal4[i].G);
-			c.blue = d4tod8(this->buf->Pal4[i].B);
+			struct Palette_depth4 *p;
+			if (this->is_GM3) {
+				p = &this->Pal4_GM3[i];
+			}
+			else {
+				p = &this->buf->Pal4[i];
+			}
+			c.red = d4tod8(p->R);
+			c.green = d4tod8(p->G);
+			c.blue = d4tod8(p->B);
 			pal.push_back(c);
 			trans.push_back(0xFF);
 		}
@@ -876,7 +911,7 @@ public:
 		trans.push_back(0);
 	}
 
-	void decode_body(std::vector<png_bytep>& out_body)
+	bool decode_body(std::vector<png_bytep>& out_body)
 	{
 		const unsigned planes = 4;
 		const size_t decode_size = (size_t)this->len_col * this->len_y * planes;
@@ -953,8 +988,6 @@ public:
 			}
 		}
 
-		std::wcerr << D.size() << L"," << decode_size << std::endl;
-
 		std::vector<unsigned __int8> P;
 		for (size_t l = 0; l < D.size(); l += Row1_step) {
 			for (size_t c = 0; c < this->len_col; c++) {
@@ -967,7 +1000,9 @@ public:
 			}
 		}
 
-		std::wcerr << P.size() << L"," << image_size << std::endl;
+		if (this->is_GM3) {
+			this->disp_y = 201;
+		}
 
 		this->I.insert(this->I.end(), PC9801_H * this->offset_y, this->transparent);
 		for (size_t y = 0; y < this->len_y; y++) {
@@ -975,11 +1010,13 @@ public:
 			this->I.insert(this->I.end(), P.begin() + this->len_x * y, P.begin() + this->len_x * (y + 1));
 			this->I.insert(this->I.end(), PC9801_H - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), PC9801_H * (PC9801_V - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(I.end(), PC9801_H * (this->disp_y - this->offset_y - this->len_y), this->transparent);
 
-		for (size_t j = 0; j < PC9801_V; j++) {
+		for (size_t j = 0; j < this->disp_y; j++) {
 			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
 		}
+
+		return this->is_GM3;
 	}
 };
 
@@ -1132,8 +1169,11 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			gl3.decode_palette(out.palette, out.trans);
-			gl3.decode_body(out.body);
-			out.set_size(PC9801_H, PC9801_V);
+			if (gl3.decode_body(out.body)) {
+				out.change_resolution_halfy();
+			}
+			out.set_size(PC9801_H, gl3.disp_y);
+
 			break;
 
 		default:
