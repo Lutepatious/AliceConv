@@ -48,7 +48,7 @@ constexpr size_t VGA_V = 480;
 constexpr size_t VGA_H = 640;
 constexpr size_t PC9801_V = 400;
 constexpr size_t PC9801_H = 640;
-constexpr size_t PC8801_V = 100;
+constexpr size_t PC8801_V = 200;
 constexpr size_t PC8801_H = 640;
 constexpr size_t RES = 40000;
 
@@ -664,6 +664,7 @@ public:
 	png_uint_32 len_y = PC8801_V;
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
+	unsigned transparent = 8;
 
 	bool init(std::vector<__int8>& buffer)
 	{
@@ -781,6 +782,23 @@ public:
 		}
 
 		std::wcout << P.size() << L", " << image_size << std::endl;
+
+
+		this->I.insert(this->I.end(), PC8801_H * this->offset_y, this->transparent);
+
+		for (size_t y = 0; y < this->len_y; y++) {
+			this->I.insert(this->I.end(), this->offset_x, this->transparent);
+			this->I.insert(this->I.end(), P.begin() + this->len_x * y, P.begin() + this->len_x * (y + 1));
+			this->I.insert(this->I.end(), PC8801_H - this->offset_x - this->len_x, this->transparent);
+		}
+
+		this->I.insert(I.end(), PC8801_H * (PC8801_V - this->offset_y - this->len_y), this->transparent);
+
+		std::wcout << this->I.size() << L", " << PC8801_H * PC8801_V << std::endl;
+
+		for (size_t j = 0; j < PC8801_V; j++) {
+			out_body.push_back((png_bytep)&I.at(j * PC8801_H));
+		}
 	}
 };
 
@@ -919,7 +937,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			gl.decode_palette(out.palette, out.trans);
 			gl.decode_body(out.body);
-			out.set_size(PC8801_H, PC8801_V);
+			out.set_size_and_change_resolution(PC8801_H, PC8801_V);
 			break;
 
 		default:
