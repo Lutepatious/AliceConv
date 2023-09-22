@@ -268,6 +268,23 @@ public:
 		return false;
 	}
 
+	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
+	{
+		png_color c;
+
+		for (size_t i = 0; i < 16; i++) {
+			c.red = d4tod8(this->buf->Pal4[i].R);
+			c.green = d4tod8(this->buf->Pal4[i].G);
+			c.blue = d4tod8(this->buf->Pal4[i].B);
+			pal.push_back(c);
+			trans.push_back(0xFF);
+		}
+		c.red = 0;
+		c.green = 0;
+		c.blue = 0;
+		pal.push_back(c);
+		trans.push_back(0);
+	}
 
 };
 
@@ -443,9 +460,9 @@ int wmain(int argc, wchar_t** argv)
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
-//			glx68k.decode_palette(out.palette, out.trans);
+			glx68k.decode_palette(out.palette, out.trans);
 //			glx68k.decode_body(out.body);
-//			out.set_size_and_change_resolution(PC8801_H, PC8801_V);
+			out.set_size(PC9801_V, PC9801_H);
 			break;
 
 		default:
