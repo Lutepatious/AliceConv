@@ -1,3 +1,7 @@
+#ifndef TOPNG_GL
+#define TOPNG_GL
+#include "toPNG.hpp"
+
 #pragma pack(push)
 #pragma pack(1)
 class GL {
@@ -171,3 +175,4 @@ public:
 	}
 };
 #pragma pack(pop)
+#endif

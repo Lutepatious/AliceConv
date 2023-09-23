@@ -1,3 +1,7 @@
+#ifndef TOPNG_DRS003
+#define TOPNG_DRS003
+#include "toPNG.hpp"
+
 #pragma pack(push)
 #pragma pack(1)
 class DRS003 {
@@ -171,3 +175,4 @@ public:
 	}
 };
 #pragma pack(pop)
+#endif

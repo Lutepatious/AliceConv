@@ -1,220 +1,24 @@
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <vector>
-#include <bitset>
-#include <algorithm>
-#include <cstdio>
-#include <cstdlib>
-#include <cwchar>
-
-#include "zlib.h"
-#include "png.h"
-
-static inline png_byte d3tod8(png_byte a)
-{
-	//	png_byte r = (double) (a) * 255.0L / 7.0L + 0.5L;
-	png_byte r = ((unsigned)a * 146 + 1) >> 2;
-	return r;
-}
-
-static inline png_byte d4tod8(png_byte a)
-{
-	//	png_byte r = (double) (a) * 255.0L / 15.0L + 0.5L;
-	png_byte r = (unsigned)a * 17;
-	return r;
-}
-
-static inline png_byte d5tod8(png_byte a)
-{
-	//	png_byte r = (double) (a) * 255.0L / 31.0L + 0.5L;
-	png_byte r = ((unsigned)a * 527 + 23) >> 6;
-	return r;
-}
-
-static inline png_byte d16tod8(png_uint_16 a)
-{
-	//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
-	png_byte r = ((unsigned)a * 255L + 32895L) >> 16;
-	return  r;
-}
-
-
-#pragma pack(push)
-#pragma pack(1)
-
-constexpr size_t VGA_V = 480;
-constexpr size_t VGA_H = 640;
-constexpr size_t PC9801_V = 400;
-constexpr size_t PC9801_H = 640;
-constexpr size_t PC8801_V = 200;
-constexpr size_t PC8801_H = 640;
-constexpr size_t RES = 40000;
-
-struct Palette_depth3 {
-	unsigned __int16 B : 3;
-	unsigned __int16 R : 3;
-	unsigned __int16 : 2;
-	unsigned __int16 G : 3;
-	unsigned __int16 : 5;
-};
-
-struct Palette_depth4 {
-	unsigned __int8 B : 4;
-	unsigned __int8 : 4;
-	unsigned __int8 R : 4;
-	unsigned __int8 : 4;
-	unsigned __int8 G : 4;
-	unsigned __int8 : 4;
-};
-
-struct Palette_depth5 {
-	unsigned __int16 I : 1;
-	unsigned __int16 B : 5;
-	unsigned __int16 R : 5;
-	unsigned __int16 G : 5;
-};
-
-struct toPNG {
-	std::vector<png_color> palette;
-	std::vector<png_byte> trans;
-	std::vector<png_bytep> body;
-
-	png_uint_32 pixels_V = PC9801_V;
-	png_uint_32 pixels_H = PC9801_H;
-	int depth = 8;
-	bool indexed = true;
-	int res_x = RES;
-	int res_y = RES;
-	unsigned background = 0;
-
-	png_int_32 offset_x = 0;
-	png_int_32 offset_y = 0;
-	bool enable_offset = false;
-
-	void set_size_and_change_resolution(png_uint_32 in_x, png_uint_32 in_y)
-	{
-		this->pixels_V = in_y;
-		this->pixels_H = in_x;
-
-		res_x = ((RES * in_x * 2) / PC9801_H + 1) >> 1;
-		res_y = ((RES * in_y * 2) / PC9801_V + 1) >> 1;
-	}
-
-	void change_resolution_halfy(void)
-	{
-		res_y >>= 1;
-	}
-
-	void set_size(png_uint_32 in_x, png_uint_32 in_y)
-	{
-		this->pixels_V = in_y;
-		this->pixels_H = in_x;
-	}
-
-	void set_offset(png_uint_32 offs_x, png_uint_32 offs_y)
-	{
-		this->offset_x = offs_x;
-		this->offset_y = offs_y;
-		this->enable_offset = true;
-	}
-
-	void set_depth(int in_depth)
-	{
-		this->depth = in_depth;
-	}
-
-	void set_directcolor(void)
-	{
-		this->indexed = false;
-	}
-
-	int create(wchar_t* outfile)
-	{
-		if (body.size()) {
-
-			FILE* pFo;
-			errno_t ecode = _wfopen_s(&pFo, outfile, L"wb");
-			if (ecode || !pFo) {
-				std::wcerr << L"File open error." << outfile << std::endl;
-				return -1;
-			}
-			png_structp png_ptr = NULL;
-			png_infop info_ptr = NULL;
-
-			png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-			if (png_ptr == NULL) {
-				fclose(pFo);
-				return -1;
-			}
-
-			info_ptr = png_create_info_struct(png_ptr);
-			if (info_ptr == NULL) {
-				png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
-				fclose(pFo);
-				return -1;
-			}
-
-			png_init_io(png_ptr, pFo);
-			png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-			png_set_IHDR(png_ptr, info_ptr, this->pixels_H, this->pixels_V, this->depth, !this->indexed ? PNG_COLOR_TYPE_RGB_ALPHA : PNG_COLOR_TYPE_PALETTE, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
-
-			png_set_pHYs(png_ptr, info_ptr, this->res_x, this->res_y, PNG_RESOLUTION_METER);
-
-			if (this->indexed) {
-				png_set_PLTE(png_ptr, info_ptr, &this->palette.at(0), this->palette.size());
-
-				if (!this->trans.empty()) {
-					png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), this->trans.size(), NULL);
-				}
-			}
-
-			if (this->enable_offset) {
-				png_color_16 t;
-				t.index = background;
-				png_set_bKGD(png_ptr, info_ptr, &t);
-				png_set_oFFs(png_ptr, info_ptr, this->offset_x, this->offset_y, PNG_OFFSET_PIXEL);
-			}
-
-			png_write_info(png_ptr, info_ptr);
-			png_write_image(png_ptr, &this->body.at(0));
-			png_write_end(png_ptr, info_ptr);
-			png_destroy_write_struct(&png_ptr, &info_ptr);
-			fclose(pFo);
-
-			return 0;
-		}
-		else {
-			return -1;
-		}
-	}
-};
+#include "GL.hpp"
+#include "GL3.hpp"
+#include "GL_X68K.hpp"
 
 #include "DRS003.hpp"
 #include "TIFF_TOWNS.hpp"
 #include "X68K.hpp"
-#include "GL.hpp"
-#include "GL3.hpp"
 
-class GL_X68K {
+#pragma pack(push)
+#pragma pack(1)
+
+class VSP { // VSPのVSはVertical Scanの事か? 各プレーンの8ドット(1バイト)を縦にスキャンしてデータが構成されている
 	std::vector<unsigned __int8> I;
 
-	struct format_GL_X68K {
-		unsigned __int8 Sig;
-		unsigned __int8 unk0;
-		struct {
-			unsigned __int8 R : 4;
-			unsigned __int8 : 4;
-			unsigned __int8 G : 4;
-			unsigned __int8 : 4;
-			unsigned __int8 B : 4;
-			unsigned __int8 : 4;
-		} Pal4[16];
-		unsigned __int16 start_hx; // divided by 2
+	struct format_VSP {
+		unsigned __int16 start_x8; // divided by 8
 		unsigned __int16 start_y;
-		unsigned __int16 len_hx; // divided by 2
-		unsigned __int16 len_y;
-		unsigned __int16 Sig2;
+		unsigned __int16 end_x8; // divided by 8
+		unsigned __int16 end_y;
+		unsigned __int16 Unknown;
+		struct Palette_depth4 Pal4[16];
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
@@ -226,18 +30,16 @@ public:
 	png_uint_32 len_y = PC9801_V;
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
-	unsigned transparent = 16;
-	png_uint_32 disp_y = PC9801_V;
 
 	bool init(std::vector<__int8>& buffer)
 	{
-		if (buffer.size() < sizeof(format_GL_X68K)) {
+		if (buffer.size() < sizeof(format_VSP)) {
 			std::wcerr << "File too short." << std::endl;
 			return true;
 		}
 
 		unsigned __int8 t = 0;
-		for (int i = 2; i < 0x32; i++) {
+		for (int i = 0x0A; i < 0x3A; i++) {
 			t |= buffer.at(i);
 		}
 
@@ -246,27 +48,21 @@ public:
 			return true;
 		}
 
-		this->buf = (format_GL_X68K*)&buffer.at(0);
+		this->buf = (format_VSP*)&buffer.at(0);
 		this->len_buf = buffer.size();
 
-		if (this->buf->Sig != 0x11 || this->buf->Sig2 != 0xFEFF) {
-			std::wcerr << "Wrong Signature." << std::endl;
-			return true;
-
-		}
-
-		if (this->buf->len_hx == 0 || this->buf->len_y == 0) {
+		if (this->buf->end_x8 <= this->buf->start_x8 || this->buf->end_y <= this->buf->start_y) {
 			std::wcerr << "Wrong size." << std::endl;
 			return true;
 		}
 
-		this->len_col = this->buf->len_hx;
-		this->len_x = 2 * this->buf->len_hx;
-		this->len_y = this->buf->len_y;
-		this->offset_x = 2 * this->buf->start_hx;
+		this->len_col = this->buf->end_x8 - this->buf->start_x8;
+		this->len_x = 8 * (this->buf->end_x8 - this->buf->start_x8);
+		this->len_y = this->buf->end_y - this->buf->start_y;
+		this->offset_x = 8 * this->buf->start_x8;
 		this->offset_y = this->buf->start_y;
 
-		if (((size_t)this->len_x + this->offset_x > PC9801_H) || ((size_t)this->len_y + this->offset_y) > PC9801_V) {
+		if ((8ULL * this->buf->end_x8 > PC9801_H) || ((this->buf->end_x8 > PC9801_V))) {
 			std::wcerr << "Wrong size." << std::endl;
 			return true;
 		}
@@ -292,83 +88,12 @@ public:
 		pal.push_back(c);
 		trans.push_back(0);
 	}
-
-	void decode_body(std::vector<png_bytep>& out_body)
-	{
-		const size_t decode_size = (size_t)this->len_col * this->len_y;
-		const size_t image_size = (size_t)this->len_x * this->len_y;
-		unsigned __int8* src = this->buf->body;
-		size_t count = this->len_buf - sizeof(format_GL_X68K);
-
-
-		union {
-			unsigned __int8 B;
-			struct {
-				unsigned __int8	L : 4;
-				unsigned __int8 H : 4;
-			} S;
-		} u;
-
-		std::vector<unsigned __int8> D;
-		while (count-- && D.size() < image_size) {
-			switch (*src) {
-			case 0xFE:
-				for (size_t len = 0; len < *(src + 1); len++) {
-					u.B = *(src + 2);
-					D.push_back(u.S.L);
-					D.push_back(u.S.H);
-					u.B = *(src + 3);
-					D.push_back(u.S.L);
-					D.push_back(u.S.H);
-				}
-				src += 4;
-				count -= 3;
-				break;
-
-			case 0xFF:
-				for (size_t len = 0; len < *(src + 1); len++) {
-					u.B = *(src + 2);
-					D.push_back(u.S.L);
-					D.push_back(u.S.H);
-				}
-				src += 3;
-				count -= 2;
-				break;
-
-			default:
-				u.B = *src;
-				D.push_back(u.S.L);
-				D.push_back(u.S.H);
-				src++;
-			}
-		}
-
-		this->I.insert(this->I.end(), PC9801_H * this->offset_y, this->transparent);
-		for (size_t y = 0; y < this->len_y; y++) {
-			this->I.insert(this->I.end(), this->offset_x, this->transparent);
-			this->I.insert(this->I.end(), D.begin() + this->len_x * y, D.begin() + this->len_x * (y + 1));
-			this->I.insert(this->I.end(), PC9801_H - this->offset_x - this->len_x, this->transparent);
-		}
-		this->I.insert(I.end(), PC9801_H * ((size_t)PC9801_V - this->offset_y - this->len_y), this->transparent);
-
-		for (size_t j = 0; j < PC9801_V; j++) {
-			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
-		}
-
-	}
 };
-
-
-
-class VSP { // VSPのVSはVertical Scanの事か? 各プレーンの8ドット(1バイト)を縦にスキャンしてデータが構成されている
-	std::vector<unsigned __int8> I;
-};
+#pragma pack(pop)
 
 enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68V, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K
 };
-
-#pragma pack(pop)
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -382,7 +107,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			// already used: sSOYPMghv
+			// already used: sSOYPMghRv
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -438,6 +163,7 @@ int wmain(int argc, wchar_t** argv)
 		GL gl;
 		GL3 gl3;
 		GL_X68K glx68k;
+		VSP vsp;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -532,6 +258,16 @@ int wmain(int argc, wchar_t** argv)
 			}
 			glx68k.decode_palette(out.palette, out.trans);
 			glx68k.decode_body(out.body);
+			out.set_size(PC9801_H, PC9801_V);
+			break;
+
+		case decode_mode::VSP:
+			if (vsp.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			vsp.decode_palette(out.palette, out.trans);
+//			vsp.decode_body(out.body);
 			out.set_size(PC9801_H, PC9801_V);
 			break;
 

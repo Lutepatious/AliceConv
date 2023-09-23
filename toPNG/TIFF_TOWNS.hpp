@@ -1,3 +1,7 @@
+#ifndef TOPNG_TIFF_TOWNS
+#define TOPNG_TIFF_TOWNS
+#include "toPNG.hpp"
+
 #include "tiffio.h"
 #pragma pack(push)
 #pragma pack(1)
@@ -87,7 +91,7 @@ public:
 						unsigned __int8 G : 3;
 					} c;
 				} u;
-				u.a = i;
+				u.a = (unsigned __int8) i;
 
 				png_color t;
 				t.red = table3to8[u.c.R];
@@ -149,3 +153,4 @@ public:
 	}
 };
 #pragma pack(pop)
+#endif

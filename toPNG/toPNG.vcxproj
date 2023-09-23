@@ -166,7 +166,9 @@
     <ClInclude Include="DRS003.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GL3.hpp" />
+    <ClInclude Include="GL_X68K.hpp" />
     <ClInclude Include="TIFF_TOWNS.hpp" />
+    <ClInclude Include="toPNG.hpp" />
     <ClInclude Include="X68K.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
