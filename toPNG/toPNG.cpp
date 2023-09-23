@@ -202,12 +202,19 @@ class GL_X68K {
 	struct format_GL_X68K {
 		unsigned __int8 Sig;
 		unsigned __int8 unk0;
-		struct Palette_depth4 Pal4[16];
+		struct {
+			unsigned __int8 R : 4;
+			unsigned __int8 : 4;
+			unsigned __int8 G : 4;
+			unsigned __int8 : 4;
+			unsigned __int8 B : 4;
+			unsigned __int8 : 4;
+		} Pal4[16];
 		unsigned __int16 start_hx; // divided by 2
 		unsigned __int16 start_y;
 		unsigned __int16 len_hx; // divided by 2
 		unsigned __int16 len_y;
-		unsigned __int16 unk1;
+		unsigned __int16 Sig2;
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
@@ -242,7 +249,7 @@ public:
 		this->buf = (format_GL_X68K*)&buffer.at(0);
 		this->len_buf = buffer.size();
 
-		if (this->buf->Sig != 0x11) {
+		if (this->buf->Sig != 0x11 || this->buf->Sig2 != 0xFEFF) {
 			std::wcerr << "Wrong Signature." << std::endl;
 			return true;
 
@@ -286,6 +293,69 @@ public:
 		trans.push_back(0);
 	}
 
+	void decode_body(std::vector<png_bytep>& out_body)
+	{
+		const size_t decode_size = (size_t)this->len_col * this->len_y;
+		const size_t image_size = (size_t)this->len_x * this->len_y;
+		unsigned __int8* src = this->buf->body;
+		size_t count = this->len_buf - sizeof(format_GL_X68K);
+
+
+		union {
+			unsigned __int8 B;
+			struct {
+				unsigned __int8	L : 4;
+				unsigned __int8 H : 4;
+			} S;
+		} u;
+
+		std::vector<unsigned __int8> D;
+		while (count-- && D.size() < image_size) {
+			switch (*src) {
+			case 0xFE:
+				for (size_t len = 0; len < *(src + 1); len++) {
+					u.B = *(src + 2);
+					D.push_back(u.S.L);
+					D.push_back(u.S.H);
+					u.B = *(src + 3);
+					D.push_back(u.S.L);
+					D.push_back(u.S.H);
+				}
+				src += 4;
+				count -= 3;
+				break;
+
+			case 0xFF:
+				for (size_t len = 0; len < *(src + 1); len++) {
+					u.B = *(src + 2);
+					D.push_back(u.S.L);
+					D.push_back(u.S.H);
+				}
+				src += 3;
+				count -= 2;
+				break;
+
+			default:
+				u.B = *src;
+				D.push_back(u.S.L);
+				D.push_back(u.S.H);
+				src++;
+			}
+		}
+
+		this->I.insert(this->I.end(), PC9801_H * this->offset_y, this->transparent);
+		for (size_t y = 0; y < this->len_y; y++) {
+			this->I.insert(this->I.end(), this->offset_x, this->transparent);
+			this->I.insert(this->I.end(), D.begin() + this->len_x * y, D.begin() + this->len_x * (y + 1));
+			this->I.insert(this->I.end(), PC9801_H - this->offset_x - this->len_x, this->transparent);
+		}
+		this->I.insert(I.end(), PC9801_H * ((size_t)PC9801_V - this->offset_y - this->len_y), this->transparent);
+
+		for (size_t j = 0; j < PC9801_V; j++) {
+			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
+		}
+
+	}
 };
 
 
@@ -461,8 +531,8 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			glx68k.decode_palette(out.palette, out.trans);
-//			glx68k.decode_body(out.body);
-			out.set_size(PC9801_V, PC9801_H);
+			glx68k.decode_body(out.body);
+			out.set_size(PC9801_H, PC9801_V);
 			break;
 
 		default:
