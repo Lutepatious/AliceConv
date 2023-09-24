@@ -49,6 +49,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'R') { // GL_X68K RanceII
 				dm = decode_mode::X68R;
 			}
+			else if (*(*argv + 1) == L'r') { // VSP 200lines
+				dm = decode_mode::VSP200l;
+			}
 			else if (*(*argv + 1) == L'v') { // VSP
 				dm = decode_mode::VSP;
 			}
@@ -76,6 +79,7 @@ int wmain(int argc, wchar_t** argv)
 		GL gl;
 		GL3 gl3;
 		GL_X68K glx68k;
+		VSP200l vsp200l;
 		VSP vsp;
 
 		switch (dm) {
@@ -172,6 +176,16 @@ int wmain(int argc, wchar_t** argv)
 			glx68k.decode_palette(out.palette, out.trans);
 			glx68k.decode_body(out.body);
 			out.set_size(PC9801_H, PC9801_V);
+			break;
+
+		case decode_mode::VSP200l:
+			if (vsp200l.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			vsp200l.decode_palette(out.palette, out.trans);
+			vsp200l.decode_body(out.body);
+			out.set_size_and_change_resolution(PC8801_H, PC8801_V);
 			break;
 
 		case decode_mode::VSP:

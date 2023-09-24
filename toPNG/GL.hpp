@@ -33,6 +33,14 @@ public:
 			return true;
 		}
 
+		for (int i = 0x04; i < 0x0C; i++) {
+			unsigned __int16 t = *((unsigned __int16*)&buffer.at(0) + i) & 0xF8C0;
+			if (t != 0x4000) {
+				std::wcerr << "Wrong palette." << std::endl;
+				return true;
+			}
+		}
+
 		this->buf = (format_GL*)&buffer.at(0);
 		this->len_buf = buffer.size();
 

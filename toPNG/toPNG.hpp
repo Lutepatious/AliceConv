@@ -206,6 +206,7 @@ struct toPNG {
 #include "GL3.hpp"
 #include "GL_X68K.hpp"
 
+#include "VSP200l.hpp"
 #include "VSP.hpp"
 
 
