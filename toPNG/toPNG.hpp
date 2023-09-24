@@ -108,18 +108,19 @@ struct toPNG {
 		this->pixels_V = in_y;
 		this->pixels_H = in_x;
 
-		res_x = ((RES * in_x * 2) / PC9801_H + 1) >> 1;
-		res_y = ((RES * in_y * 2) / PC9801_V + 1) >> 1;
+		this->res_x = ((RES * in_x * 2) / PC9801_H + 1) >> 1;
+		this->res_y = ((RES * in_y * 2) / PC9801_V + 1) >> 1;
 	}
 
 	void change_resolution_halfy(void)
 	{
-		res_y >>= 1;
+		this->res_y >>= 1;
 	}
 
 	void change_resolution_x68k_g(void)
 	{
-		res_x * 4 / 5;
+		this->res_x = this->res_x * 4 / 5;
+		this->res_y = this->res_y * 6 / 5;
 	}
 
 	void set_size(png_uint_32 in_x, png_uint_32 in_y)
@@ -214,6 +215,7 @@ struct toPNG {
 
 #include "VSP200l.hpp"
 #include "VSP.hpp"
+#include "X68K_TT.hpp"
 
 
 #include "DRS003.hpp"
