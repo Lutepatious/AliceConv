@@ -95,11 +95,11 @@ public:
 		std::vector<unsigned __int8> D;
 		size_t index;
 		while (count-- && D.size() < decode_size) {
-
 			switch (*src) {
 			case 0x00: // 1列前の同プレーンのデータを1バイト目で指定した長さだけコピー
 				D.insert(D.end(), D.end() - Col1_step, D.end() - Col1_step + *(src + 1) + 1);
 				src += 2;
+				count--;
 				break;
 
 			case 0x01: // 2バイト目の値を1バイト目で指定した長さ繰り返す
@@ -107,6 +107,7 @@ public:
 					D.push_back(*(src + 2));
 				}
 				src += 3;
+				count -= 2;
 				break;
 
 			case 0x02: // 2-3バイト目の値を1バイト目で指定した長さ繰り返す
@@ -115,6 +116,7 @@ public:
 					D.push_back(*(src + 3));
 				}
 				src += 4;
+				count -= 3;
 				break;
 
 			case 0x03: // 第0プレーン(青)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
@@ -124,7 +126,8 @@ public:
 					D.push_back(negate ? ~t : t);
 				}
 				src += 2;
-				negate = 0;
+				count--;
+				negate = false;
 				break;
 
 			case 0x04: // 第1プレーン(赤)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
@@ -134,7 +137,8 @@ public:
 					D.push_back(negate ? ~t : t);
 				}
 				src += 2;
-				negate = 0;
+				count--;
+				negate = false;
 				break;
 
 			case 0x05: // 第2プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに制御が来てはならない。
@@ -144,7 +148,8 @@ public:
 					D.push_back(negate ? ~t : t);
 				}
 				src += 2;
-				negate = 0;
+				count--;
+				negate = false;
 				break;
 
 			case 0x06: // 機能3,4,5でコピーするデータを反転するか指定
@@ -156,6 +161,7 @@ public:
 				src++;
 				D.push_back(*src);
 				src++;
+				count--;
 				break;
 
 			default:

@@ -8,7 +8,7 @@ class SPRITE {
 	std::vector<unsigned __int8> I;
 
 	struct format_SPRITE {
-		unsigned __int16 Pal16BE[16]; // X68000 big endian、バイトスワップの上で色分解する事。
+		unsigned __int16 Pal5BE[16]; // X68000 big endian、バイトスワップの上で色分解する事。
 		struct {
 			unsigned __int8 H : 4;
 			unsigned __int8 L : 4;
@@ -37,7 +37,7 @@ public:
 
 		png_color c;
 		for (size_t i = 0; i < 16; i++) {
-			P.Pin = _byteswap_ushort(buf->Pal16BE[i]);
+			P.Pin = _byteswap_ushort(buf->Pal5BE[i]);
 
 			c.red = d5tod8(P.Pal5.R);
 			c.green = d5tod8(P.Pal5.G);

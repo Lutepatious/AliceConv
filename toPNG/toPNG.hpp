@@ -50,6 +50,7 @@ constexpr size_t PC9801_V = 400;
 constexpr size_t PC9801_H = 640;
 constexpr size_t PC8801_V = 200;
 constexpr size_t PC8801_H = 640;
+constexpr size_t X68000_G = 512;
 constexpr size_t RES = 40000;
 
 struct Palette_depth3 {
@@ -114,6 +115,11 @@ struct toPNG {
 	void change_resolution_halfy(void)
 	{
 		res_y >>= 1;
+	}
+
+	void change_resolution_x68k_g(void)
+	{
+		res_x * 4 / 5;
 	}
 
 	void set_size(png_uint_32 in_x, png_uint_32 in_y)

@@ -8,14 +8,14 @@ class GL_X68K {
 	std::vector<unsigned __int8> I;
 
 	struct format_GL_X68K {
-		unsigned __int8 Sig;
+		unsigned __int8 Sig0; // 0x11
 		unsigned __int8 unk0;
 		struct Palette_depth4RGB Pal4[16];
 		unsigned __int16 start_hx; // divided by 2
 		unsigned __int16 start_y;
 		unsigned __int16 len_hx; // divided by 2
 		unsigned __int16 len_y;
-		unsigned __int16 Sig2;
+		unsigned __int16 Sig1; // 0xFEFF
 		unsigned __int8 body[];
 	} *buf = nullptr;
 
@@ -50,10 +50,9 @@ public:
 		this->buf = (format_GL_X68K*)&buffer.at(0);
 		this->len_buf = buffer.size();
 
-		if (this->buf->Sig != 0x11 || this->buf->Sig2 != 0xFEFF) {
+		if (this->buf->Sig0 != 0x11 || this->buf->Sig1 != 0xFEFF) {
 			std::wcerr << "Wrong Signature." << std::endl;
 			return true;
-
 		}
 
 		if (this->buf->len_hx == 0 || this->buf->len_y == 0) {
@@ -96,11 +95,9 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		const size_t decode_size = (size_t)this->len_col * this->len_y;
 		const size_t image_size = (size_t)this->len_x * this->len_y;
 		unsigned __int8* src = this->buf->body;
 		size_t count = this->len_buf - sizeof(format_GL_X68K);
-
 
 		union {
 			unsigned __int8 B;
