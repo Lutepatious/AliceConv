@@ -116,8 +116,6 @@ public:
 			}
 		}
 
-		std::wcout << D.size() << L"," << image_size << std::endl;
-
 		this->I.insert(this->I.end(), X68000_G * this->offset_y, this->transparent);
 		for (size_t y = 0; y < this->len_y; y++) {
 			this->I.insert(this->I.end(), this->offset_x, this->transparent);
@@ -125,8 +123,6 @@ public:
 			this->I.insert(this->I.end(), X68000_G - this->offset_x - this->len_x, this->transparent);
 		}
 		this->I.insert(I.end(), X68000_G * ((size_t)X68000_G - this->offset_y - this->len_y), this->transparent);
-
-		std::wcout << I.size() << std::endl;
 
 		for (size_t j = 0; j < X68000_G; j++) {
 			out_body.push_back((png_bytep)&I.at(j * X68000_G));
