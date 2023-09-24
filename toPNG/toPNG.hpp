@@ -201,3 +201,14 @@ struct toPNG {
 };
 #pragma pack(pop)
 #endif
+
+#include "GL.hpp"
+#include "GL3.hpp"
+#include "GL_X68K.hpp"
+
+#include "VSP.hpp"
+
+
+#include "DRS003.hpp"
+#include "TIFF_TOWNS.hpp"
+#include "X68K.hpp"

@@ -1,94 +1,7 @@
-#include "GL.hpp"
-#include "GL3.hpp"
-#include "GL_X68K.hpp"
-
-#include "DRS003.hpp"
-#include "TIFF_TOWNS.hpp"
-#include "X68K.hpp"
-
+#include "toPNG.hpp"
 #pragma pack(push)
 #pragma pack(1)
 
-class VSP { // VSPのVSはVertical Scanの事か? 各プレーンの8ドット(1バイト)を縦にスキャンしてデータが構成されている
-	std::vector<unsigned __int8> I;
-
-	struct format_VSP {
-		unsigned __int16 start_x8; // divided by 8
-		unsigned __int16 start_y;
-		unsigned __int16 end_x8; // divided by 8
-		unsigned __int16 end_y;
-		unsigned __int16 Unknown;
-		struct Palette_depth4 Pal4[16];
-		unsigned __int8 body[];
-	} *buf = nullptr;
-
-	size_t len_buf = 0;
-
-public:
-	size_t len_col = 0;
-	png_uint_32 len_x = PC9801_H;
-	png_uint_32 len_y = PC9801_V;
-	png_int_32 offset_x = 0;
-	png_int_32 offset_y = 0;
-
-	bool init(std::vector<__int8>& buffer)
-	{
-		if (buffer.size() < sizeof(format_VSP)) {
-			std::wcerr << "File too short." << std::endl;
-			return true;
-		}
-
-		unsigned __int8 t = 0;
-		for (int i = 0x0A; i < 0x3A; i++) {
-			t |= buffer.at(i);
-		}
-
-		if (t >= 0x10) {
-			std::wcerr << "Wrong palette." << std::endl;
-			return true;
-		}
-
-		this->buf = (format_VSP*)&buffer.at(0);
-		this->len_buf = buffer.size();
-
-		if (this->buf->end_x8 <= this->buf->start_x8 || this->buf->end_y <= this->buf->start_y) {
-			std::wcerr << "Wrong size." << std::endl;
-			return true;
-		}
-
-		this->len_col = this->buf->end_x8 - this->buf->start_x8;
-		this->len_x = 8 * (this->buf->end_x8 - this->buf->start_x8);
-		this->len_y = this->buf->end_y - this->buf->start_y;
-		this->offset_x = 8 * this->buf->start_x8;
-		this->offset_y = this->buf->start_y;
-
-		if ((8ULL * this->buf->end_x8 > PC9801_H) || ((this->buf->end_x8 > PC9801_V))) {
-			std::wcerr << "Wrong size." << std::endl;
-			return true;
-		}
-
-		std::wcout << L"From " << std::setw(4) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" Size " << std::setw(4) << len_x << L"," << std::setw(3) << len_y << std::endl;
-		return false;
-	}
-
-	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
-	{
-		png_color c;
-
-		for (size_t i = 0; i < 16; i++) {
-			c.red = d4tod8(this->buf->Pal4[i].R);
-			c.green = d4tod8(this->buf->Pal4[i].G);
-			c.blue = d4tod8(this->buf->Pal4[i].B);
-			pal.push_back(c);
-			trans.push_back(0xFF);
-		}
-		c.red = 0;
-		c.green = 0;
-		c.blue = 0;
-		pal.push_back(c);
-		trans.push_back(0);
-	}
-};
 #pragma pack(pop)
 
 enum class decode_mode {
@@ -267,7 +180,7 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			vsp.decode_palette(out.palette, out.trans);
-//			vsp.decode_body(out.body);
+			vsp.decode_body(out.body);
 			out.set_size(PC9801_H, PC9801_V);
 			break;
 
