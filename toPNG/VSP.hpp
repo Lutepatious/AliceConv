@@ -18,7 +18,7 @@ class VSP { // VSP‚ÌVS‚ÍVertical Scan‚ÌŽ–‚©? ŠeƒvƒŒ[ƒ“‚Ì8ƒhƒbƒg(1ƒoƒCƒg)‚ðc‚Éƒ
 	} *buf = nullptr;
 
 	size_t len_buf = 0;
-	unsigned transparent = 0;
+	unsigned transparent = 16;
 
 public:
 	size_t len_col = 0;
@@ -78,8 +78,11 @@ public:
 			pal.push_back(c);
 			trans.push_back(0xFF);
 		}
-
-		trans[this->transparent] = 0;
+		c.red = 0;
+		c.green = 0;
+		c.blue = 0;
+		pal.push_back(c);
+		trans.push_back(0);
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
