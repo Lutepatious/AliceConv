@@ -1,76 +1,6 @@
 #include "toPNG.hpp"
 #pragma pack(push)
 #pragma pack(1)
-class X68K_ABZ { // RanceIII オプションセット あぶない文化祭前夜 X68000 256色
-	std::vector<unsigned __int8> I;
-
-	struct format_X68K_ABZ {
-		unsigned __int32 SigBE; // 0x00200010
-		unsigned __int16 len_x_BE;
-		unsigned __int16 len_y_BE;
-		unsigned __int16 Pal5BE[0x100]; // Palette No. 0x00 to 0xFE 最後の1個は無効?
-		unsigned __int8 body[];
-	} *buf = nullptr;
-
-	size_t len_buf = 0;
-	unsigned transparent = 0xFF;
-
-public:
-	png_uint_32 len_x = X68000_GX;
-	png_uint_32 len_y = X68000_G;
-	png_int_32 offset_x = 96; // 開始点がプログラム上で決め打ちになっていた。
-	png_int_32 offset_y = 56; // 同上
-
-	bool init(std::vector<__int8>& buffer)
-	{
-		if (buffer.size() < sizeof(format_X68K_ABZ)) {
-			std::wcerr << "File too short." << std::endl;
-			return true;
-		}
-
-		this->buf = (format_X68K_ABZ*)&buffer.at(0);
-		this->len_buf = buffer.size();
-
-		if (_byteswap_ulong(this->buf->SigBE) != 0x00200010) {
-			std::wcerr << "Wrong Signature." << std::endl;
-			return true;
-		}
-
-		this->len_x = _byteswap_ushort(this->buf->len_x_BE);
-		this->len_y = _byteswap_ushort(this->buf->len_y_BE);
-
-		if ((size_t)this->len_x + this->offset_x > X68000_G || (size_t)this->len_y + this->offset_y > X68000_G) {
-			std::wcerr << "Wrong size." << std::endl;
-			return true;
-		}
-
-		std::wcout << L"From " << std::setw(4) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" Size " << std::setw(4) << len_x << L"," << std::setw(3) << len_y << std::endl;
-		return false;
-	}
-
-	void decode_palette(std::vector<png_color>& pal, std::vector<png_byte>& trans)
-	{
-		union X68Pal_conv {
-			struct Palette_depth5 Pal5;
-			unsigned __int16 Pin;
-		} P;
-
-		png_color c;
-
-		for (size_t i = 0; i < 0x100; i++) {
-			P.Pin = _byteswap_ushort(buf->Pal5BE[i]);
-
-			c.red = d5tod8(P.Pal5.R);
-			c.green = d5tod8(P.Pal5.G);
-			c.blue = d5tod8(P.Pal5.B);
-			pal.push_back(c);
-			trans.push_back(0xFF);
-		}
-
-		trans.at(this->transparent) = 0;
-	}
-
-};
 #pragma pack(pop)
 
 enum class decode_mode {
@@ -158,6 +88,7 @@ int wmain(int argc, wchar_t** argv)
 
 		VSP vsp;
 		X68K_TT x68t;
+		X68K_ABZ x68b;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -284,6 +215,16 @@ int wmain(int argc, wchar_t** argv)
 			x68t.decode_body(out.body);
 			out.change_resolution_x68k_g();
 			out.set_size(X68000_G, X68000_G);
+			break;
+
+		case decode_mode::X68B:
+			if (x68b.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			x68b.decode_palette(out.palette, out.trans);
+			x68b.decode_body(out.body);
+			out.set_size(X68000_GX, X68000_G);
 			break;
 
 		default:

@@ -217,7 +217,7 @@ struct toPNG {
 #include "VSP200l.hpp"
 #include "VSP.hpp"
 #include "X68K_TT.hpp"
-
+#include "X68K_ABZ.hpp"
 
 #include "DRS003.hpp"
 #include "TIFF_TOWNS.hpp"

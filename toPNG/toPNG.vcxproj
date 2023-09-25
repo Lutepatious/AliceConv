@@ -172,6 +172,7 @@
     <ClInclude Include="VSP.hpp" />
     <ClInclude Include="VSP200l.hpp" />
     <ClInclude Include="X68K.hpp" />
+    <ClInclude Include="X68K_ABZ.hpp" />
     <ClInclude Include="X68K_TT.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
