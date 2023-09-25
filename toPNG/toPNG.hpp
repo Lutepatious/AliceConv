@@ -51,6 +51,7 @@ constexpr size_t PC9801_H = 640;
 constexpr size_t PC8801_V = 200;
 constexpr size_t PC8801_H = 640;
 constexpr size_t X68000_G = 512;
+constexpr size_t X68000_GX = 768;
 constexpr size_t RES = 40000;
 
 struct Palette_depth3 {
