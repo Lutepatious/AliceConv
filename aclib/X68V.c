@@ -44,7 +44,7 @@ struct image_info* decode_X68V(FILE* pFi)
 	}
 	fclose(pFi);
 
-	// スタートアドレスの決め方が不明なので決め打ちにした。
+	// スタートアドレスの決め方が不明なので決め打ちにした。いや、プログラム自体が決め打ちだった。
 	const size_t in_x = 96;
 	const size_t in_y = 56;
 	const size_t len_x = _byteswap_ushort(data->ColsBE);
