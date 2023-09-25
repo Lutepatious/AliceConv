@@ -55,6 +55,7 @@ EOMMLtoVGM.exe		eomml形式の楽曲データを.vgmに変換する。
 PSGtoVGM.exe		MSX用PSGの楽曲データを.vgmに変換する。
 PC88toVGM.exe		PC-8801SR版のMML形式の楽曲データを.vgmに変換する。
 MCLtoVGM.exe		MCL形式というかMSXのMML内部形式の楽曲データを.vgmに変換する。
+toPNG.exe			VSPtoPNG.exe,TIFFtoPNG_Y1CD.exe,DRStoPNG.exeシリーズの置き換え。C++ STLを活用し、Boehm GCを排除するもの。
 
 廃止物 (機能はMAKO2toVGM.EXEに取り込みました)
 PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
@@ -194,6 +195,28 @@ IntruderではカレントディレクトリにCOLPALET.DATを置いてくださ
 
 Dream Program System -SG-のインターレースモードによる縦2倍画像に対応しましたが、
 Rabbit -P4P-の283/284はデータ自体ががバグっており通常のプレイでも表示されないので非対応とします。
+
+### toPNG.exe ###
+新しいMSXtoPNG.exeに倣い、VSPtoPNG.exeもC++ STL化を行いました。
+まだ移行途中ですが、DRStoPNG.exe, DRStoPNG_TOWNS.exe,TIFFtoPNG_Y1CD.exeの機能を取り込み、闘神都市X68000版でのPCG情報の変換機能も追加しました。
+
+-s Dr.STOP!のオープニングで流れるスクロールCGであるCG003.DAT対応 (PC-9801版とX68000版)
+-S Dr.STOP!のオープニングで流れるスクロールCGであるCG003.BMP対応 (FM TOWNS版)
+-O Dr.STOP!のタイトルバック(FM TOWNS版) 
+-Y ALICEの館CD他FM TOWNS版CDに含まれるTIFF対応。なおTIFFでRGB16bitパレットを使っている場合はRGBA64ビットダイレクトカラーに変換する。
+-P 闘神都市X68000版のPCGエリアを使うチップキャラ対応(SPRPT.SPR)
+-M 闘神都市X68000版の戦闘エフェクトのマスキングデータ対応(ATDAT.SPR)
+-g GL形式対応
+-h GL3形式対応
+-R RanceII X68000版専用形式対応
+-r RanceII PC8801SR版をはじめとするVSP 200lines形式対応
+-v VSP形式対応
+-T 闘神都市X68000版の256色形式対応
+-B RanceIII オプションSET あぶない文化祭前夜 X68000版の256色形式対応
+
+
+
+
 
 ### TIFFtoPNG_Y1CD.exe ###
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
