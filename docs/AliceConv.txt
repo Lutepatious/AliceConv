@@ -202,7 +202,7 @@ Rabbit -P4P-の283/284はデータ自体ががバグっており通常のプレ�
 
 -s Dr.STOP!のオープニングで流れるスクロールCGであるCG003.DAT対応 (PC-9801版とX68000版)
 -S Dr.STOP!のオープニングで流れるスクロールCGであるCG003.BMP対応 (FM TOWNS版)
--O Dr.STOP!のタイトルバック(FM TOWNS版) 
+-O Dr.STOP!のタイトルバックOPENNING.BMP対応 (FM TOWNS版) 
 -Y ALICEの館CD他FM TOWNS版CDに含まれるTIFF対応。なおTIFFでRGB16bitパレットを使っている場合はRGBA64ビットダイレクトカラーに変換する。
 -P 闘神都市X68000版のPCGエリアを使うチップキャラ対応(SPRPT.SPR)
 -M 闘神都市X68000版の戦闘エフェクトのマスキングデータ対応(ATDAT.SPR)
@@ -218,7 +218,7 @@ Rabbit -P4P-の283/284はデータ自体ががバグっており通常のプレ�
 
 
 
-### TIFFtoPNG_Y1CD.exe ###
+### TIFFtoPNG_Y1CD.exe ### (廃止予定)
 FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFFファイルをPNGに変換するものです。
 電子の国のアリスやクイズの館、女の子図鑑の一部CGは特殊な色情報
 (どうも初期のTOWNSにおける特殊フォーマットだったらしい)を使ったため、
@@ -227,14 +227,14 @@ FM TOWNSにしかリリースされなかったALICEの館CDに含まれるTIFF�
 適切なパレットを生成してインデックスカラー化する本プログラムを作成しました。
 FM TOWNS版Rance IIIやALICEの館CD IIのTIFFフォイルにも適応できます。
 
-### DRStoPNG.exe ###
+### DRStoPNG.exe ### (廃止予定)
 Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 PC-9801版とX68000版の場合、カレントディレクトリにAディスクのCG003.DATを置いて
 
 >DRStoPNG
 とするだけで003.pngファイルが得られます。
 
-### DRStoPNG_TOWNS.exe ###
+### DRStoPNG_TOWNS.exe ### (廃止予定)
 FM TOWNS版Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 
 カレントディレクトリにAディスクのCG003.DATとOPENNING.DATを置いて
