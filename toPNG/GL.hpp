@@ -29,14 +29,14 @@ public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_GL)) {
-			std::wcerr << "File too short." << std::endl;
+			wouterr(L"File too short.");
 			return true;
 		}
 
 		for (int i = 0x04; i < 0x0C; i++) {
 			unsigned __int16 t = *((unsigned __int16*)&buffer.at(0) + i) & 0xF8C0;
 			if (t != 0x4000) {
-				std::wcerr << "Wrong palette." << std::endl;
+				wouterr(L"Wrong palette.");
 				return true;
 			}
 		}
@@ -46,14 +46,14 @@ public:
 
 		unsigned start = _byteswap_ushort(this->buf->Start);
 		if (start < 0xC000) {
-			std::wcerr << "Wrong start address." << std::endl;
+			wouterr(L"Wrong start address.");
 			return true;
 		}
 
 		start -= 0xC000;
 
 		if (this->buf->len_x8 == 0 || this->buf->len_y == 0) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 
@@ -64,7 +64,7 @@ public:
 		this->offset_y = start / 80;
 
 		if (((size_t)this->len_x + this->offset_x > PC8801_H) || ((size_t)this->len_y + this->offset_y) > PC8801_V) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 

@@ -16,6 +16,15 @@
 #pragma pack(push)
 #pragma pack(1)
 
+static bool silent = false;
+
+static inline void wouterr(const wchar_t* msg)
+{
+	if (!silent) {
+		std::wcerr << msg << std::endl;
+	}
+}
+
 static inline png_byte d3tod8(png_byte a)
 {
 	//	png_byte r = (double) (a) * 255.0L / 7.0L + 0.5L;
@@ -180,10 +189,10 @@ struct toPNG {
 			png_set_pHYs(png_ptr, info_ptr, this->res_x, this->res_y, PNG_RESOLUTION_METER);
 
 			if (this->indexed) {
-				png_set_PLTE(png_ptr, info_ptr, &this->palette.at(0), (int) this->palette.size());
+				png_set_PLTE(png_ptr, info_ptr, &this->palette.at(0), (int)this->palette.size());
 
 				if (!this->trans.empty()) {
-					png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), (int) this->trans.size(), NULL);
+					png_set_tRNS(png_ptr, info_ptr, &this->trans.at(0), (int)this->trans.size(), NULL);
 				}
 			}
 

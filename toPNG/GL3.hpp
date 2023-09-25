@@ -36,7 +36,7 @@ public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_GL3)) {
-			std::wcerr << "File too short." << std::endl;
+			wouterr(L"File too short.");
 			return true;
 		}
 
@@ -46,7 +46,7 @@ public:
 		}
 
 		if (t >= 0x10) {
-			std::wcerr << "Wrong palette." << std::endl;
+			wouterr(L"Wrong palette.");
 			return true;
 		}
 
@@ -59,14 +59,14 @@ public:
 
 		unsigned start = this->buf->Start;
 		if (start < 0x8000) {
-			std::wcerr << "Wrong start address." << std::endl;
+			wouterr(L"Wrong start address.");
 			return true;
 		}
 
 		start -= 0x8000;
 
 		if (this->buf->len_x8 == 0 || this->buf->len_y == 0) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 
@@ -77,7 +77,7 @@ public:
 		this->offset_y = start / 80;
 
 		if (((size_t)this->len_x + this->offset_x > PC9801_H) || ((size_t)this->len_y + this->offset_y) > PC9801_V) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 

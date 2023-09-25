@@ -237,7 +237,7 @@ PC-9801版とX68000版の場合、カレントディレクトリにAディスク
 ### DRStoPNG_TOWNS.exe ### (廃止予定)
 FM TOWNS版Dr.STOP!のオープニングで使われるスクロール一枚絵をPNGに変換します。
 
-カレントディレクトリにAディスクのCG003.DATとOPENNING.DATを置いて
+カレントディレクトリにAディスクのCG003.BMPとOPENNING.BMPを置いて
 >DRStoPNG_TOWNS
 とするだけで003.pngとOPENNING.pngファイルが得られます。
 
