@@ -25,6 +25,11 @@ static inline void wouterr(const wchar_t* msg)
 	}
 }
 
+static inline void out_image_info(const size_t offset_x, const size_t offset_y, const size_t len_x, const size_t len_y, const wchar_t* type)
+{
+	std::wcout << L"From " << std::setw(4) <<offset_x << L"," << std::setw(3) << offset_y << L" Size " << std::setw(4) << len_x << L"*" << std::setw(3) << len_y << L" Type:" << type << std::endl;
+}
+
 static inline png_byte d3tod8(png_byte a)
 {
 	//	png_byte r = (double) (a) * 255.0L / 7.0L + 0.5L;

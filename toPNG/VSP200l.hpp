@@ -63,7 +63,7 @@ public:
 			return true;
 		}
 
-		std::wcout << L"From " << std::setw(4) << this->offset_x << L"," << std::setw(3) << this->offset_y << L" Size " << std::setw(4) << len_x << L"," << std::setw(3) << len_y << std::endl;
+		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"VSP200l");
 		return false;
 	}
 
