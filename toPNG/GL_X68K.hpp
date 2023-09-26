@@ -33,7 +33,7 @@ public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_GL_X68K)) {
-			std::wcerr << "File too short." << std::endl;
+			wouterr(L"File too short.");
 			return true;
 		}
 
@@ -43,7 +43,7 @@ public:
 		}
 
 		if (t >= 0x10) {
-			std::wcerr << "Wrong palette." << std::endl;
+			wouterr(L"Wrong palette.");
 			return true;
 		}
 
@@ -51,12 +51,12 @@ public:
 		this->len_buf = buffer.size();
 
 		if (this->buf->Sig0 != 0x11 || this->buf->Sig1 != 0xFEFF) {
-			std::wcerr << "Wrong Signature." << std::endl;
+			wouterr(L"Wrong signature.");
 			return true;
 		}
 
 		if (this->buf->len_hx == 0 || this->buf->len_y == 0) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 
@@ -67,7 +67,7 @@ public:
 		this->offset_y = this->buf->start_y;
 
 		if (((size_t)this->len_x + this->offset_x > PC9801_H) || ((size_t)this->len_y + this->offset_y) > PC9801_V) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 

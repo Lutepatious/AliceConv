@@ -31,7 +31,7 @@ public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_X68K_TT)) {
-			std::wcerr << "File too short." << std::endl;
+			wouterr(L"File too short.");
 			return true;
 		}
 
@@ -39,7 +39,7 @@ public:
 		this->len_buf = buffer.size();
 
 		if (_byteswap_ulong(this->buf->Sig0BE) != 0x11 || _byteswap_ulong(this->buf->Sig1BE) != 0 || _byteswap_ulong(this->buf->Sig2BE) != 0x00010007) {
-			std::wcerr << "Wrong Signature." << std::endl;
+			wouterr(L"Wrong signature.");
 			return true;
 		}
 
@@ -50,7 +50,7 @@ public:
 		this->len_y = _byteswap_ushort(this->buf->len_y_BE);
 
 		if (this->len_x > X68000_G || this->len_y > X68000_G) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 

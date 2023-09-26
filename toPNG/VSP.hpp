@@ -30,7 +30,7 @@ public:
 	bool init(std::vector<__int8>& buffer)
 	{
 		if (buffer.size() < sizeof(format_VSP)) {
-			std::wcerr << "File too short." << std::endl;
+			wouterr(L"File too short.");
 			return true;
 		}
 
@@ -40,7 +40,7 @@ public:
 		}
 
 		if (t >= 0x10) {
-			std::wcerr << "Wrong palette." << std::endl;
+			wouterr(L"Wrong palette.");
 			return true;
 		}
 
@@ -48,7 +48,7 @@ public:
 		this->len_buf = buffer.size();
 
 		if (this->buf->end_x8 <= this->buf->start_x8 || this->buf->end_y <= this->buf->start_y) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 
@@ -59,7 +59,7 @@ public:
 		this->offset_y = this->buf->start_y;
 
 		if ((8ULL * this->buf->end_x8 > PC9801_H) || ((this->buf->end_x8 > PC9801_V))) {
-			std::wcerr << "Wrong size." << std::endl;
+			wouterr(L"Wrong size.");
 			return true;
 		}
 
