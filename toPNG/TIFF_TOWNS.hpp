@@ -1,6 +1,5 @@
 #ifndef TOPNG_TIFF_TOWNS
 #define TOPNG_TIFF_TOWNS
-#include "toPNG.hpp"
 
 #include "tiffio.h"
 #pragma pack(push)

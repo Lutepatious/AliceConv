@@ -1,6 +1,5 @@
 #ifndef TOPNG_X68K_ABZ
 #define TOPNG_X68K_ABZ
-#include "toPNG.hpp"
 
 #pragma pack(push)
 #pragma pack(1)

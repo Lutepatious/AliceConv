@@ -1,6 +1,5 @@
 #ifndef TOPNG_VSP
 #define TOPNG_VSP
-#include "toPNG.hpp"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -12,7 +11,8 @@ class VSP { // VSP‚ÌVS‚ÍVertical Scan‚Ì–‚©? ŠeƒvƒŒ[ƒ“‚Ì8ƒhƒbƒg(1ƒoƒCƒg)‚ğc‚Éƒ
 		unsigned __int16 start_y;
 		unsigned __int16 end_x8; // divided by 8
 		unsigned __int16 end_y;
-		unsigned __int16 Unknown;
+		unsigned __int8 unk0;
+		unsigned __int8 unk1;
 		struct Palette_depth4 Pal4[16];
 		unsigned __int8 body[];
 	} *buf = nullptr;
@@ -58,12 +58,12 @@ public:
 		this->offset_x = 8 * this->buf->start_x8;
 		this->offset_y = this->buf->start_y;
 
-		if ((8ULL * this->buf->end_x8 > PC9801_H) || ((this->buf->end_x8 > PC9801_V))) {
+		if ((8ULL * this->buf->end_x8 > PC9801_H) || ((this->buf->end_y > PC9801_V))) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
 
-		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"VSP");
+		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"VSP", this->buf->unk0, this->buf->unk1);
 		return false;
 	}
 
@@ -176,7 +176,7 @@ public:
 		// 4ƒvƒŒ[ƒ“•\Œ»‚ğƒCƒ“ƒfƒbƒNƒXƒJƒ‰[‚É•ÏŠ· std::bitset‚Å‚æ‚èŠÈŒ‰‚É‚È‚Á‚½B
 		std::vector<unsigned __int8> P;
 		for (size_t l = 0; l < this->len_y; l++) {
-			for (size_t c = 0; c < D.size(); c += Col1_step) {
+			for (size_t c = 0; c < decode_size; c += Col1_step) {
 				std::bitset<8> b[4] = { D.at(l + c), D.at(l + c + this->len_y), D.at(l + c + this->len_y * 2), D.at(l + c + this->len_y * 3) };
 
 				for (size_t i = 0; i < 8; i++) {

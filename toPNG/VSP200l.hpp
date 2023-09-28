@@ -1,6 +1,5 @@
 #ifndef TOPNG_VSP200l
 #define TOPNG_VSP200l
-#include "toPNG.hpp"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -12,7 +11,8 @@ class VSP200l { // VSP‚ÌVS‚ÍVertical Scan‚Ì–‚©? ŠeƒvƒŒ[ƒ“‚Ì8ƒhƒbƒg(1ƒoƒCƒg)‚ğ
 		unsigned __int16 start_y;
 		unsigned __int16 end_x8; // divided by 8
 		unsigned __int16 end_y;
-		unsigned __int16 Unknown;
+		unsigned __int8 unk0;
+		unsigned __int8 unk1;
 		struct Palette_depth3 Pal3[8];
 		unsigned __int8 body[];
 	} *buf = nullptr;
@@ -58,12 +58,12 @@ public:
 		this->offset_x = 8 * this->buf->start_x8;
 		this->offset_y = this->buf->start_y;
 
-		if ((8ULL * this->buf->end_x8 > PC8801_H) || ((this->buf->end_x8 > PC8801_V))) {
+		if ((8ULL * this->buf->end_x8 > PC8801_H) || ((this->buf->end_y > PC8801_V))) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
 
-		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"VSP200l");
+		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"VSP200l", this->buf->unk0, this->buf->unk1);
 		return false;
 	}
 

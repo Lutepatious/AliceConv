@@ -19,7 +19,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTB
+			// already used: sSOYPMghRrvTBp
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -60,6 +60,12 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'B') { // RanceIII オプションセット あぶない文化祭前夜 X68000 256色
 				dm = decode_mode::X68B;
 			}
+			else if (*(*argv + 1) == L'p') { // 旧PMS(VSP256)
+				dm = decode_mode::VSP256;
+			}
+			else if (*(*argv + 1) == L'k') { // PMS8
+				dm = decode_mode::PMS8;
+			}
 			continue;
 		}
 
@@ -89,6 +95,8 @@ int wmain(int argc, wchar_t** argv)
 		VSP vsp;
 		X68K_TT x68t;
 		X68K_ABZ x68b;
+
+		PMS pms;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -225,6 +233,26 @@ int wmain(int argc, wchar_t** argv)
 			x68b.decode_palette(out.palette, out.trans);
 			x68b.decode_body(out.body);
 			out.set_size(X68000_GX, X68000_G);
+			break;
+
+		case decode_mode::VSP256:
+			if (pms.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			pms.decode_palette(out.palette, out.trans);
+			pms.decode_body(out.body);
+			out.set_size(pms.disp_x, pms.disp_y);
+			break;
+
+		case decode_mode::PMS8:
+			if (pms.init8(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			pms.decode_palette(out.palette, out.trans);
+			pms.decode_body(out.body);
+			out.set_size(pms.disp_x, pms.disp_y);
 			break;
 
 		default:

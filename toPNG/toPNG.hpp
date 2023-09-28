@@ -25,9 +25,9 @@ static inline void wouterr(const wchar_t* msg)
 	}
 }
 
-static inline void out_image_info(const size_t offset_x, const size_t offset_y, const size_t len_x, const size_t len_y, const wchar_t* type)
+static inline void out_image_info(const size_t offset_x, const size_t offset_y, const size_t len_x, const size_t len_y, const wchar_t* type, const size_t extra0 = 0, const size_t extra1 = 0)
 {
-	std::wcout << L"From " << std::setw(4) <<offset_x << L"," << std::setw(3) << offset_y << L" Size " << std::setw(4) << len_x << L"*" << std::setw(3) << len_y << L" Type:" << type << std::endl;
+	std::wcout << L"From " << std::setw(4) <<offset_x << L"," << std::setw(3) << offset_y << L" Size " << std::setw(4) << len_x << L"*" << std::setw(3) << len_y << L" Type:" << type << L" " << std::setw(3) << extra0 << L"," << std::setw(3) << extra1 << std::endl;
 }
 
 static inline png_byte d3tod8(png_byte a)
@@ -99,6 +99,12 @@ struct Palette_depth5 {
 	unsigned __int16 B : 5;
 	unsigned __int16 R : 5;
 	unsigned __int16 G : 5;
+};
+
+struct Palette_depth8 {
+	unsigned __int8 R;
+	unsigned __int8 G;
+	unsigned __int8 B;
 };
 
 struct toPNG {
@@ -232,6 +238,8 @@ struct toPNG {
 #include "VSP.hpp"
 #include "X68K_TT.hpp"
 #include "X68K_ABZ.hpp"
+
+#include "PMS.hpp"
 
 #include "DRS003.hpp"
 #include "TIFF_TOWNS.hpp"

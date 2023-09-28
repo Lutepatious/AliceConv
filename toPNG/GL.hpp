@@ -1,6 +1,5 @@
 #ifndef TOPNG_GL
 #define TOPNG_GL
-#include "toPNG.hpp"
 
 #pragma pack(push)
 #pragma pack(1)
@@ -63,7 +62,7 @@ public:
 		this->offset_x = start % 80 * 8;
 		this->offset_y = start / 80;
 
-		if (((size_t)this->len_x + this->offset_x > PC8801_H) || ((size_t)this->len_y + this->offset_y) > PC8801_V) {
+		if (((size_t)this->len_x + this->offset_x) > PC8801_H || ((size_t)this->len_y + this->offset_y) > PC8801_V) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
