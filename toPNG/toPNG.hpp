@@ -51,6 +51,13 @@ static inline png_byte d5tod8(png_byte a)
 	return r;
 }
 
+static inline unsigned __int8 d6tod8(unsigned __int8 a)
+{
+	//	unsigned __int8 r = (double) (a) * 255.0L / 63.0L + 0.5L;
+	unsigned __int8 r = ((unsigned)a * 259 + 33) >> 6;
+	return r;
+}
+
 static inline png_byte d16tod8(png_uint_16 a)
 {
 	//	png_byte r = ((double) a) * 255.0L / 65535.0L + 0.5L;
@@ -58,6 +65,8 @@ static inline png_byte d16tod8(png_uint_16 a)
 	return  r;
 }
 
+constexpr size_t SVGA_V = 600;
+constexpr size_t SVGA_H = 800;
 constexpr size_t VGA_V = 480;
 constexpr size_t VGA_H = 640;
 constexpr size_t PC9801_V = 400;
@@ -240,6 +249,7 @@ struct toPNG {
 #include "X68K_ABZ.hpp"
 
 #include "PMS.hpp"
+#include "PMS16.hpp"
 
 #include "DRS003.hpp"
 #include "TIFF_TOWNS.hpp"

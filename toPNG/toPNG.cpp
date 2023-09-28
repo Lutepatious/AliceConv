@@ -19,7 +19,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBp
+			// already used: sSOYPMghRrvTBpki
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -63,8 +63,11 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'p') { // ãåPMS(VSP256)
 				dm = decode_mode::VSP256;
 			}
-			else if (*(*argv + 1) == L'k') { // PMS8
+			else if (*(*argv + 1) == L'k') { // PMS8 ãSí{â§ÉâÉìÉXà»ç~
 				dm = decode_mode::PMS8;
+			}
+			else if (*(*argv + 1) == L'i') { // PMS16 Ç¢ÇØÇ»Ç¢Ç©Ç¬Ç›êÊê∂
+				dm = decode_mode::PMS16;
 			}
 			continue;
 		}
@@ -97,6 +100,7 @@ int wmain(int argc, wchar_t** argv)
 		X68K_ABZ x68b;
 
 		PMS pms;
+		PMS16 pms16;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -253,6 +257,16 @@ int wmain(int argc, wchar_t** argv)
 			pms.decode_palette(out.palette, out.trans);
 			pms.decode_body(out.body);
 			out.set_size(pms.disp_x, pms.disp_y);
+			break;
+
+		case decode_mode::PMS16:
+			if (pms16.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+//			pms16.decode_body(out.body);
+			out.set_directcolor();
+			out.set_size(pms16.disp_x, pms16.disp_y);
 			break;
 
 		default:

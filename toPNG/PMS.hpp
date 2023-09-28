@@ -72,15 +72,15 @@ public:
 			return true;
 		}
 
-		this->len_x = this->buf->end_x - this->buf->start_x + 1;
-		this->len_y = this->buf->end_y - this->buf->start_y + 1;
-		this->offset_x = this->buf->start_x;
-		this->offset_y = this->buf->start_y;
-
 		if (this->buf->end_x > VGA_H || this->buf->end_y > VGA_V) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
+
+		this->len_x = this->buf->end_x - this->buf->start_x + 1;
+		this->len_y = this->buf->end_y - this->buf->start_y + 1;
+		this->offset_x = this->buf->start_x;
+		this->offset_y = this->buf->start_y;
 
 		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"PMS", this->buf->unk0, this->buf->unk1);
 		return false;
@@ -108,15 +108,15 @@ public:
 			return true;
 		}
 
-		this->len_x = this->buf8->len_x;
-		this->len_y = this->buf8->len_y;
-		this->offset_x = this->buf8->start_x;
-		this->offset_y = this->buf8->start_y;
-
 		if ((size_t)this->buf8->start_x + this->buf8->len_x > VGA_H || (size_t)this->buf8->start_y + this->buf8->len_y > VGA_V) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
+
+		this->len_x = this->buf8->len_x;
+		this->len_y = this->buf8->len_y;
+		this->offset_x = this->buf8->start_x;
+		this->offset_y = this->buf8->start_y;
 
 		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"PMS8", this->buf8->unk0, this->buf8->unk1);
 		return false;
@@ -142,8 +142,6 @@ public:
 		const size_t image_size = (size_t)this->len_x * this->len_y;
 		unsigned __int8* src = this->is_PMS8 ? ((unsigned __int8*)this->buf8 + this->buf8->offset_body) : this->buf->body;
 		size_t count = this->is_PMS8 ? this->len_buf - this->buf8->offset_body : this->len_buf - sizeof(format_PMS);
-
-		//		std::wcout << count << L"," << image_size << std::endl;
 
 		std::vector<unsigned __int8> D;
 		while (count-- && D.size() < image_size) {
@@ -192,7 +190,7 @@ public:
 			}
 		}
 
-		if (this->offset_y + this->len_y > PC9801_V) {
+		if ((size_t)this->offset_y + this->len_y > PC9801_V) {
 			disp_y = VGA_V;
 		}
 
@@ -208,7 +206,6 @@ public:
 			out_body.push_back((png_bytep)&I.at(j * this->disp_x));
 		}
 	}
-
 };
 #pragma pack(pop)
 #endif
