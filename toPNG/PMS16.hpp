@@ -139,9 +139,6 @@ public:
 				}
 			}
 		}
-		else {
-			A.insert(A.end(), 0xFF, image_size);
-		}
 
 		unsigned __int8* src = (unsigned __int8*)this->buf + this->buf->offset_body;
 		size_t count = (exist_Alpha ? (size_t)this->buf->offset_Alpha : this->len_buf) - this->buf->offset_body;
@@ -195,17 +192,19 @@ public:
 				u.B[1] = *(src + 2);
 				D16.push_back(u.W);
 				src += 3;
+				count -= 2;
 				break;
 
 			case 0xF9:
 				// 連続する近似した色の圧縮表現、1バイト目に長さ、2バイト目が各色上位ビット(B3G2R3)、3バイト目以降が各色下位ビット(B2G4R2)。
-				cp_len = *(src + 1) + 1LL;
+				cp_len = *(src + 1) + 1ULL;
 				uh.B = *(src + 2);
 
 				uW.S.Rh = uh.S.Rh;
 				uW.S.Gh = uh.S.Gh;
 				uW.S.Bh = uh.S.Bh;
 				src += 3;
+				count -= 2;
 
 				for (size_t len = 0; len < cp_len; len++) {
 					ul.B = *src++;
@@ -213,6 +212,7 @@ public:
 					uW.S.Gl = ul.S.Gl;
 					uW.S.Bl = ul.S.Bl;
 					D16.push_back(uW.W);
+					count--;
 				}
 				break;
 
@@ -227,7 +227,7 @@ public:
 				break;
 
 			case 0xFC: // 2-5バイト目の2ピクセルの値を1バイト目で指定した回数繰り返す。
-				cp_len = *(src + 1) + 2LL;
+				cp_len = *(src + 1) + 2ULL;
 				for (size_t len = 0; len < cp_len; len++) {
 					u.B[0] = *(src + 2);
 					u.B[1] = *(src + 3);
@@ -237,29 +237,29 @@ public:
 					D16.push_back(u.W);
 				}
 				src += 6;
+				count -= 5;
 				break;
 			case 0xFD: // 2,3バイト目の1ピクセルの値を1バイト目で指定した回数繰り返す。
-				cp_len = *(src + 1) + 3LL;
+				cp_len = *(src + 1) + 3ULL;
 				for (size_t len = 0; len < cp_len; len++) {
 					u.B[0] = *(src + 2);
 					u.B[1] = *(src + 3);
 					D16.push_back(u.W);
 				}
 				src += 4;
+				count -= 3;
 				break;
+
 			case 0xFE: // 2行前の値を1バイト目で指定した長さでコピー
-				cp_len = *(src + 1) + 2LL;
-				cp_src = dst - Col_per_Row * 2;
-				wmemcpy_s(dst, cp_len, cp_src, cp_len);
-				dst += cp_len;
+				D16.insert(D16.end(), D16.end() - 2ULL *len_x, D16.end() - 2ULL * len_x + *(src + 1) + 2ULL);
 				src += 2;
+				count--;
 				break;
+
 			case 0xFF: // 1行前の値を1バイト目で指定した長さでコピー
-				cp_len = *(src + 1) + 2LL;
-				cp_src = dst - Col_per_Row;
-				wmemcpy_s(dst, cp_len, cp_src, cp_len);
-				dst += cp_len;
+				D16.insert(D16.end(), D16.end() - len_x, D16.end() - len_x + *(src + 1) + 2ULL);
 				src += 2;
+				count--;
 				break;
 
 			default:
@@ -267,9 +267,15 @@ public:
 				u.B[1] = *(src + 1);
 				D16.push_back(u.W);
 				src += 2;
+				count--;
 				break;
 			}
 		}
+
+		std::wcout << D16.size() << L"," << A.size() << L"," << image_size << std::endl;
+
+
+
 
 	}
 };

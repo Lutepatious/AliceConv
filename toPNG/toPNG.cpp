@@ -264,7 +264,7 @@ int wmain(int argc, wchar_t** argv)
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
-//			pms16.decode_body(out.body);
+			pms16.decode_body(out.body);
 			out.set_directcolor();
 			out.set_size(pms16.disp_x, pms16.disp_y);
 			break;
