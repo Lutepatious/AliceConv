@@ -45,7 +45,6 @@ class PMS {
 	bool is_PMS8 = false;
 
 public:
-	size_t len_col = 0;
 	png_uint_32 len_x = PC9801_H;
 	png_uint_32 len_y = PC9801_V;
 	png_int_32 offset_x = 0;
@@ -104,6 +103,11 @@ public:
 			return true;
 		}
 
+		if (this->buf8->depth != 0x08) {
+			wouterr(L"Not PMS8.");
+			return true;
+		}
+
 		this->len_x = this->buf8->len_x;
 		this->len_y = this->buf8->len_y;
 		this->offset_x = this->buf8->start_x;
@@ -139,7 +143,7 @@ public:
 		unsigned __int8* src = this->is_PMS8 ? ((unsigned __int8*)this->buf8 + this->buf8->offset_body) : this->buf->body;
 		size_t count = this->is_PMS8 ? this->len_buf - this->buf8->offset_body : this->len_buf - sizeof(format_PMS);
 
-//		std::wcout << count << L"," << image_size << std::endl;
+		//		std::wcout << count << L"," << image_size << std::endl;
 
 		std::vector<unsigned __int8> D;
 		while (count-- && D.size() < image_size) {
@@ -188,10 +192,8 @@ public:
 			}
 		}
 
-		if (!this->is_PMS8) {
-			if (buf->end_y > PC9801_V) {
-				disp_y = VGA_V;
-			}
+		if (this->offset_y + this->len_y > PC9801_V) {
+			disp_y = VGA_V;
 		}
 
 		this->I.insert(this->I.end(), (size_t)this->disp_x * this->offset_y, this->transparent);
