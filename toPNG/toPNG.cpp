@@ -4,7 +4,7 @@
 #pragma pack(pop)
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -19,7 +19,7 @@ int wmain(int argc, wchar_t** argv)
 
 	while (--argc) {
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBpki
+			// already used: sSOYPMghRrvTBpkia
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -68,6 +68,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'i') { // PMS16 Ç¢ÇØÇ»Ç¢Ç©Ç¬Ç›êÊê∂
 				dm = decode_mode::PMS16;
+			}
+			else if (*(*argv + 1) == L'a') { // auto detect ghRrvTBpki 
+				dm = decode_mode::AUTO;
 			}
 			continue;
 		}
@@ -269,6 +272,70 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size(pms16.disp_x, pms16.disp_y);
 			break;
 
+		case decode_mode::AUTO:
+			::silent = true;
+			if (!pms16.init(inbuf)) {
+				pms16.decode_body(out.body);
+				out.set_directcolor();
+				out.set_size(pms16.disp_x, pms16.disp_y);
+			}
+			else if (!pms.init8(inbuf)) {
+				pms.decode_palette(out.palette, out.trans);
+				pms.decode_body(out.body);
+				out.set_size(pms.disp_x, pms.disp_y);
+			}
+			else if (!pms.init(inbuf)) {
+				pms.decode_palette(out.palette, out.trans);
+				pms.decode_body(out.body);
+				out.set_size(pms.disp_x, pms.disp_y);
+			}
+			else if (!x68b.init(inbuf)) {
+				x68b.decode_palette(out.palette, out.trans);
+				x68b.decode_body(out.body);
+				out.set_size(x68b.len_x, x68b.len_y);
+			}
+			else if (!x68t.init(inbuf)) {
+				x68t.decode_palette(out.palette, out.trans);
+				x68t.decode_body(out.body);
+				out.change_resolution_x68k_g();
+				out.set_size(X68000_G, X68000_G);
+			}
+			else if (!vsp.init(inbuf)) {
+				vsp.decode_palette(out.palette, out.trans);
+				vsp.decode_body(out.body);
+				out.set_size(PC9801_H, PC9801_V);
+			}
+			else if (!vsp200l.init(inbuf)) {
+				vsp200l.decode_palette(out.palette, out.trans);
+				vsp200l.decode_body(out.body);
+				out.set_size_and_change_resolution(PC8801_H, PC8801_V);
+			}
+			else if (!glx68k.init(inbuf)) {
+				glx68k.decode_palette(out.palette, out.trans);
+				glx68k.decode_body(out.body);
+				out.set_size(PC9801_H, PC9801_V);
+			}
+			else if (!gl3.init(inbuf)) {
+				gl3.decode_palette(out.palette, out.trans);
+				if (gl3.decode_body(out.body)) {
+					out.change_resolution_halfy();
+				}
+				out.set_size(PC9801_H, gl3.disp_y);
+			}
+			else if (!gl.init(inbuf)) {
+				gl.decode_palette(out.palette, out.trans);
+				gl.decode_body(out.body);
+				out.set_size_and_change_resolution(PC8801_H, PC8801_V);
+			}
+			else {
+				::silent = false;
+				std::wcerr << L"Unknown or cannot autodetect. " << *argv << std::endl;
+				continue;
+			}
+
+			::silent = false;
+			break;
+			
 		default:
 			break;
 		}

@@ -64,11 +64,11 @@ public:
 		this->offset_x = this->buf->start_x;
 		this->offset_y = this->buf->start_y;
 
-		if (this->offset_x + this->len_x > VGA_H || this->offset_y + this->len_y > VGA_V) {
+		if ((size_t)this->offset_x + this->len_x > VGA_H || (size_t)this->offset_y + this->len_y > VGA_V) {
 			this->disp_x = SVGA_H;
 			this->disp_y = SVGA_V;
 		}
-		else if (this->offset_y + this->len_y > PC9801_V) {
+		else if ((size_t)this->offset_y + this->len_y > PC9801_V) {
 			this->disp_x = VGA_H;
 			this->disp_y = VGA_V;
 		}
@@ -268,7 +268,7 @@ public:
 			}
 		}
 
-		std::wcout << D16.size() << L"," << A.size() << L"," << image_size << std::endl;
+//		std::wcout << D16.size() << L"," << A.size() << L"," << image_size << std::endl;
 
 		std::vector<unsigned __int32> P32;
 
@@ -291,7 +291,7 @@ public:
 					unsigned __int16 R : 5;
 				} S;
 			} u16;
-			
+
 			u16.W = D16.at(i);
 
 			t.S.R = d5tod8(u16.S.R);
@@ -302,7 +302,7 @@ public:
 			P32.push_back(t.D);
 		}
 
-		this->I32.insert(this->I32.end(), (size_t)this->disp_x* this->offset_y, 0);
+		this->I32.insert(this->I32.end(), (size_t)this->disp_x * this->offset_y, 0);
 		for (size_t y = 0; y < this->len_y; y++) {
 			this->I32.insert(this->I32.end(), this->offset_x, 0);
 			this->I32.insert(this->I32.end(), P32.begin() + this->len_x * y, P32.begin() + this->len_x * (y + 1));
