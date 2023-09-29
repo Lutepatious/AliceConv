@@ -72,7 +72,7 @@ public:
 			return true;
 		}
 
-		if (this->buf->end_x > VGA_H || this->buf->end_y > VGA_V) {
+		if (this->buf->end_x >= PC9801_H || (this->buf->end_y >= PC9801_V && this->buf->end_y != VGA_V - 1)) {
 			wouterr(L"Wrong size.");
 			return true;
 		}
@@ -103,7 +103,7 @@ public:
 			return true;
 		}
 
-		if (this->buf8->depth != 0x08) {
+		if (this->buf8->depth != 0x08 || this->buf8->offset_body == 0 || this->buf8->offset_Pal == 0) {
 			wouterr(L"Not PMS8.");
 			return true;
 		}

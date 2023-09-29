@@ -49,7 +49,7 @@ public:
 			return true;
 		}
 
-		if (this->buf->depth != 0x10) {
+		if (this->buf->depth != 0x10 || this->buf->offset_body == 0) {
 			wouterr(L"Not PMS16.");
 			return true;
 		}

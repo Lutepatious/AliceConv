@@ -40,7 +40,7 @@ public:
 		}
 
 		if (t != 0) {
-			std::wcerr << "Wrong palette." << std::endl;
+			wouterr(L"Wrong palette.");
 			return true;
 		}
 
