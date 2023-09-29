@@ -3,7 +3,7 @@
 
 #pragma pack(push)
 class PMS16 {
-	std::vector<unsigned __int8> I;
+	std::vector<unsigned __int32> I32;
 
 	struct format_PMS16 {
 		unsigned __int16 Sig; // 'P','M'
@@ -25,19 +25,6 @@ class PMS16 {
 	} *buf = nullptr;
 
 	size_t len_buf = 0;
-
-	struct COLOR16BGR {
-		unsigned __int16 B : 5;
-		unsigned __int16 G : 6;
-		unsigned __int16 R : 5;
-	};
-
-	struct COLOR32RGBA {
-		unsigned __int8 R;
-		unsigned __int8 G;
-		unsigned __int8 B;
-		unsigned __int8 A;
-	};
 
 public:
 	png_uint_32 len_x = PC9801_H;
@@ -77,19 +64,28 @@ public:
 		this->offset_x = this->buf->start_x;
 		this->offset_y = this->buf->start_y;
 
+		if (this->offset_x + this->len_x > VGA_H || this->offset_y + this->len_y > VGA_V) {
+			this->disp_x = SVGA_H;
+			this->disp_y = SVGA_V;
+		}
+		else if (this->offset_y + this->len_y > PC9801_V) {
+			this->disp_x = VGA_H;
+			this->disp_y = VGA_V;
+		}
+
 		out_image_info(this->offset_x, this->offset_y, this->len_x, this->len_y, L"PMS16", this->buf->unk0, this->buf->unk1);
 		return false;
 	}
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		bool exist_Alpha = false;
+		bool have_Alpha = false;
 		unsigned __int8* Alpha_body = nullptr;
 		const size_t image_size = (size_t)this->len_x * this->len_y;
 
 		std::vector<unsigned __int8> A;
 		if (this->buf->offset_Alpha != 0) {
-			exist_Alpha = true;
+			have_Alpha = true;
 			size_t Acount = this->len_buf - this->buf->offset_Alpha;
 			Alpha_body = (unsigned __int8*)this->buf + this->buf->offset_Alpha;
 
@@ -141,7 +137,7 @@ public:
 		}
 
 		unsigned __int8* src = (unsigned __int8*)this->buf + this->buf->offset_body;
-		size_t count = (exist_Alpha ? (size_t)this->buf->offset_Alpha : this->len_buf) - this->buf->offset_body;
+		size_t count = (have_Alpha ? (size_t)this->buf->offset_Alpha : this->len_buf) - this->buf->offset_body;
 
 		size_t cp_len;
 		std::vector<unsigned __int16> D16;
@@ -251,7 +247,7 @@ public:
 				break;
 
 			case 0xFE: // 2行前の値を1バイト目で指定した長さでコピー
-				D16.insert(D16.end(), D16.end() - 2ULL *len_x, D16.end() - 2ULL * len_x + *(src + 1) + 2ULL);
+				D16.insert(D16.end(), D16.end() - 2ULL * len_x, D16.end() - 2ULL * len_x + *(src + 1) + 2ULL);
 				src += 2;
 				count--;
 				break;
@@ -274,9 +270,50 @@ public:
 
 		std::wcout << D16.size() << L"," << A.size() << L"," << image_size << std::endl;
 
+		std::vector<unsigned __int32> P32;
+
+		for (size_t i = 0; i < image_size; i++) {
+			union COLOR32RGBA {
+				unsigned __int32 D;
+				struct {
+					unsigned __int8 R;
+					unsigned __int8 G;
+					unsigned __int8 B;
+					unsigned __int8 A;
+				} S;
+			} t;
+
+			union {
+				unsigned __int16 W;
+				struct {
+					unsigned __int16 B : 5;
+					unsigned __int16 G : 6;
+					unsigned __int16 R : 5;
+				} S;
+			} u16;
+			
+			u16.W = D16.at(i);
+
+			t.S.R = d5tod8(u16.S.R);
+			t.S.G = d6tod8(u16.S.G);
+			t.S.B = d5tod8(u16.S.B);
+			t.S.A = have_Alpha ? A.at(i) : 0xFF;
+
+			P32.push_back(t.D);
+		}
+
+		this->I32.insert(this->I32.end(), (size_t)this->disp_x* this->offset_y, 0);
+		for (size_t y = 0; y < this->len_y; y++) {
+			this->I32.insert(this->I32.end(), this->offset_x, 0);
+			this->I32.insert(this->I32.end(), P32.begin() + this->len_x * y, P32.begin() + this->len_x * (y + 1));
+			this->I32.insert(this->I32.end(), (size_t)this->disp_x - this->offset_x - this->len_x, 0);
+		}
+		this->I32.insert(I32.end(), this->disp_x * ((size_t)this->disp_y - this->offset_y - this->len_y), 0);
 
 
-
+		for (size_t j = 0; j < this->disp_y; j++) {
+			out_body.push_back((png_bytep)&I32.at(j * this->disp_x));
+		}
 	}
 };
 #pragma pack(1)

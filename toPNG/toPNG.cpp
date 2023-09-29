@@ -236,7 +236,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			x68b.decode_palette(out.palette, out.trans);
 			x68b.decode_body(out.body);
-			out.set_size(X68000_GX, X68000_G);
+			out.set_size(x68b.len_x, x68b.len_y);
 			break;
 
 		case decode_mode::VSP256:
