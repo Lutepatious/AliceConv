@@ -240,6 +240,7 @@ struct toPNG {
 #endif
 
 #include "DAT.hpp"
+#include "TXT.hpp"
 
 #include "GL.hpp"
 #include "GL3.hpp"

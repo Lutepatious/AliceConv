@@ -92,7 +92,5 @@ public:
 		return false;
 	}
 };
-
-
 #pragma pack(pop)
 #endif

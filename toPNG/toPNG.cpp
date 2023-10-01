@@ -93,6 +93,7 @@ int wmain(int argc, wchar_t** argv)
 		toPNG out;
 
 		DAT dat;
+		TXT txt;
 
 		DRS003 drs;
 		DRS003T drst;
@@ -420,6 +421,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else {
 				std::wcerr << L"Unknown or cannot autodetect. " << *argv << std::endl;
+				txt.init(inbuf);
 				continue;
 			}
 			break;
