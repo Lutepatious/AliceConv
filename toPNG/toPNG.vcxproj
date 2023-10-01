@@ -163,6 +163,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DAT.hpp" />
     <ClInclude Include="DRS003.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GL3.hpp" />

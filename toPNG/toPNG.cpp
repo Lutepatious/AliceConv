@@ -4,7 +4,7 @@
 #pragma pack(pop)
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -20,7 +20,7 @@ int wmain(int argc, wchar_t** argv)
 	while (--argc) {
 		::silent = false;
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBpkia
+			// already used: sSOYPMghRrvTBpkiad
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -73,6 +73,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'a') { // auto detect ghRrvTBpki 
 				dm = decode_mode::AUTO;
 			}
+			else if (*(*argv + 1) == L'd') { // archive DAT file 
+				dm = decode_mode::DAT;
+			}
 			continue;
 		}
 
@@ -88,6 +91,9 @@ int wmain(int argc, wchar_t** argv)
 		infile.close();
 
 		toPNG out;
+
+		DAT dat;
+
 		DRS003 drs;
 		DRS003T drst;
 		DRSOPNT drsot;
@@ -272,6 +278,50 @@ int wmain(int argc, wchar_t** argv)
 			out.set_directcolor();
 			out.set_size(pms16.disp_x, pms16.disp_y);
 			break;
+
+		case decode_mode::DAT:
+			if (dat.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			for (auto& a : dat.files) {
+//				std::wcout << a << L":" << std::hex << std::setw(6) << dat.offsets.at(a) << L":" << std::hex << std::setw(6) << dat.lengths.at(a) << std::endl;
+				std::vector<__int8> cbuf(inbuf.begin() + dat.offsets.at(a), inbuf.begin() + dat.offsets.at(a) + dat.lengths.at(a));
+//				std::wcout << cbuf.size() << std::endl;
+				::silent = true;
+
+				toPNG cout;
+				GL3 cgl3;
+				VSP cvsp;
+				if (!cgl3.init(cbuf)) {
+					cgl3.decode_palette(cout.palette, cout.trans);
+					if (cgl3.decode_body(cout.body)) {
+						cout.change_resolution_halfy();
+					}
+					cout.set_size(PC9801_H, cgl3.disp_y);
+				}
+				else if (!cvsp.init(cbuf)) {
+					cvsp.decode_palette(cout.palette, cout.trans);
+					cvsp.decode_body(cout.body);
+					cout.set_size(PC9801_H, PC9801_V);
+				}
+
+				wchar_t cpath[_MAX_PATH];
+				wchar_t cfname[_MAX_FNAME];
+				wchar_t cfname_new[_MAX_FNAME];
+				wchar_t cdir[_MAX_DIR];
+				wchar_t cdrive[_MAX_DRIVE];
+
+				_wsplitpath_s(*argv, cdrive, _MAX_DRIVE, cdir, _MAX_DIR, cfname, _MAX_FNAME, NULL, 0);
+				swprintf_s(cfname_new, _MAX_FNAME, L"%s_%02zu", cfname, a);
+				_wmakepath_s(cpath, _MAX_PATH, cdrive, cdir, cfname_new, L".png");
+
+				int result = cout.create(cpath);
+				if (result) {
+					std::wcerr << L"output failed." << std::endl;
+				}
+			}
+			continue;
 
 		case decode_mode::AUTO:
 			::silent = true;

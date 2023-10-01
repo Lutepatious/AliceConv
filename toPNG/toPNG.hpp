@@ -239,6 +239,8 @@ struct toPNG {
 #pragma pack(pop)
 #endif
 
+#include "DAT.hpp"
+
 #include "GL.hpp"
 #include "GL3.hpp"
 #include "GL_X68K.hpp"
