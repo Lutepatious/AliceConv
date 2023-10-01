@@ -172,7 +172,6 @@
     <ClInclude Include="PMS16.hpp" />
     <ClInclude Include="TIFF_TOWNS.hpp" />
     <ClInclude Include="toPNG.hpp" />
-    <ClInclude Include="TXT.hpp" />
     <ClInclude Include="VSP.hpp" />
     <ClInclude Include="VSP200l.hpp" />
     <ClInclude Include="X68K.hpp" />

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <string>
 #include <vector>
 #include <bitset>
 #include <algorithm>
@@ -240,7 +241,6 @@ struct toPNG {
 #endif
 
 #include "DAT.hpp"
-#include "TXT.hpp"
 
 #include "GL.hpp"
 #include "GL3.hpp"

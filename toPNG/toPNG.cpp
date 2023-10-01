@@ -93,7 +93,6 @@ int wmain(int argc, wchar_t** argv)
 		toPNG out;
 
 		DAT dat;
-		TXT txt;
 
 		DRS003 drs;
 		DRS003T drst;
@@ -421,7 +420,20 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else {
 				std::wcerr << L"Unknown or cannot autodetect. " << *argv << std::endl;
-				txt.init(inbuf);
+				wchar_t tpath[_MAX_PATH];
+				wchar_t tfname[_MAX_FNAME];
+				wchar_t tdir[_MAX_DIR];
+				wchar_t tdrive[_MAX_DRIVE];
+
+				_wsplitpath_s(*argv, tdrive, _MAX_DRIVE, tdir, _MAX_DIR, tfname, _MAX_FNAME, NULL, 0);
+				_wmakepath_s(tpath, _MAX_PATH, tdrive, tdir, tfname, L".txt");
+				_wsetlocale(LC_ALL, L"Japanese_Japan");
+				std::string m(&inbuf.at(0));
+				std::wstring fn(tpath);
+				std::ofstream outfile(fn, std::ios::out);
+				outfile << m;
+				outfile.close();
+
 				continue;
 			}
 			break;
