@@ -22,6 +22,8 @@ public:
 	png_uint_32 len_y = X68000_G;
 	png_int_32 offset_x = 96; // 開始点がプログラム上で決め打ちになっていた。
 	png_int_32 offset_y = 56; // 同上
+	png_uint_32 disp_x = X68000_GX;
+	png_uint_32 disp_y = X68000_G;
 
 	bool init(std::vector<__int8>& buffer)
 	{
@@ -107,16 +109,16 @@ public:
 			}
 		}
 
-		this->I.insert(this->I.end(), X68000_GX * this->offset_y, this->transparent);
+		this->I.insert(this->I.end(), disp_x * this->offset_y, this->transparent);
 		for (size_t y = 0; y < this->len_y; y++) {
 			this->I.insert(this->I.end(), this->offset_x, this->transparent);
 			this->I.insert(this->I.end(), D.begin() + this->len_x * y, D.begin() + this->len_x * (y + 1));
-			this->I.insert(this->I.end(), X68000_GX - this->offset_x - this->len_x, this->transparent);
+			this->I.insert(this->I.end(), disp_x - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), X68000_GX * ((size_t)X68000_G - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(I.end(), disp_x * ((size_t)disp_y - this->offset_y - this->len_y), this->transparent);
 
-		for (size_t j = 0; j < X68000_G; j++) {
-			out_body.push_back((png_bytep)&I.at(j * X68000_GX));
+		for (size_t j = 0; j < disp_y; j++) {
+			out_body.push_back((png_bytep)&I.at(j * disp_x));
 		}
 	}
 };

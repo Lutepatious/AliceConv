@@ -240,7 +240,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			x68b.decode_palette(out.palette, out.trans);
 			x68b.decode_body(out.body);
-			out.set_size(x68b.len_x, x68b.len_y);
+			out.set_size(x68b.disp_x, x68b.disp_y);
 			break;
 
 		case decode_mode::VSP256:
@@ -311,7 +311,7 @@ int wmain(int argc, wchar_t** argv)
 			else if (!x68b.init(inbuf)) {
 				x68b.decode_palette(out.palette, out.trans);
 				x68b.decode_body(out.body);
-				out.set_size(x68b.len_x, x68b.len_y);
+				out.set_size(x68b.disp_x, x68b.disp_y);
 			}
 			else if (!pms.init(inbuf)) {
 				pms.decode_palette(out.palette, out.trans);
