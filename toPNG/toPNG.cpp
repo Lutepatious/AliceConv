@@ -313,7 +313,7 @@ int wmain(int argc, wchar_t** argv)
 				wchar_t cdrive[_MAX_DRIVE];
 
 				_wsplitpath_s(*argv, cdrive, _MAX_DRIVE, cdir, _MAX_DIR, cfname, _MAX_FNAME, NULL, 0);
-				swprintf_s(cfname_new, _MAX_FNAME, L"%s_%02zu", cfname, a);
+				swprintf_s(cfname_new, _MAX_FNAME, L"%s_%03zu", cfname, a);
 				_wmakepath_s(cpath, _MAX_PATH, cdrive, cdir, cfname_new, L".png");
 
 				int result = cout.create(cpath);
@@ -325,7 +325,47 @@ int wmain(int argc, wchar_t** argv)
 
 		case decode_mode::AUTO:
 			::silent = true;
-			if (!gl.init(inbuf)) {
+			if (!dat.init(inbuf)) {
+				for (auto& a : dat.files) {
+					//				std::wcout << a << L":" << std::hex << std::setw(6) << dat.offsets.at(a) << L":" << std::hex << std::setw(6) << dat.lengths.at(a) << std::endl;
+					std::vector<__int8> cbuf(inbuf.begin() + dat.offsets.at(a), inbuf.begin() + dat.offsets.at(a) + dat.lengths.at(a));
+					//				std::wcout << cbuf.size() << std::endl;
+					::silent = true;
+
+					toPNG cout;
+					GL3 cgl3;
+					VSP cvsp;
+					if (!cgl3.init(cbuf)) {
+						cgl3.decode_palette(cout.palette, cout.trans);
+						if (cgl3.decode_body(cout.body)) {
+							cout.change_resolution_halfy();
+						}
+						cout.set_size(PC9801_H, cgl3.disp_y);
+					}
+					else if (!cvsp.init(cbuf)) {
+						cvsp.decode_palette(cout.palette, cout.trans);
+						cvsp.decode_body(cout.body);
+						cout.set_size(PC9801_H, PC9801_V);
+					}
+
+					wchar_t cpath[_MAX_PATH];
+					wchar_t cfname[_MAX_FNAME];
+					wchar_t cfname_new[_MAX_FNAME];
+					wchar_t cdir[_MAX_DIR];
+					wchar_t cdrive[_MAX_DRIVE];
+
+					_wsplitpath_s(*argv, cdrive, _MAX_DRIVE, cdir, _MAX_DIR, cfname, _MAX_FNAME, NULL, 0);
+					swprintf_s(cfname_new, _MAX_FNAME, L"%s_%03zu", cfname, a);
+					_wmakepath_s(cpath, _MAX_PATH, cdrive, cdir, cfname_new, L".png");
+
+					int result = cout.create(cpath);
+					if (result) {
+						std::wcerr << L"output failed." << std::endl;
+					}
+				}
+				continue;
+			}
+			else if (!gl.init(inbuf)) {
 				gl.decode_palette(out.palette, out.trans);
 				gl.decode_body(out.body);
 				out.set_size_and_change_resolution(PC8801_H, PC8801_V);

@@ -19,10 +19,25 @@ public:
 
 	bool init(std::vector<__int8>& buffer)
 	{
+		if (buffer.size() < 0x200) {
+			return true;
+		}
+
 		this->Addr = (unsigned __int16*)&buffer.at(0);
 
 		if (this->Addr == 0) {
 			return true;
+		}
+
+		size_t index = 0;
+		while (*(this->Addr + index++) != 0);
+
+		size_t l = (index / 128 + (index % 128 ? 1 : 0))* 128;
+
+		for (size_t i = index; i < l; i++) {
+			if (*(this->Addr + index++) != 0) {
+				return true;
+			}
 		}
 
 		for (size_t i = 0; *(this->Addr + i) != 0; i++) {
@@ -32,8 +47,12 @@ public:
 
 			size_t offset = 0x100ULL * (*(this->Addr + i) - 1);
 
-			if (offset >= buffer.size()) {
+			if (offset == buffer.size()) {
 				break;
+			}
+
+			else if (offset > buffer.size()) {
+				return true;
 			}
 
 			this->offsets.push_back(offset);
