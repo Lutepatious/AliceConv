@@ -72,7 +72,7 @@ public:
 			return true;
 		}
 
-		if (this->buf->end_x >= PC9801_H || (this->buf->end_y >= PC9801_V && this->buf->end_y != VGA_V - 1)) {
+		if (this->buf->end_x >= PC9801_H || this->buf->end_y >= VGA_V) {
 			wouterr(L"Wrong size.");
 			return true;
 		}

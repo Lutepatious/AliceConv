@@ -2,6 +2,7 @@
 #define TOPNG_PMS16
 
 #pragma pack(push)
+#pragma pack(1)
 class PMS16 {
 	std::vector<unsigned __int32> I32;
 
@@ -316,5 +317,5 @@ public:
 		}
 	}
 };
-#pragma pack(1)
+#pragma pack(pop)
 #endif
