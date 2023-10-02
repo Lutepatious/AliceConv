@@ -427,11 +427,18 @@ int wmain(int argc, wchar_t** argv)
 
 				_wsplitpath_s(*argv, tdrive, _MAX_DRIVE, tdir, _MAX_DIR, tfname, _MAX_FNAME, NULL, 0);
 				_wmakepath_s(tpath, _MAX_PATH, tdrive, tdir, tfname, L".txt");
-				_wsetlocale(LC_ALL, L"Japanese_Japan");
-				std::string m(&inbuf.at(0));
+				_wsetlocale(LC_ALL, L"ja_JP");
+
+				size_t len_t = strlen(&inbuf.at(0));
+				std::vector<wchar_t> wt(len_t * 2);
+
+				size_t len_wt;
+				mbstowcs_s(&len_wt, &wt.at(0), wt.size(), &inbuf.at(0), len_t);
+
 				std::wstring fn(tpath);
-				std::ofstream outfile(fn, std::ios::out);
-				outfile << m;
+				std::wofstream outfile(fn, std::ios::out | std::ios::binary);
+				outfile.imbue(std::locale("ja_JP.UTF-8"));
+				outfile << &wt.at(0);
 				outfile.close();
 
 				continue;
