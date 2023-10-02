@@ -382,15 +382,15 @@ int wmain(int argc, wchar_t** argv)
 				glx68k.decode_body(out.body);
 				out.set_size(PC9801_H, PC9801_V);
 			}
-			else if (!vsp200l.init(inbuf)) {
-				vsp200l.decode_palette(out.palette, out.trans);
-				vsp200l.decode_body(out.body);
-				out.set_size_and_change_resolution(PC8801_H, PC8801_V);
-			}
 			else if (!vsp.init(inbuf)) {
 				vsp.decode_palette(out.palette, out.trans);
 				vsp.decode_body(out.body);
 				out.set_size(PC9801_H, PC9801_V);
+			}
+			else if (!vsp200l.init(inbuf)) {
+				vsp200l.decode_palette(out.palette, out.trans);
+				vsp200l.decode_body(out.body);
+				out.set_size_and_change_resolution(PC8801_H, PC8801_V);
 			}
 			else if (!x68t.init(inbuf)) {
 				x68t.decode_palette(out.palette, out.trans);
