@@ -430,17 +430,18 @@ int wmain(int argc, wchar_t** argv)
 				_wsetlocale(LC_ALL, L"ja_JP");
 
 				size_t len_t = strlen(&inbuf.at(0));
-				std::vector<wchar_t> wt(len_t * 2);
+				if (len_t) {
+					std::vector<wchar_t> wt(len_t * 2);
 
-				size_t len_wt;
-				mbstowcs_s(&len_wt, &wt.at(0), wt.size(), &inbuf.at(0), len_t);
+					size_t len_wt;
+					mbstowcs_s(&len_wt, &wt.at(0), wt.size(), &inbuf.at(0), len_t);
 
-				std::wstring fn(tpath);
-				std::wofstream outfile(fn, std::ios::out | std::ios::binary);
-				outfile.imbue(std::locale("ja_JP.UTF-8"));
-				outfile << &wt.at(0);
-				outfile.close();
-
+					std::wstring fn(tpath);
+					std::wofstream outfile(fn, std::ios::out | std::ios::binary);
+					outfile.imbue(std::locale("ja_JP.UTF-8"));
+					outfile << &wt.at(0);
+					outfile.close();
+				}
 				continue;
 			}
 			break;
