@@ -111,7 +111,7 @@ public:
 		// このif分を恒真にすればindexed colorにできるがパレットの階調が16btiから8bitに下がる。
 		if (this->Format == PHOTOMETRIC_MINISBLACK) {
 			for (size_t j = 0; j < this->Rows; j++) {
-				out_body.push_back((png_bytep)&I.at(j * this->Cols * this->Samples_per_Pixel));
+				out_body.push_back((png_bytep)&this->I.at(j * this->Cols * this->Samples_per_Pixel));
 			}
 			return false;
 		}
@@ -132,18 +132,18 @@ public:
 				u.P.B = this->Pal.B[i];
 				u.P.A = (1U << 16) - 1;
 
-				nI.push_back(u.B[1]);
-				nI.push_back(u.B[0]);
-				nI.push_back(u.B[3]);
-				nI.push_back(u.B[2]);
-				nI.push_back(u.B[5]);
-				nI.push_back(u.B[4]);
-				nI.push_back(u.B[7]);
-				nI.push_back(u.B[6]);
+				this->nI.push_back(u.B[1]);
+				this->nI.push_back(u.B[0]);
+				this->nI.push_back(u.B[3]);
+				this->nI.push_back(u.B[2]);
+				this->nI.push_back(u.B[5]);
+				this->nI.push_back(u.B[4]);
+				this->nI.push_back(u.B[7]);
+				this->nI.push_back(u.B[6]);
 			}
 
 			for (size_t j = 0; j < this->Rows; j++) {
-				out_body.push_back((png_bytep)&nI.at(j * this->Cols * sizeof(u)));
+				out_body.push_back((png_bytep)&this->nI.at(j * this->Cols * sizeof(u)));
 			}
 
 			this->depth = 16;

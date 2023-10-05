@@ -309,11 +309,11 @@ public:
 			this->I32.insert(this->I32.end(), P32.begin() + this->len_x * y, P32.begin() + this->len_x * (y + 1));
 			this->I32.insert(this->I32.end(), (size_t)this->disp_x - this->offset_x - this->len_x, 0);
 		}
-		this->I32.insert(I32.end(), this->disp_x * ((size_t)this->disp_y - this->offset_y - this->len_y), 0);
+		this->I32.insert(this->I32.end(), this->disp_x * ((size_t)this->disp_y - this->offset_y - this->len_y), 0);
 
 
 		for (size_t j = 0; j < this->disp_y; j++) {
-			out_body.push_back((png_bytep)&I32.at(j * this->disp_x));
+			out_body.push_back((png_bytep)&this->I32.at(j * this->disp_x));
 		}
 	}
 };

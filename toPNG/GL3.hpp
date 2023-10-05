@@ -213,10 +213,10 @@ public:
 			this->I.insert(this->I.end(), P.begin() + this->len_x * y, P.begin() + this->len_x * (y + 1));
 			this->I.insert(this->I.end(), PC9801_H - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), PC9801_H * ((size_t)this->disp_y - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(this->I.end(), PC9801_H * ((size_t)this->disp_y - this->offset_y - this->len_y), this->transparent);
 
 		for (size_t j = 0; j < this->disp_y; j++) {
-			out_body.push_back((png_bytep)&I.at(j * PC9801_H));
+			out_body.push_back((png_bytep)&this->I.at(j * PC9801_H));
 		}
 
 		return this->is_GM3;

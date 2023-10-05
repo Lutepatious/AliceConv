@@ -257,3 +257,5 @@ struct toPNG {
 #include "DRS003.hpp"
 #include "TIFF_TOWNS.hpp"
 #include "X68K.hpp"
+
+#include "ICN.hpp"

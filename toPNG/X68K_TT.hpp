@@ -121,10 +121,10 @@ public:
 			this->I.insert(this->I.end(), D.begin() + this->len_x * y, D.begin() + this->len_x * (y + 1));
 			this->I.insert(this->I.end(), X68000_G - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), X68000_G * ((size_t)X68000_G - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(this->I.end(), X68000_G * ((size_t)X68000_G - this->offset_y - this->len_y), this->transparent);
 
 		for (size_t j = 0; j < X68000_G; j++) {
-			out_body.push_back((png_bytep)&I.at(j * X68000_G));
+			out_body.push_back((png_bytep)&this->I.at(j * X68000_G));
 		}
 	}
 };

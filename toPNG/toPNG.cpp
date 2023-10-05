@@ -4,7 +4,7 @@
 #pragma pack(pop)
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -20,7 +20,7 @@ int wmain(int argc, wchar_t** argv)
 	while (--argc) {
 		::silent = false;
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBpkiad
+			// already used: sSOYPMghRrvTBpkiadI
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -76,6 +76,9 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'd') { // archive DAT file 
 				dm = decode_mode::DAT;
 			}
+			else if (*(*argv + 1) == L'I') { // TownsMENU ICON 
+				dm = decode_mode::ICN;
+			}
 			continue;
 		}
 
@@ -111,6 +114,7 @@ int wmain(int argc, wchar_t** argv)
 
 		PMS pms;
 		PMS16 pms16;
+		ICN icn;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -154,6 +158,16 @@ int wmain(int argc, wchar_t** argv)
 			}
 			out.set_depth(tifft.depth);
 			out.set_size(tifft.Cols, tifft.Rows);
+			break;
+
+		case decode_mode::ICN:
+			if (icn.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			icn.decode_palette(out.palette, out.trans);
+			icn.decode_body(out.body);
+			out.set_size(icn.disp_x, icn.disp_y);
 			break;
 
 		case decode_mode::SPRITE_X68K:

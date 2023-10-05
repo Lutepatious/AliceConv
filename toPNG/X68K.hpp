@@ -61,8 +61,8 @@ public:
 				for (size_t b = 0; b < blocks; b++) {
 					for (size_t h = 0; h < 2; h++) {
 						for (size_t c = 0; c < 4; c++) {
-							I.push_back(this->buf->S[p + b][h][Rows][c].L);
-							I.push_back(this->buf->S[p + b][h][Rows][c].H);
+							this->I.push_back(this->buf->S[p + b][h][Rows][c].L);
+							this->I.push_back(this->buf->S[p + b][h][Rows][c].H);
 						}
 					}
 				}
@@ -71,7 +71,7 @@ public:
 
 
 		for (size_t j = 0; j < spr_y * patterns / blocks; j++) {
-			out_body.push_back((png_bytep)&I.at(j * spr_x * blocks));
+			out_body.push_back((png_bytep)&this->I.at(j * spr_x * blocks));
 		}
 	}
 
@@ -127,7 +127,7 @@ public:
 						for (size_t i = 0; i < 8; i++) {
 							std::bitset<8> t = this->buf->M[p + b][y][x];
 							unsigned a = t[7 - i] ? 1 : 0;
-							I.push_back(a);
+							this->I.push_back(a);
 						}
 					}
 				}
@@ -135,7 +135,7 @@ public:
 		}
 
 		for (size_t j = 0; j < spr_y * patterns / blocks; j++) {
-			out_body.push_back((png_bytep)&I.at(j * spr_x * blocks * 8));
+			out_body.push_back((png_bytep)&this->I.at(j * spr_x * blocks * 8));
 		}
 	}
 

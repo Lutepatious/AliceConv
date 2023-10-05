@@ -109,16 +109,16 @@ public:
 			}
 		}
 
-		this->I.insert(this->I.end(), disp_x * this->offset_y, this->transparent);
+		this->I.insert(this->I.end(), (size_t)disp_x * this->offset_y, this->transparent);
 		for (size_t y = 0; y < this->len_y; y++) {
 			this->I.insert(this->I.end(), this->offset_x, this->transparent);
 			this->I.insert(this->I.end(), D.begin() + this->len_x * y, D.begin() + this->len_x * (y + 1));
-			this->I.insert(this->I.end(), disp_x - this->offset_x - this->len_x, this->transparent);
+			this->I.insert(this->I.end(), (size_t)disp_x - this->offset_x - this->len_x, this->transparent);
 		}
-		this->I.insert(I.end(), disp_x * ((size_t)disp_y - this->offset_y - this->len_y), this->transparent);
+		this->I.insert(this->I.end(), disp_x * ((size_t)disp_y - this->offset_y - this->len_y), this->transparent);
 
 		for (size_t j = 0; j < disp_y; j++) {
-			out_body.push_back((png_bytep)&I.at(j * disp_x));
+			out_body.push_back((png_bytep)&this->I.at(j * disp_x));
 		}
 	}
 };

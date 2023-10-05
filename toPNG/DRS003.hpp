@@ -43,13 +43,13 @@ public:
 
 				for (size_t i = 0; i < 8; i++) {
 					unsigned __int8 a = (b[0][7 - i] ? 1 : 0) | (b[1][7 - i] ? 2 : 0) | (b[2][7 - i] ? 4 : 0) | (b[3][7 - i] ? 8 : 0);
-					I.push_back(a);
+					this->I.push_back(a);
 				}
 			}
 		}
 
 		for (size_t j = 0; j < PC9801_H; j++) {
-			out_body.push_back((png_bytep)&I.at(j * PC9801_V));
+			out_body.push_back((png_bytep)&this->I.at(j * PC9801_V));
 		}
 	}
 };
@@ -103,13 +103,13 @@ public:
 				} u;
 				u.A = this->buf->body[y][x];
 
-				I.push_back(u.B.L);
-				I.push_back(u.B.H);
+				this->I.push_back(u.B.L);
+				this->I.push_back(u.B.H);
 			}
 		}
 
 		for (size_t j = 0; j < PC9801_H; j++) {
-			out_body.push_back((png_bytep)&I.at(j * PC9801_V));
+			out_body.push_back((png_bytep)&this->I.at(j * PC9801_V));
 		}
 	}
 };
@@ -163,13 +163,13 @@ public:
 				} u;
 				u.A = this->buf->body[y][x];
 
-				I.push_back(u.B.L);
-				I.push_back(u.B.H);
+				this->I.push_back(u.B.L);
+				this->I.push_back(u.B.H);
 			}
 		}
 
 		for (size_t j = 0; j < VGA_V; j++) {
-			out_body.push_back((png_bytep)&I.at(j * VGA_H));
+			out_body.push_back((png_bytep)&this->I.at(j * VGA_H));
 		}
 	}
 };
