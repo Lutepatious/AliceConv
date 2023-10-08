@@ -163,11 +163,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\aclib\aclib.vcxproj">
-      <Project>{7421ff63-eafe-42d2-acc7-43ff244cfef6}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="EOMMLtoVGM.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

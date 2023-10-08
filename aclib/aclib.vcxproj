@@ -176,28 +176,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="accore.c" />
-    <ClCompile Include="GL.c" />
-    <ClCompile Include="GL3.c" />
-    <ClCompile Include="PMS16.c" />
-    <ClCompile Include="PMS8.c" />
-    <ClCompile Include="pngio.c" />
-    <ClCompile Include="tiffrw.c" />
-    <ClCompile Include="tools.c" />
-    <ClCompile Include="VSP.c" />
-    <ClCompile Include="VSP200l.c" />
-    <ClCompile Include="VSP256.c" />
-    <ClCompile Include="X68R.c" />
-    <ClCompile Include="X68T.c" />
-    <ClCompile Include="X68V.c" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="accore.h" />
-    <ClInclude Include="acinternal.h" />
-    <ClInclude Include="pngio.h" />
     <ClInclude Include="stdtype.h" />
-    <ClInclude Include="tiffrw.h" />
-    <ClInclude Include="tools.h" />
     <ClInclude Include="VGM.hpp" />
     <ClInclude Include="VGMFile.h" />
     <ClInclude Include="VGM_FM.hpp" />
