@@ -53,7 +53,8 @@ public:
 
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
-		size_t blocks = 2;
+		size_t blocks = 47;
+
 		for (size_t i = 0; i < this->buf->entries; i += blocks) {
 			for (size_t y = 0; y < 16; y++) {
 				for (size_t b = 0; b < blocks; b++) {
