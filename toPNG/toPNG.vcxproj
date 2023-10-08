@@ -165,6 +165,7 @@
   <ItemGroup>
     <ClInclude Include="DAT.hpp" />
     <ClInclude Include="DRS003.hpp" />
+    <ClInclude Include="GAIJI.hpp" />
     <ClInclude Include="GL.hpp" />
     <ClInclude Include="GL3.hpp" />
     <ClInclude Include="GL_X68K.hpp" />

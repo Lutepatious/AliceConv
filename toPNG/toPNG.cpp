@@ -4,7 +4,7 @@
 #pragma pack(pop)
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -20,7 +20,7 @@ int wmain(int argc, wchar_t** argv)
 	while (--argc) {
 		::silent = false;
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBpkiadI
+			// already used: sSOYPMghRrvTBpkiadIU
 
 			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
@@ -49,7 +49,7 @@ int wmain(int argc, wchar_t** argv)
 			else if (*(*argv + 1) == L'R') { // GL_X68K RanceII
 				dm = decode_mode::X68R;
 			}
-			else if (*(*argv + 1) == L'r') { // VSP 200lines
+			else if (*(*argv + 1) == L'r') { // VSP 200lines (RanceII PC-8801SR)
 				dm = decode_mode::VSP200l;
 			}
 			else if (*(*argv + 1) == L'v') { // VSP
@@ -78,6 +78,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'I') { // TownsMENU ICON 
 				dm = decode_mode::ICN;
+			}
+			else if (*(*argv + 1) == L'U') { // User Defined Character (GAIJI.DAT)
+				dm = decode_mode::GAIJI;
 			}
 			continue;
 		}

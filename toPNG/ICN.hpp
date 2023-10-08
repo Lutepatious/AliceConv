@@ -3,7 +3,6 @@
 
 #pragma pack(push)
 #pragma pack(1)
-
 class ICN {
 	std::vector<unsigned __int8> I;
 
@@ -43,6 +42,7 @@ class ICN {
 		unsigned __int32 Unk[6];
 	} *buf_info2 = nullptr;
 
+	// TownsMENUのアイコンで使うパレットが不明のため、unzなどで割り出し。
 	struct Palette_depth4RGB TPal[16] = {
 	{0x0, 0x0, 0x0}, {0x2, 0x7, 0xB}, {0xC, 0x6, 0x4}, {0xF, 0xC, 0xA},
 	{0x9, 0x9, 0x9}, {0x0, 0xC, 0x7}, {0xC, 0xC, 0xC}, {0x7, 0x7, 0x7},
@@ -112,6 +112,7 @@ public:
 	void decode_body(std::vector<png_bytep>& out_body)
 	{
 		if (this->is_new) {
+			// 後期フォーマット 不定形不定長であるため、各エントリごとに64*64の領域を与え、範囲外を透過にして出力。
 #if 0
 			for (size_t i = 0; i < this->buf_ICNFILE->info_entries; i++) {
 				std::wcout << std::setw(3) << i << L":" << std::hex << std::setw(2) << this->buf_ICNFILE->info[i].ID

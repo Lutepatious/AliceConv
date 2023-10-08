@@ -259,3 +259,4 @@ struct toPNG {
 #include "X68K.hpp"
 
 #include "ICN.hpp"
+#include "GAIJI.hpp"
