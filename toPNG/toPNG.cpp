@@ -118,6 +118,7 @@ int wmain(int argc, wchar_t** argv)
 		PMS pms;
 		PMS16 pms16;
 		ICN icn;
+		GAIJI gaiji;
 
 		switch (dm) {
 		case decode_mode::DRS_CG003:
@@ -171,6 +172,16 @@ int wmain(int argc, wchar_t** argv)
 			icn.decode_palette(out.palette, out.trans);
 			icn.decode_body(out.body);
 			out.set_size(icn.disp_x, icn.disp_y);
+			break;
+
+		case decode_mode::GAIJI:
+			if (gaiji.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			gaiji.decode_palette(out.palette, out.trans);
+			gaiji.decode_body(out.body);
+			out.set_size(gaiji.disp_x, gaiji.disp_y);
 			break;
 
 		case decode_mode::SPRITE_X68K:
