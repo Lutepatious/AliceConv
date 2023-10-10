@@ -167,6 +167,14 @@ struct toPNG {
 		res_y = ((MSX_RES_Y * in_y * 2) / MSX_SCREEN7_V + 1) >> 1;
 	}
 
+	void set_size_and_change_resolution_MSX_default(png_uint_32 in_x, png_uint_32 in_y)
+	{
+		this->pixels_V = in_y;
+		this->pixels_H = in_x;
+
+		res_x = MSX_RES_X;
+		res_y = MSX_RES_Y;
+	}
 	void set_size_and_change_resolution(png_uint_32 in_x, png_uint_32 in_y)
 	{
 		this->pixels_V = in_y;
@@ -295,3 +303,5 @@ struct toPNG {
 #include "GAIJI.hpp"
 
 #include "MSX_GE7.hpp"
+#include "MSX_LP.hpp"
+#include "MSX_LV.hpp"
