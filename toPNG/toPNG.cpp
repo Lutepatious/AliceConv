@@ -4,7 +4,7 @@
 #pragma pack(pop)
 
 enum class decode_mode {
-	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI
+	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT, X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS, SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI, MSX_GE7
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -20,66 +20,99 @@ int wmain(int argc, wchar_t** argv)
 	while (--argc) {
 		::silent = false;
 		if (**++argv == L'-') {
-			// already used: sSOYPMghRrvTBpkiadIU
+			// already used: XTMsghrvpkiadU
 
-			if (*(*argv + 1) == L's') { // Dr.STOP! CG003
+			if (*(*argv + 1) == L'X') {
+				// X68000 specific
+				if (*(*argv + 2) == L'P') {
+					// ì¨ê_ìsés X68000 PCG
+					dm = decode_mode::SPRITE_X68K;
+				}
+				else if (*(*argv + 2) == L'M') {
+					// ì¨ê_ìsés X68000 Attack effect mask
+					dm = decode_mode::MASK_X68K;
+				}
+				else if (*(*argv + 2) == L'R') {
+					// GL_X68K RanceII
+					dm = decode_mode::X68R;
+				}
+				else if (*(*argv + 2) == L'T') {
+					// ì¨ê_ìsés X68000 256êF
+					dm = decode_mode::X68T;
+				}
+				else if (*(*argv + 2) == L'B') {
+					// RanceIII ÉIÉvÉVÉáÉìÉZÉbÉg Ç†Ç‘Ç»Ç¢ï∂âªç’ëOñÈ X68000 256êF
+					dm = decode_mode::X68B;
+				}
+			}
+			else if (*(*argv + 1) == L'T') {
+				// FM TOWNS specific
+				if (*(*argv + 2) == L'S') {
+					// Dr.STOP! FM TOWNS CG003
+					dm = decode_mode::DRS_CG003_TOWNS;
+				}
+				else if (*(*argv + 2) == L'O') {
+					// Dr.STOP! FM TOWNS OPENING
+					dm = decode_mode::DRS_OPENING_TOWNS;
+				}
+				else if (*(*argv + 2) == L'Y') {
+					// ALICEÇÃäŸCDëºTIFF FM TOWNS
+					dm = decode_mode::TIFF_TOWNS;
+				}
+				else if (*(*argv + 2) == L'I') {
+					// TownsMENU ICON 
+					dm = decode_mode::ICN;
+				}
+			}
+			else if (*(*argv + 1) == L'M') {
+				// MSX2 specific
+				if (*(*argv + 2) == L'b') {
+					// MSX BSAVE GRAPHICS7
+					dm = decode_mode::MSX_GE7;
+				}
+			}
+			else if (*(*argv + 1) == L's') {
+				// Dr.STOP! CG003
 				dm = decode_mode::DRS_CG003;
 			}
-			else if (*(*argv + 1) == L'S') { // Dr.STOP! FM TOWNS CG003
-				dm = decode_mode::DRS_CG003_TOWNS;
-			}
-			else if (*(*argv + 1) == L'O') { // Dr.STOP! FM TOWNS OPENING
-				dm = decode_mode::DRS_OPENING_TOWNS;
-			}
-			else if (*(*argv + 1) == L'Y') { // ALICEÇÃäŸCDëºTIFF FM TOWNS
-				dm = decode_mode::TIFF_TOWNS;
-			}
-			else if (*(*argv + 1) == L'P') { // ì¨ê_ìsés X68000 PCG
-				dm = decode_mode::SPRITE_X68K;
-			}
-			else if (*(*argv + 1) == L'M') { // ì¨ê_ìsés X68000 Attack effect mask
-				dm = decode_mode::MASK_X68K;
-			}
-			else if (*(*argv + 1) == L'g') { // GL 
+			else if (*(*argv + 1) == L'g') {
+				// GL 
 				dm = decode_mode::GL;
 			}
-			else if (*(*argv + 1) == L'h') { // GL3, GM3
+			else if (*(*argv + 1) == L'h') {
+				// GL3, GM3
 				dm = decode_mode::GL3;
 			}
-			else if (*(*argv + 1) == L'R') { // GL_X68K RanceII
-				dm = decode_mode::X68R;
-			}
-			else if (*(*argv + 1) == L'r') { // VSP 200lines (RanceII PC-8801SR)
+			else if (*(*argv + 1) == L'r') {
+				// VSP 200lines (RanceII PC-8801SR)
 				dm = decode_mode::VSP200l;
 			}
-			else if (*(*argv + 1) == L'v') { // VSP
+			else if (*(*argv + 1) == L'v') {
+				// VSP
 				dm = decode_mode::VSP;
 			}
-			else if (*(*argv + 1) == L'T') { // ì¨ê_ìsés X68000 256êF
-				dm = decode_mode::X68T;
-			}
-			else if (*(*argv + 1) == L'B') { // RanceIII ÉIÉvÉVÉáÉìÉZÉbÉg Ç†Ç‘Ç»Ç¢ï∂âªç’ëOñÈ X68000 256êF
-				dm = decode_mode::X68B;
-			}
-			else if (*(*argv + 1) == L'p') { // ãåPMS(VSP256)
+			else if (*(*argv + 1) == L'p') {
+				// ãåPMS(VSP256)
 				dm = decode_mode::VSP256;
 			}
-			else if (*(*argv + 1) == L'k') { // PMS8 ãSí{â§ÉâÉìÉXà»ç~
+			else if (*(*argv + 1) == L'k') {
+				// PMS8 ãSí{â§ÉâÉìÉXà»ç~
 				dm = decode_mode::PMS8;
 			}
-			else if (*(*argv + 1) == L'i') { // PMS16 Ç¢ÇØÇ»Ç¢Ç©Ç¬Ç›êÊê∂
+			else if (*(*argv + 1) == L'i') {
+				// PMS16 Ç¢ÇØÇ»Ç¢Ç©Ç¬Ç›êÊê∂
 				dm = decode_mode::PMS16;
 			}
-			else if (*(*argv + 1) == L'a') { // auto detect ghRrvTBpki 
+			else if (*(*argv + 1) == L'a') {
+				// auto detect ghRrvTBpki 
 				dm = decode_mode::AUTO;
 			}
-			else if (*(*argv + 1) == L'd') { // archive DAT file 
+			else if (*(*argv + 1) == L'd') {
+				// archive DAT file 
 				dm = decode_mode::DAT;
 			}
-			else if (*(*argv + 1) == L'I') { // TownsMENU ICON 
-				dm = decode_mode::ICN;
-			}
-			else if (*(*argv + 1) == L'U') { // User Defined Character (GAIJI.DAT)
+			else if (*(*argv + 1) == L'U') {
+				// User Defined Character (GAIJI.DAT)
 				dm = decode_mode::GAIJI;
 			}
 			continue;
@@ -120,7 +153,12 @@ int wmain(int argc, wchar_t** argv)
 		ICN icn;
 		GAIJI gaiji;
 
+		MSX_GE7 ge7;
+
 		switch (dm) {
+		case decode_mode::NONE:
+			continue;
+
 		case decode_mode::DRS_CG003:
 			if (drs.init(inbuf)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
@@ -307,15 +345,25 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size(pms16.disp_x, pms16.disp_y);
 			break;
 
+		case decode_mode::MSX_GE7:
+			if (ge7.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			ge7.decode_palette(out.palette);
+			ge7.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX(ge7.disp_x, ge7.disp_y);
+			break;
+
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
 			for (auto& a : dat.files) {
-//				std::wcout << a << L":" << std::hex << std::setw(6) << dat.offsets.at(a) << L":" << std::hex << std::setw(6) << dat.lengths.at(a) << std::endl;
+				//				std::wcout << a << L":" << std::hex << std::setw(6) << dat.offsets.at(a) << L":" << std::hex << std::setw(6) << dat.lengths.at(a) << std::endl;
 				std::vector<__int8> cbuf(inbuf.begin() + dat.offsets.at(a), inbuf.begin() + dat.offsets.at(a) + dat.lengths.at(a));
-//				std::wcout << cbuf.size() << std::endl;
+				//				std::wcout << cbuf.size() << std::endl;
 				::silent = true;
 
 				toPNG cout;
@@ -473,7 +521,7 @@ int wmain(int argc, wchar_t** argv)
 				continue;
 			}
 			break;
-			
+
 		default:
 			break;
 		}

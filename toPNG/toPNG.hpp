@@ -77,6 +77,11 @@ constexpr size_t PC8801_H = 640;
 constexpr size_t X68000_G = 512;
 constexpr size_t X68000_GX = 768;
 constexpr size_t RES = 40000;
+constexpr size_t MSX_SCREEN7_V = 212;
+constexpr size_t MSX_SCREEN7_H = 512;
+constexpr size_t MSX_RES_Y = 20000;
+constexpr size_t MSX_RES_X = MSX_RES_Y * 7 / 4;
+constexpr size_t LEN_SECTOR = 256;
 
 struct Palette_depth3 {
 	unsigned __int16 B : 3;
@@ -117,6 +122,25 @@ struct Palette_depth8 {
 	unsigned __int8 B;
 };
 
+struct MSX_Pal {
+	unsigned __int16 B : 3;
+	unsigned __int16 : 1;
+	unsigned __int16 R : 3;
+	unsigned __int16 : 1;
+	unsigned __int16 G : 3;
+	unsigned __int16 : 5;
+};
+
+struct PackedPixel4 {
+	unsigned __int8	L : 4;
+	unsigned __int8 H : 4;
+};
+
+union uPackedPixel4 {
+	unsigned __int8 B;
+	PackedPixel4 S;
+};
+
 struct toPNG {
 	std::vector<png_color> palette;
 	std::vector<png_byte> trans;
@@ -133,6 +157,15 @@ struct toPNG {
 	png_int_32 offset_x = 0;
 	png_int_32 offset_y = 0;
 	bool enable_offset = false;
+
+	void set_size_and_change_resolution_MSX(png_uint_32 in_x, png_uint_32 in_y)
+	{
+		this->pixels_V = in_y;
+		this->pixels_H = in_x;
+
+		res_x = ((MSX_RES_X * in_x * 2) / MSX_SCREEN7_H + 1) >> 1;
+		res_y = ((MSX_RES_Y * in_y * 2) / MSX_SCREEN7_V + 1) >> 1;
+	}
 
 	void set_size_and_change_resolution(png_uint_32 in_x, png_uint_32 in_y)
 	{
@@ -260,3 +293,5 @@ struct toPNG {
 
 #include "ICN.hpp"
 #include "GAIJI.hpp"
+
+#include "MSX_GE7.hpp"
