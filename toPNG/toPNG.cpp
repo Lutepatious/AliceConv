@@ -73,13 +73,17 @@ int wmain(int argc, wchar_t** argv)
 					// MSX BSAVE GRAPHICS7
 					dm = decode_mode::MSX_GE7;
 				}
-				if (*(*argv + 2) == L'L') {
+				else if (*(*argv + 2) == L'L') {
 					// MSX Little Princess
 					dm = decode_mode::MSX_LP;
 				}
-				if (*(*argv + 2) == L'V') {
+				else if (*(*argv + 2) == L'V') {
 					// MSX Little Vampire
 					dm = decode_mode::MSX_LV;
+				}
+				else if (*(*argv + 2) == L'S') {
+					// MSX Šw‰€í‹L
+					dm = decode_mode::MSX_GS;
 				}
 			}
 			else if (*(*argv + 1) == L's') {
@@ -167,6 +171,7 @@ int wmain(int argc, wchar_t** argv)
 		MSX_GE7 ge7;
 		MSX_LP lp;
 		MSX_LV lv;
+		MSX_GS gs;
 
 		switch (dm) {
 		case decode_mode::NONE:
@@ -388,6 +393,39 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size_and_change_resolution_MSX_default(lv.len_x, lv.len_y);
 			break;
 
+		case decode_mode::MSX_GS:
+		{
+			wchar_t* t;
+			wchar_t fname[_MAX_FNAME];
+			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
+			size_t n = wcstoull(fname, &t, 10);
+
+			if (n == 0 || n > 300) {
+				std::wcerr << L"Out of range." << std::endl;
+
+				continue;
+			}
+
+			std::ifstream palettefile("RXX", std::ios::binary);
+			if (!palettefile) {
+				std::wcerr << L"File " << "RXX" << L" open error." << std::endl;
+
+				continue;
+			}
+
+			std::vector<__int8> palbuf{ std::istreambuf_iterator<__int8>(palettefile), std::istreambuf_iterator<__int8>() };
+
+			palettefile.close();
+
+			if (gs.init(inbuf, palbuf, n)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			gs.decode_palette(out.palette, out.trans);
+			gs.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX_default(gs.disp_x, gs.disp_y);
+			break;
+		}
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;

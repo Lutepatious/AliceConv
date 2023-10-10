@@ -305,3 +305,4 @@ struct toPNG {
 #include "MSX_GE7.hpp"
 #include "MSX_LP.hpp"
 #include "MSX_LV.hpp"
+#include "MSX_GS.hpp"

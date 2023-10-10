@@ -170,6 +170,7 @@
     <ClInclude Include="GL3.hpp" />
     <ClInclude Include="GL_X68K.hpp" />
     <ClInclude Include="ICN.hpp" />
+    <ClInclude Include="MSX_GS.hpp" />
     <ClInclude Include="MSX_LV.hpp" />
     <ClInclude Include="MSX_GE7.hpp" />
     <ClInclude Include="MSX_LP.hpp" />
