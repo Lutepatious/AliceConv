@@ -7,7 +7,7 @@ enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT,
 	X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS,
 	SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI,
-	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL
+	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL, MSX_I
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -88,6 +88,10 @@ int wmain(int argc, wchar_t** argv)
 				else if (*(*argv + 2) == L'g') {
 					// MSX GL
 					dm = decode_mode::MSX_GL;
+				}
+				else if (*(*argv + 2) == L'I') {
+					// MSX Intruder
+					dm = decode_mode::MSX_I;
 				}
 			}
 			else if (*(*argv + 1) == L's') {
@@ -177,6 +181,7 @@ int wmain(int argc, wchar_t** argv)
 		MSX_LV lv;
 		MSX_GS gs;
 		MSX_GL mgl;
+		MSX_Intruder mi;
 
 		switch (dm) {
 		case decode_mode::NONE:
@@ -433,6 +438,16 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		case decode_mode::MSX_GL:
+			if (mgl.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			mgl.decode_palette(out.palette, out.trans);
+			mgl.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX_default(mgl.disp_x, mgl.disp_y);
+			break;
+
+		case decode_mode::MSX_I:
 			if (mgl.init(inbuf)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
