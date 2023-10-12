@@ -7,7 +7,7 @@ enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT,
 	X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS,
 	SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI,
-	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL, MSX_I
+	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL, MSX_I, MSX_SG
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -92,6 +92,10 @@ int wmain(int argc, wchar_t** argv)
 				else if (*(*argv + 2) == L'I') {
 					// MSX Intruder
 					dm = decode_mode::MSX_I;
+				}
+				else if (*(*argv + 2) == L'S') {
+					// MSX DPS -SG- dualline
+					dm = decode_mode::MSX_SG;
 				}
 			}
 			else if (*(*argv + 1) == L's') {
@@ -182,6 +186,7 @@ int wmain(int argc, wchar_t** argv)
 		MSX_GS gs;
 		MSX_GL mgl;
 		MSX_Intruder mi;
+		MSX_GL_Dual msg;
 
 		switch (dm) {
 		case decode_mode::NONE:
@@ -481,7 +486,89 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size_and_change_resolution_MSX_default(mi.len_x, mi.len_y);
 			break;
 		}
-		break;
+
+		case decode_mode::MSX_SG:
+		{
+			wchar_t drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
+
+			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
+
+			if (wcslen(fname) != 8 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswdigit(fname[3]) ||
+				!iswdigit(fname[5]) || !iswdigit(fname[6]) || !iswdigit(fname[7]) || !iswalpha(fname[4])) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+
+			unsigned image_number, archive_entry;
+			wchar_t archive_volume;
+			bool odd;
+
+			swscanf_s(fname, L"%4u%c%3u", &image_number, &archive_volume, 1, &archive_entry);
+
+			if ((image_number & 1) != (archive_entry & 1)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+			}
+
+			if (image_number & 1) {
+				odd = true;
+			}
+			else {
+				odd = false;
+			}
+
+			if (odd) {
+				image_number++;
+				archive_entry++;
+			}
+			else {
+				image_number--;
+				archive_entry--;
+			}
+
+			wchar_t mate_filename[_MAX_FNAME], mate_file[_MAX_PATH];
+			swprintf_s(mate_filename, _MAX_FNAME, L"%04u%c%03u", image_number, archive_volume, archive_entry);
+			_wmakepath_s(mate_file, _MAX_PATH, drive, dir, mate_filename, ext);
+
+			std::ifstream infile2(mate_file, std::ios::binary);
+			if (!infile2) {
+				std::wcerr << L"File " << mate_file << L" open error." << std::endl;
+				continue;
+			}
+
+			std::vector<__int8> inbuf2{ std::istreambuf_iterator<__int8>(infile2), std::istreambuf_iterator<__int8>() };
+
+			infile2.close();
+
+			if (odd) {
+				if (msg.init(inbuf, inbuf2)) {
+					if (mgl.init(inbuf)) {
+						std::wcerr << L"Wrong file. " << *argv << std::endl;
+						continue;
+					}
+					mgl.decode_palette(out.palette, out.trans);
+					mgl.decode_body(out.body);
+					out.set_size_and_change_resolution_MSX_default(mgl.disp_x, mgl.disp_y);
+					break;
+				}
+			}
+			else {
+				if (msg.init(inbuf2, inbuf)) {
+					if (mgl.init(inbuf)) {
+						std::wcerr << L"Wrong file. " << *argv << std::endl;
+						continue;
+					}
+					mgl.decode_palette(out.palette, out.trans);
+					mgl.decode_body(out.body);
+					out.set_size_and_change_resolution_MSX_default(mgl.disp_x, mgl.disp_y);
+					break;
+				}
+			}
+
+			msg.decode_palette(out.palette, out.trans);
+			msg.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX(msg.disp_x, msg.disp_y);
+			break;
+		}
 
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {
