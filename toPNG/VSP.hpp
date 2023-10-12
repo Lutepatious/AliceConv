@@ -96,7 +96,7 @@ public:
 		bool negate = false;
 
 		std::vector<unsigned __int8> D;
-		size_t index;
+		size_t index, tlen, plen;
 		while (count-- && D.size() < decode_size) {
 			switch (*src) {
 			case 0x00: // 1列前の同プレーンのデータを1バイト目で指定した長さだけコピー
@@ -123,8 +123,13 @@ public:
 				break;
 
 			case 0x03: // 第0プレーン(青)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
-				index = D.size() - this->len_y * ((D.size() / this->len_y) % planes);
-				for (size_t len = 0; len < 1ULL + *(src + 1); len++) {
+				plen = this->len_y * ((D.size() / this->len_y) % planes);
+				index = D.size() > plen ? D.size() - plen : 0;
+				tlen = 1ULL + *(src + 1);
+				if (tlen > plen) {
+					tlen = 0;
+				}
+				for (size_t len = 0; len < tlen; len++) {
 					auto t = D.at(index++);
 					D.push_back(negate ? ~t : t);
 				}
@@ -134,8 +139,13 @@ public:
 				break;
 
 			case 0x04: // 第1プレーン(赤)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)
-				index = D.size() - this->len_y * ((D.size() / this->len_y) % planes - 1);
-				for (size_t len = 0; len < 1ULL + *(src + 1); len++) {
+				plen = this->len_y * ((D.size() / this->len_y) % planes - 1);
+				index = D.size() > plen ? D.size() - plen : 0;
+				tlen = 1ULL + *(src + 1);
+				if (tlen > plen) {
+					tlen = 0;
+				}
+				for (size_t len = 0; len < tlen; len++) {
 					auto t = D.at(index++);
 					D.push_back(negate ? ~t : t);
 				}
@@ -145,8 +155,13 @@ public:
 				break;
 
 			case 0x05: // 第2プレーン(緑)のデータを1バイト目で指定した長さだけコピー(negateが1ならビット反転する)、VSP200lではここに制御が来てはならない。
-				index = D.size() - this->len_y * ((D.size() / this->len_y) % planes - 2);
-				for (size_t len = 0; len < 1ULL + *(src + 1); len++) {
+				plen = this->len_y * ((D.size() / this->len_y) % planes - 2);
+				index = D.size() > plen ? D.size() - plen : 0;
+				tlen = 1ULL + *(src + 1);
+				if (tlen > plen) {
+					tlen = 0;
+				}
+				for (size_t len = 0; len < tlen; len++) {
 					auto t = D.at(index++);
 					D.push_back(negate ? ~t : t);
 				}
