@@ -7,7 +7,7 @@ enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT,
 	X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS,
 	SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI,
-	MSX_GE7, MSX_LP, MSX_LV, MSX_GS
+	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -69,7 +69,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'M') {
 				// MSX2 specific
-				if (*(*argv + 2) == L'B') {
+				if (*(*argv + 2) == L'b') {
 					// MSX BSAVE GRAPHICS7
 					dm = decode_mode::MSX_GE7;
 				}
@@ -81,9 +81,13 @@ int wmain(int argc, wchar_t** argv)
 					// MSX Little Vampire
 					dm = decode_mode::MSX_LV;
 				}
-				else if (*(*argv + 2) == L'S') {
+				else if (*(*argv + 2) == L'G') {
 					// MSX äwâÄêÌãL
 					dm = decode_mode::MSX_GS;
+				}
+				else if (*(*argv + 2) == L'g') {
+					// MSX GL
+					dm = decode_mode::MSX_GL;
 				}
 			}
 			else if (*(*argv + 1) == L's') {
@@ -172,6 +176,7 @@ int wmain(int argc, wchar_t** argv)
 		MSX_LP lp;
 		MSX_LV lv;
 		MSX_GS gs;
+		MSX_GL mgl;
 
 		switch (dm) {
 		case decode_mode::NONE:
@@ -426,6 +431,17 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size_and_change_resolution_MSX_default(gs.disp_x, gs.disp_y);
 			break;
 		}
+
+		case decode_mode::MSX_GL:
+			if (mgl.init(inbuf)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			mgl.decode_palette(out.palette, out.trans);
+			mgl.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX_default(mgl.disp_x, mgl.disp_y);
+			break;
+
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;

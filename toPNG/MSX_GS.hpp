@@ -4,7 +4,6 @@
 #pragma pack(push)
 #pragma pack(1)
 class MSX_GS {
-	std::vector<unsigned __int8> I;
 	std::vector<unsigned __int8> FI;
 	struct format_GS {
 		unsigned __int8 len_hx; // divided by 2
@@ -155,6 +154,8 @@ public:
 			pal.push_back(c);
 		}
 
+		// パレット情報が不完全なため、定義外の色は前の画像のパレットを流用するしかなく、
+		// 解析した結果をここでハードコードする。
 		size_t tnum = this->image_num;
 		switch (tnum) {
 		case 43:
@@ -274,12 +275,6 @@ public:
 					c.blue = d3tod8(this->R[tnum - 1].palette[i].B);
 					pal.push_back(c);
 				}
-
-				for (size_t s = 0; s < I.size(); s++) {
-					if (s % 512 >= 256 && I.at(s) >= 10) {
-						I.at(s) += 6;
-					}
-				}
 			}
 			else {
 				for (size_t i = 0; i < 6; i++) {
@@ -311,6 +306,7 @@ public:
 		unsigned __int8* src = this->buf->body, prev = ~*src;
 		bool repeat = false;
 
+		std::vector<unsigned __int8> I;
 		while (!this->is_end(src)) {
 			if (repeat) {
 				repeat = false;
@@ -344,21 +340,22 @@ public:
 		std::wcerr << std::setw(6) << I.size() << L"/" << std::setw(6) << this->len_x * this->len_y << L" ";
 		I.resize((size_t)this->len_x * this->len_y);
 
-#if 0
-		for (size_t j = 0; j < this->len_y; j++) {
-			out_body.push_back((png_bytep)&I.at(j * this->len_x));
+		if (this->image_num == 298) {
+			for (size_t s = 0; s < I.size(); s++) {
+				if (s % 512 >= 256 && I.at(s) >= 10) {
+					I.at(s) += 6;
+				}
+			}
 		}
 
-#else
-		FI.assign(MSX_SCREEN7_H * MSX_SCREEN7_V, this->transparent);
+		FI.assign((size_t) this->disp_x * this->disp_y, this->transparent);
 		for (size_t j = 0; j < this->len_y; j++) {
-			memcpy_s(&FI[(this->offset_y + j) * MSX_SCREEN7_H + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
+			memcpy_s(&FI[(this->offset_y + j) * this->disp_x + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
 		}
 
-		for (size_t j = 0; j < MSX_SCREEN7_V; j++) {
-			out_body.push_back((png_bytep)&FI.at(j * MSX_SCREEN7_H));
+		for (size_t j = 0; j < this->disp_y; j++) {
+			out_body.push_back((png_bytep)&FI.at(j * this->disp_x));
 		}
-#endif
 	}
 };
 #pragma pack(pop)

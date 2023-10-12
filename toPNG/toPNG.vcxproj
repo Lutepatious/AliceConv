@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -170,10 +170,13 @@
     <ClInclude Include="GL3.hpp" />
     <ClInclude Include="GL_X68K.hpp" />
     <ClInclude Include="ICN.hpp" />
+    <ClInclude Include="MSX_GL.hpp" />
     <ClInclude Include="MSX_GS.hpp" />
+    <ClInclude Include="MSX_Intruder.hpp" />
     <ClInclude Include="MSX_LV.hpp" />
     <ClInclude Include="MSX_GE7.hpp" />
     <ClInclude Include="MSX_LP.hpp" />
+    <ClInclude Include="MSX_SG.hpp" />
     <ClInclude Include="PMS.hpp" />
     <ClInclude Include="PMS16.hpp" />
     <ClInclude Include="TIFF_TOWNS.hpp" />
