@@ -448,14 +448,40 @@ int wmain(int argc, wchar_t** argv)
 			break;
 
 		case decode_mode::MSX_I:
-			if (mgl.init(inbuf)) {
+		{
+			wchar_t* t;
+			wchar_t fname[_MAX_FNAME];
+			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
+			size_t n = wcstoull(fname, &t, 10);
+
+			if (n == 0 || n > 99) {
+				std::wcerr << L"Out of range." << std::endl;
+
+				continue;
+			}
+
+			std::ifstream palettefile("COLPALET.DAT", std::ios::binary);
+			if (!palettefile) {
+				std::wcerr << L"File " << "COLPALET.DAT" << L" open error." << std::endl;
+
+				continue;
+			}
+
+			std::vector<__int8> palbuf{ std::istreambuf_iterator<__int8>(palettefile), std::istreambuf_iterator<__int8>() };
+
+			palettefile.close();
+
+			if (mi.init(inbuf, palbuf, n)) {
 				std::wcerr << L"Wrong file. " << *argv << std::endl;
 				continue;
 			}
-			mgl.decode_palette(out.palette, out.trans);
-			mgl.decode_body(out.body);
-			out.set_size_and_change_resolution_MSX_default(mgl.disp_x, mgl.disp_y);
+
+			mi.decode_palette(out.palette);
+			mi.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX_default(mi.len_x, mi.len_y);
 			break;
+		}
+		break;
 
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {
