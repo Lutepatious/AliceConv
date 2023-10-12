@@ -7,7 +7,7 @@ enum class decode_mode {
 	NONE = 0, GL, GL3, GM3, VSP, VSP200l, VSP256, PMS8, PMS16, QNT,
 	X68R, X68T, X68B, TIFF_TOWNS, DRS_CG003, DRS_CG003_TOWNS, DRS_OPENING_TOWNS,
 	SPRITE_X68K, MASK_X68K, AUTO, DAT, ICN, GAIJI,
-	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL, MSX_I, MSX_SG
+	MSX_GE7, MSX_LP, MSX_LV, MSX_GS, MSX_GL, MSX_I, MSX_SG, MSX_TT, MSX_DRS
 };
 
 int wmain(int argc, wchar_t** argv)
@@ -94,8 +94,16 @@ int wmain(int argc, wchar_t** argv)
 					dm = decode_mode::MSX_I;
 				}
 				else if (*(*argv + 2) == L'S') {
-					// MSX DPS -SG- dualline
+					// MSX DPS -SG- インターレース
 					dm = decode_mode::MSX_SG;
+				}
+				else if (*(*argv + 2) == L'T') {
+					// MSX 闘神都市
+					dm = decode_mode::MSX_TT;
+				}
+				else if (*(*argv + 2) == L'D') {
+					// MSX Dr.STOP!
+					dm = decode_mode::MSX_DRS;
 				}
 			}
 			else if (*(*argv + 1) == L's') {
@@ -187,6 +195,7 @@ int wmain(int argc, wchar_t** argv)
 		MSX_GL mgl;
 		MSX_Intruder mi;
 		MSX_GL_Dual msg;
+		MSX_TT_DRS mttdrs;
 
 		switch (dm) {
 		case decode_mode::NONE:
@@ -569,6 +578,26 @@ int wmain(int argc, wchar_t** argv)
 			out.set_size_and_change_resolution_MSX(msg.disp_x, msg.disp_y);
 			break;
 		}
+
+		case decode_mode::MSX_TT:
+			if (mttdrs.init(inbuf, false)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			mttdrs.decode_palette(out.palette, out.trans);
+			mttdrs.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX(mttdrs.disp_x, mttdrs.disp_y);
+			break;
+
+		case decode_mode::MSX_DRS:
+			if (mttdrs.init(inbuf, true)) {
+				std::wcerr << L"Wrong file. " << *argv << std::endl;
+				continue;
+			}
+			mttdrs.decode_palette(out.palette, out.trans);
+			mttdrs.decode_body(out.body);
+			out.set_size_and_change_resolution_MSX(mttdrs.disp_x, mttdrs.disp_y);
+			break;
 
 		case decode_mode::DAT:
 			if (dat.init(inbuf)) {

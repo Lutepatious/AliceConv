@@ -177,6 +177,7 @@
     <ClInclude Include="MSX_GE7.hpp" />
     <ClInclude Include="MSX_LP.hpp" />
     <ClInclude Include="MSX_SG.hpp" />
+    <ClInclude Include="MSX_TT_DRS.hpp" />
     <ClInclude Include="PMS.hpp" />
     <ClInclude Include="PMS16.hpp" />
     <ClInclude Include="TIFF_TOWNS.hpp" />

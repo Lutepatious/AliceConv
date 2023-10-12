@@ -309,3 +309,4 @@ struct toPNG {
 #include "MSX_GL.hpp"
 #include "MSX_Intruder.hpp"
 #include "MSX_SG.hpp"
+#include "MSX_TT_DRS.hpp"
