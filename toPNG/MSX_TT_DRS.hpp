@@ -141,19 +141,19 @@ public:
 				this->disp_x /= 2;
 			}
 			FI.assign((size_t)this->disp_x * this->disp_y, this->transparent);
+
 			for (size_t j = 0; j < this->len_y; j++) {
 				memcpy_s(&FI[(this->offset_y + j) * this->disp_x + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
 			}
 		}
 		else {
-			FI.assign((size_t)this->disp_x * this->disp_y * 2ULL, this->transparent);
+			this->disp_y *= 2;
+			FI.assign((size_t)this->disp_x * this->disp_y, this->transparent);
 
 			for (size_t j = 0; j < this->len_y; j++) {
 				memcpy_s(&FI[(this->offset_y + j) * 2 * this->disp_x + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);
 				memcpy_s(&FI[((this->offset_y + j) * 2 + 1) * this->disp_x + this->offset_x], this->len_x, &I[(j + this->len_y) * this->len_x], this->len_x);
 			}
-
-			this->disp_y *= 2;
 		}
 
 		for (size_t j = 0; j < this->disp_y; j++) {
