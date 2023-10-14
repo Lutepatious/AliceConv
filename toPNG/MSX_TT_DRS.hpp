@@ -137,6 +137,9 @@ public:
 		size_t Aspect = image_size / I.size();
 
 		if (Aspect == 2) {
+			if (this->DRS_len_add == 0 && this->len_x <= 256) {
+				this->disp_x /= 2;
+			}
 			FI.assign((size_t)this->disp_x * this->disp_y, this->transparent);
 			for (size_t j = 0; j < this->len_y; j++) {
 				memcpy_s(&FI[(this->offset_y + j) * this->disp_x + this->offset_x], this->len_x, &I[j * this->len_x], this->len_x);

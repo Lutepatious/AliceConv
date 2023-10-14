@@ -32,6 +32,20 @@
          </ul>
         <li>CG</li>
         <ul>
+            <li>toPNG</li>
+            New and Unified CG converter. It has many options.
+            <ul> MSX2 Version specific options.
+                <li>-Mb for MSX Screen7 BSAVE format (Gakuen Senki TITLE, Fukei san VX FUKEI.CG, Abunai Tengu Densetu README*.GE7, Dream Program System POPART?.DAT</li>
+                <li>-ML for Little Princess (Champion Soft). </li>
+                <li>-MV for for Little Vampire (Champion Soft). </li>
+                <li>-MG for Gakuen Senki (Champion Soft). needs RXX</li>
+                <li>-Mg for Rance, Cresent Moon Girl, Abunai Tengu Densetsu, Dream Pregram System, RanceII, Dream Program System -SG-.</li>
+                <li>-MI for Intruder. needs COLPALET.DAT</li>
+                <li>-MS for Dream Program System -SG- Interlace mode</li>
+                <li>-MT for Toushin Toshi.</li>
+                <li>-MD for Dr.STOP!.</li>
+            </ul>
+
             <li>VSPtoPNG</li>
             Main tool of CG converters. It automatically detects these formats.
             <ul>
@@ -47,8 +61,6 @@
                 <li>Abunai Bunkasai Zenya for X68000 in RanceIII Option Set for X68000</li>
             </ul>
             There are no common transparent information. So I cannot include transparent infos.
-            <li>TIFFtoPNG_Y1CD</li>
-            FM TOWNS TIFF (256 colors). Format used in Alice no Yakata CD, Alice no Yakata CD II, Rance III FM TOWNS.
             <li>MSXtoPNG</li>
             It has 9 options.
             <ul>
@@ -67,107 +79,103 @@
             It contains palette and location information.
             Due to bugs and lacked palette, some images use previous image's palette.
 
-            <li>DRStoPNG</li>
-            Converter for Dr.STOP! opening demo CG (cg003.dat) for PC-9801/X68000.
-            <li>DRStoPNG_TOWNS</li>
-            Converter for Dr.STOP! opening demo CG (cg003.dat) and openning.dat for FM TOWNS.
         </ul>
-        <li>Sound</li>
-        <ul>
-             <li>MCLtoVGM</li>
-            Converter for MSX MCL DATA to VGM.
+            <li>Sound</li>
             <ul>
-                <li>Gakuen Senki for MSX2 (Champion Soft)</li>
-                <li>Little Vampire for MSX2 (Champion Soft)</li>
-            </ul>
+                <li>MCLtoVGM</li>
+                Converter for MSX MCL DATA to VGM.
+                <ul>
+                    <li>Gakuen Senki for MSX2 (Champion Soft)</li>
+                    <li>Little Vampire for MSX2 (Champion Soft)</li>
+                </ul>
 
-	    <li>PC88toVGM</li>
-            Converter for PC-8801SR MML format to VGM.
-            <ul>
-                <li>Little Vampire for PC-8801SR (Champion Soft)</li>
-                <li>Rance for PC-8801SR</li>
-                <li>Intruder for PC-8801SR</li>
-                <li>Abunai Tengu Densetu for PC-8801SR</li>
-                <li>Dream Program System for PC-8801SR</li>
-            </ul>
+                <li>PC88toVGM</li>
+                Converter for PC-8801SR MML format to VGM.
+                <ul>
+                    <li>Little Vampire for PC-8801SR (Champion Soft)</li>
+                    <li>Rance for PC-8801SR</li>
+                    <li>Intruder for PC-8801SR</li>
+                    <li>Abunai Tengu Densetu for PC-8801SR</li>
+                    <li>Dream Program System for PC-8801SR</li>
+                </ul>
 
-            <li>PSGtoVGM</li>
-            Converter for MSX PSG DATA to VGM.
-            <ul>
-                <li>Rance for MSX2</li>
-                <li>Intruder for MSX2</li>
-                <li>Cresent Moon Girl for MSX2</li>
-                <li>Abunai Tengu Densetu for MSX2</li>
-                <li>Dream Program System for MSX2</li>
-                <li>RanceII for MSX2</li>
-                <li>Dream Program System -SG- for MSX2</li>
-                <li>Dream Program System -SG- set2 for MSX2</li>
-                <li>Dream Program System -SG- set3 for MSX2</li>
-            </ul>
+                <li>PSGtoVGM</li>
+                Converter for MSX PSG DATA to VGM.
+                <ul>
+                    <li>Rance for MSX2</li>
+                    <li>Intruder for MSX2</li>
+                    <li>Cresent Moon Girl for MSX2</li>
+                    <li>Abunai Tengu Densetu for MSX2</li>
+                    <li>Dream Program System for MSX2</li>
+                    <li>RanceII for MSX2</li>
+                    <li>Dream Program System -SG- for MSX2</li>
+                    <li>Dream Program System -SG- set2 for MSX2</li>
+                    <li>Dream Program System -SG- set3 for MSX2</li>
+                </ul>
 
-            <li>EOMMLtoVGM</li>
-            Converter for EOMML format to VGM.
-            <ul>
-                <li>Rance for X68000/PC-9801</li>
-                <li>Cresent Moon Girl for X68000/PC-9801</li>
-                <li>Abunai Tengu Densetu for X68000/PC-9801</li>
-                <li>Dream Program System for X68000/PC-9801</li>
-                <li>Alice no Yakata for X68000/PC-9801</li>
-                <li>RanceII for X68000</li>
-                <li>Dream Program System -SG- for X68000</li>
-                <li>Tousin Toshi for X68000</li>
-                <li>Dream Program System -SG- set2 for X68000</li>
-                <li>Dream Program System -SG- set3 for X68000</li>
-            </ul>
-            It cannot autodetect machine specific information.
-            I decided X68000 as default.
+                <li>EOMMLtoVGM</li>
+                Converter for EOMML format to VGM.
+                <ul>
+                    <li>Rance for X68000/PC-9801</li>
+                    <li>Cresent Moon Girl for X68000/PC-9801</li>
+                    <li>Abunai Tengu Densetu for X68000/PC-9801</li>
+                    <li>Dream Program System for X68000/PC-9801</li>
+                    <li>Alice no Yakata for X68000/PC-9801</li>
+                    <li>RanceII for X68000</li>
+                    <li>Dream Program System -SG- for X68000</li>
+                    <li>Tousin Toshi for X68000</li>
+                    <li>Dream Program System -SG- set2 for X68000</li>
+                    <li>Dream Program System -SG- set3 for X68000</li>
+                </ul>
+                It cannot autodetect machine specific information.
+                I decided X68000 as default.
 
-            It has 3 options.
-            <ul>
-                <li>-9 for PC-9801 (YM-2203) musics.</li>
-                <li>-T for ToushinToshi for X68000 (YM-2151) musics. </li>
-                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
-            </ul>
-            <li>MAKO1toVGM</li>
-            Converter for MAKO1 format to VGM.
-            <ul>
-                <li>Rance for PC-88VA/FM TOWNS</li>
-                <li>Intruder for FM TOWNS (in Alice no Yakata CD)</li>
-                <li>Cresent Moon Girl for PC-88VA, FM TOWNS (in Alice no Yakata CD)</li>
-                <li>Abunai Tengu Densetu for PC-88VA/FM TOWNS</li>
-                <li>Dream Program System for PC-88VA/FM TOWNS</li>
-                <li>Alice no Yakata for PC-88VA</li>
-                <li>RanceII for PC-9801/PC-8801/PC-88VA/FM TOWNS</li>
-                <li>Dream Program System -SG- for PC-9801/PC-88VA/FM TOWNS</li>
-                <li>Tousin Toshi for PC-9801/FM TOWNS</li>
-                <li>Dream Program System -SG- set2 for PC-9801/PC-88VA/FM TOWNS</li>
-                <li>Alice no Yakata CD for FM TOWNS</li>
-                <li>Dream Program System -SG- set3 for PC-9801/PC-88VA/FM TOWNS</li>
-            </ul>
-            It cannot autodetect machine specific information.
-            I decided PC-9801 as default.
+                It has 3 options.
+                <ul>
+                    <li>-9 for PC-9801 (YM-2203) musics.</li>
+                    <li>-T for ToushinToshi for X68000 (YM-2151) musics. </li>
+                    <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
+                </ul>
+                <li>MAKO1toVGM</li>
+                Converter for MAKO1 format to VGM.
+                <ul>
+                    <li>Rance for PC-88VA/FM TOWNS</li>
+                    <li>Intruder for FM TOWNS (in Alice no Yakata CD)</li>
+                    <li>Cresent Moon Girl for PC-88VA, FM TOWNS (in Alice no Yakata CD)</li>
+                    <li>Abunai Tengu Densetu for PC-88VA/FM TOWNS</li>
+                    <li>Dream Program System for PC-88VA/FM TOWNS</li>
+                    <li>Alice no Yakata for PC-88VA</li>
+                    <li>RanceII for PC-9801/PC-8801/PC-88VA/FM TOWNS</li>
+                    <li>Dream Program System -SG- for PC-9801/PC-88VA/FM TOWNS</li>
+                    <li>Tousin Toshi for PC-9801/FM TOWNS</li>
+                    <li>Dream Program System -SG- set2 for PC-9801/PC-88VA/FM TOWNS</li>
+                    <li>Alice no Yakata CD for FM TOWNS</li>
+                    <li>Dream Program System -SG- set3 for PC-9801/PC-88VA/FM TOWNS</li>
+                </ul>
+                It cannot autodetect machine specific information.
+                I decided PC-9801 as default.
 
-            It has 4 options.
-            <ul>
-                <li>-v for PC-88VA (YM-2203) musics.</li>
-                <li>-t for FM TOWNS (YM-2612) musics. </li>
-                <li>-r for Rance FM TOWNS version (YM-2612) musics. </li>
-                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
-            </ul>
-            If NOT -v/-t/-r options applied. It works for PC-9801 music.
-            <li>MAKO2toVGM</li>
-            Converter for MAKO2 format to VGM.
-            It supports after RanceIII to Windows 3.1 era FM/SSG musics (except D.P.S -SG set3).
-            It also converts SSG-PCM or TOWNS PCM to Windows WAVE.
-            Autodetect file types (except RanceIV and Alice no Yakata 3).
-            It has 5 options.
-            <ul>
-                <li>-n for OPN mode.</li>
-                <li>-x for OPM (X68000) mode. </li>
-                <li>-a for OPNA mode. </li>
-                <li>-d for first impliment (RanceIII). Correct Detune level.</li>
-                <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
+                It has 4 options.
+                <ul>
+                    <li>-v for PC-88VA (YM-2203) musics.</li>
+                    <li>-t for FM TOWNS (YM-2612) musics. </li>
+                    <li>-r for Rance FM TOWNS version (YM-2612) musics. </li>
+                    <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
+                </ul>
+                If NOT -v/-t/-r options applied. It works for PC-9801 music.
+                <li>MAKO2toVGM</li>
+                Converter for MAKO2 format to VGM.
+                It supports after RanceIII to Windows 3.1 era FM/SSG musics (except D.P.S -SG set3).
+                It also converts SSG-PCM or TOWNS PCM to Windows WAVE.
+                Autodetect file types (except RanceIV and Alice no Yakata 3).
+                It has 5 options.
+                <ul>
+                    <li>-n for OPN mode.</li>
+                    <li>-x for OPM (X68000) mode. </li>
+                    <li>-a for OPNA mode. </li>
+                    <li>-d for first impliment (RanceIII). Correct Detune level.</li>
+                    <li>-s(num) for SSG relative volume (1-255%) to FM.</li>
+                </ul>
             </ul>
         </ul>
-    </ul>
 </body>
