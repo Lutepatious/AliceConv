@@ -34,50 +34,54 @@
         <ul>
             <li>toPNG</li>
             New and Unified CG converter. It has many options.
-            <ul> MSX2 Version specific options.
+
+            <ul>
+                X68000 version specific options.
+                <li>-XP for Tousin Toshi (and hint disk) "SPRPT.SPR"</li>
+                <li>-XM for Tousin Toshi (and hint disk) "ATDAT.SPR"</li>
+                <li>-XR for RanceII (and hint disk)</li>
+                <li>-XT for Tousin Toshi 256 colors CG</li>
+                <li>-XB for Abunai Bunkasai zen'ya in RanceIII Option SET</li>
+            </ul>
+
+            <ul>
+                FM TOWNS version specific opitons.
+                <li>-TS for Dr.STOP! "CG003.BMP"</li>
+                <li>-TO for Dr.STOP! "OPENNING.BMP"</li>
+                <li>-TY for TIFF variant since Alice no yakata CD</li>
+                <li>-TI for "*.ICN" TownsMENU icons</li>
+            </ul>
+
+            <ul>
+                MSX2 version specific options.
                 <li>-Mb for MSX Screen7 BSAVE format (Gakuen Senki TITLE, Fukei san VX FUKEI.CG, Abunai Tengu Densetu README*.GE7, Dream Program System POPART?.DAT</li>
                 <li>-ML for Little Princess (Champion Soft). </li>
                 <li>-MV for for Little Vampire (Champion Soft). </li>
-                <li>-MG for Gakuen Senki (Champion Soft). needs RXX</li>
+                <li>-MG for Gakuen Senki (Champion Soft). needs RXX on current directory</li>
                 <li>-Mg for Rance, Cresent Moon Girl, Abunai Tengu Densetsu, Dream Pregram System, RanceII, Dream Program System -SG-.</li>
-                <li>-MI for Intruder. needs COLPALET.DAT</li>
+                <li>-MI for Intruder. needs COLPALET.DAT on current directory</li>
                 <li>-MS for Dream Program System -SG- Interlace mode</li>
                 <li>-MT for Toushin Toshi.</li>
                 <li>-MD for Dr.STOP!.</li>
+                Gakuen Senki needs RXX file on current directory. Please copy from any game disk.
+                It contains palette and location information.
+                Due to bugs and lacked palette, some images use previous image's palette.
             </ul>
 
-            <li>VSPtoPNG</li>
-            Main tool of CG converters. It automatically detects these formats.
             <ul>
-                <li>GL - very early CG format (8/512 colors) from Champion soft era (Predecessor of Alicesoft) to almost all PC-8801 games (except RanceII).</li>
-                <li>GL3 - early CG format (16/4096 colors) form Rance to Alice no yakata CD. PC-9801, PC-88VA and almost FM TOWNS, X68000.</li>
-                <li>GM3 - variant of GL3 (8/512 colors). Intruder for FM TOWNS only.</li>
-                <li>VSP - (16/4096 colors). Supported by many titles for PC-9801/FM TOWNS/X68000.</li>
-                <li>VSP200line - variant of VSP (8/256 colors). Supported by RanceII for PC-8801 and Little Vampire for PC-9801 (ALICE-NET version).</li>
-                <li>VSP 256 colors - (256/16M colors). Format used in 256-colors games after Super D.P.S.</li>
-                <li>PMS - variant of VSP 256 colors. Format used after Kichikuou Rance (System 3.5).</li>
-                <li>RanceII for X68000</li>
-                <li>Tousin Toshi for X68000</li>
-                <li>Abunai Bunkasai Zenya for X68000 in RanceIII Option Set for X68000</li>
+                <li>-s for Dr.STOP! PC-9801 or X68000 version's "CG003.DAT"</li>
+                <li>-g for GL - very early CG format (8/512 colors) from Champion soft era (Predecessor of Alicesoft) to almost all PC-8801 games (except RanceII).</li>
+                <li>-h for GL3 - early CG format (16/4096 colors) form Rance to Alice no yakata CD. PC-9801, PC-88VA and almost FM TOWNS, X68000.</li>
+                <li>-r for VSP200line - variant of VSP (8/256 colors). Supported by RanceII for PC-8801 and Little Vampire for PC-9801 (ALICE-NET version).</li>
+                <li>-v for VSP - (16/4096 colors). Supported by many titles for PC-9801/FM TOWNS/X68000.</li>
+                <li>-p for old PMSŒ`Ž®(‹Œ)  - (256/16M colors). Format used in 256-colors games after Super D.P.S.</li>
+                <li>-k for PMS8 - after Kichikuou Rance (System 3.5).</li>
+                <li>-i for PMS16 - afrer Ikenai Katumi sensei.</li>
+                <li>-d for DATinDAT for Rance "?ANM*.DAT" and Alice no yakata II title animation.</li>
+                <li>-U for "GAIJI.DAT" User defined bitmap font(16x16 size).</li>
+                <li>-a for autodetect DATinDAT, GL, GL3, RanceII (X68000), VSP, VSP200lines, Toushin Toshi(X68000), Abunai Bunkasai zen'ya, PMS, PMS8, PMS16</li>
             </ul>
             There are no common transparent information. So I cannot include transparent infos.
-            <li>MSXtoPNG</li>
-            It has 9 options.
-            <ul>
-                <li>-b for MSX Screen7 BSAVE format (Gakuen Senki TITLE, Fukei san VX FUKEI.CG, Abunai Tengu Densetu README*.GE7, Dream Program System POPART?.DAT</li>
-                <li>-l for Little Princess (Champion Soft). </li>
-                <li>-v for for Little Vampire (Champion Soft). </li>
-                <li>-g for Gakuen Senki (Champion Soft). needs RXX</li>
-                <li>-r for Rance, Cresent Moon Girl, Abunai Tengu Densetsu, Dream Pregram System, RanceII, Dream Program System -SG-.</li>
-                <li>-i for Intruder. needs COLPALET.DAT</li>
-                <li>-s for Dream Program System -SG- Interlace mode</li>
-                <li>-t for Toushin Toshi.</li>
-                <li>-d for Dr.STOP!.</li>
-            </ul>
-
-            Gakuen Senki needs RXX file on current directory. Please copy from any game disk.
-            It contains palette and location information.
-            Due to bugs and lacked palette, some images use previous image's palette.
 
         </ul>
             <li>Sound</li>
