@@ -78,10 +78,10 @@ steps:
     artifact: 'drop'
 
 - task: UniversalPackages@0
-  displayName: Publish a Universal Package
   inputs:
-    command: publish
+    command: 'publish'
     publishDirectory: '$(Build.ArtifactStagingDirectory)'
-    vstsFeedPublish: 'Lutepatious.AliceConv/AliceConv'
+    feedsToUsePublish: 'internal'
+    vstsFeedPublish: 'a2f6766f-c9eb-45ac-8864-d379f2268234/501becc7-847a-4609-b440-eb0ae84ff952'
     vstsFeedPackagePublish: 'aliceconv'
-    packagePublishDescription: 'Alicesoft Converter'
+    versionOption: 'patch'
