@@ -33,6 +33,7 @@ steps:
   inputs:
     targetPath: '$(Pipeline.Workspace)'
     publishLocation: 'pipeline'
+    artifact: 'x86'
 
 - task: VSBuild@1
   inputs:
@@ -45,3 +46,4 @@ steps:
   inputs:
     targetPath: '$(Pipeline.Workspace)'
     publishLocation: 'pipeline'
+    artifact: 'x64'
