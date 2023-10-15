@@ -29,12 +29,6 @@ steps:
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_src.7z'
 
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_src.7z'
-    publishLocation: 'pipeline'
-    artifact: 'src'
-
 - task: VSBuild@1
   inputs:
     platform: 'x86'
@@ -56,12 +50,6 @@ steps:
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x86.7z'
 
-- task: PublishPipelineArtifact@1
-  inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x86.7z'
-    publishLocation: 'pipeline'
-    artifact: 'x86'
-
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '$(Pipeline.Workspace)\s\x64\Release' 
@@ -71,7 +59,7 @@ steps:
 
 - task: PublishPipelineArtifact@1
   inputs:
-    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x64.7z'
+    targetPath: '$(Build.ArtifactStagingDirectory)'
     publishLocation: 'pipeline'
-    artifact: 'x64'
+    artifact: 'drop'
 
