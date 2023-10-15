@@ -33,7 +33,7 @@ steps:
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_src.7z'
     publishLocation: 'pipeline'
-    artifact: '7z'
+    artifact: '$(Build.BuildId)_src.7z'
 
 - task: VSBuild@1
   inputs:
@@ -60,7 +60,7 @@ steps:
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x86.7z'
     publishLocation: 'pipeline'
-    artifact: '7z'
+    artifact: '$(Build.BuildId)_x86.7z'
 
 - task: ArchiveFiles@2
   inputs:
@@ -73,5 +73,5 @@ steps:
   inputs:
     targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x64.7z'
     publishLocation: 'pipeline'
-    artifact: '7z'
+    artifact: '$(Build.BuildId)_x64.7z'
 
