@@ -47,3 +47,17 @@ steps:
     targetPath: '$(Pipeline.Workspace)\s\x64\Release'
     publishLocation: 'pipeline'
     artifact: 'x64'
+
+- task: ArchiveFiles@2
+  inputs:
+    rootFolderOrFile: '$(Build.BinariesDirectory)' 
+    archiveType: '7z'
+    sevenZipCompression: 'ultra'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+
+- task: PublishPipelineArtifact@1
+  inputs:
+    targetPath: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
+    publishLocation: 'pipeline'
+    artifact: 'x86-archive'
+
