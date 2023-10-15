@@ -27,7 +27,7 @@ steps:
     rootFolderOrFile: '$(Pipeline.Workspace)\s' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_src.7z'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_src.7z'
 
 - task: VSBuild@1
   inputs:
@@ -48,14 +48,14 @@ steps:
     rootFolderOrFile: '$(Pipeline.Workspace)\s\Release' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x86.7z'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_x86.7z'
 
 - task: ArchiveFiles@2
   inputs:
     rootFolderOrFile: '$(Pipeline.Workspace)\s\x64\Release' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId)_x64.7z'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_x64.7z'
 
 - task: PublishPipelineArtifact@1
   inputs:
