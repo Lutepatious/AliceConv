@@ -83,5 +83,5 @@ steps:
     command: publish
     publishDirectory: '$(Build.ArtifactStagingDirectory)'
     vstsFeedPublish: 'Lutepatious.AliceConv/AliceConv'
-    vstsFeedPackagePublish: 'AliceConv'
+    vstsFeedPackagePublish: 'aliceconv'
     packagePublishDescription: 'Alicesoft Converter'
