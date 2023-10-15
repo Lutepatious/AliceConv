@@ -6,8 +6,7 @@ N88Splitter
 DATSplitter
 
 1. CG converter.
-VSP2PNG
-MSX2PNG serise
+toPNG
 
 2. Sound Converter
 MAKO2toVGM
