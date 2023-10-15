@@ -24,21 +24,21 @@ steps:
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Pipeline.Workspace)/s' 
+    rootFolderOrFile: '$(Pipeline.Workspace)\s' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_src.7z'
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Pipeline.Workspace)/s/patches' 
+    rootFolderOrFile: '$(Pipeline.Workspace)\s\patches' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_music_bspatches.7z'
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Pipeline.Workspace)/s/docs' 
+    rootFolderOrFile: '$(Pipeline.Workspace)\s\docs' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_docs.7z'
@@ -59,14 +59,14 @@ steps:
     
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Pipeline.Workspace)/s/Release' 
+    rootFolderOrFile: '$(Pipeline.Workspace)\s\Release' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_x86.7z'
 
 - task: ArchiveFiles@2
   inputs:
-    rootFolderOrFile: '$(Pipeline.Workspace)/s/x64/Release' 
+    rootFolderOrFile: '$(Pipeline.Workspace)\s\x64\Release' 
     archiveType: '7z'
     sevenZipCompression: 'ultra'
     archiveFile: '$(Build.ArtifactStagingDirectory)/AliceConv_build$(Build.BuildId)_x64.7z'
