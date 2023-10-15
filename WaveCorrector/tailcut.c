@@ -119,12 +119,12 @@ int wmain(int argc, wchar_t **argv)
 		wprintf_s(L"Data size %ld.\n", waveC2.Subchunk2Size);
 		if (fs.st_size != sizeof(waveH) + sizeof(waveC1) + sizeof (waveC2) + waveC2.Subchunk2Size) {
 			change = 1;
-			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
+			wprintf_s(L"The file %s not match. %zu bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
 		if (waveH.ChunkSize != 4 + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size) {
 			change = 1;
-			wprintf_s(L"The file %s not match. %I64d bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
+			wprintf_s(L"The file %s not match. %zu bytes.\n", *argv, sizeof(waveH) + sizeof(waveC1) + sizeof(waveC2) + waveC2.Subchunk2Size);
 		}
 
 		unsigned __int8* buffer = malloc(waveC2.Subchunk2Size);
