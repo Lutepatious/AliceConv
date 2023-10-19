@@ -152,6 +152,8 @@ int wmain(int argc, wchar_t** argv)
 	int nest = 0;
 	bool encoding_MSX = false;
 	bool debug = false;
+	bool set_menu = false;
+
 	if (argc < 2) {
 		std::wcerr << L"Usage: " << *argv << L" file ..." << std::endl;
 		exit(-1);
@@ -317,9 +319,22 @@ int wmain(int argc, wchar_t** argv)
 				str += slabel;
 			}
 			else if (*src == '$') {
+				if (set_menu) {
+					set_menu = false;
+				}
+				else {
+					int Addr = *(unsigned __int16*)(++src);
+					Labels.push_back(Addr);
+					src++;
+
+					wchar_t slabel[20];
+					swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nLabel%04X ", Addr);
+					str += slabel;
+
+					set_menu = true;
+				}
 			}
 			else {
-//				std::wcout << str << std::endl;
 				std::wcout << *src << L"," << *(src + 1) << L"," << *(src + 2) << L"," << *(src + 3) << std::endl;
 			}
 			src++;
