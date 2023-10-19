@@ -35,10 +35,10 @@ bool is_Little_Vampire_MSX2 = false;
 
 static unsigned __int16 VVal(unsigned __int8** in)
 {
-	unsigned t = *(++ * in);
+	unsigned t = *(++*in);
 	if (t & 0x40) {
 		t = ((t & 0x3F) << 8);
-		t += *(++ * in);
+		t += *(++*in);
 	}
 	else {
 		t &= 0x3F;
@@ -160,15 +160,15 @@ int wmain(int argc, wchar_t** argv)
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'0') {
 				sysver = 0;
+				if (*(*argv + 2) == L'v') {
+					encoding_MSX = true;
+					::is_Little_Vampire_MSX2 = true;
+				}
 			}
 			else if (*(*argv + 1) == L'1') {
 				sysver = 1;
 				if (*(*argv + 2) == L'm') {
 					encoding_MSX = true;
-				}
-				else if (*(*argv + 2) == L'v') {
-					encoding_MSX = true;
-					::is_Little_Vampire_MSX2 = true;
 				}
 			}
 			else if (*(*argv + 1) == L'2') {
@@ -193,6 +193,7 @@ int wmain(int argc, wchar_t** argv)
 		std::wcout << inbuf.size() << std::endl;
 
 		unsigned __int8* src = (unsigned __int8*)&inbuf.at(0);
+		unsigned __int8* src_start = src;
 		unsigned __int8* src_end = (unsigned __int8*)&inbuf.at(inbuf.size() - 1);
 		unsigned __int16 h;
 		if (sysver == 1 || sysver == 2 || sysver == 3) {
@@ -203,7 +204,16 @@ int wmain(int argc, wchar_t** argv)
 		_wsetlocale(LC_ALL, L"ja_JP");
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
 		std::wstring str;
+		std::vector<unsigned __int16> Labels;
 		while (src <= src_end) {
+			for (auto& i : Labels) {
+				if (src - src_start == i) {
+					wchar_t slabel[14];
+					swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nLabel%04X:\n", i);
+					str += slabel;
+				}
+			}
+
 			// !$&@AFGLPQRSUYZ]{}
 			if (encoding_MSX && MSX_GS[*src] != 0) {
 				str.push_back(::MSX_GS[*src]);
@@ -250,11 +260,10 @@ int wmain(int argc, wchar_t** argv)
 				src++;
 			}
 			else if (*src == '!') {
-				str += L"Val";
-				str += InttoDEC(VVal(&src));
-				str += L", ";
-				str += CALI(&src);
-				str.push_back(L'\n');
+				int val = VVal(&src);
+				wchar_t slabel[20];
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Var%d = %s\n", val, CALI(&src).c_str());
+				str += slabel;
 				src++;
 			}
 			else if (*src == 'G') {
@@ -277,6 +286,7 @@ int wmain(int argc, wchar_t** argv)
 				int Addr = *(unsigned __int16*)(++src);
 				src++;
 
+				Labels.push_back(Addr);
 				wchar_t slabel[20];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %u, %u\n", Addr, p0, p1);
 				str += slabel;
@@ -287,6 +297,7 @@ int wmain(int argc, wchar_t** argv)
 				int p0 = *++src;
 				int p1 = *++src;
 				int Addr = *(unsigned __int16*)(++src);
+				Labels.push_back(Addr);
 				src++;
 
 				wchar_t slabel[40];
