@@ -21,6 +21,12 @@ static wchar_t MSX_GS[] = { L" !\"#$%&\'()*+,-./0123456789[]<=>?"
 
 static wchar_t X0201kana[] = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
 
+static wchar_t sei[] = L"うかきくけこさしすせそたちつてとはひふへほウカキクケコサシスセソタチツテトハヒフヘホ";
+static wchar_t daku[] = L"ゔがぎぐげござじずぜぞだぢづでどばびぶべぼヴガギグゲゴザジズゼゾダヂヅデドバビブベボ";
+
+static wchar_t sei_h[] = L"はひふへほハヒフヘホ";
+static wchar_t daku_h[] = L"ぱぴぷぺぽパピプペポ";
+
 static unsigned __int16 Var[512];
 
 enum class VarName {
@@ -30,6 +36,21 @@ enum class VarName {
 	B01, B02, B03, B04, B05, B06, B07, B08, B09, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B20,
 	M_X, M_Y
 };
+
+// https://www.wabiapp.com/WabiSampleSource/windows/replace_string_w.html
+std::wstring ReplaceString(std::wstring target, std::wstring from, std::wstring to)
+{
+	std::wstring::size_type  Pos(target.find(from));
+
+	while (Pos != std::string::npos)
+	{
+		target.replace(Pos, from.length(), to);
+		Pos = target.find(from, Pos + to.length());
+	}
+
+	return target;
+}
+
 
 bool is_Little_Vampire_MSX2 = false;
 
@@ -349,6 +370,21 @@ int wmain(int argc, wchar_t** argv)
 			src++;
 
 		}
+
+		for (size_t i = 0; i < 42; i++) {
+			std::wstring f{ ::sei[i] };
+			std::wstring t{ ::daku[i] };
+			f += L"゛";
+			str = ReplaceString(str, f, t);
+		}
+
+		for (size_t i = 0; i < 10; i++) {
+			std::wstring f{ ::sei_h[i] };
+			std::wstring t{ ::daku_h[i] };
+			f += L"゜";
+			str = ReplaceString(str, f, t);
+		}
+
 		std::wcout << str << std::endl;
 	}
 }
