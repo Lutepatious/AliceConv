@@ -31,6 +31,8 @@ enum class VarName {
 	M_X, M_Y
 };
 
+bool is_Little_Vampire_MSX2 = false;
+
 static unsigned __int16 VVal(unsigned __int8** in)
 {
 	unsigned t = *(++ * in);
@@ -45,7 +47,6 @@ static unsigned __int16 VVal(unsigned __int8** in)
 	return t;
 }
 
-static std::wstring ret_CALI;
 std::wstring CALI(unsigned __int8** in)
 {
 	// import from T.T sys32
@@ -62,9 +63,14 @@ std::wstring CALI(unsigned __int8** in)
 			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"Var%d", ((**in & 0x3F) << 8) | *(++*in));
 			mes.push_back(tstr);
 		}
-		else if ((**in & 0xC0) == 0x00) { // 0x00-0x3F リトルヴァンパイアでは不可 (8bit長?)
+		else if ((**in & 0xC0) == 0x00) {
 			wchar_t tstr[7];
-			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", ((**in & 0x3F) << 8) | *(++*in));
+			if (::is_Little_Vampire_MSX2) {
+				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", (**in & 0x3F));
+			}
+			else {
+				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", ((**in & 0x3F) << 8) | *(++ * in));
+			}
 			mes.push_back(tstr);
 		}
 		else if ((**in & 0xC0) == 0x40) { // 0x40-0x7F
@@ -116,9 +122,7 @@ std::wstring CALI(unsigned __int8** in)
 				mes.push_back(t);
 			}
 			else if (**in == 0x7F) {
-				ret_CALI = *mes.begin();
-
-				return ret_CALI;
+				return *mes.begin();
 			}
 		}
 	}
@@ -140,6 +144,7 @@ static wchar_t* InttoHEX(int val)
 	return a;
 }
 
+
 int wmain(int argc, wchar_t** argv)
 {
 
@@ -160,6 +165,10 @@ int wmain(int argc, wchar_t** argv)
 				sysver = 1;
 				if (*(*argv + 2) == L'm') {
 					encoding_MSX = true;
+				}
+				else if (*(*argv + 2) == L'v') {
+					encoding_MSX = true;
+					::is_Little_Vampire_MSX2 = true;
 				}
 			}
 			else if (*(*argv + 1) == L'2') {
@@ -286,6 +295,9 @@ int wmain(int argc, wchar_t** argv)
 				src++;
 			}
 			else if (*src == '&') {
+				std::wstring A = CALI(&src);
+				str += L"\nJump to page " + A + L".\n";
+				src++;
 			}
 			else {
 //				std::wcout << str << std::endl;
