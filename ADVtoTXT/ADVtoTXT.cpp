@@ -280,16 +280,15 @@ int wmain(int argc, wchar_t** argv)
 				int Addr = *(unsigned __int16*)(++src);
 				src++;
 
-				str += L"if " + A + L" then ";
-
-				wchar_t slabel[20];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %0u, %u\n",  Addr, p0, p1);
-				std::wcout << slabel << std::endl;
+				wchar_t slabel[40];
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"if %s then Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
 				str += slabel;
 				src++;
 			}
+			else if (*src == '&') {
+			}
 			else {
-				std::wcout << str << std::endl;
+//				std::wcout << str << std::endl;
 				std::wcout << *src << L"," << *(src + 1) << L"," << *(src + 2) << L"," << *(src + 3) << std::endl;
 				src++;
 			}
