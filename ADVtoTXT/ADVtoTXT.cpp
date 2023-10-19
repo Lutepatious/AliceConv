@@ -257,7 +257,7 @@ int wmain(int argc, wchar_t** argv)
 			else if (*src == '!') {
 				int val = VVal(&src);
 				wchar_t slabel[20];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Var%d = %s\n", val, CALI(&src).c_str());
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nVar%d = %s\n", val, CALI(&src).c_str());
 				str += slabel;
 			}
 			else if (*src == 'G') {
@@ -265,8 +265,15 @@ int wmain(int argc, wchar_t** argv)
 				str += InttoDEC(*++src);
 				str.push_back(L'\n');
 			}
+			else if (*src == 'Y') {
+				str += L"Extra1: ";
+				str += CALI(&src);
+				str += L", ";
+				str += CALI(&src);
+				str.push_back(L'\n');
+			}
 			else if (*src == 'Z') {
-				str += L"Extra: ";
+				str += L"Extra2: ";
 				str += CALI(&src);
 				str += L", ";
 				str += CALI(&src);
@@ -340,6 +347,13 @@ int wmain(int argc, wchar_t** argv)
 			src++;
 
 		}
+
+
+
+
+
+
+
 
 		std::wcout << str << std::endl;
 	}
