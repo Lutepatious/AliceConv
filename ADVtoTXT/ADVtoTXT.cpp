@@ -211,11 +211,13 @@ int wmain(int argc, wchar_t** argv)
 		while (src <= src_end) {
 			for (auto& i : Labels) {
 				if (src - src_start == i) {
-					wchar_t slabel[14];
+					wchar_t slabel[15];
 					swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nLabel%04X:\n", i);
 					str += slabel;
 				}
 			}
+
+//			std::wcout << std::hex << src - src_start << std::endl;
 
 			// !$&@AFGLPQRSUYZ]{}
 			if (encoding_MSX && MSX_GS[*src] != 0) {
@@ -256,7 +258,7 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*src == '!') {
 				int val = VVal(&src);
-				wchar_t slabel[20];
+				wchar_t slabel[50];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nVar%d = %s\n", val, CALI(&src).c_str());
 				str += slabel;
 			}
@@ -286,7 +288,7 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				wchar_t slabel[20];
+				wchar_t slabel[30];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %u, %u\n", Addr, p0, p1);
 				str += slabel;
 			}
@@ -321,7 +323,7 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				wchar_t slabel[20];
+				wchar_t slabel[22];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Jump to Label%04X\n", Addr);
 				str += slabel;
 			}
@@ -347,16 +349,6 @@ int wmain(int argc, wchar_t** argv)
 			src++;
 
 		}
-
-
-
-
-
-
-
-
 		std::wcout << str << std::endl;
 	}
-
-
 }
