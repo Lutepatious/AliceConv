@@ -149,6 +149,7 @@ int wmain(int argc, wchar_t** argv)
 {
 
 	int sysver = -1;
+	int nest = 0;
 	bool encoding_MSX = false;
 	bool debug = false;
 	if (argc < 2) {
@@ -217,60 +218,50 @@ int wmain(int argc, wchar_t** argv)
 			// !$&@AFGLPQRSUYZ]{}
 			if (encoding_MSX && MSX_GS[*src] != 0) {
 				str.push_back(::MSX_GS[*src]);
-				src++;
 			}
 			else if (*src == 0x20) {
 				str.push_back(*src);
-				src++;
 			}
 			else if (*src >= 0xA0 && *src < 0xE0) {
 				str.push_back(::X0201kana[*src - 0xA0]);
-				src++;
 			}
 			else if (_mbbtype_l(*src, 0, loc_jp) == 1 && _mbbtype_l(*(src + 1), 1, loc_jp) == 2) {
 				wchar_t tmp;
 				int ret = _mbtowc_l(&tmp, (const char*)src, 2, loc_jp);
+				src++;
 
 				if (ret != 2) {
 					std::wcerr << L"character convert failed." << std::endl;
 				}
 				str.push_back(tmp);
-				src += 2;
 			}
 			else if (*src == 'R') {
 				str.push_back('\n');
-				src++;
 			}
 			else if (*src == 'A') {
 				str += L"\nPush any Key.\n";
-				src++;
 			}
 			else if (*src == 'F') {
 				str += L"Return to top.\n";
-				src++;
 			}
 			else if (*src == ']') {
 				str += L"\nOpen Menu.\n";
-				src++;
 			}
 			else if (*src == 'P') {
 				str += L"(Change Text Color:";
 				str += InttoDEC(*++src);
 				str.push_back(L')');
-				src++;
 			}
 			else if (*src == '!') {
 				int val = VVal(&src);
 				wchar_t slabel[20];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Var%d = %s\n", val, CALI(&src).c_str());
 				str += slabel;
-				src++;
 			}
 			else if (*src == 'G') {
 				str += L"Load Graphic ";
 				str += InttoDEC(*++src);
 				str.push_back(L'\n');
-				src++;
 			}
 			else if (*src == 'Z') {
 				str += L"Extra: ";
@@ -278,19 +269,17 @@ int wmain(int argc, wchar_t** argv)
 				str += L", ";
 				str += CALI(&src);
 				str.push_back(L'\n');
-				src++;
 			}
 			else if (*src == '[') {
 				int p0 = *++src;
 				int p1 = *++src;
 				int Addr = *(unsigned __int16*)(++src);
+				Labels.push_back(Addr);
 				src++;
 
-				Labels.push_back(Addr);
 				wchar_t slabel[20];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %u, %u\n", Addr, p0, p1);
 				str += slabel;
-				src++;
 			}
 			else if (*src == ':') {
 				std::wstring A = CALI(&src);
@@ -303,18 +292,37 @@ int wmain(int argc, wchar_t** argv)
 				wchar_t slabel[40];
 				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"if %s then Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
 				str += slabel;
-				src++;
 			}
 			else if (*src == '&') {
-				std::wstring A = CALI(&src);
-				str += L"\nJump to page " + A + L".\n";
+				str += L"\nJump to page " + CALI(&src) + L".\n";
+			}
+			else if (*src == '{') {
+				nest++;
+				str += L"\n{ " + CALI(&src) + L"\n";
+
+			}
+			else if (*src == '}') {
+				if (nest) {
+					nest--;
+				}
+				str += L"\n}\n";
+			}
+			else if (*src == '@') {
+				int Addr = *(unsigned __int16*)(++src);
+				Labels.push_back(Addr);
 				src++;
+
+				wchar_t slabel[20];
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Jump to Label%04X\n", Addr);
+				str += slabel;
+			}
+			else if (*src == '$') {
 			}
 			else {
 //				std::wcout << str << std::endl;
 				std::wcout << *src << L"," << *(src + 1) << L"," << *(src + 2) << L"," << *(src + 3) << std::endl;
-				src++;
 			}
+			src++;
 
 		}
 
