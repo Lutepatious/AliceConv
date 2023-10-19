@@ -12,6 +12,13 @@ enum class decode_mode {
 
 int wmain(int argc, wchar_t** argv)
 {
+	wchar_t path[_MAX_PATH];
+	wchar_t fname[_MAX_FNAME];
+	wchar_t dir[_MAX_DIR];
+	wchar_t drive[_MAX_DRIVE];
+	wchar_t ext[_MAX_EXT];
+	wchar_t fname_new[_MAX_FNAME];
+
 	bool debug = false;
 	if (argc < 2) {
 		std::wcerr << L"Usage: " << *argv << L" file ..." << std::endl;
@@ -420,7 +427,6 @@ int wmain(int argc, wchar_t** argv)
 		case decode_mode::MSX_GS:
 		{
 			wchar_t* t;
-			wchar_t fname[_MAX_FNAME];
 			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
 			size_t n = wcstoull(fname, &t, 10);
 
@@ -464,7 +470,6 @@ int wmain(int argc, wchar_t** argv)
 		case decode_mode::MSX_I:
 		{
 			wchar_t* t;
-			wchar_t fname[_MAX_FNAME];
 			_wsplitpath_s(*argv, NULL, 0, NULL, 0, fname, _MAX_FNAME, NULL, 0);
 			size_t n = wcstoull(fname, &t, 10);
 
@@ -498,8 +503,6 @@ int wmain(int argc, wchar_t** argv)
 
 		case decode_mode::MSX_SG:
 		{
-			wchar_t drive[_MAX_DRIVE], dir[_MAX_DIR], fname[_MAX_FNAME], ext[_MAX_EXT];
-
 			_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, ext, _MAX_EXT);
 
 			if (wcslen(fname) != 8 || !iswdigit(fname[0]) || !iswdigit(fname[1]) || !iswdigit(fname[2]) || !iswdigit(fname[3]) ||
@@ -626,17 +629,11 @@ int wmain(int argc, wchar_t** argv)
 					cout.set_size(PC9801_H, PC9801_V);
 				}
 
-				wchar_t cpath[_MAX_PATH];
-				wchar_t cfname[_MAX_FNAME];
-				wchar_t cfname_new[_MAX_FNAME];
-				wchar_t cdir[_MAX_DIR];
-				wchar_t cdrive[_MAX_DRIVE];
+				_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+				swprintf_s(fname_new, _MAX_FNAME, L"%s_%03zu", fname, a);
+				_wmakepath_s(path, _MAX_PATH, drive, dir, fname_new, L".png");
 
-				_wsplitpath_s(*argv, cdrive, _MAX_DRIVE, cdir, _MAX_DIR, cfname, _MAX_FNAME, NULL, 0);
-				swprintf_s(cfname_new, _MAX_FNAME, L"%s_%03zu", cfname, a);
-				_wmakepath_s(cpath, _MAX_PATH, cdrive, cdir, cfname_new, L".png");
-
-				int result = cout.create(cpath);
+				int result = cout.create(path);
 				if (result) {
 					std::wcerr << L"output failed." << std::endl;
 				}
@@ -668,17 +665,11 @@ int wmain(int argc, wchar_t** argv)
 						cout.set_size(PC9801_H, PC9801_V);
 					}
 
-					wchar_t cpath[_MAX_PATH];
-					wchar_t cfname[_MAX_FNAME];
-					wchar_t cfname_new[_MAX_FNAME];
-					wchar_t cdir[_MAX_DIR];
-					wchar_t cdrive[_MAX_DRIVE];
+					_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+					swprintf_s(fname_new, _MAX_FNAME, L"%s_%03zu", fname, a);
+					_wmakepath_s(path, _MAX_PATH, drive, dir, fname_new, L".png");
 
-					_wsplitpath_s(*argv, cdrive, _MAX_DRIVE, cdir, _MAX_DIR, cfname, _MAX_FNAME, NULL, 0);
-					swprintf_s(cfname_new, _MAX_FNAME, L"%s_%03zu", cfname, a);
-					_wmakepath_s(cpath, _MAX_PATH, cdrive, cdir, cfname_new, L".png");
-
-					int result = cout.create(cpath);
+					int result = cout.create(path);
 					if (result) {
 						std::wcerr << L"output failed." << std::endl;
 					}
@@ -740,13 +731,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else {
 				std::wcerr << L"Unknown or cannot autodetect. " << *argv << std::endl;
-				wchar_t tpath[_MAX_PATH];
-				wchar_t tfname[_MAX_FNAME];
-				wchar_t tdir[_MAX_DIR];
-				wchar_t tdrive[_MAX_DRIVE];
 
-				_wsplitpath_s(*argv, tdrive, _MAX_DRIVE, tdir, _MAX_DIR, tfname, _MAX_FNAME, NULL, 0);
-				_wmakepath_s(tpath, _MAX_PATH, tdrive, tdir, tfname, L".txt");
+				_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+				_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".txt");
 				_wsetlocale(LC_ALL, L"ja_JP");
 
 				size_t len_t = strlen(&inbuf.at(0));
@@ -756,7 +743,7 @@ int wmain(int argc, wchar_t** argv)
 					size_t len_wt;
 					mbstowcs_s(&len_wt, &wt.at(0), wt.size(), &inbuf.at(0), len_t);
 
-					std::wstring fn(tpath);
+					std::wstring fn(path);
 					std::wofstream outfile(fn, std::ios::out | std::ios::binary);
 					outfile.imbue(std::locale("ja_JP.UTF-8"));
 					outfile << &wt.at(0);
@@ -769,11 +756,6 @@ int wmain(int argc, wchar_t** argv)
 		default:
 			break;
 		}
-
-		wchar_t path[_MAX_PATH];
-		wchar_t fname[_MAX_FNAME];
-		wchar_t dir[_MAX_DIR];
-		wchar_t drive[_MAX_DRIVE];
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".png");

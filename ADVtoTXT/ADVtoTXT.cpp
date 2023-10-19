@@ -21,13 +21,22 @@ static wchar_t MSX_GS[] = { L" !\"#$%&\'()*+,-./0123456789[]<=>?"
 
 static wchar_t X0201kana[] = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
 
+static unsigned __int16 Var[512];
 
-static unsigned __int16 VVal(unsigned __int8 **in)
+enum class VarName {
+	RND = 0,
+	D01, D02, D03, D04, D05, D06, D07, D08, D09, D10, D11, D12, D13, D14, D15, D16, D17, D18, D19, D20,
+	U01, U02, U03, U04, U05, U06, U07, U08, U09, U10, U11, U12, U13, U14, U15, U16, U17, U18, U19, U20,
+	B01, B02, B03, B04, B05, B06, B07, B08, B09, B10, B11, B12, B13, B14, B15, B16, B17, B18, B19, B20,
+	M_X, M_Y
+};
+
+static unsigned __int16 VVal(unsigned __int8** in)
 {
-	unsigned t = *(++*in);
+	unsigned t = *(++ * in);
 	if (t & 0x40) {
 		t = ((t & 0x3F) << 8);
-		t += *(++*in);
+		t += *(++ * in);
 	}
 	else {
 		t &= 0x3F;
@@ -36,11 +45,100 @@ static unsigned __int16 VVal(unsigned __int8 **in)
 	return t;
 }
 
-static unsigned __int16 cali(unsigned __int8** in)
+static std::wstring ret_CALI;
+std::wstring CALI(unsigned __int8** in)
 {
+	// import from T.T sys32
+	std::vector<std::wstring> mes;
 
+	while (1) {
+		if ((*(++*in) & 0xC0) == 0x80) { // 0x80-0xBF
+			wchar_t tstr[10];
+			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"Var%d", **in & 0x3F);
+			mes.push_back(tstr);
+		}
+		else if ((**in & 0xC0) == 0xC0) { // 0xC0-0xFF
+			wchar_t tstr[10];
+			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"Var%d", ((**in & 0x3F) << 8) | *(++*in));
+			mes.push_back(tstr);
+		}
+		else if ((**in & 0xC0) == 0x00) { // 0x00-0x3F リトルヴァンパイアでは不可 (8bit長?)
+			wchar_t tstr[7];
+			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", ((**in & 0x3F) << 8) | *(++*in));
+			mes.push_back(tstr);
+		}
+		else if ((**in & 0xC0) == 0x40) { // 0x40-0x7F
+			if (**in < 0x78) {
+				wchar_t tstr[7];
+				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", (**in & 0x3F));
+				mes.push_back(tstr);
+			}
+			else if (**in == 0x78) {
+				std::wstring t = L"(" + * (mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (**in == 0x7F) {
+				ret_CALI = *mes.begin();
+
+				return ret_CALI;
+			}
+		}
+	}
 }
 
+static wchar_t* InttoDEC(int val)
+{
+	static wchar_t a[12] = L"\0";
+	_itow_s(val, a, 10);
+
+	return a;
+}
+
+static wchar_t* InttoHEX(int val)
+{
+	static wchar_t a[9] = L"\0";
+	_itow_s(val, a, 16);
+
+	return a;
+}
 
 int wmain(int argc, wchar_t** argv)
 {
@@ -98,7 +196,6 @@ int wmain(int argc, wchar_t** argv)
 		std::wstring str;
 		while (src <= src_end) {
 			// !$&@AFGLPQRSUYZ]{}
-			std::wcout << *src << std::endl;
 			if (encoding_MSX && MSX_GS[*src] != 0) {
 				str.push_back(::MSX_GS[*src]);
 				src++;
@@ -138,84 +235,62 @@ int wmain(int argc, wchar_t** argv)
 				src++;
 			}
 			else if (*src == 'P') {
-				if (sysver == 1) {
-					str += L"(Change Text Color:";
-					int t = *(src + 1);
-					wchar_t a[10] = L"\0";
-					_itow_s(t, a, 10);
-					str += a;
-					str.push_back(L')');
-					src += 2;
-				}
-				else if (sysver == 2) {
-					str += L"(Change Cursor Color:";
-					int t = *(src + 1);
-					wchar_t a[10] = L"\0";
-					_itow_s(t, a, 10);
-					str += a;
-					str.push_back(L')');
-					src += 2;
-				}
-				else if (sysver == 3) {
-					// incomplete.
-					str += L"(Change Cursor Color:";
-					int t = *(src + 1);
-					wchar_t a[10] = L"\0";
-					_itow_s(t, a, 10);
-					str += a;
-					str.push_back(L')');
-					src += 4;
-				}
+				str += L"(Change Text Color:";
+				str += InttoDEC(*++src);
+				str.push_back(L')');
+				src++;
 			}
 			else if (*src == '!') {
 				str += L"Val";
-				int t = VVal(&src);
-
-				wchar_t a[10] = L"\0";
-				_itow_s(t, a, 10);
-				str += a;
+				str += InttoDEC(VVal(&src));
 				str += L", ";
-
-				int u = *(++src);
-				if (u & 0x40) {
-					u = ((u & 0x3F) << 8);
-					u += *(++src);
-				}
-				else {
-					u &= 0x3F;
-				}
-
-				wchar_t b[10] = L"\0";
-				_itow_s(u, b, 10);
-				str += b;
-
+				str += CALI(&src);
 				str.push_back(L'\n');
+				src++;
 			}
 			else if (*src == 'G') {
 				str += L"Load Graphic ";
-				int t = *(src + 1);
-				wchar_t a[10] = L"\0";
-				_itow_s(t, a, 10);
-				str += a;
-				src += 2;
+				str += InttoDEC(*++src);
 				str.push_back(L'\n');
+				src++;
 			}
 			else if (*src == 'Z') {
-				int sc = *(src + 1) - '@';
 				str += L"Extra: ";
-				wchar_t o[10] = L"\0";
-				_itow_s(sc, o, 10);
-				str += o;
+				str += CALI(&src);
 				str += L", ";
-
-				int t = *(src + 3) - '@';
-				wchar_t a[10] = L"\0";
-				_itow_s(t, a, 10);
-				str += a;
-				src += 5;
+				str += CALI(&src);
 				str.push_back(L'\n');
+				src++;
+			}
+			else if (*src == '[') {
+				int p0 = *++src;
+				int p1 = *++src;
+				int Addr = *(unsigned __int16*)(++src);
+				src++;
+
+				wchar_t slabel[20];
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %u, %u\n", Addr, p0, p1);
+				str += slabel;
+				src++;
+			}
+			else if (*src == ':') {
+				std::wstring A = CALI(&src);
+				int p0 = *++src;
+				int p1 = *++src;
+				int Addr = *(unsigned __int16*)(++src);
+				src++;
+
+				str += L"if " + A + L" then ";
+
+				wchar_t slabel[20];
+				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %0u, %u\n",  Addr, p0, p1);
+				std::wcout << slabel << std::endl;
+				str += slabel;
+				src++;
 			}
 			else {
+				std::wcout << str << std::endl;
+				std::wcout << *src << L"," << *(src + 1) << L"," << *(src + 2) << L"," << *(src + 3) << std::endl;
 				src++;
 			}
 
