@@ -168,12 +168,18 @@ static wchar_t* InttoHEX(int val)
 
 int wmain(int argc, wchar_t** argv)
 {
+	wchar_t path[_MAX_PATH];
+	wchar_t fname[_MAX_FNAME];
+	wchar_t dir[_MAX_DIR];
+	wchar_t drive[_MAX_DRIVE];
+	wchar_t printf_buf[100];
 
 	int sysver = -1;
 	int nest = 0;
 	bool encoding_MSX = false;
 	bool debug = false;
 	bool set_menu = false;
+	bool is_Gakuen_Senki = false;
 
 	if (argc < 2) {
 		std::wcerr << L"Usage: " << *argv << L" file ..." << std::endl;
@@ -193,6 +199,10 @@ int wmain(int argc, wchar_t** argv)
 				sysver = 1;
 				if (*(*argv + 2) == L'm') {
 					encoding_MSX = true;
+				}
+				else if (*(*argv + 2) == L'g') {
+					encoding_MSX = true;
+					is_Gakuen_Senki = true;
 				}
 			}
 			else if (*(*argv + 1) == L'2') {
@@ -232,9 +242,8 @@ int wmain(int argc, wchar_t** argv)
 		while (src <= src_end) {
 			for (auto& i : Labels) {
 				if (src - src_start == i) {
-					wchar_t slabel[15];
-					swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nLabel%04X:\n", i);
-					str += slabel;
+					swprintf_s(printf_buf, 100, L"\nLabel%04X:\n", i);
+					str += printf_buf;
 				}
 			}
 
@@ -267,7 +276,7 @@ int wmain(int argc, wchar_t** argv)
 				str += L"\nPush any Key.\n";
 			}
 			else if (*src == 'F') {
-				str += L"Return to top.\n";
+				str += L"\nReturn to top.\n";
 			}
 			else if (*src == ']') {
 				str += L"\nOpen Menu.\n";
@@ -279,28 +288,36 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*src == '!') {
 				int val = VVal(&src);
-				wchar_t slabel[50];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nVar%d = %s\n", val, CALI(&src).c_str());
-				str += slabel;
+				swprintf_s(printf_buf, 100, L"\nVar%d = %s\n", val, CALI(&src).c_str());
+				str += printf_buf;
 			}
 			else if (*src == 'G') {
-				str += L"Load Graphic ";
+				str += L"\nLoad Graphics ";
 				str += InttoDEC(*++src);
 				str.push_back(L'\n');
 			}
 			else if (*src == 'Y') {
-				str += L"Extra1: ";
-				str += CALI(&src);
-				str += L", ";
-				str += CALI(&src);
-				str.push_back(L'\n');
+				std::wstring sub = CALI(&src);
+				std::wstring p0 = CALI(&src);
+
+				str += L"Extra1: " + sub + L", " + p0 + L"\n";
 			}
 			else if (*src == 'Z') {
-				str += L"Extra2: ";
-				str += CALI(&src);
-				str += L", ";
-				str += CALI(&src);
-				str.push_back(L'\n');
+				std::wstring sub = CALI(&src);
+				std::wstring p0 = CALI(&src);
+
+				wchar_t* t;
+				unsigned __int32 f = wcstoul(sub.c_str(), &t, 10);
+
+				if (is_Gakuen_Senki && f == 1) {
+					unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
+					str += L"\nLoad Graphics ";
+					str += InttoDEC(n + 250);
+					str.push_back(L'\n');
+				}
+				else {
+					str += L"Extra2: " + sub + L", " + p0 + L"\n";
+				}
 			}
 			else if (*src == '[') {
 				int p0 = *++src;
@@ -309,9 +326,8 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				wchar_t slabel[30];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Label%04X %u, %u\n", Addr, p0, p1);
-				str += slabel;
+				swprintf_s(printf_buf, 100, L"\nLabel%04X %u, %u\n", Addr, p0, p1);
+				str += printf_buf;
 			}
 			else if (*src == ':') {
 				std::wstring A = CALI(&src);
@@ -321,9 +337,8 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				wchar_t slabel[40];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"if %s then Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
-				str += slabel;
+				swprintf_s(printf_buf, 100, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
+				str += printf_buf;
 			}
 			else if (*src == '&') {
 				str += L"\nJump to page " + CALI(&src) + L".\n";
@@ -344,9 +359,8 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				wchar_t slabel[22];
-				swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"Jump to Label%04X\n", Addr);
-				str += slabel;
+				swprintf_s(printf_buf, 100, L"\nJump to Label%04X\n", Addr);
+				str += printf_buf;
 			}
 			else if (*src == '$') {
 				if (set_menu) {
@@ -358,8 +372,8 @@ int wmain(int argc, wchar_t** argv)
 					src++;
 
 					wchar_t slabel[20];
-					swprintf_s(slabel, sizeof(slabel) / sizeof(wchar_t), L"\nLabel%04X ", Addr);
-					str += slabel;
+					swprintf_s(printf_buf, 100, L"\nLabel%04X ", Addr);
+					str += printf_buf;
 
 					set_menu = true;
 				}
@@ -385,6 +399,15 @@ int wmain(int argc, wchar_t** argv)
 			str = ReplaceString(str, f, t);
 		}
 
-		std::wcout << str << std::endl;
+		str = ReplaceString(str, L"\n\n", L"\n");
+
+		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
+		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".txt");
+		_wsetlocale(LC_ALL, L"ja_JP");
+		std::wstring fn(path);
+		std::wofstream outfile(fn, std::ios::out | std::ios::binary);
+		outfile.imbue(std::locale("ja_JP.UTF-8"));
+		outfile << str;
+		outfile.close();
 	}
 }
