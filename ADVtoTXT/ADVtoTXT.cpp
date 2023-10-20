@@ -296,6 +296,16 @@ int wmain(int argc, wchar_t** argv)
 				str += InttoDEC(*++src);
 				str.push_back(L'\n');
 			}
+			else if (*src == 'Q') {
+				str += L"\nSave Slot ";
+				str += InttoDEC(*++src);
+				str.push_back(L'\n');
+			}
+			else if (*src == 'L') {
+				str += L"\nLoad Slot ";
+				str += InttoDEC(*++src);
+				str.push_back(L'\n');
+			}
 			else if (*src == 'Y') {
 				std::wstring sub = CALI(&src);
 				std::wstring p0 = CALI(&src);
