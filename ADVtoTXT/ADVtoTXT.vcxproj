@@ -153,6 +153,9 @@
   <ItemGroup>
     <ClCompile Include="ADVtoTXT.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="toTXT.hpp" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

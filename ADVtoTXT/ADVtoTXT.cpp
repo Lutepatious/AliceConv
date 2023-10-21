@@ -52,12 +52,15 @@ std::wstring ReplaceString(std::wstring target, std::wstring from, std::wstring 
 }
 
 
-bool is_Little_Vampire_MSX2 = false;
+int sysver = -1;
 
 static unsigned __int16 VVal(unsigned __int8** in)
 {
 	unsigned t = *(++*in);
-	if (t & 0x40) {
+
+	bool x = (::sysver != 0) && (t & 0x40);
+
+	if (x) {
 		t = ((t & 0x3F) << 8);
 		t += *(++*in);
 	}
@@ -72,32 +75,31 @@ std::wstring CALI(unsigned __int8** in)
 {
 	// import from T.T sys32
 	std::vector<std::wstring> mes;
+	wchar_t tstr[1000];
+	size_t tstr_len = 1000;
+
 
 	while (1) {
 		if ((*(++*in) & 0xC0) == 0x80) { // 0x80-0xBF
-			wchar_t tstr[10];
-			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"Var%d", **in & 0x3F);
+			swprintf_s(tstr, tstr_len, L"Var%d", **in & 0x3F);
 			mes.push_back(tstr);
 		}
 		else if ((**in & 0xC0) == 0xC0) { // 0xC0-0xFF
-			wchar_t tstr[10];
-			swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"Var%d", ((**in & 0x3F) << 8) | *(++*in));
+			swprintf_s(tstr, tstr_len, L"Var%d", ((**in & 0x3F) << 8) | *(++*in));
 			mes.push_back(tstr);
 		}
 		else if ((**in & 0xC0) == 0x00) {
-			wchar_t tstr[7];
-			if (::is_Little_Vampire_MSX2) {
-				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", (**in & 0x3F));
+			if (::sysver == 0) {
+				swprintf_s(tstr, tstr_len, L"%d", (**in & 0x3F));
 			}
 			else {
-				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", ((**in & 0x3F) << 8) | *(++ * in));
+				swprintf_s(tstr, tstr_len, L"%d", ((**in & 0x3F) << 8) | *(++*in));
 			}
 			mes.push_back(tstr);
 		}
 		else if ((**in & 0xC0) == 0x40) { // 0x40-0x7F
 			if (**in < 0x78) {
-				wchar_t tstr[7];
-				swprintf_s(tstr, sizeof(tstr) / sizeof(wchar_t), L"%d", (**in & 0x3F));
+				swprintf_s(tstr, tstr_len, L"%d", (**in & 0x3F));
 				mes.push_back(tstr);
 			}
 			else if (**in == 0x78) {
@@ -149,32 +151,15 @@ std::wstring CALI(unsigned __int8** in)
 	}
 }
 
-static wchar_t* InttoDEC(int val)
-{
-	static wchar_t a[12] = L"\0";
-	_itow_s(val, a, 10);
-
-	return a;
-}
-
-static wchar_t* InttoHEX(int val)
-{
-	static wchar_t a[9] = L"\0";
-	_itow_s(val, a, 16);
-
-	return a;
-}
-
-
 int wmain(int argc, wchar_t** argv)
 {
 	wchar_t path[_MAX_PATH];
 	wchar_t fname[_MAX_FNAME];
 	wchar_t dir[_MAX_DIR];
 	wchar_t drive[_MAX_DRIVE];
-	wchar_t printf_buf[100];
+	wchar_t printf_buf[1000];
+	wchar_t printf_buf_len = 1000;
 
-	int sysver = -1;
 	int nest = 0;
 	bool encoding_MSX = false;
 	bool debug = false;
@@ -192,7 +177,6 @@ int wmain(int argc, wchar_t** argv)
 				sysver = 0;
 				if (*(*argv + 2) == L'v') {
 					encoding_MSX = true;
-					::is_Little_Vampire_MSX2 = true;
 				}
 			}
 			else if (*(*argv + 1) == L'1') {
@@ -239,11 +223,13 @@ int wmain(int argc, wchar_t** argv)
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
 		std::wstring str;
 		std::vector<unsigned __int16> Labels;
-		while (src <= src_end) {
+		while (src <= src_end && (*src != 0x1A || encoding_MSX) ) {
+			bool Label = false;
 			for (auto& i : Labels) {
-				if (src - src_start == i) {
-					swprintf_s(printf_buf, 100, L"\nLabel%04X:\n", i);
+				if (src - src_start == i && !Label) {
+					swprintf_s(printf_buf, printf_buf_len, L"\nLabel%04X:\n", i);
 					str += printf_buf;
+					Label = true;
 				}
 			}
 
@@ -283,34 +269,49 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*src == 'P') {
 				str += L"(Change Text Color:";
-				str += InttoDEC(*++src);
+				str += std::to_wstring(*++src);
 				str.push_back(L')');
 			}
 			else if (*src == '!') {
 				int val = VVal(&src);
-				swprintf_s(printf_buf, 100, L"\nVar%d = %s\n", val, CALI(&src).c_str());
+				swprintf_s(printf_buf, printf_buf_len, L"\nVar%d = %s\n", val, CALI(&src).c_str());
 				str += printf_buf;
 			}
 			else if (*src == 'G') {
 				str += L"\nLoad Graphics ";
-				str += InttoDEC(*++src);
+				str += std::to_wstring(*++src);
 				str.push_back(L'\n');
 			}
-			else if (*src == 'Q') {
-				str += L"\nSave Slot ";
-				str += InttoDEC(*++src);
+			else if (*src == 'U') {
+				str += L"\nLoad Graphics ";
+				str += std::to_wstring(*++src);
+				str += L", Transparent ";
+				str += std::to_wstring(*++src);
 				str.push_back(L'\n');
+			}
+			else if (*src == 'S') {
+				str += L"\nLoad Sound ";
+				str += std::to_wstring(*++src);
+				str.push_back(L'\n');
+			}
+			else if (*src == 'Q' && ::sysver != 0) {
+				str += L"\nSave Slot ";
+				str += std::to_wstring(*++src);
+				str.push_back(L'\n');
+			}
+			else if (*src == 'Q' && ::sysver == 0) {
+				str += L"\nSave\n";
 			}
 			else if (*src == 'L') {
 				str += L"\nLoad Slot ";
-				str += InttoDEC(*++src);
+				str += std::to_wstring(*++src);
 				str.push_back(L'\n');
 			}
 			else if (*src == 'Y') {
 				std::wstring sub = CALI(&src);
 				std::wstring p0 = CALI(&src);
 
-				str += L"Extra1: " + sub + L", " + p0 + L"\n";
+				str += L"\nExtra1: " + sub + L", " + p0 + L"\n";
 			}
 			else if (*src == 'Z') {
 				std::wstring sub = CALI(&src);
@@ -322,11 +323,11 @@ int wmain(int argc, wchar_t** argv)
 				if (is_Gakuen_Senki && f == 1) {
 					unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
 					str += L"\nLoad Graphics ";
-					str += InttoDEC(n + 250);
+					str += std::to_wstring(n + 250);
 					str.push_back(L'\n');
 				}
 				else {
-					str += L"Extra2: " + sub + L", " + p0 + L"\n";
+					str += L"\nExtra2: " + sub + L", " + p0 + L"\n";
 				}
 			}
 			else if (*src == '[') {
@@ -336,7 +337,7 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				swprintf_s(printf_buf, 100, L"\nLabel%04X %u, %u\n", Addr, p0, p1);
+				swprintf_s(printf_buf, printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p0, p1);
 				str += printf_buf;
 			}
 			else if (*src == ':') {
@@ -347,7 +348,7 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				swprintf_s(printf_buf, 100, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
+				swprintf_s(printf_buf, printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
 				str += printf_buf;
 			}
 			else if (*src == '&') {
@@ -369,7 +370,7 @@ int wmain(int argc, wchar_t** argv)
 				Labels.push_back(Addr);
 				src++;
 
-				swprintf_s(printf_buf, 100, L"\nJump to Label%04X\n", Addr);
+				swprintf_s(printf_buf, printf_buf_len, L"\nJump to Label%04X\n", Addr);
 				str += printf_buf;
 			}
 			else if (*src == '$') {
@@ -381,14 +382,16 @@ int wmain(int argc, wchar_t** argv)
 					Labels.push_back(Addr);
 					src++;
 
-					wchar_t slabel[20];
-					swprintf_s(printf_buf, 100, L"\nLabel%04X ", Addr);
+					swprintf_s(printf_buf, printf_buf_len, L"\nLabel%04X ", Addr);
 					str += printf_buf;
 
 					set_menu = true;
 				}
 			}
 			else {
+				if (*src == 0x1A && *(src + 1) == 0 && *(src + 2) == 0 && *(src + 3) == 0) {
+					break;
+				}
 				std::wcout << *src << L"," << *(src + 1) << L"," << *(src + 2) << L"," << *(src + 3) << std::endl;
 			}
 			src++;
