@@ -58,9 +58,9 @@ static unsigned __int16 VVal(unsigned __int8** in)
 {
 	unsigned t = *(++*in);
 
-	bool x = (::sysver != 0) && (t & 0x40);
-
-	if (x) {
+	if (::sysver == 0) {
+	}
+	else if (t & 0x40) {
 		t = ((t & 0x3F) << 8);
 		t += *(++*in);
 	}
@@ -90,7 +90,7 @@ std::wstring CALI(unsigned __int8** in)
 		}
 		else if ((**in & 0xC0) == 0x00) {
 			if (::sysver == 0) {
-				swprintf_s(tstr, tstr_len, L"%d", (**in & 0x3F));
+				swprintf_s(tstr, tstr_len, L"%d", (**in));
 			}
 			else {
 				swprintf_s(tstr, tstr_len, L"%d", ((**in & 0x3F) << 8) | *(++*in));
@@ -99,7 +99,11 @@ std::wstring CALI(unsigned __int8** in)
 		}
 		else if ((**in & 0xC0) == 0x40) { // 0x40-0x7F
 			if (**in < 0x78) {
-				swprintf_s(tstr, tstr_len, L"%d", (**in & 0x3F));
+				int t = **in;
+				if (::sysver != 0) {
+					t &= 0x3F;
+				}
+				swprintf_s(tstr, tstr_len, L"%d", t);
 				mes.push_back(tstr);
 			}
 			else if (**in == 0x78) {
@@ -295,17 +299,20 @@ int wmain(int argc, wchar_t** argv)
 				str.push_back(L'\n');
 			}
 			else if (*src == 'Q' && ::sysver != 0) {
-				str += L"\nSave Slot ";
+				str += L"\nSave Playdata Slot ";
 				str += std::to_wstring(*++src);
 				str.push_back(L'\n');
 			}
 			else if (*src == 'Q' && ::sysver == 0) {
-				str += L"\nSave\n";
+				str += L"\nSave Playdata\n";
 			}
-			else if (*src == 'L') {
+			else if (*src == 'L' && ::sysver != 0) {
 				str += L"\nLoad Slot ";
 				str += std::to_wstring(*++src);
 				str.push_back(L'\n');
+			}
+			else if (*src == 'L' && ::sysver == 0) {
+				str += L"\nLoad Playdata\n";
 			}
 			else if (*src == 'Y') {
 				std::wstring sub = CALI(&src);
