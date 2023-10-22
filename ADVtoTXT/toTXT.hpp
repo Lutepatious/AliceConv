@@ -273,31 +273,6 @@ public:
 			else if (*this->src == 'Z') { // Extra2
 				str += this->command_Z();
 			}
-
-#if 0
-			else if (*src == 'Z') {
-				std::wstring sub = CALI(&src);
-				std::wstring p0 = CALI(&src);
-
-				wchar_t* t;
-				unsigned __int32 f = wcstoul(sub.c_str(), &t, 10);
-
-				if (is_Gakuen_Senki && f == 1) {
-					unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
-					str += L"\nLoad Graphics ";
-					str += std::to_wstring(n + 250);
-					str.push_back(L'\n');
-				}
-				else {
-					str += L"\nExtra2: " + sub + L", " + p0 + L"\n";
-				}
-			}
-#endif
-
-
-
-
-
 			else {
 				std::wcout << *this->src << L"," << *(this->src + 1) << L"," << *(this->src + 2) << L"," << *(this->src + 3) << std::endl;
 			}
@@ -332,7 +307,7 @@ class toTXT0 : toTXT {
 			}
 			else { // 0x00-0x7F
 				if (*this->src < 0x78) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", **in);
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", *this->src);
 					mes.push_back(this->printf_buf);
 				}
 				else if (*this->src == 0x78) {
@@ -544,6 +519,7 @@ class toTXT1 : toTXT {
 
 	std::wstring command_Z(void)
 	{
+		std::wstring ret;
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
 
@@ -554,16 +530,16 @@ class toTXT1 : toTXT {
 			if (f == 1) {
 				unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLoad Graphics %s, %d\n", sub.c_str(), n + 250);
-				std::wstring ret{ this->printf_buf };
+				ret = this->printf_buf;
 			}
 			else {
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
-				std::wstring ret{ this->printf_buf };
+				ret = this->printf_buf;
 			}
 		}
 		else {
 			swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
-			std::wstring ret{ this->printf_buf };
+			ret = this->printf_buf;
 		}
 		return ret;
 	}
