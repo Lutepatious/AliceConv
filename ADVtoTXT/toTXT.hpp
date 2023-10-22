@@ -407,7 +407,7 @@ class toTXT0 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %\n", sub.c_str(), p0.c_str());
+		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %s\n", sub.c_str(), p0.c_str());
 		std::wstring ret{ this->printf_buf };
 		return ret;
 	}
@@ -416,7 +416,7 @@ class toTXT0 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %\n", sub.c_str(), p0.c_str());
+		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
 		std::wstring ret{ this->printf_buf };
 		return ret;
 	}
@@ -537,7 +537,7 @@ class toTXT1 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %\n", sub.c_str(), p0.c_str());
+		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %s\n", sub.c_str(), p0.c_str());
 		std::wstring ret{ this->printf_buf };
 		return ret;
 	}
@@ -546,10 +546,32 @@ class toTXT1 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %\n", sub.c_str(), p0.c_str());
-		std::wstring ret{ this->printf_buf };
+
+		if (this->is_GakuenSenkiMSX) {
+			wchar_t* t;
+			unsigned __int32 f = wcstoul(sub.c_str(), &t, 10);
+
+			if (f == 1) {
+				unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLoad Graphics %s, %d\n", sub.c_str(), n + 250);
+				std::wstring ret{ this->printf_buf };
+			}
+			else {
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
+				std::wstring ret{ this->printf_buf };
+			}
+		}
+		else {
+			swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
+			std::wstring ret{ this->printf_buf };
+		}
 		return ret;
 	}
+
+
+public:
+	bool is_GakuenSenkiMSX = false;
+
 };
 
 
