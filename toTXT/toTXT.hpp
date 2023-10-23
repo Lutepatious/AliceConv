@@ -89,12 +89,19 @@ class toTXT {
 		if (this->encoding_MSX && *(unsigned __int32*)this->src == 0x1A) {
 			return true;
 		}
-		else if (*this->src == 0x1A || *(unsigned __int32*)this->src == 0) {
+		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0) {
+			return true;
+		}
+		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0x02020102) {
+			return true;
+		}
+		else if (!this->encoding_MSX && *this->src == 0x1A) {
 			return true;
 		}
 		return false;
 	}
 
+	virtual unsigned __int16 get_16(void) = 0;
 	virtual unsigned __int16 VL_Value(void) = 0;
 	virtual std::wstring CALI(void) = 0;
 	virtual std::wstring command_Q(void) = 0; // Save Playdata
@@ -118,7 +125,7 @@ public:
 		this->encoding_MSX = enc;
 	}
 
-	void decode()
+	std::wstring decode(void)
 	{
 		int nest = 0;
 		bool set_menu = false;
@@ -127,6 +134,9 @@ public:
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
 		std::wstring str;
 		std::vector<unsigned __int16> Labels;
+		unsigned __int16 Val = this->get_16();
+		swprintf_s(this->printf_buf, this->printf_buf_len, L"Condition 0x%04X\n", Val);
+		str += this->printf_buf;
 
 		while (this->src < this->src_end && !this->is_end()) {
 			bool Label = false;
@@ -279,10 +289,15 @@ public:
 			this->src++;
 		}
 
+		return CleanUpString(str);
 	}
 };
 
-class toTXT0 : toTXT {
+class toTXT0 : public toTXT {
+	unsigned __int16 get_16(void)
+	{
+		return 0;
+	}
 
 	unsigned __int16 VL_Value(void)
 	{
@@ -382,8 +397,7 @@ class toTXT0 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %s\n", sub.c_str(), p0.c_str());
-		std::wstring ret{ this->printf_buf };
+		std::wstring ret = L"\nExtra1 " + sub + L", " + p0 + L"\n";
 		return ret;
 	}
 
@@ -391,14 +405,19 @@ class toTXT0 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
-		std::wstring ret{ this->printf_buf };
+		std::wstring ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
 		return ret;
 	}
 
 };
 
-class toTXT1 : toTXT {
+class toTXT1 : public toTXT {
+	unsigned __int16 get_16(void)
+	{
+		unsigned __int16 val = *(unsigned __int16*)(this->src);
+		this->src += 2;
+		return val;
+	}
 
 	unsigned __int16 VL_Value(void)
 	{
@@ -512,8 +531,7 @@ class toTXT1 : toTXT {
 	{
 		std::wstring sub = CALI();
 		std::wstring p0 = CALI();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra1 %s, %s\n", sub.c_str(), p0.c_str());
-		std::wstring ret{ this->printf_buf };
+		std::wstring ret = L"\nExtra1 " + sub + L", " + p0 + L"\n";
 		return ret;
 	}
 
@@ -524,22 +542,16 @@ class toTXT1 : toTXT {
 		std::wstring p0 = CALI();
 
 		if (this->is_GakuenSenkiMSX) {
-			wchar_t* t;
-			unsigned __int32 f = wcstoul(sub.c_str(), &t, 10);
-
+			unsigned __int32 f = std::stoul(sub);
 			if (f == 1) {
-				unsigned __int32 n = wcstoul(p0.c_str(), &t, 10);
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLoad Graphics %s, %d\n", sub.c_str(), n + 250);
-				ret = this->printf_buf;
+				ret = L"\nExtra2 " + sub + L", " + std::to_wstring(std::stoul(p0) + 250) + L"\n";
 			}
 			else {
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
-				ret = this->printf_buf;
+				ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
 			}
 		}
 		else {
-			swprintf_s(this->printf_buf, this->printf_buf_len, L"\nExtra2 %s, %s\n", sub.c_str(), p0.c_str());
-			ret = this->printf_buf;
+			ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
 		}
 		return ret;
 	}
