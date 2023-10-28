@@ -186,55 +186,57 @@ public:
 			}
 
 			else if (*this->src == 'G') {
-				str += L"\nLoad Graphics ";
-				str += std::to_wstring(*++this->src);
-				str.push_back(L'\n');
+				auto p1 = std::to_wstring(*++this->src);
+				str += L"\nLoad Graphics " + p1 + L"\n";
 			}
 			else if (*this->src == 'U') {
-				str += L"\nLoad Graphics ";
-				str += std::to_wstring(*++this->src);
-				str += L", Transparent ";
-				str += std::to_wstring(*++this->src);
-				str.push_back(L'\n');
+				auto p1 = std::to_wstring(*++this->src);
+				auto p2 = std::to_wstring(*++this->src);
+				str += L"\nLoad Graphics " + p1 +  L", Transparent " + p2 + L"\n";
 			}
 			else if (*this->src == 'S') {
-				str += L"\nLoad Sound ";
-				str += std::to_wstring(*++this->src);
-				str.push_back(L'\n');
+				auto p1 = std::to_wstring(*++this->src);
+				str += L"\nLoad Sound " + p1 + L"\n";
+			}
+			else if (*this->src == 'X') {
+				auto p1 = std::to_wstring(*++this->src);
+				str += L"(Put $"+ p1 + L")";
 			}
 
 			else if (*src == '!') {
-				int val = this->VL_Value();
-				swprintf_s(printf_buf, printf_buf_len, L"\nVar%d = %s\n", val, this->CALI().c_str());
-				str += printf_buf;
+				auto p1 = std::to_wstring(this->VL_Value());
+				auto p2 = this->CALI();
+				str += L"\nVar" + p1 + L" = " + p2 + L"\n";
 			}
 			else if (*this->src == '[') {
-				int p0 = *++this->src;
-				int p1 = *++this->src;
-				int Addr = *(unsigned __int16*)(++this->src);
+				auto p1 = *++this->src;
+				auto p2 = *++this->src;
+				auto Addr = *(unsigned __int16*)(++this->src);
 				Labels.push_back(Addr);
 				this->src++;
 
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p0, p1);
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p1, p2);
 				str += this->printf_buf;
 			}
 			else if (*src == ':') {
 				std::wstring A = this->CALI();
-				int p0 = *++this->src;
-				int p1 = *++this->src;
+				int p2 = *++this->src;
+				int p3 = *++this->src;
 				int Addr = *(unsigned __int16*)(++this->src);
 				Labels.push_back(Addr);
 				this->src++;
 
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p0, p1);
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p2, p3);
 				str += this->printf_buf;
 			}
 			else if (*this->src == '&') {
-				str += L"\nJump to page " + this->CALI() + L".\n";
+				std::wstring A = this->CALI();
+				str += L"\nJump to page " + A + L".\n";
 			}
 			else if (*this->src == '{') {
 				nest++;
-				str += L"\n{ " + this->CALI() + L"\n";
+				std::wstring A = this->CALI();
+				str += L"\n" + A + L" {\n";
 
 			}
 			else if (*this->src == '}') {
@@ -312,7 +314,8 @@ class toTXT0 : public toTXT {
 			if (*++this->src & 0x80) {
 				unsigned t;
 				if ((*this->src & 0x40)) { // 0xC0-0xFF
-					t = ((*this->src & 0x3F) << 8) | *++this->src;
+					t = (*this->src & 0x3F) << 8;
+					t += *++this->src;
 				}
 				else { // 0x80-0xBF
 					t = *this->src & 0x3F;
@@ -388,24 +391,24 @@ class toTXT0 : public toTXT {
 
 	std::wstring command_P(void)
 	{
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"(Change Text Color:%d)", *++this->src);
-		std::wstring ret{ this->printf_buf };
+		auto p1 = std::to_wstring(*++this->src);
+		std::wstring ret = L"(Set Color #" + p1 + L")";
 		return ret;
 	}
 
 	std::wstring command_Y(void)
 	{
-		std::wstring sub = CALI();
-		std::wstring p0 = CALI();
-		std::wstring ret = L"\nExtra1 " + sub + L", " + p0 + L"\n";
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_Z(void)
 	{
-		std::wstring sub = CALI();
-		std::wstring p0 = CALI();
-		std::wstring ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
 		return ret;
 	}
 
@@ -424,7 +427,7 @@ class toTXT1 : public toTXT {
 		unsigned t = *++this->src;
 
 		if ((t & 0x40)) {
-			t = ((t & 0x3F) << 8);
+			t = (t & 0x3F) << 8;
 			t += *++this->src;
 		}
 		else {
@@ -445,11 +448,15 @@ class toTXT1 : public toTXT {
 				mes.push_back(this->printf_buf);
 			}
 			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", ((*this->src & 0x3F) << 8) | *++this->src);
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
 				mes.push_back(this->printf_buf);
 			}
 			else if ((*this->src & 0xC0) == 0x00) {
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", ((*this->src & 0x3F) << 8) | *++this->src);
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
 				mes.push_back(this->printf_buf);
 			}
 			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
@@ -508,50 +515,50 @@ class toTXT1 : public toTXT {
 
 	std::wstring command_Q(void)
 	{
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nSave Playdata %d\n", *++this->src);
-		std::wstring ret{ this->printf_buf };
+		auto p1 = std::to_wstring(*++this->src);
+		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_L(void)
 	{
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLoad Playdata %d\n", *++this->src);
-		std::wstring ret{ this->printf_buf };
+		auto p1 = std::to_wstring(*++this->src);
+		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_P(void)
 	{
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"(Change Text Color:%d)", *++this->src);
-		std::wstring ret{ this->printf_buf };
+		auto p1 = std::to_wstring(*++this->src);
+		std::wstring ret = L"(Set Color #" + p1 + L")";
 		return ret;
 	}
 
 	std::wstring command_Y(void)
 	{
-		std::wstring sub = CALI();
-		std::wstring p0 = CALI();
-		std::wstring ret = L"\nExtra1 " + sub + L", " + p0 + L"\n";
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_Z(void)
 	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
 		std::wstring ret;
-		std::wstring sub = CALI();
-		std::wstring p0 = CALI();
 
 		if (this->is_GakuenSenkiMSX) {
-			unsigned __int32 f = std::stoul(sub);
+			unsigned __int32 f = std::stoul(p1);
 			if (f == 1) {
-				ret = L"\nExtra2 " + sub + L", " + std::to_wstring(std::stoul(p0) + 250) + L"\n";
+				ret = L"\nLoad Graphics " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
 			}
 			else {
-				ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
+				ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
 			}
 		}
 		else {
-			ret = L"\nExtra2 " + sub + L", " + p0 + L"\n";
+			ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
 		}
 		return ret;
 	}
