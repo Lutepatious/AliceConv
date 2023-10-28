@@ -117,6 +117,19 @@ protected:
 	wchar_t printf_buf[1000] = { 0 };
 	wchar_t printf_buf_len = 1000;
 
+	unsigned __int16 get_byte(void)
+	{
+		return *++this->src;
+	}
+
+	unsigned __int16 get_word(void)
+	{
+		unsigned __int16 ret = *(unsigned __int16*)(++this->src);
+		this->src++;
+
+		return ret;
+	}
+
 public:
 	void init(std::vector<__int8>& s, bool enc = false)
 	{
@@ -186,20 +199,20 @@ public:
 			}
 
 			else if (*this->src == 'G') {
-				auto p1 = std::to_wstring(*++this->src);
+				auto p1 = std::to_wstring(this->get_byte());
 				str += L"\nLoad Graphics " + p1 + L"\n";
 			}
 			else if (*this->src == 'U') {
-				auto p1 = std::to_wstring(*++this->src);
-				auto p2 = std::to_wstring(*++this->src);
+				auto p1 = std::to_wstring(this->get_byte());
+				auto p2 = std::to_wstring(this->get_byte());
 				str += L"\nLoad Graphics " + p1 +  L", Transparent " + p2 + L"\n";
 			}
 			else if (*this->src == 'S') {
-				auto p1 = std::to_wstring(*++this->src);
+				auto p1 = std::to_wstring(this->get_byte());
 				str += L"\nLoad Sound " + p1 + L"\n";
 			}
 			else if (*this->src == 'X') {
-				auto p1 = std::to_wstring(*++this->src);
+				auto p1 = std::to_wstring(this->get_byte());
 				str += L"(Put $"+ p1 + L")";
 			}
 
@@ -209,22 +222,20 @@ public:
 				str += L"\nVar" + p1 + L" = " + p2 + L"\n";
 			}
 			else if (*this->src == '[') {
-				auto p1 = *++this->src;
-				auto p2 = *++this->src;
-				auto Addr = *(unsigned __int16*)(++this->src);
+				auto p1 = this->get_byte();
+				auto p2 = this->get_byte();
+				auto Addr = this->get_word();
 				Labels.push_back(Addr);
-				this->src++;
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p1, p2);
 				str += this->printf_buf;
 			}
 			else if (*src == ':') {
 				std::wstring A = this->CALI();
-				int p2 = *++this->src;
-				int p3 = *++this->src;
-				int Addr = *(unsigned __int16*)(++this->src);
+				auto p2 = this->get_byte();
+				auto p3 = this->get_byte();
+				auto Addr = this->get_word();
 				Labels.push_back(Addr);
-				this->src++;
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p2, p3);
 				str += this->printf_buf;
@@ -246,9 +257,8 @@ public:
 				str += L"\n}\n";
 			}
 			else if (*this->src == '@') {
-				int Addr = *(unsigned __int16*)(++src);
+				int Addr = this->get_word();
 				Labels.push_back(Addr);
-				this->src++;
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
 				str += this->printf_buf;
@@ -258,9 +268,8 @@ public:
 					set_menu = false;
 				}
 				else {
-					int Addr = *(unsigned __int16*)(++this->src);
+					int Addr = this->get_word();
 					Labels.push_back(Addr);
-					this->src++;
 
 					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X ", Addr);
 					str += this->printf_buf;
@@ -391,7 +400,7 @@ class toTXT0 : public toTXT {
 
 	std::wstring command_P(void)
 	{
-		auto p1 = std::to_wstring(*++this->src);
+		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"(Set Color #" + p1 + L")";
 		return ret;
 	}
@@ -515,21 +524,21 @@ class toTXT1 : public toTXT {
 
 	std::wstring command_Q(void)
 	{
-		auto p1 = std::to_wstring(*++this->src);
+		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_L(void)
 	{
-		auto p1 = std::to_wstring(*++this->src);
+		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_P(void)
 	{
-		auto p1 = std::to_wstring(*++this->src);
+		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"(Set Color #" + p1 + L")";
 		return ret;
 	}
