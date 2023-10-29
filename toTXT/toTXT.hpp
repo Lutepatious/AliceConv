@@ -89,16 +89,33 @@ class toTXT {
 	bool encoding_MSX = false;
 	bool is_end(void)
 	{
+//		unsigned __int16 h = *(unsigned __int16*)this->src_start;
+
 		if (this->encoding_MSX && *(unsigned __int32*)this->src == 0x1A) {
+//			unsigned __int16 len = this->src - this->src_start;
+//			if (h != len - 1) {
+//				std::wcerr << L"Header is not length" << std::endl;
+//			}
+
 			return true;
 		}
 		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0) {
+//			unsigned __int16 len = this->src - this->src_start;
+//			if (h != len - 1) {
+//				std::wcerr << L"Header is not length" << std::endl;
+//			}
+
 			return true;
 		}
 		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0x02020102) {
 			return true;
 		}
 		else if (!this->encoding_MSX && *this->src == 0x1A) {
+//			unsigned __int16 len = this->src - this->src_start;
+//			if (h != len - 1) {
+//				std::wcerr << L"Header is not length" << std::endl;
+//			}
+
 			return true;
 		}
 		return false;
@@ -108,6 +125,14 @@ class toTXT {
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	virtual std::wstring command_U(void) // Load Graphics
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		auto p2 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
 		return ret;
 	}
 
@@ -263,11 +288,6 @@ public:
 				decoded_command.second = L"\nOpen Menu.\n";
 			}
 
-			else if (*this->src == 'U') {
-				auto p1 = std::to_wstring(this->get_byte());
-				auto p2 = std::to_wstring(this->get_byte());
-				decoded_command.second = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
-			}
 			else if (*this->src == 'S') {
 				auto p1 = std::to_wstring(this->get_byte());
 				decoded_command.second = L"\nLoad Sound " + p1 + L"\n";
@@ -340,6 +360,9 @@ public:
 			// System Dependent Functions
 			else if (*this->src == 'G') { // Load Graphics
 				decoded_command.second = this->command_G();
+			}
+			else if (*this->src == 'U') {
+				decoded_command.second = this->command_U();
 			}
 			else if (*this->src == 'B') {
 				decoded_command.second = this->command_G();
@@ -771,10 +794,74 @@ class toTXT2 : public toTXT {
 		}
 	}
 
+	std::wstring command_B(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring p7 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+	std::wstring command_D(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring p7 = CALI();
+		std::wstring p8 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+	std::wstring command_E(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+	std::wstring command_H(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+	std::wstring command_I(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+	std::wstring command_J(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret;
+		return ret;
+	}
+
 	std::wstring command_G(void) // Load Graphics
 	{
 		std::wstring p1 = CALI();
 		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_U(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
 		return ret;
 	}
 
