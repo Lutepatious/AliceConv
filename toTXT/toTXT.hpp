@@ -5,9 +5,11 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <utility>
 #include <cwchar>
 #include <climits>
 #include <mbstring.h>
+#include <mbctype.h>
 
 enum class VarName {
 	RND = 0,
@@ -116,6 +118,7 @@ protected:
 	unsigned __int8* src_end = nullptr;
 	wchar_t printf_buf[1000] = { 0 };
 	wchar_t printf_buf_len = 1000;
+	const wchar_t* text_color[8] = { L"(Black)", L"(Blue)", L"(Red)", L"(Magenta)", L"(Green)", L"(Cyan)", L"(Yellow)", L"(White)" };
 
 	unsigned __int16 get_byte(void)
 	{
@@ -140,6 +143,8 @@ public:
 
 	std::wstring decode(void)
 	{
+		std::vector<std::pair<unsigned __int16, std::wstring>> decoded_commands;
+		std::pair<unsigned __int16, std::wstring> decoded_command;
 		int nest = 0;
 		bool set_menu = false;
 
@@ -149,29 +154,27 @@ public:
 		std::vector<unsigned __int16> Labels;
 		unsigned __int16 Val = this->get_16();
 		swprintf_s(this->printf_buf, this->printf_buf_len, L"Condition 0x%04X\n", Val);
-		str += this->printf_buf;
+
+		decoded_command.first = 0;
+		decoded_command.second = this->printf_buf;
+		decoded_commands.push_back(decoded_command);
 
 		while (this->src < this->src_end && !this->is_end()) {
-			bool Label = false;
-			for (auto& i : Labels) {
-				if (this->src - this->src_start == i && !Label) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X:\n", i);
-					str += this->printf_buf;
-					Label = true;
-				}
-			}
+			unsigned __int16 Address = this->src - this->src_start;
+			decoded_command.first = Address;
+			decoded_command.second.empty();
 
 			// Output Characters
 			if (this->encoding_MSX && this->MSX_char_table[*this->src] != 0) {
-				str.push_back(this->MSX_char_table[*this->src]);
+				decoded_command.second = this->MSX_char_table[*this->src];
 			}
 			else if (*this->src == 0x20) {
-				str.push_back(*this->src);
+				decoded_command.second = *this->src;
 			}
-			else if (*this->src >= 0xA0 && *this->src < 0xE0) {
-				str.push_back(this->X0201kana_table[*this->src - 0xA0]);
+			else if (_ismbbkana_l(*this->src, loc_jp)) {
+				decoded_command.second = this->X0201kana_table[*this->src - 0xA0];
 			}
-			else if (_mbbtype_l(*this->src, 0, loc_jp) == 1 && _mbbtype_l(*(this->src + 1), 1, loc_jp) == 2) {
+			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
 				wchar_t tmp;
 				int ret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
 				this->src++;
@@ -179,47 +182,47 @@ public:
 				if (ret != 2) {
 					std::wcerr << L"character convert failed." << std::endl;
 				}
-				str.push_back(tmp);
+				decoded_command.second = tmp;
 			}
 
 			// Output Texts
 			else if (*this->src == 'R') {
-				str.push_back('\n');
+				decoded_command.second = L"\n";
 			}
 			else if (*this->src == 'A') {
-				str += L"\nPush any Key.\n";
+				decoded_command.second = L"\nHit any Key.\n";
 			}
 
 
 			else if (*this->src == 'F') {
-				str += L"\nReturn to top.\n";
+				decoded_command.second = L"\nReturn to top.\n";
 			}
 			else if (*this->src == ']') {
-				str += L"\nOpen Menu.\n";
+				decoded_command.second = L"\nOpen Menu.\n";
 			}
 
 			else if (*this->src == 'G') {
 				auto p1 = std::to_wstring(this->get_byte());
-				str += L"\nLoad Graphics " + p1 + L"\n";
+				decoded_command.second = L"\nLoad Graphics " + p1 + L"\n";
 			}
 			else if (*this->src == 'U') {
 				auto p1 = std::to_wstring(this->get_byte());
 				auto p2 = std::to_wstring(this->get_byte());
-				str += L"\nLoad Graphics " + p1 +  L", Transparent " + p2 + L"\n";
+				decoded_command.second = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
 			}
 			else if (*this->src == 'S') {
 				auto p1 = std::to_wstring(this->get_byte());
-				str += L"\nLoad Sound " + p1 + L"\n";
+				decoded_command.second = L"\nLoad Sound " + p1 + L"\n";
 			}
 			else if (*this->src == 'X') {
 				auto p1 = std::to_wstring(this->get_byte());
-				str += L"(Put $"+ p1 + L")";
+				decoded_command.second = L"(Print $" + p1 + L")";
 			}
 
 			else if (*src == '!') {
 				auto p1 = std::to_wstring(this->VL_Value());
 				auto p2 = this->CALI();
-				str += L"\nVar" + p1 + L" = " + p2 + L"\n";
+				decoded_command.second = L"\nVar" + p1 + L" = " + p2 + L"\n";
 			}
 			else if (*this->src == '[') {
 				auto p1 = this->get_byte();
@@ -228,7 +231,7 @@ public:
 				Labels.push_back(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p1, p2);
-				str += this->printf_buf;
+				decoded_command.second = this->printf_buf;
 			}
 			else if (*src == ':') {
 				std::wstring A = this->CALI();
@@ -238,30 +241,29 @@ public:
 				Labels.push_back(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p2, p3);
-				str += this->printf_buf;
+				decoded_command.second = this->printf_buf;
 			}
 			else if (*this->src == '&') {
 				std::wstring A = this->CALI();
-				str += L"\nJump to page " + A + L".\n";
+				decoded_command.second = L"\nJump to page " + A + L".\n";
 			}
 			else if (*this->src == '{') {
 				nest++;
 				std::wstring A = this->CALI();
-				str += L"\n" + A + L" {\n";
-
+				decoded_command.second = L"\n" + A + L" {\n";
 			}
 			else if (*this->src == '}') {
 				if (nest) {
 					nest--;
 				}
-				str += L"\n}\n";
+				decoded_command.second = L"\n}\n";
 			}
 			else if (*this->src == '@') {
 				int Addr = this->get_word();
 				Labels.push_back(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
-				str += this->printf_buf;
+				decoded_command.second = this->printf_buf;
 			}
 			else if (*this->src == '$') {
 				if (set_menu) {
@@ -272,33 +274,48 @@ public:
 					Labels.push_back(Addr);
 
 					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X ", Addr);
-					str += this->printf_buf;
-
+					decoded_command.second = this->printf_buf;
 					set_menu = true;
 				}
 			}
 
 			// System Dependent Functions
 			else if (*this->src == 'Q') { // Save Playdata
-				str += this->command_Q();
+				decoded_command.second = this->command_Q();
 			}
 			else if (*this->src == 'L') { // Load Playdata
-				str += this->command_L();
+				decoded_command.second = this->command_L();
 			}
 			else if (*this->src == 'P') { // Change Text Color
-				str += this->command_P();
+				decoded_command.second = this->command_P();
 			}
 			else if (*this->src == 'Y') { // Extra1
-				str += this->command_Y();
+				decoded_command.second = this->command_Y();
 			}
 			else if (*this->src == 'Z') { // Extra2
-				str += this->command_Z();
+				decoded_command.second = this->command_Z();
 			}
 			else {
-				std::wcout << *this->src << L"," << *(this->src + 1) << L"," << *(this->src + 2) << L"," << *(this->src + 3) << std::endl;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *this->src, *(this->src + 1), *(this->src + 2), *(this->src + 3));
+				std::wcout << decoded_command.second;
 			}
+			decoded_commands.push_back(decoded_command);
 			this->src++;
 		}
+
+		for (auto& i : decoded_commands) {
+			bool Label = false;
+			for (auto& j : Labels) {
+				if (i.first == j && !Label) {
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X:\n", j);
+					str += this->printf_buf;
+					Label = true;
+				}
+			}
+
+			str += i.second;
+		}
+
 
 		return CleanUpString(str);
 	}
@@ -400,8 +417,9 @@ class toTXT0 : public toTXT {
 
 	std::wstring command_P(void)
 	{
-		auto p1 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"(Set Color #" + p1 + L")";
+		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		auto p1 = this->get_byte();
+		std::wstring ret = this->text_color[p1];
 		return ret;
 	}
 
@@ -538,8 +556,9 @@ class toTXT1 : public toTXT {
 
 	std::wstring command_P(void)
 	{
-		auto p1 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"(Set Color #" + p1 + L")";
+		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		auto p1 = this->get_byte();
+		std::wstring ret = this->text_color[p1];
 		return ret;
 	}
 
