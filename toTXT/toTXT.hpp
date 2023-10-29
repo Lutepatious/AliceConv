@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <string>
 #include <vector>
+#include <set>
 #include <utility>
 #include <cwchar>
 #include <climits>
@@ -103,12 +104,26 @@ class toTXT {
 		return false;
 	}
 
+	virtual std::wstring command_G(void) // Load Graphics
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	virtual std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		auto p1 = this->get_byte();
+		std::wstring ret = this->text_color[p1];
+		return ret;
+	}
+
 	virtual unsigned __int16 get_16(void) = 0;
 	virtual unsigned __int16 VL_Value(void) = 0;
 	virtual std::wstring CALI(void) = 0;
 	virtual std::wstring command_Q(void) = 0; // Save Playdata
 	virtual std::wstring command_L(void) = 0; // Load Playdata
-	virtual std::wstring command_P(void) = 0; // Change Text Color
 	virtual std::wstring command_Y(void) = 0; // Extra1
 	virtual std::wstring command_Z(void) = 0; // Extra2
 
@@ -151,7 +166,7 @@ public:
 		_wsetlocale(LC_ALL, L"ja_JP");
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
 		std::wstring str;
-		std::vector<unsigned __int16> Labels;
+		std::set<unsigned __int16> Labels;
 		unsigned __int16 Val = this->get_16();
 		swprintf_s(this->printf_buf, this->printf_buf_len, L"Condition 0x%04X\n", Val);
 
@@ -202,8 +217,7 @@ public:
 			}
 
 			else if (*this->src == 'G') {
-				auto p1 = std::to_wstring(this->get_byte());
-				decoded_command.second = L"\nLoad Graphics " + p1 + L"\n";
+				decoded_command.second = this->command_G();
 			}
 			else if (*this->src == 'U') {
 				auto p1 = std::to_wstring(this->get_byte());
@@ -228,7 +242,7 @@ public:
 				auto p1 = this->get_byte();
 				auto p2 = this->get_byte();
 				auto Addr = this->get_word();
-				Labels.push_back(Addr);
+				Labels.insert(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p1, p2);
 				decoded_command.second = this->printf_buf;
@@ -238,7 +252,7 @@ public:
 				auto p2 = this->get_byte();
 				auto p3 = this->get_byte();
 				auto Addr = this->get_word();
-				Labels.push_back(Addr);
+				Labels.insert(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p2, p3);
 				decoded_command.second = this->printf_buf;
@@ -260,7 +274,7 @@ public:
 			}
 			else if (*this->src == '@') {
 				int Addr = this->get_word();
-				Labels.push_back(Addr);
+				Labels.insert(Addr);
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
 				decoded_command.second = this->printf_buf;
@@ -271,7 +285,7 @@ public:
 				}
 				else {
 					int Addr = this->get_word();
-					Labels.push_back(Addr);
+					Labels.insert(Addr);
 
 					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X ", Addr);
 					decoded_command.second = this->printf_buf;
@@ -286,7 +300,7 @@ public:
 			else if (*this->src == 'L') { // Load Playdata
 				decoded_command.second = this->command_L();
 			}
-			else if (*this->src == 'P') { // Change Text Color
+			else if (*this->src == 'P') { // Set Text Color
 				decoded_command.second = this->command_P();
 			}
 			else if (*this->src == 'Y') { // Extra1
@@ -297,6 +311,7 @@ public:
 			}
 			else {
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *this->src, *(this->src + 1), *(this->src + 2), *(this->src + 3));
+				decoded_command.second = this->printf_buf;
 				std::wcout << decoded_command.second;
 			}
 			decoded_commands.push_back(decoded_command);
@@ -304,12 +319,10 @@ public:
 		}
 
 		for (auto& i : decoded_commands) {
-			bool Label = false;
 			for (auto& j : Labels) {
-				if (i.first == j && !Label) {
+				if (i.first == j) {
 					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X:\n", j);
 					str += this->printf_buf;
-					Label = true;
 				}
 			}
 
@@ -415,14 +428,6 @@ class toTXT0 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_P(void)
-	{
-		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
-		auto p1 = this->get_byte();
-		std::wstring ret = this->text_color[p1];
-		return ret;
-	}
-
 	std::wstring command_Y(void)
 	{
 		std::wstring p1 = CALI();
@@ -440,6 +445,162 @@ class toTXT0 : public toTXT {
 	}
 
 };
+
+class toTXT2 : public toTXT {
+	unsigned __int16 get_16(void)
+	{
+		unsigned __int16 val = *(unsigned __int16*)(this->src);
+		this->src += 2;
+		return val;
+	}
+
+	unsigned __int16 VL_Value(void)
+	{
+		unsigned t = *++this->src;
+
+		if ((t & 0x40)) {
+			t = (t & 0x3F) << 8;
+			t += *++this->src;
+		}
+		else {
+			t &= 0x3F;
+		}
+
+		return t;
+	}
+
+	std::wstring CALI(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+
+		while (1) {
+			if ((*++this->src & 0xC0) == 0x80) { // 0x80-0xBF
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x00) {
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
+				if (*this->src < 0x78) {
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+					mes.push_back(this->printf_buf);
+				}
+				else if (*this->src == 0x78) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x79) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7A) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7B) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7C) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7D) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7E) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7F) {
+					return *mes.begin();
+				}
+			}
+		}
+	}
+
+	std::wstring command_G(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Q(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_L(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Y(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Z(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret;
+
+		if (this->is_GakuenSenkiMSX) {
+			unsigned __int32 f = std::stoul(p1);
+			if (f == 1) {
+				ret = L"\nLoad Graphics " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
+			}
+			else {
+				ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+			}
+		}
+		else {
+			ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+		}
+		return ret;
+	}
+
+
+public:
+	bool is_GakuenSenkiMSX = false;
+
+};
+
 
 class toTXT1 : public toTXT {
 	unsigned __int16 get_16(void)
@@ -551,14 +712,6 @@ class toTXT1 : public toTXT {
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_P(void)
-	{
-		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
-		auto p1 = this->get_byte();
-		std::wstring ret = this->text_color[p1];
 		return ret;
 	}
 

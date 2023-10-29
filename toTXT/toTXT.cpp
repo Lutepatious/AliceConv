@@ -57,6 +57,7 @@ int wmain(int argc, wchar_t** argv)
 
 		toTXT0 sys0;
 		toTXT1 sys1;
+		toTXT2 sys2;
 		std::wstring out;
 
 		if (sysver == 0) {
@@ -72,11 +73,16 @@ int wmain(int argc, wchar_t** argv)
 			out = sys1.decode();
 		}
 
+		else if (sysver == 2) {
+			sys2.init(inbuf);
+			out = sys2.decode();
+		}
+
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".txt");
 		_wsetlocale(LC_ALL, L"ja_JP");
 		std::wstring fn(path);
-		std::wofstream outfile(fn, std::ios::out | std::ios::binary);
+		std::wofstream outfile(fn, std::ios::out);
 		outfile.imbue(std::locale("ja_JP.UTF-8"));
 		outfile << out;
 		outfile.close();
