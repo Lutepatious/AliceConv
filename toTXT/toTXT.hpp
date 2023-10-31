@@ -89,21 +89,21 @@ class toTXT {
 	bool encoding_MSX = false;
 	bool is_end(void)
 	{
-//		unsigned __int16 h = *(unsigned __int16*)this->src_start;
+		//		unsigned __int16 h = *(unsigned __int16*)this->src_start;
 
 		if (this->encoding_MSX && *(unsigned __int32*)this->src == 0x1A) {
-//			unsigned __int16 len = this->src - this->src_start;
-//			if (h != len - 1) {
-//				std::wcerr << L"Header is not length" << std::endl;
-//			}
+			//			unsigned __int16 len = this->src - this->src_start;
+			//			if (h != len - 1) {
+			//				std::wcerr << L"Header is not length" << std::endl;
+			//			}
 
 			return true;
 		}
 		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0) {
-//			unsigned __int16 len = this->src - this->src_start;
-//			if (h != len - 1) {
-//				std::wcerr << L"Header is not length" << std::endl;
-//			}
+			//			unsigned __int16 len = this->src - this->src_start;
+			//			if (h != len - 1) {
+			//				std::wcerr << L"Header is not length" << std::endl;
+			//			}
 
 			return true;
 		}
@@ -111,10 +111,10 @@ class toTXT {
 			return true;
 		}
 		else if (!this->encoding_MSX && *this->src == 0x1A) {
-//			unsigned __int16 len = this->src - this->src_start;
-//			if (h != len - 1) {
-//				std::wcerr << L"Header is not length" << std::endl;
-//			}
+			//			unsigned __int16 len = this->src - this->src_start;
+			//			if (h != len - 1) {
+			//				std::wcerr << L"Header is not length" << std::endl;
+			//			}
 
 			return true;
 		}
@@ -185,7 +185,37 @@ class toTXT {
 		return ret;
 	}
 
+	virtual std::wstring command_M(void)
+	{
+		std::wstring ret;
+		return ret;
+	}
+
+	virtual std::wstring command_N(void)
+	{
+		std::wstring ret;
+		return ret;
+	}
+
+	virtual std::wstring command_O(void)
+	{
+		std::wstring ret;
+		return ret;
+	}
+
 	virtual std::wstring command_T(void)
+	{
+		std::wstring ret;
+		return ret;
+	}
+
+	virtual std::wstring command_V(void)
+	{
+		std::wstring ret;
+		return ret;
+	}
+
+	virtual std::wstring command_W(void)
 	{
 		std::wstring ret;
 		return ret;
@@ -230,10 +260,12 @@ public:
 
 	std::wstring decode(void)
 	{
+		bool debug = false;
 		std::vector<std::pair<unsigned __int16, std::wstring>> decoded_commands;
 		std::pair<unsigned __int16, std::wstring> decoded_command;
 		int nest = 0;
 		bool set_menu = false;
+		bool in_M = false;
 
 		_wsetlocale(LC_ALL, L"ja_JP");
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
@@ -249,14 +281,19 @@ public:
 		while (this->src < this->src_end && !this->is_end()) {
 			unsigned __int16 Address = this->src - this->src_start;
 			decoded_command.first = Address;
-			decoded_command.second.empty();
+			decoded_command.second.clear();
+
+			if (debug) {
+				swprintf_s(printf_buf, printf_buf_len, L"%04X", Address);
+				std::wcout << printf_buf << std::endl;
+			}
 
 			// Output Characters
 			if (this->encoding_MSX && this->MSX_char_table[*this->src] != 0) {
 				decoded_command.second = this->MSX_char_table[*this->src];
 			}
-			else if (*this->src == 0x20) {
-				decoded_command.second = *this->src;
+			else if (*this->src == ' ') {
+				decoded_command.second = L" ";
 			}
 			else if (_ismbbkana_l(*this->src, loc_jp)) {
 				decoded_command.second = this->X0201kana_table[*this->src - 0xA0];
@@ -270,6 +307,13 @@ public:
 					std::wcerr << L"character convert failed." << std::endl;
 				}
 				decoded_command.second = tmp;
+			}
+
+			else if (in_M && *this->src == ':') {
+				in_M = false;
+				decoded_command.second = L")";
+			}
+			else if (in_M && *this->src == '\'') {
 			}
 
 			// Output Texts
@@ -365,25 +409,32 @@ public:
 				decoded_command.second = this->command_U();
 			}
 			else if (*this->src == 'B') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_B();
 			}
 			else if (*this->src == 'D') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_D();
 			}
 			else if (*this->src == 'E') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_E();
 			}
 			else if (*this->src == 'H') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_H();
 			}
 			else if (*this->src == 'I') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_I();
 			}
 			else if (*this->src == 'J') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_J();
 			}
 			else if (*this->src == 'K') {
-				decoded_command.second = this->command_G();
+				decoded_command.second = this->command_K();
+			}
+			else if (*this->src == 'M') {
+				decoded_command.second = this->command_M();
+				in_M = true;
+			}
+			else if (*this->src == 'O') {
+				decoded_command.second = this->command_O();
 			}
 			else if (*this->src == 'Q') { // Save Playdata
 				decoded_command.second = this->command_Q();
@@ -394,14 +445,23 @@ public:
 			else if (*this->src == 'P') { // Set Text Color
 				decoded_command.second = this->command_P();
 			}
-			else if (*this->src == 'T') { // 
-				decoded_command.second = this->command_T();
-			}
 			else if (*this->src == 'Y') { // Extra1
 				decoded_command.second = this->command_Y();
 			}
 			else if (*this->src == 'Z') { // Extra2
 				decoded_command.second = this->command_Z();
+			}
+			else if (*this->src == 'T') { // Save What?
+				decoded_command.second = this->command_T();
+			}
+			else if (*this->src == 'N') {
+				decoded_command.second = this->command_N();
+			}
+			else if (*this->src == 'V') {
+				decoded_command.second = this->command_V();
+			}
+			else if (*this->src == 'W') {
+				decoded_command.second = this->command_W();
 			}
 			else {
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *this->src, *(this->src + 1), *(this->src + 2), *(this->src + 3));
@@ -803,7 +863,7 @@ class toTXT2 : public toTXT {
 		std::wstring p5 = CALI();
 		std::wstring p6 = CALI();
 		std::wstring p7 = CALI();
-		std::wstring ret;
+		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L"\n";
 		return ret;
 	}
 	std::wstring command_D(void)
@@ -816,37 +876,121 @@ class toTXT2 : public toTXT {
 		std::wstring p6 = CALI();
 		std::wstring p7 = CALI();
 		std::wstring p8 = CALI();
-		std::wstring ret;
+		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L", " + p8 + L"\n";
 		return ret;
 	}
+
 	std::wstring command_E(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring ret;
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
 	}
-	std::wstring command_H(void)
-	{
-		auto p1 = get_byte();
-		std::wstring p2 = CALI();
-		std::wstring ret;
-		return ret;
-	}
+
 	std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret;
+		auto p3 = get_byte();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + std::to_wstring(p3) + L"\n";
 		return ret;
 	}
+
 	std::wstring command_J(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
-		std::wstring ret;
+		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+
+	std::wstring command_N(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_T(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_O(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_M(void)
+	{
+		std::wstring ret = L"\n(";
+		return ret;
+	}
+
+	std::wstring command_H(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"(";
+		while (p1--) {
+			ret += L"#";
+		}
+		ret += L"," + p2 + L")";
+		return ret;
+	}
+
+	std::wstring command_V(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nV " + std::to_wstring(p1) + L", " + p2;
+		if (p1) {
+			std::wstring p3[28];
+
+			for (size_t i = 0; i < 28; i++) {
+				p3[i] = CALI();
+			}
+
+			for (size_t i = 0; i < 28; i++) {
+				ret += L", " + p3[i];
+			}
+		}
+		else {
+			std::pair<unsigned __int16, unsigned __int16> p3[28];
+
+			for (size_t i = 0; i < 28; i++) {
+				p3[i].first = VL_Value();
+				p3[i].second = get_byte();
+			}
+
+			for (size_t i = 0; i < 28; i++) {
+				ret += L", Var" + std::to_wstring(p3[i].first) + L" = " + std::to_wstring(p3[i].second);
+			}
+		}
+
+		ret += L"\n";
+		return ret;
+	}
+
+	std::wstring command_W(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring ret = L"\nMask (" + p1 + L"," + p2 + L") - (" + p3 + L"," + p4 + L")\n";
 		return ret;
 	}
 
@@ -865,6 +1009,13 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
+	virtual std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		auto p1 = this->get_byte();
+		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
+		return ret;
+	}
 	std::wstring command_Q(void)
 	{
 		auto p1 = std::to_wstring(this->get_byte());
@@ -876,15 +1027,6 @@ class toTXT2 : public toTXT {
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_T(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret;
 		return ret;
 	}
 
