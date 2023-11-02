@@ -17,6 +17,7 @@ int wmain(int argc, wchar_t** argv)
 	int sysver = -1;
 	bool encoding_MSX = false;
 	bool is_GakuenSenki = false;
+	bool is_DALK = false;
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'0') {
@@ -37,6 +38,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'2') {
 				sysver = 2;
+				if (*(*argv + 2) == L'd') {
+					is_DALK = true;
+				}
 			}
 			else if (*(*argv + 1) == L'3') {
 				sysver = 3;
@@ -55,17 +59,16 @@ int wmain(int argc, wchar_t** argv)
 		std::vector<__int8> inbuf{ std::istreambuf_iterator<__int8>(infile), std::istreambuf_iterator<__int8>() };
 		infile.close();
 
-		toTXT0 sys0;
-		toTXT1 sys1;
-		toTXT2 sys2;
 		std::wstring out;
 
 		if (sysver == 0) {
+			toTXT0 sys0;
 			sys0.init(inbuf, encoding_MSX);
 			out = sys0.decode();
 		}
 
 		else if (sysver == 1) {
+			toTXT1 sys1;
 			sys1.init(inbuf, encoding_MSX);
 			if (is_GakuenSenki) {
 				sys1.is_GakuenSenkiMSX = true;
@@ -74,8 +77,16 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		else if (sysver == 2) {
-			sys2.init(inbuf);
-			out = sys2.decode();
+			if (is_DALK) {
+				toTXT2d sys2;
+				sys2.init(inbuf);
+				out = sys2.decode();
+			}
+			else {
+				toTXT2 sys2;
+				sys2.init(inbuf);
+				out = sys2.decode();
+			}
 		}
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);

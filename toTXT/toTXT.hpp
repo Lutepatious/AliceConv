@@ -772,88 +772,6 @@ class toTXT2 : public toTXT {
 		return t;
 	}
 
-	std::wstring CALI(void)
-	{
-		// import from T.T sys32
-		std::vector<std::wstring> mes;
-
-		while (1) {
-			if ((*++this->src & 0xC0) == 0x80) { // 0x80-0xBF
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
-				if (*this->src < 0x77) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-					mes.push_back(this->printf_buf);
-				}
-				else if (*this->src == 0x77) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x78) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x79) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7A) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7B) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7C) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7D) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7E) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7F) {
-					return *mes.begin();
-				}
-			}
-		}
-	}
-
 	std::wstring command_B(void)
 	{
 		std::wstring p1 = CALI();
@@ -889,7 +807,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_I(void)
+	virtual std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1009,7 +927,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_P(void) // Set Text Color
+	std::wstring command_P(void) // Set Text Color
 	{
 		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
 		auto p1 = this->get_byte();
@@ -1048,10 +966,100 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-
 public:
+	std::wstring CALI(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+
+		while (1) {
+			if ((*++this->src & 0xC0) == 0x80) { // 0x80-0xBF
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x00) {
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
+				if (*this->src < 0x77) {
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+					mes.push_back(this->printf_buf);
+				}
+				else if (*this->src == 0x77) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x78) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x79) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7A) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7B) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7C) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7D) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7E) {
+					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+					mes.pop_back();
+					mes.pop_back();
+					mes.push_back(t);
+				}
+				else if (*this->src == 0x7F) {
+					return *mes.begin();
+				}
+			}
+		}
+	}
+
 
 };
 
-
+class toTXT2d : public toTXT2 {
+	virtual std::wstring command_I(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+};
 #endif
