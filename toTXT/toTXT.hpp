@@ -35,9 +35,6 @@ class toTXT {
 		L"タチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン゛゜"
 		L"たちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん\x0000\x0000";
 
-	// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
-	const wchar_t* X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
-
 	// 清音濁音変換テーブル
 	const wchar_t* seion = L"うかきくけこさしすせそたちつてとはひふへほウカキクケコサシスセソタチツテトハヒフヘホ";
 	const wchar_t* dakuon = L"ゔがぎぐげござじずぜぞだぢづでどばびぶべぼヴガギグゲゴザジズゼゾダヂヅデドバビブベボ";
@@ -262,6 +259,7 @@ protected:
 	wchar_t printf_buf_len = 1000;
 	const wchar_t* text_color[8] = { L"(Black)", L"(Blue)", L"(Red)", L"(Magenta)", L"(Green)", L"(Cyan)", L"(Yellow)", L"(White)" };
 
+
 	unsigned __int16 get_byte(void)
 	{
 		return *++this->src;
@@ -276,6 +274,9 @@ protected:
 	}
 
 public:
+	// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
+	const wchar_t* X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
+
 	void init(std::vector<__int8>& s, bool enc = false)
 	{
 		this->src_start = this->src = (unsigned __int8*)&*s.begin();
@@ -290,7 +291,6 @@ public:
 		std::pair<unsigned __int16, std::wstring> decoded_command;
 		int nest = 0;
 		bool set_menu = false;
-		bool in_M = false;
 
 		_wsetlocale(LC_ALL, L"ja_JP");
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
@@ -314,27 +314,6 @@ public:
 			}
 
 			// Output Characters
-#if 0
-			if (this->encoding_MSX && this->MSX_char_table[*this->src] != 0) {
-				decoded_command.second = this->MSX_char_table[*this->src];
-			}
-			else if (*this->src == ' ') {
-				decoded_command.second = L" ";
-			}
-			else if (_ismbbkana_l(*this->src, loc_jp)) {
-				decoded_command.second = this->X0201kana_table[*this->src - 0xA0];
-			}
-			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				wchar_t tmp;
-				int ret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
-				this->src++;
-
-				if (ret != 2) {
-					std::wcerr << L"character convert failed." << std::endl;
-				}
-				decoded_command.second = tmp;
-			}
-#endif
 			decoded_command.second = this->get_string();
 			decoded_commands.push_back(decoded_command);
 
@@ -345,13 +324,6 @@ public:
 			if (debug) {
 				swprintf_s(printf_buf, printf_buf_len, L"%04X", Address);
 				std::wcout << printf_buf << std::endl;
-			}
-
-			if (in_M && *this->src == ':') {
-				in_M = false;
-				decoded_command.second = L")";
-			}
-			else if (in_M && *this->src == '\'') {
 			}
 
 			// Output Texts
@@ -469,7 +441,6 @@ public:
 			}
 			else if (*this->src == 'M') {
 				decoded_command.second = this->command_M();
-				in_M = true;
 			}
 			else if (*this->src == 'O') {
 				decoded_command.second = this->command_O();
@@ -891,7 +862,39 @@ class toTXT2 : public toTXT {
 
 	std::wstring command_M(void)
 	{
+		this->src++;
 		std::wstring ret = L"\n(";
+		_wsetlocale(LC_ALL, L"ja_JP");
+		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+		while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+			if (*this->src == ' ') {
+				ret += L" ";
+				this->src++;
+			}
+			else if (_ismbbkana_l(*this->src, loc_jp)) {
+				ret += this->X0201kana_table[*this->src - 0xA0];
+				this->src++;
+			}
+			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				wchar_t tmp;
+				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+				if (nret != 2) {
+					std::wcerr << L"character convert failed." << std::endl;
+				}
+				ret += tmp;
+				this->src += 2;
+			}
+		}
+
+		if (*this->src == '\'') {
+			ret += L"'";
+			this->src++;
+		}
+
+		if (*this->src == ':') {
+			ret += L")";
+		}
 		return ret;
 	}
 
