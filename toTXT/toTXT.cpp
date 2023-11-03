@@ -61,6 +61,11 @@ int wmain(int argc, wchar_t** argv)
 
 		std::wstring out;
 
+		// MSX版ではEOFが途中でも現れるため、その後にNULが3バイト続くことを想定しているが、ファイル末端にEOFが来る事もあるので3バイトのNULを付加。
+		if (encoding_MSX) {
+			inbuf.insert(inbuf.end(), 3, 0);
+		}
+
 		if (sysver == 0) {
 			toTXT0 sys0;
 			sys0.init(inbuf, encoding_MSX);

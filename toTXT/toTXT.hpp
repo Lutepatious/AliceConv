@@ -89,36 +89,61 @@ class toTXT {
 	bool encoding_MSX = false;
 	bool is_end(void)
 	{
-		//		unsigned __int16 h = *(unsigned __int16*)this->src_start;
-
-		if (this->encoding_MSX && *(unsigned __int32*)this->src == 0x1A) {
-			//			unsigned __int16 len = this->src - this->src_start;
-			//			if (h != len - 1) {
-			//				std::wcerr << L"Header is not length" << std::endl;
-			//			}
-
+		if (this->encoding_MSX) {
+			if (*(unsigned __int32*)this->src == 0x1A) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+		else if (*(unsigned __int32*)this->src == 0) {
 			return true;
 		}
-		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0) {
-			//			unsigned __int16 len = this->src - this->src_start;
-			//			if (h != len - 1) {
-			//				std::wcerr << L"Header is not length" << std::endl;
-			//			}
-
+		else if (*(unsigned __int32*)this->src == 0x02020102) {
 			return true;
 		}
-		else if (!this->encoding_MSX && *(unsigned __int32*)this->src == 0x02020102) {
-			return true;
-		}
-		else if (!this->encoding_MSX && *this->src == 0x1A) {
-			//			unsigned __int16 len = this->src - this->src_start;
-			//			if (h != len - 1) {
-			//				std::wcerr << L"Header is not length" << std::endl;
-			//			}
-
+		else if (*this->src == 0x1A) {
 			return true;
 		}
 		return false;
+	}
+
+	std::wstring get_string(void)
+	{
+		std::wstring ret;
+
+		if (this->encoding_MSX) {
+			while (this->MSX_char_table[*this->src] != 0) {
+				ret += MSX_char_table[*this->src];
+				this->src++;
+			}
+		}
+		else {
+			_wsetlocale(LC_ALL, L"ja_JP");
+			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				if (*this->src == ' ') {
+					ret += L" ";
+					this->src++;
+				}
+				else if (_ismbbkana_l(*this->src, loc_jp)) {
+					ret += this->X0201kana_table[*this->src - 0xA0];
+					this->src++;
+				}
+				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+					wchar_t tmp;
+					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+					if (nret != 2) {
+						std::wcerr << L"character convert failed." << std::endl;
+					}
+					ret += tmp;
+					this->src += 2;
+				}
+			}
+		}
+		return ret;
 	}
 
 	virtual std::wstring command_G(void) // Load Graphics
@@ -289,6 +314,7 @@ public:
 			}
 
 			// Output Characters
+#if 0
 			if (this->encoding_MSX && this->MSX_char_table[*this->src] != 0) {
 				decoded_command.second = this->MSX_char_table[*this->src];
 			}
@@ -308,8 +334,20 @@ public:
 				}
 				decoded_command.second = tmp;
 			}
+#endif
+			decoded_command.second = this->get_string();
+			decoded_commands.push_back(decoded_command);
 
-			else if (in_M && *this->src == ':') {
+			Address = this->src - this->src_start;
+			decoded_command.first = Address;
+			decoded_command.second.clear();
+
+			if (debug) {
+				swprintf_s(printf_buf, printf_buf_len, L"%04X", Address);
+				std::wcout << printf_buf << std::endl;
+			}
+
+			if (in_M && *this->src == ':') {
 				in_M = false;
 				decoded_command.second = L")";
 			}
@@ -470,7 +508,7 @@ public:
 			}
 			decoded_commands.push_back(decoded_command);
 			this->src++;
-		}
+			}
 
 		for (auto& i : decoded_commands) {
 			for (auto& j : Labels) {
@@ -485,8 +523,8 @@ public:
 
 
 		return CleanUpString(str);
-	}
-};
+		}
+	};
 
 class toTXT0 : public toTXT {
 	unsigned __int16 get_16(void)
