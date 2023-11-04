@@ -479,7 +479,7 @@ public:
 			}
 			decoded_commands.push_back(decoded_command);
 			this->src++;
-			}
+		}
 
 		for (auto& i : decoded_commands) {
 			for (auto& j : Labels) {
@@ -494,8 +494,8 @@ public:
 
 
 		return CleanUpString(str);
-		}
-	};
+	}
+};
 
 class toTXT0 : public toTXT {
 	unsigned __int16 get_16(void)
@@ -512,8 +512,50 @@ class toTXT0 : public toTXT {
 	{
 		// import from T.T sys32
 		std::vector<std::wstring> mes;
-		while (1) {
-			if (*++this->src & 0x80) {
+		while (*++this->src != 0x7F) {
+			if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src & 0x80) {
 				unsigned t;
 				if ((*this->src & 0x40)) { // 0xC0-0xFF
 					t = (*this->src & 0x3F) << 8;
@@ -525,58 +567,12 @@ class toTXT0 : public toTXT {
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
 				mes.push_back(this->printf_buf);
 			}
-			else { // 0x00-0x7F
-				if (*this->src < 0x78) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", *this->src);
-					mes.push_back(this->printf_buf);
-				}
-				else if (*this->src == 0x78) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x79) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7A) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7B) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7C) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7D) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7E) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7F) {
-					return *mes.begin();
-				}
+			else { // 0x00-0x77
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", *this->src);
+				mes.push_back(this->printf_buf);
 			}
 		}
+		return *mes.begin();
 	}
 
 	std::wstring command_Q(void)
@@ -637,8 +633,50 @@ class toTXT1 : public toTXT {
 		// import from T.T sys32
 		std::vector<std::wstring> mes;
 
-		while (1) {
-			if ((*++this->src & 0xC0) == 0x80) { // 0x80-0xBF
+		while (*++this->src != 0x7F) {
+			if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
 				mes.push_back(this->printf_buf);
 			}
@@ -654,58 +692,12 @@ class toTXT1 : public toTXT {
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
 				mes.push_back(this->printf_buf);
 			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
-				if (*this->src < 0x78) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-					mes.push_back(this->printf_buf);
-				}
-				else if (*this->src == 0x78) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x79) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7A) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7B) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7C) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7D) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7E) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7F) {
-					return *mes.begin();
-				}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x77
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+				mes.push_back(this->printf_buf);
 			}
 		}
+		return *mes.begin();
 	}
 
 	std::wstring command_Q(void)
@@ -756,7 +748,6 @@ public:
 	bool is_GakuenSenkiMSX = false;
 
 };
-
 
 class toTXT2 : public toTXT {
 	unsigned __int16 get_16(void)
@@ -1013,8 +1004,56 @@ public:
 		// import from T.T sys32
 		std::vector<std::wstring> mes;
 
-		while (1) {
-			if ((*++this->src & 0xC0) == 0x80) { // 0x80-0xBF
+		while (*++this->src != 0x7F) {
+			if (*this->src == 0x77) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
 				mes.push_back(this->printf_buf);
 			}
@@ -1030,67 +1069,13 @@ public:
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
 				mes.push_back(this->printf_buf);
 			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x7F
-				if (*this->src < 0x77) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-					mes.push_back(this->printf_buf);
-				}
-				else if (*this->src == 0x77) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x78) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x79) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7A) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7B) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7C) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7D) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7E) {
-					std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-					mes.pop_back();
-					mes.pop_back();
-					mes.push_back(t);
-				}
-				else if (*this->src == 0x7F) {
-					return *mes.begin();
-				}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+				mes.push_back(this->printf_buf);
 			}
 		}
+		return *mes.begin();
 	}
-
-
 };
 
 class toTXT2d : public toTXT2 {
@@ -1101,6 +1086,335 @@ class toTXT2d : public toTXT2 {
 		std::wstring p3 = CALI();
 		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
+	}
+};
+
+class toTXT3 : public toTXT {
+	unsigned __int16 get_16(void)
+	{
+		unsigned __int16 val = *(unsigned __int16*)(this->src);
+		this->src += 2;
+		return val;
+	}
+
+	unsigned __int16 VL_Value(void)
+	{
+		unsigned t = *++this->src;
+
+		if ((t & 0x40)) {
+			t = (t & 0x3F) << 8;
+			t += *++this->src;
+		}
+		else {
+			t &= 0x3F;
+		}
+
+		return t;
+	}
+
+	std::wstring command_B(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring p7 = CALI();
+		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L"\n";
+		return ret;
+	}
+	std::wstring command_D(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring p7 = CALI();
+		std::wstring p8 = CALI();
+		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L", " + p8 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_E(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	virtual std::wstring command_I(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		auto p3 = get_byte();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + std::to_wstring(p3) + L"\n";
+		return ret;
+	}
+
+	std::wstring command_J(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+
+	std::wstring command_N(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_T(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_O(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_M(void)
+	{
+		this->src++;
+		std::wstring ret = L"\n(";
+		_wsetlocale(LC_ALL, L"ja_JP");
+		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+		while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+			if (*this->src == ' ') {
+				ret += L" ";
+				this->src++;
+			}
+			else if (_ismbbkana_l(*this->src, loc_jp)) {
+				ret += this->X0201kana_table[*this->src - 0xA0];
+				this->src++;
+			}
+			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				wchar_t tmp;
+				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+				if (nret != 2) {
+					std::wcerr << L"character convert failed." << std::endl;
+				}
+				ret += tmp;
+				this->src += 2;
+			}
+		}
+
+		if (*this->src == '\'') {
+			ret += L"'";
+			this->src++;
+		}
+
+		if (*this->src == ':') {
+			ret += L")";
+		}
+		return ret;
+	}
+
+	std::wstring command_H(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"(";
+		while (p1--) {
+			ret += L"#";
+		}
+		ret += L"," + p2 + L")";
+		return ret;
+	}
+
+	std::wstring command_V(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nV " + std::to_wstring(p1) + L", " + p2;
+		if (p1) {
+			std::wstring p3[28];
+
+			for (size_t i = 0; i < 28; i++) {
+				p3[i] = CALI();
+			}
+
+			for (size_t i = 0; i < 28; i++) {
+				ret += L", " + p3[i];
+			}
+		}
+		else {
+			std::pair<unsigned __int16, unsigned __int16> p3[28];
+
+			for (size_t i = 0; i < 28; i++) {
+				p3[i].first = VL_Value();
+				p3[i].second = get_byte();
+			}
+
+			for (size_t i = 0; i < 28; i++) {
+				ret += L", Var" + std::to_wstring(p3[i].first) + L" = " + std::to_wstring(p3[i].second);
+			}
+		}
+
+		ret += L"\n";
+		return ret;
+	}
+
+	std::wstring command_W(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring ret = L"\nMask (" + p1 + L"," + p2 + L") - (" + p3 + L"," + p4 + L")\n";
+		return ret;
+	}
+
+	std::wstring command_G(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_U(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		auto p1 = this->get_byte();
+		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
+		return ret;
+	}
+	std::wstring command_Q(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_L(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Y(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Z(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret;
+
+		ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+public:
+	std::wstring CALI(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+
+		while (*++this->src != 0x7F) {
+			if (*this->src == 0x77) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+			}
+			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x00) {
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+				mes.push_back(this->printf_buf);
+			}
+		}
+		return *mes.begin();
 	}
 };
 #endif
