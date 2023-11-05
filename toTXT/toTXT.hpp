@@ -143,6 +143,19 @@ class toTXT {
 		return ret;
 	}
 
+	virtual std::wstring command_block_open(void)
+	{
+		auto p1 = this->CALI();
+		std::wstring ret = L"\n" + p1 + L" {\n";
+		return ret;
+	}
+
+	virtual std::wstring command_block_close(void)
+	{
+		std::wstring ret = L"\n}\n";
+		return ret;
+	}
+
 	virtual std::wstring command_G(void) // Load Graphics
 	{
 		auto p1 = std::to_wstring(this->get_byte());
@@ -326,6 +339,23 @@ public:
 				std::wcout << printf_buf << std::endl;
 			}
 
+			if (*src == '!') { // Set Variable
+				auto p1 = std::to_wstring(this->VL_Value());
+				auto p2 = this->CALI();
+				decoded_command.second = L"\nVar" + p1 + L" = " + p2 + L"\n";
+			}
+
+			else if (*this->src == '{') {
+				nest++;
+				decoded_command.second = this->command_block_open();
+			}
+			else if (*this->src == '}') {
+				if (nest) {
+					nest--;
+				}
+				decoded_command.second = this->command_block_close();
+			}
+
 			// Output Texts
 			else if (*this->src == 'R') {
 				decoded_command.second = L"\n";
@@ -351,11 +381,6 @@ public:
 				decoded_command.second = L"(Print $" + p1 + L")";
 			}
 
-			else if (*src == '!') {
-				auto p1 = std::to_wstring(this->VL_Value());
-				auto p2 = this->CALI();
-				decoded_command.second = L"\nVar" + p1 + L" = " + p2 + L"\n";
-			}
 			else if (*this->src == '[') {
 				auto p1 = this->get_byte();
 				auto p2 = this->get_byte();
@@ -378,17 +403,6 @@ public:
 			else if (*this->src == '&') {
 				std::wstring A = this->CALI();
 				decoded_command.second = L"\nJump to page " + A + L".\n";
-			}
-			else if (*this->src == '{') {
-				nest++;
-				std::wstring A = this->CALI();
-				decoded_command.second = L"\n" + A + L" {\n";
-			}
-			else if (*this->src == '}') {
-				if (nest) {
-					nest--;
-				}
-				decoded_command.second = L"\n}\n";
 			}
 			else if (*this->src == '@') {
 				int Addr = this->get_word();
