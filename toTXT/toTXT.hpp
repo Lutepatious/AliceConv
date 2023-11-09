@@ -106,51 +106,14 @@ class toTXT {
 		return false;
 	}
 
-	std::wstring get_string(void)
-	{
-		std::wstring ret;
-
-		if (this->encoding_MSX) {
-			while (this->MSX_char_table[*this->src] != 0) {
-				ret += MSX_char_table[*this->src];
-				this->src++;
-			}
-		}
-		else {
-			_wsetlocale(LC_ALL, L"ja_JP");
-			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
-			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				if (*this->src == ' ') {
-					ret += L" ";
-					this->src++;
-				}
-				else if (_ismbbkana_l(*this->src, loc_jp)) {
-					ret += this->X0201kana_table[*this->src - 0xA0];
-					this->src++;
-				}
-				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-					wchar_t tmp;
-					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
-
-					if (nret != 2) {
-						std::wcerr << L"character convert failed." << std::endl;
-					}
-					ret += tmp;
-					this->src += 2;
-				}
-			}
-		}
-		return ret;
-	}
-
-	virtual std::wstring command_block_open(void)
+	virtual std::wstring command_block_begin(void)
 	{
 		auto p1 = this->CALI();
 		std::wstring ret = L"\n" + p1 + L" {\n";
 		return ret;
 	}
 
-	virtual std::wstring command_block_close(void)
+	virtual std::wstring command_block_end(void)
 	{
 		std::wstring ret = L"\n}\n";
 		return ret;
@@ -257,7 +220,7 @@ class toTXT {
 	}
 
 	virtual unsigned __int16 get_16(void) = 0;
-	virtual unsigned __int16 VL_Value(void) = 0;
+	virtual unsigned __int16 get_Vword(void) = 0;
 	virtual std::wstring CALI(void) = 0;
 	virtual std::wstring command_Q(void) = 0; // Save Playdata
 	virtual std::wstring command_L(void) = 0; // Load Playdata
@@ -271,19 +234,282 @@ protected:
 	wchar_t printf_buf[1000] = { 0 };
 	wchar_t printf_buf_len = 1000;
 	const wchar_t* text_color[8] = { L"(Black)", L"(Blue)", L"(Red)", L"(Magenta)", L"(Green)", L"(Cyan)", L"(Yellow)", L"(White)" };
-
+	unsigned __int16 header = 0;
 
 	unsigned __int16 get_byte(void)
 	{
-		return *++this->src;
+		return *this->src++;
 	}
 
 	unsigned __int16 get_word(void)
 	{
-		unsigned __int16 ret = *(unsigned __int16*)(++this->src);
-		this->src++;
+		unsigned __int16 ret = *(unsigned __int16*)(this->src);
+		this->src += 2;
 
 		return ret;
+	}
+
+	unsigned __int16 VL_Value(void)
+	{
+		unsigned t = *this->src++;
+
+		if (t & 0x40) {
+			t = (t & 0x3F) << 8;
+			t += *this->src++;
+		}
+		else {
+			t &= 0x3F;
+		}
+
+		return t;
+	}
+
+	unsigned __int16 VL_Value_NEG(void)
+	{
+		unsigned t = *this->src++;
+
+		if (t & 0x40) {
+			t &= 0x3F;
+		}
+		else {
+			t = (t & 0x3F) << 8;
+			t += *this->src++;
+		}
+
+		return t;
+	}
+
+	std::wstring CALI3(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+		while (*this->src != 0x7F) {
+			if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src & 0x80) {
+				int t = VL_Value();
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else { // 0x00-0x77
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", *this->src);
+				mes.push_back(this->printf_buf);
+				++this->src;
+			}
+		}
+
+		++this->src;
+		return *mes.begin();
+	}
+
+	std::wstring CALI5(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+
+		while (*this->src != 0x7F) {
+			if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src & 0x80) { // 0x80-0xFF
+				int t = VL_Value();
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x00) {
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
+				mes.push_back(this->printf_buf);
+				++this->src;
+			}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x77
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+				mes.push_back(this->printf_buf);
+				++this->src;
+			}
+		}
+
+		++this->src;
+		return *mes.begin();
+	}
+
+	std::wstring CALI7(void)
+	{
+		// import from T.T sys32
+		std::vector<std::wstring> mes;
+
+		while (*this->src != 0x7F) {
+			if (*this->src == 0x77) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x78) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x79) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7A) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7B) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7C) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7D) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src == 0x7E) {
+				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
+				mes.pop_back();
+				mes.pop_back();
+				mes.push_back(t);
+				++this->src;
+			}
+			else if (*this->src & 0x80) { // 0x80-0xFF
+				int t = VL_Value();
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
+				mes.push_back(this->printf_buf);
+			}
+			else if ((*this->src & 0xC0) == 0x00) {
+				unsigned t = (*this->src & 0x3F) << 8;
+				t += *++this->src;
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
+				mes.push_back(this->printf_buf);
+				++this->src;
+			}
+			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
+				mes.push_back(this->printf_buf);
+				++this->src;
+			}
+		}
+
+		++this->src;
+		return *mes.begin();
 	}
 
 public:
@@ -295,6 +521,44 @@ public:
 		this->src_start = this->src = (unsigned __int8*)&*s.begin();
 		this->src_end = (unsigned __int8*)&*s.end();
 		this->encoding_MSX = enc;
+		this->header = this->get_16();
+	}
+
+	std::wstring get_string(void)
+	{
+		std::wstring ret;
+
+		if (this->encoding_MSX) {
+			while (this->MSX_char_table[*this->src] != 0) {
+				ret += MSX_char_table[*this->src];
+				this->src++;
+			}
+		}
+		else {
+			_wsetlocale(LC_ALL, L"ja_JP");
+			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				if (*this->src == ' ') {
+					ret += L" ";
+					this->src++;
+				}
+				else if (_ismbbkana_l(*this->src, loc_jp)) {
+					ret += this->X0201kana_table[*this->src - 0xA0];
+					this->src++;
+				}
+				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+					wchar_t tmp;
+					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+					if (nret != 2) {
+						std::wcerr << L"character convert failed." << std::endl;
+					}
+					ret += tmp;
+					this->src += 2;
+				}
+			}
+		}
+		return ret;
 	}
 
 	std::wstring decode(void)
@@ -309,12 +573,11 @@ public:
 		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
 		std::wstring str;
 		std::set<unsigned __int16> Labels;
-		unsigned __int16 Val = this->get_16();
-		swprintf_s(this->printf_buf, this->printf_buf_len, L"Condition 0x%04X\n", Val);
 
 		decoded_command.first = 0;
 		decoded_command.second = this->printf_buf;
 		decoded_commands.push_back(decoded_command);
+		std::vector<unsigned __int16> Call_Address;
 
 		while (this->src < this->src_end && !this->is_end()) {
 			unsigned __int16 Address = this->src - this->src_start;
@@ -339,49 +602,88 @@ public:
 				std::wcout << printf_buf << std::endl;
 			}
 
-			if (*src == '!') { // Set Variable
-				auto p1 = std::to_wstring(this->VL_Value());
+			switch (*this->src++) {
+			case '!': // Set Variable
+			{
+				auto p1 = std::to_wstring(this->get_Vword());
 				auto p2 = this->CALI();
 				decoded_command.second = L"\nVar" + p1 + L" = " + p2 + L"\n";
+				break;
 			}
-
-			else if (*this->src == '{') {
+			case '{':
 				nest++;
-				decoded_command.second = this->command_block_open();
-			}
-			else if (*this->src == '}') {
+				decoded_command.second = this->command_block_begin();
+				break;
+
+			case '}':
 				if (nest) {
 					nest--;
 				}
-				decoded_command.second = this->command_block_close();
-			}
+				decoded_command.second = this->command_block_end();
+				break;
 
-			// Output Texts
-			else if (*this->src == 'R') {
-				decoded_command.second = L"\n";
-			}
-			else if (*this->src == 'A') {
-				decoded_command.second = L"\nHit any Key.\n";
-			}
+			case '@':
+			{
+				int Addr = this->get_word();
+				Labels.insert(Addr);
 
-
-			else if (*this->src == 'F') {
-				decoded_command.second = L"\nReturn to top.\n";
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
+				decoded_command.second = this->printf_buf;
+				break;
 			}
-			else if (*this->src == ']') {
+			case '\\':
+			{
+				int Addr = this->get_word();
+
+				if (Addr) {
+					Labels.insert(Addr);
+					Labels.insert(decoded_command.first);
+					Call_Address.push_back(decoded_command.first);
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nCall to Label%04X\n", Addr);
+				}
+				else {
+					auto Addr_ret = *(Call_Address.end() - 1);
+					Call_Address.pop_back();
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nReturn to Label%04X\n", Addr_ret);
+				}
+
+				decoded_command.second = this->printf_buf;
+				break;
+			}
+			case ']':
 				decoded_command.second = L"\nOpen Menu.\n";
-			}
+				break;
 
-			else if (*this->src == 'S') {
+			case 'P': // Set Text Color
+				decoded_command.second = this->command_P();
+				break;
+
+			case 'R':
+				decoded_command.second = L"\n";
+				break;
+
+			case 'A':
+				decoded_command.second = L"\nHit any Key.\n";
+				break;
+
+			case 'F':
+				decoded_command.second = L"\nReturn to top.\n";
+				break;
+
+			case 'S':
+			{
 				auto p1 = std::to_wstring(this->get_byte());
 				decoded_command.second = L"\nLoad Sound " + p1 + L"\n";
+				break;
 			}
-			else if (*this->src == 'X') {
+			case 'X':
+			{
 				auto p1 = std::to_wstring(this->get_byte());
 				decoded_command.second = L"(Print $" + p1 + L")";
+				break;
 			}
-
-			else if (*this->src == '[') {
+			case '[':
+			{
 				auto p1 = this->get_byte();
 				auto p2 = this->get_byte();
 				auto Addr = this->get_word();
@@ -389,8 +691,10 @@ public:
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X %u, %u\n", Addr, p1, p2);
 				decoded_command.second = this->printf_buf;
+				break;
 			}
-			else if (*src == ':') {
+			case ':':
+			{
 				std::wstring A = this->CALI();
 				auto p2 = this->get_byte();
 				auto p3 = this->get_byte();
@@ -399,19 +703,15 @@ public:
 
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\n%s Label%04X %u, %u\n", A.c_str(), Addr, p2, p3);
 				decoded_command.second = this->printf_buf;
+				break;
 			}
-			else if (*this->src == '&') {
+			case '&':
+			{
 				std::wstring A = this->CALI();
 				decoded_command.second = L"\nJump to page " + A + L".\n";
+				break;
 			}
-			else if (*this->src == '@') {
-				int Addr = this->get_word();
-				Labels.insert(Addr);
-
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
-				decoded_command.second = this->printf_buf;
-			}
-			else if (*this->src == '$') {
+			case '$':
 				if (set_menu) {
 					set_menu = false;
 				}
@@ -423,76 +723,92 @@ public:
 					decoded_command.second = this->printf_buf;
 					set_menu = true;
 				}
-			}
+				break;
 
-			// System Dependent Functions
-			else if (*this->src == 'G') { // Load Graphics
+			case 'G': // Load Graphics
 				decoded_command.second = this->command_G();
-			}
-			else if (*this->src == 'U') {
+				break;
+
+			case 'U': // Load Graphics with Transparent
 				decoded_command.second = this->command_U();
-			}
-			else if (*this->src == 'B') {
+				break;
+
+			case 'B':
 				decoded_command.second = this->command_B();
-			}
-			else if (*this->src == 'D') {
+				break;
+
+			case 'D':
 				decoded_command.second = this->command_D();
-			}
-			else if (*this->src == 'E') {
+				break;
+
+			case 'E':
 				decoded_command.second = this->command_E();
-			}
-			else if (*this->src == 'H') {
+				break;
+
+			case 'H':
 				decoded_command.second = this->command_H();
-			}
-			else if (*this->src == 'I') {
+				break;
+
+			case 'I':
 				decoded_command.second = this->command_I();
-			}
-			else if (*this->src == 'J') {
+				break;
+
+			case 'J':
 				decoded_command.second = this->command_J();
-			}
-			else if (*this->src == 'K') {
+				break;
+
+			case 'K':
 				decoded_command.second = this->command_K();
-			}
-			else if (*this->src == 'M') {
+				break;
+
+			case 'M':
 				decoded_command.second = this->command_M();
-			}
-			else if (*this->src == 'O') {
+				break;
+
+			case 'O':
 				decoded_command.second = this->command_O();
-			}
-			else if (*this->src == 'Q') { // Save Playdata
+				break;
+
+			case 'Q': // Save Playdata
 				decoded_command.second = this->command_Q();
-			}
-			else if (*this->src == 'L') { // Load Playdata
+				break;
+
+			case 'L': // Load Playdata
 				decoded_command.second = this->command_L();
-			}
-			else if (*this->src == 'P') { // Set Text Color
-				decoded_command.second = this->command_P();
-			}
-			else if (*this->src == 'Y') { // Extra1
+				break;
+
+			case 'Y': // Extra1
 				decoded_command.second = this->command_Y();
-			}
-			else if (*this->src == 'Z') { // Extra2
+				break;
+
+			case 'Z': // Extra2
 				decoded_command.second = this->command_Z();
-			}
-			else if (*this->src == 'T') { // Save What?
+				break;
+
+			case 'T': // Save What?
 				decoded_command.second = this->command_T();
-			}
-			else if (*this->src == 'N') {
+				break;
+
+			case 'N':
 				decoded_command.second = this->command_N();
-			}
-			else if (*this->src == 'V') {
+				break;
+
+			case 'V':
 				decoded_command.second = this->command_V();
-			}
-			else if (*this->src == 'W') {
+				break;
+
+			case 'W':
 				decoded_command.second = this->command_W();
-			}
-			else {
+				break;
+
+			default:
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *this->src, *(this->src + 1), *(this->src + 2), *(this->src + 3));
 				decoded_command.second = this->printf_buf;
 				std::wcout << decoded_command.second;
+
 			}
+
 			decoded_commands.push_back(decoded_command);
-			this->src++;
 		}
 
 		for (auto& i : decoded_commands) {
@@ -512,81 +828,19 @@ public:
 };
 
 class toTXT0 : public toTXT {
-	unsigned __int16 get_16(void)
+	unsigned __int16 inline get_16(void)
 	{
 		return 0;
 	}
 
-	unsigned __int16 VL_Value(void)
+	unsigned __int16 inline get_Vword(void)
 	{
-		return *++this->src;
+		return *this->src++;
 	}
 
-	std::wstring CALI(void)
+	std::wstring inline CALI(void)
 	{
-		// import from T.T sys32
-		std::vector<std::wstring> mes;
-		while (*++this->src != 0x7F) {
-			if (*this->src == 0x78) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x79) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7A) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7B) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7C) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7D) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7E) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src & 0x80) {
-				unsigned t;
-				if ((*this->src & 0x40)) { // 0xC0-0xFF
-					t = (*this->src & 0x3F) << 8;
-					t += *++this->src;
-				}
-				else { // 0x80-0xBF
-					t = *this->src & 0x3F;
-				}
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else { // 0x00-0x77
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", *this->src);
-				mes.push_back(this->printf_buf);
-			}
-		}
-		return *mes.begin();
+		return this->CALI3();
 	}
 
 	std::wstring command_Q(void)
@@ -620,98 +874,19 @@ class toTXT0 : public toTXT {
 };
 
 class toTXT1 : public toTXT {
-	unsigned __int16 get_16(void)
+	unsigned __int16 inline get_16(void)
 	{
-		unsigned __int16 val = *(unsigned __int16*)(this->src);
-		this->src += 2;
-		return val;
+		return this->get_word();
 	}
 
-	unsigned __int16 VL_Value(void)
+	unsigned __int16 inline get_Vword(void)
 	{
-		unsigned t = *++this->src;
-
-		if ((t & 0x40)) {
-			t = (t & 0x3F) << 8;
-			t += *++this->src;
-		}
-		else {
-			t &= 0x3F;
-		}
-
-		return t;
+		return this->VL_Value();
 	}
 
-	std::wstring CALI(void)
+	std::wstring inline CALI(void)
 	{
-		// import from T.T sys32
-		std::vector<std::wstring> mes;
-
-		while (*++this->src != 0x7F) {
-			if (*this->src == 0x78) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x79) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7A) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7B) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7C) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7D) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7E) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x77
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-				mes.push_back(this->printf_buf);
-			}
-		}
-		return *mes.begin();
+		return this->CALI5();
 	}
 
 	std::wstring command_Q(void)
@@ -764,26 +939,14 @@ public:
 };
 
 class toTXT2 : public toTXT {
-	unsigned __int16 get_16(void)
+	unsigned __int16 inline get_16(void)
 	{
-		unsigned __int16 val = *(unsigned __int16*)(this->src);
-		this->src += 2;
-		return val;
+		return get_word();
 	}
 
-	unsigned __int16 VL_Value(void)
+	unsigned __int16 inline get_Vword(void)
 	{
-		unsigned t = *++this->src;
-
-		if ((t & 0x40)) {
-			t = (t & 0x3F) << 8;
-			t += *++this->src;
-		}
-		else {
-			t &= 0x3F;
-		}
-
-		return t;
+		return this->VL_Value();
 	}
 
 	std::wstring command_B(void)
@@ -838,7 +1001,6 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-
 	std::wstring command_N(void)
 	{
 		std::wstring p1 = CALI();
@@ -867,38 +1029,16 @@ class toTXT2 : public toTXT {
 
 	std::wstring command_M(void)
 	{
-		this->src++;
-		std::wstring ret = L"\n(";
-		_wsetlocale(LC_ALL, L"ja_JP");
-		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
-		while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-			if (*this->src == ' ') {
-				ret += L" ";
-				this->src++;
-			}
-			else if (_ismbbkana_l(*this->src, loc_jp)) {
-				ret += this->X0201kana_table[*this->src - 0xA0];
-				this->src++;
-			}
-			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				wchar_t tmp;
-				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
-
-				if (nret != 2) {
-					std::wcerr << L"character convert failed." << std::endl;
-				}
-				ret += tmp;
-				this->src += 2;
-			}
-		}
+		std::wstring ret = L"\n(" + this->get_string();
 
 		if (*this->src == '\'') {
 			ret += L"'";
-			this->src++;
+			++this->src;
 		}
 
 		if (*this->src == ':') {
 			ret += L")";
+			++this->src;
 		}
 		return ret;
 	}
@@ -1013,87 +1153,14 @@ class toTXT2 : public toTXT {
 	}
 
 public:
-	std::wstring CALI(void)
+	std::wstring inline CALI(void)
 	{
-		// import from T.T sys32
-		std::vector<std::wstring> mes;
-
-		while (*++this->src != 0x7F) {
-			if (*this->src == 0x77) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x78) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x79) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7A) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7B) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7C) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7D) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7E) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-				mes.push_back(this->printf_buf);
-			}
-		}
-		return *mes.begin();
+		return this->CALI7();
 	}
 };
 
 class toTXT2d : public toTXT2 {
-	virtual std::wstring command_I(void)
+	std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1104,26 +1171,30 @@ class toTXT2d : public toTXT2 {
 };
 
 class toTXT3 : public toTXT {
-	unsigned __int16 get_16(void)
+	unsigned __int16 inline get_16(void)
 	{
-		unsigned __int16 val = *(unsigned __int16*)(this->src);
-		this->src += 2;
-		return val;
+		return get_word();
 	}
 
-	unsigned __int16 VL_Value(void)
+	unsigned __int16 inline get_Vword(void)
 	{
-		unsigned t = *++this->src;
+		return this->VL_Value();
+	}
 
-		if ((t & 0x40)) {
-			t = (t & 0x3F) << 8;
-			t += *++this->src;
-		}
-		else {
-			t &= 0x3F;
-		}
+	std::wstring command_block_begin(void)
+	{
+		auto p1 = this->CALI();
+		auto p2 = std::to_wstring(this->get_word());
+		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
+		return ret;
+	}
 
-		return t;
+	std::wstring command_block_end(void)
+	{
+		auto p1 = this->CALI();
+		auto p2 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
+		return ret;
 	}
 
 	std::wstring command_B(void)
@@ -1207,38 +1278,16 @@ class toTXT3 : public toTXT {
 
 	std::wstring command_M(void)
 	{
-		this->src++;
-		std::wstring ret = L"\n(";
-		_wsetlocale(LC_ALL, L"ja_JP");
-		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
-		while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-			if (*this->src == ' ') {
-				ret += L" ";
-				this->src++;
-			}
-			else if (_ismbbkana_l(*this->src, loc_jp)) {
-				ret += this->X0201kana_table[*this->src - 0xA0];
-				this->src++;
-			}
-			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				wchar_t tmp;
-				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
-
-				if (nret != 2) {
-					std::wcerr << L"character convert failed." << std::endl;
-				}
-				ret += tmp;
-				this->src += 2;
-			}
-		}
+		std::wstring ret = L"\n(" + this->get_string();
 
 		if (*this->src == '\'') {
 			ret += L"'";
-			this->src++;
+			++this->src;
 		}
 
 		if (*this->src == ':') {
 			ret += L")";
+			++this->src;
 		}
 		return ret;
 	}
@@ -1353,82 +1402,9 @@ class toTXT3 : public toTXT {
 	}
 
 public:
-	std::wstring CALI(void)
+	std::wstring inline CALI(void)
 	{
-		// import from T.T sys32
-		std::vector<std::wstring> mes;
-
-		while (*++this->src != 0x7F) {
-			if (*this->src == 0x77) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" *= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x78) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" /= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x79) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" += " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7A) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" -= " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7B) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" == " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7C) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" < " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7D) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" > " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if (*this->src == 0x7E) {
-				std::wstring t = L"(" + *(mes.end() - 2) + L" != " + *(mes.end() - 1) + L")";
-				mes.pop_back();
-				mes.pop_back();
-				mes.push_back(t);
-			}
-			else if ((*this->src & 0xC0) == 0x80) { // 0x80-0xBF
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", *this->src & 0x3F);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0xC0) { // 0xC0-0xFF
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
-				mes.push_back(this->printf_buf);
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-				mes.push_back(this->printf_buf);
-			}
-		}
-		return *mes.begin();
+		return this->CALI7();
 	}
 };
 #endif
