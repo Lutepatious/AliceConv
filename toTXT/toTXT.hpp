@@ -409,17 +409,10 @@ protected:
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
 				mes.push_back(this->printf_buf);
 			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
+			else {
+				int t = VL_Value_NEG();
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
 				mes.push_back(this->printf_buf);
-				++this->src;
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x77
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-				mes.push_back(this->printf_buf);
-				++this->src;
 			}
 		}
 
@@ -494,17 +487,10 @@ protected:
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"Var%d", t);
 				mes.push_back(this->printf_buf);
 			}
-			else if ((*this->src & 0xC0) == 0x00) {
-				unsigned t = (*this->src & 0x3F) << 8;
-				t += *++this->src;
+			else {
+				int t = VL_Value_NEG();
 				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", t);
 				mes.push_back(this->printf_buf);
-				++this->src;
-			}
-			else if ((*this->src & 0xC0) == 0x40) { // 0x40-0x76
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"%d", (*this->src & 0x3F));
-				mes.push_back(this->printf_buf);
-				++this->src;
 			}
 		}
 
@@ -610,6 +596,7 @@ public:
 				decoded_command.second = L"\nVar" + p1 + L" = " + p2 + L"\n";
 				break;
 			}
+
 			case '{':
 				nest++;
 				decoded_command.second = this->command_block_begin();
@@ -622,15 +609,10 @@ public:
 				decoded_command.second = this->command_block_end();
 				break;
 
-			case '@':
-			{
-				int Addr = this->get_word();
-				Labels.insert(Addr);
-
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
-				decoded_command.second = this->printf_buf;
+			case ']':
+				decoded_command.second = L"\nOpen Menu.\n";
 				break;
-			}
+
 			case '\\':
 			{
 				int Addr = this->get_word();
@@ -650,9 +632,6 @@ public:
 				decoded_command.second = this->printf_buf;
 				break;
 			}
-			case ']':
-				decoded_command.second = L"\nOpen Menu.\n";
-				break;
 
 			case 'P': // Set Text Color
 				decoded_command.second = this->command_P();
@@ -660,6 +639,60 @@ public:
 
 			case 'R':
 				decoded_command.second = L"\n";
+				break;
+
+			case '@':
+			{
+				int Addr = this->get_word();
+				Labels.insert(Addr);
+
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nJump to Label%04X\n", Addr);
+				decoded_command.second = this->printf_buf;
+				break;
+			}
+
+			case 'K':
+				decoded_command.second = this->command_K();
+				break;
+
+			case 'J':
+				decoded_command.second = this->command_J();
+				break;
+
+			case 'O':
+				decoded_command.second = this->command_O();
+				break;
+
+			case 'N':
+				decoded_command.second = this->command_N();
+				break;
+
+			case 'T': // Save What?
+				decoded_command.second = this->command_T();
+				break;
+
+			case 'W':
+				decoded_command.second = this->command_W();
+				break;
+
+			case 'V':
+				decoded_command.second = this->command_V();
+				break;
+
+			case 'B':
+				decoded_command.second = this->command_B();
+				break;
+
+			case 'H':
+				decoded_command.second = this->command_H();
+				break;
+
+			case 'I':
+				decoded_command.second = this->command_I();
+				break;
+
+			case 'M':
+				decoded_command.second = this->command_M();
 				break;
 
 			case 'A':
@@ -733,40 +766,12 @@ public:
 				decoded_command.second = this->command_U();
 				break;
 
-			case 'B':
-				decoded_command.second = this->command_B();
-				break;
-
 			case 'D':
 				decoded_command.second = this->command_D();
 				break;
 
 			case 'E':
 				decoded_command.second = this->command_E();
-				break;
-
-			case 'H':
-				decoded_command.second = this->command_H();
-				break;
-
-			case 'I':
-				decoded_command.second = this->command_I();
-				break;
-
-			case 'J':
-				decoded_command.second = this->command_J();
-				break;
-
-			case 'K':
-				decoded_command.second = this->command_K();
-				break;
-
-			case 'M':
-				decoded_command.second = this->command_M();
-				break;
-
-			case 'O':
-				decoded_command.second = this->command_O();
 				break;
 
 			case 'Q': // Save Playdata
@@ -783,22 +788,6 @@ public:
 
 			case 'Z': // Extra2
 				decoded_command.second = this->command_Z();
-				break;
-
-			case 'T': // Save What?
-				decoded_command.second = this->command_T();
-				break;
-
-			case 'N':
-				decoded_command.second = this->command_N();
-				break;
-
-			case 'V':
-				decoded_command.second = this->command_V();
-				break;
-
-			case 'W':
-				decoded_command.second = this->command_W();
 				break;
 
 			default:
@@ -1115,7 +1104,7 @@ class toTXT2 : public toTXT {
 
 	std::wstring command_P(void) // Set Text Color
 	{
-		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
+		// Set text color Palette 0-15
 		auto p1 = this->get_byte();
 		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
 		return ret;
@@ -1167,6 +1156,211 @@ class toTXT2d : public toTXT2 {
 		std::wstring p3 = CALI();
 		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
+	}
+};
+
+class toTXTR4 : public toTXT {
+	unsigned __int16 inline get_16(void)
+	{
+		return get_word();
+	}
+
+	unsigned __int16 inline get_Vword(void)
+	{
+		return this->VL_Value();
+	}
+
+	std::wstring command_block_begin(void)
+	{
+		auto p1 = this->CALI();
+		auto p2 = std::to_wstring(this->get_word());
+		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
+		return ret;
+	}
+
+	std::wstring command_block_end(void)
+	{
+		auto p1 = this->CALI();
+		auto p2 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
+		return ret;
+	}
+
+	std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color Palette 0-15
+		auto p1 = this->get_byte();
+		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
+		return ret;
+	}
+
+	std::wstring command_J(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_O(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_N(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_T(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_W(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring ret = L"\nMask (" + p1 + L"," + p2 + L") - (" + p3 + L"," + p4 + L")\n";
+		return ret;
+	}
+
+	std::wstring command_V(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nV " + std::to_wstring(p1) + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_B(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nB " + std::to_wstring(p1) + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_H(void)
+	{
+		auto p1 = get_byte();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nH " + std::to_wstring(p1) + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_I(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_D(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring p7 = CALI();
+		std::wstring p8 = CALI();
+		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L", " + p8 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_E(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_M(void)
+	{
+		std::wstring ret = L"\n(" + this->get_string();
+
+		if (*this->src == '\'') {
+			ret += L"'";
+			++this->src;
+		}
+
+		if (*this->src == ':') {
+			ret += L")";
+			++this->src;
+		}
+		return ret;
+	}
+
+
+	std::wstring command_G(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_U(void) // Load Graphics
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Q(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_L(void)
+	{
+		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Y(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Z(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret;
+
+		ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+public:
+	std::wstring inline CALI(void)
+	{
+		return this->CALI7();
 	}
 };
 
