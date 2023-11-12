@@ -18,6 +18,8 @@ int wmain(int argc, wchar_t** argv)
 	bool encoding_MSX = false;
 	bool is_GakuenSenki = false;
 	bool is_DALK = false;
+	bool is_Rance4 = false;
+
 	while (--argc) {
 		if (**++argv == L'-') {
 			if (*(*argv + 1) == L'0') {
@@ -40,6 +42,9 @@ int wmain(int argc, wchar_t** argv)
 				sysver = 2;
 				if (*(*argv + 2) == L'd') {
 					is_DALK = true;
+				}
+				if (*(*argv + 2) == L'r') {
+					is_Rance4 = true;
 				}
 			}
 			else if (*(*argv + 1) == L'3') {
@@ -84,6 +89,11 @@ int wmain(int argc, wchar_t** argv)
 		else if (sysver == 2) {
 			if (is_DALK) {
 				toTXT2d sys2;
+				sys2.init(inbuf);
+				out = sys2.decode();
+			}
+			else if (is_Rance4) {
+				toTXT2r4 sys2;
 				sys2.init(inbuf);
 				out = sys2.decode();
 			}

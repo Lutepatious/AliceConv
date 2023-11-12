@@ -633,6 +633,13 @@ public:
 				break;
 			}
 
+			case '%':
+			{
+				std::wstring A = this->CALI();
+				decoded_command.second = L"\nCall page " + A + L".\n";
+				break;
+			}
+
 			case 'P': // Set Text Color
 				decoded_command.second = this->command_P();
 				break;
@@ -695,12 +702,42 @@ public:
 				decoded_command.second = this->command_M();
 				break;
 
-			case 'A':
-				decoded_command.second = L"\nHit any Key.\n";
+			case 'D':
+				decoded_command.second = this->command_D();
+				break;
+
+			case 'E':
+				decoded_command.second = this->command_E();
 				break;
 
 			case 'F':
 				decoded_command.second = L"\nReturn to top.\n";
+				break;
+
+			case '$':
+				if (set_menu) {
+					set_menu = false;
+				}
+				else {
+					int Addr = this->get_word();
+					Labels.insert(Addr);
+
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X ", Addr);
+					decoded_command.second = this->printf_buf;
+					set_menu = true;
+				}
+				break;
+
+			case 'A':
+				decoded_command.second = L"\nHit any Key.\n";
+				break;
+
+			case 'G': // Load Graphics
+				decoded_command.second = this->command_G();
+				break;
+
+			case 'U': // Load Graphics with Transparent
+				decoded_command.second = this->command_U();
 				break;
 
 			case 'S':
@@ -709,12 +746,38 @@ public:
 				decoded_command.second = L"\nLoad Sound " + p1 + L"\n";
 				break;
 			}
+
+			case '&':
+			{
+				std::wstring A = this->CALI();
+				decoded_command.second = L"\nJump to page " + A + L".\n";
+				break;
+			}
+
+			case 'L': // Load Playdata
+				decoded_command.second = this->command_L();
+				break;
+
+			case 'Q': // Save Playdata
+				decoded_command.second = this->command_Q();
+				break;
+
+
 			case 'X':
 			{
 				auto p1 = std::to_wstring(this->get_byte());
 				decoded_command.second = L"(Print $" + p1 + L")";
 				break;
 			}
+
+			case 'Y': // Extra1
+				decoded_command.second = this->command_Y();
+				break;
+
+			case 'Z': // Extra2
+				decoded_command.second = this->command_Z();
+				break;
+
 			case '[':
 			{
 				auto p1 = this->get_byte();
@@ -738,60 +801,8 @@ public:
 				decoded_command.second = this->printf_buf;
 				break;
 			}
-			case '&':
-			{
-				std::wstring A = this->CALI();
-				decoded_command.second = L"\nJump to page " + A + L".\n";
-				break;
-			}
-			case '$':
-				if (set_menu) {
-					set_menu = false;
-				}
-				else {
-					int Addr = this->get_word();
-					Labels.insert(Addr);
-
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X ", Addr);
-					decoded_command.second = this->printf_buf;
-					set_menu = true;
-				}
-				break;
-
-			case 'G': // Load Graphics
-				decoded_command.second = this->command_G();
-				break;
-
-			case 'U': // Load Graphics with Transparent
-				decoded_command.second = this->command_U();
-				break;
-
-			case 'D':
-				decoded_command.second = this->command_D();
-				break;
-
-			case 'E':
-				decoded_command.second = this->command_E();
-				break;
-
-			case 'Q': // Save Playdata
-				decoded_command.second = this->command_Q();
-				break;
-
-			case 'L': // Load Playdata
-				decoded_command.second = this->command_L();
-				break;
-
-			case 'Y': // Extra1
-				decoded_command.second = this->command_Y();
-				break;
-
-			case 'Z': // Extra2
-				decoded_command.second = this->command_Z();
-				break;
-
 			default:
-				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *this->src, *(this->src + 1), *(this->src + 2), *(this->src + 3));
+				swprintf_s(this->printf_buf, this->printf_buf_len, L"\nUnknown at %04X:%02X %02X %02X %02X", decoded_command.first, *(this->src - 1), *this->src, *(this->src + 1), *(this->src + 2));
 				decoded_command.second = this->printf_buf;
 				std::wcout << decoded_command.second;
 
@@ -800,17 +811,20 @@ public:
 			decoded_commands.push_back(decoded_command);
 		}
 
+		unsigned __int16 prev = 0;
 		for (auto& i : decoded_commands) {
 			for (auto& j : Labels) {
 				if (i.first == j) {
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X:\n", j);
-					str += this->printf_buf;
+					if (prev != j) {
+						swprintf_s(this->printf_buf, this->printf_buf_len, L"\nLabel%04X:\n", j);
+						str += this->printf_buf;
+						prev = j;
+					}
 				}
 			}
 
 			str += i.second;
 		}
-
 
 		return CleanUpString(str);
 	}
@@ -938,7 +952,7 @@ class toTXT2 : public toTXT {
 		return this->VL_Value();
 	}
 
-	std::wstring command_B(void)
+	virtual std::wstring command_B(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -950,7 +964,7 @@ class toTXT2 : public toTXT {
 		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L"\n";
 		return ret;
 	}
-	std::wstring command_D(void)
+	virtual std::wstring command_D(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -964,7 +978,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_E(void)
+	virtual std::wstring command_E(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1044,7 +1058,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_V(void)
+	virtual std::wstring command_V(void)
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1077,7 +1091,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_W(void)
+	virtual std::wstring command_W(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1131,7 +1145,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_Z(void)
+	virtual std::wstring command_Z(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1159,82 +1173,13 @@ class toTXT2d : public toTXT2 {
 	}
 };
 
-class toTXTR4 : public toTXT {
-	unsigned __int16 inline get_16(void)
-	{
-		return get_word();
-	}
-
-	unsigned __int16 inline get_Vword(void)
-	{
-		return this->VL_Value();
-	}
-
-	std::wstring command_block_begin(void)
-	{
-		auto p1 = this->CALI();
-		auto p2 = std::to_wstring(this->get_word());
-		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
-		return ret;
-	}
-
-	std::wstring command_block_end(void)
-	{
-		auto p1 = this->CALI();
-		auto p2 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"\n" + p1 + L"," + p2 + L" {\n";
-		return ret;
-	}
-
-	std::wstring command_P(void) // Set Text Color
-	{
-		// Set text color Palette 0-15
-		auto p1 = this->get_byte();
-		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
-		return ret;
-	}
-
-	std::wstring command_J(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_O(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_N(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_T(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
-		return ret;
-	}
-
+class toTXT2r4 : public toTXT2 {
 	std::wstring command_W(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring p4 = CALI();
-		std::wstring ret = L"\nMask (" + p1 + L"," + p2 + L") - (" + p3 + L"," + p4 + L")\n";
+		std::wstring ret = L"\nMask (" + p1 + L") - (" + p2 + L"," + p3 + L")\n";
 		return ret;
 	}
 
@@ -1254,14 +1199,6 @@ class toTXTR4 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_H(void)
-	{
-		auto p1 = get_byte();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nH " + std::to_wstring(p1) + L", " + p2 + L"\n";
-		return ret;
-	}
-
 	std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
@@ -1275,12 +1212,7 @@ class toTXTR4 : public toTXT {
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring p4 = CALI();
-		std::wstring p5 = CALI();
-		std::wstring p6 = CALI();
-		std::wstring p7 = CALI();
-		std::wstring p8 = CALI();
-		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L", " + p8 + L"\n";
+		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
 	}
 
@@ -1289,61 +1221,10 @@ class toTXTR4 : public toTXT {
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_M(void)
-	{
-		std::wstring ret = L"\n(" + this->get_string();
-
-		if (*this->src == '\'') {
-			ret += L"'";
-			++this->src;
-		}
-
-		if (*this->src == ':') {
-			ret += L")";
-			++this->src;
-		}
-		return ret;
-	}
-
-
-	std::wstring command_G(void) // Load Graphics
-	{
-		std::wstring p1 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_U(void) // Load Graphics
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_Q(void)
-	{
-		auto p1 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_L(void)
-	{
-		auto p1 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_Y(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"," + p4 + L", " + p5 + L", " + p6 + L"\n";
 		return ret;
 	}
 
@@ -1351,16 +1232,11 @@ class toTXTR4 : public toTXT {
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
 		std::wstring ret;
 
-		ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+		ret = L"\nExtra2 " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
-	}
-
-public:
-	std::wstring inline CALI(void)
-	{
-		return this->CALI7();
 	}
 };
 
@@ -1391,6 +1267,50 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
+	std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color Pal using RGB
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring p4 = CALI();
+		std::wstring ret = L"(Color Pal#" + p1 + L" R" + p2 + L" G" + p3 + L" B" + p4 + L")";
+		return ret;
+	}
+
+	std::wstring command_K(void)
+	{
+		std::wstring p1 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nK " + p1 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_J(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_O(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = std::to_wstring(VL_Value());
+		std::wstring p3 = std::to_wstring(this->get_byte());
+		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_N(void)
+	{
+		std::wstring p1 = std::to_wstring(this->get_byte());
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nN " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
 	std::wstring command_B(void)
 	{
 		std::wstring p1 = CALI();
@@ -1426,29 +1346,12 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_I(void)
+	std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		auto p3 = get_byte();
 		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + std::to_wstring(p3) + L"\n";
-		return ret;
-	}
-
-	std::wstring command_J(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nJ " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
-
-	std::wstring command_N(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
 		return ret;
 	}
 
@@ -1458,15 +1361,6 @@ class toTXT3 : public toTXT {
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
 		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_O(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret = L"\nO " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
 	}
 
@@ -1556,13 +1450,6 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_P(void) // Set Text Color
-	{
-		// Set text color 0-7 Black, Blue, Red, Magenta, Green, Cyan, Yellow, White
-		auto p1 = this->get_byte();
-		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
-		return ret;
-	}
 	std::wstring command_Q(void)
 	{
 		auto p1 = std::to_wstring(this->get_byte());
