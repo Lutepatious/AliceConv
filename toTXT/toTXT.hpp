@@ -58,6 +58,43 @@ class toTXT {
 		return target;
 	}
 
+	std::wstring get_string(void)
+	{
+		std::wstring ret;
+
+		if (this->encoding_MSX) {
+			while (this->MSX_char_table[*this->src] != 0) {
+				ret += MSX_char_table[*this->src];
+				this->src++;
+			}
+		}
+		else {
+			_wsetlocale(LC_ALL, L"ja_JP");
+			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				if (*this->src == ' ') {
+					ret += L" ";
+					this->src++;
+				}
+				else if (_ismbbkana_l(*this->src, loc_jp)) {
+					ret += this->X0201kana_table[*this->src - 0xA0];
+					this->src++;
+				}
+				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+					wchar_t tmp;
+					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+					if (nret != 2) {
+						std::wcerr << L"character convert failed." << std::endl;
+					}
+					ret += tmp;
+					this->src += 2;
+				}
+			}
+		}
+		return ret;
+	}
+
 	// 文字列の正規化
 	std::wstring CleanUpString(std::wstring& in)
 	{
@@ -510,40 +547,51 @@ public:
 		this->header = this->get_16();
 	}
 
-	std::wstring get_string(void)
+	std::wstring get_stringM(void)
 	{
 		std::wstring ret;
 
-		if (this->encoding_MSX) {
-			while (this->MSX_char_table[*this->src] != 0) {
-				ret += MSX_char_table[*this->src];
+		_wsetlocale(LC_ALL, L"ja_JP");
+		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+		while (*this->src != ':') {
+			if (*this->src == ' ') {
+				ret += L" ";
+				this->src++;
+			}
+			else if (*this->src == '\'') {
+				ret += L"\'";
+				this->src++;
+			}
+			else if (*this->src == '.') {
+				ret += L".";
+				this->src++;
+			}
+			else if (isalnum(*this->src)) {
+				wchar_t tmp;
+				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+				ret += tmp;
+				this->src++;
+			}
+			else if (_ismbbkana_l(*this->src, loc_jp)) {
+				ret += this->X0201kana_table[*this->src - 0xA0];
+				this->src++;
+			}
+			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				wchar_t tmp;
+				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+
+				if (nret != 2) {
+					std::wcerr << L"character convert failed." << std::endl;
+				}
+				ret += tmp;
+				this->src += 2;
+			}
+			else {
 				this->src++;
 			}
 		}
-		else {
-			_wsetlocale(LC_ALL, L"ja_JP");
-			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
-			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				if (*this->src == ' ') {
-					ret += L" ";
-					this->src++;
-				}
-				else if (_ismbbkana_l(*this->src, loc_jp)) {
-					ret += this->X0201kana_table[*this->src - 0xA0];
-					this->src++;
-				}
-				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-					wchar_t tmp;
-					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+		++this->src;
 
-					if (nret != 2) {
-						std::wcerr << L"character convert failed." << std::endl;
-					}
-					ret += tmp;
-					this->src += 2;
-				}
-			}
-		}
 		return ret;
 	}
 
@@ -569,11 +617,6 @@ public:
 			unsigned __int16 Address = this->src - this->src_start;
 			decoded_command.first = Address;
 			decoded_command.second.clear();
-
-			if (debug) {
-				swprintf_s(printf_buf, printf_buf_len, L"%04X", Address);
-				std::wcout << printf_buf << std::endl;
-			}
 
 			// Output Characters
 			decoded_command.second = this->get_string();
@@ -620,13 +663,10 @@ public:
 				if (Addr) {
 					Labels.insert(Addr);
 					Labels.insert(decoded_command.first);
-					Call_Address.push_back(decoded_command.first);
 					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nCall to Label%04X\n", Addr);
 				}
 				else {
-					auto Addr_ret = *(Call_Address.end() - 1);
-					Call_Address.pop_back();
-					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nReturn to Label%04X\n", Addr_ret);
+					swprintf_s(this->printf_buf, this->printf_buf_len, L"\nReturn\n");
 				}
 
 				decoded_command.second = this->printf_buf;
@@ -807,7 +847,9 @@ public:
 				std::wcout << decoded_command.second;
 
 			}
-
+			if (debug) {
+				std::wcout << decoded_command.second << std::endl;
+			}
 			decoded_commands.push_back(decoded_command);
 		}
 
@@ -1032,17 +1074,7 @@ class toTXT2 : public toTXT {
 
 	std::wstring command_M(void)
 	{
-		std::wstring ret = L"\n(" + this->get_string();
-
-		if (*this->src == '\'') {
-			ret += L"'";
-			++this->src;
-		}
-
-		if (*this->src == ':') {
-			ret += L")";
-			++this->src;
-		}
+		std::wstring ret = L"\n(" + this->get_stringM() + L")\n";
 		return ret;
 	}
 
@@ -1375,17 +1407,7 @@ class toTXT3 : public toTXT {
 
 	std::wstring command_M(void)
 	{
-		std::wstring ret = L"\n(" + this->get_string();
-
-		if (*this->src == '\'') {
-			ret += L"'";
-			++this->src;
-		}
-
-		if (*this->src == ':') {
-			ret += L")";
-			++this->src;
-		}
+		std::wstring ret = L"\n(" + this->get_stringM() + L")\n";
 		return ret;
 	}
 
@@ -1398,6 +1420,7 @@ class toTXT3 : public toTXT {
 		std::wstring p5 = CALI();
 		std::wstring p6 = CALI();
 		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"," + p4 + L", " + p5 + L", " + p6 + L"\n";
+		return ret;
 	}
 
 	std::wstring command_G(void) // Load Graphics
