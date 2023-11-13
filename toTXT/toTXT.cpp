@@ -104,6 +104,12 @@ int wmain(int argc, wchar_t** argv)
 			}
 		}
 
+		else if (sysver == 3) {
+			toTXT3 sys3;
+			sys3.init(inbuf);
+			out = sys3.decode();
+		}
+
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
 		_wmakepath_s(path, _MAX_PATH, drive, dir, fname, L".txt");
 		_wsetlocale(LC_ALL, L"ja_JP");

@@ -1179,7 +1179,7 @@ class toTXT2r4 : public toTXT2 {
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring ret = L"\nMask (" + p1 + L") - (" + p2 + L"," + p3 + L")\n";
+		std::wstring ret = L"\nW " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
 	}
 
@@ -1311,9 +1311,34 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_B(void)
+	std::wstring command_T(void)
 	{
 		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_W(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nW " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_V(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_B(void)
+	{
+		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
 		std::wstring p4 = CALI();
@@ -1323,26 +1348,16 @@ class toTXT3 : public toTXT {
 		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L"\n";
 		return ret;
 	}
-	std::wstring command_D(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring p4 = CALI();
-		std::wstring p5 = CALI();
-		std::wstring p6 = CALI();
-		std::wstring p7 = CALI();
-		std::wstring p8 = CALI();
-		std::wstring ret = L"\nD " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L", " + p8 + L"\n";
-		return ret;
-	}
 
-	std::wstring command_E(void)
+	std::wstring command_H(void)
 	{
-		std::wstring p1 = CALI();
+		auto p1 = get_byte();
 		std::wstring p2 = CALI();
-		std::wstring p3 = CALI();
-		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		std::wstring ret = L"(";
+		while (p1--) {
+			ret += L"#";
+		}
+		ret += L"," + p2 + L")";
 		return ret;
 	}
 
@@ -1350,17 +1365,11 @@ class toTXT3 : public toTXT {
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
-		auto p3 = get_byte();
-		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + std::to_wstring(p3) + L"\n";
-		return ret;
-	}
-
-	std::wstring command_T(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		std::wstring p4 = CALI();
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + p3 + L"," + p4 + L", " + p5 + L", " + p6 + L"\n";
 		return ret;
 	}
 
@@ -1380,59 +1389,15 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_H(void)
-	{
-		auto p1 = get_byte();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"(";
-		while (p1--) {
-			ret += L"#";
-		}
-		ret += L"," + p2 + L")";
-		return ret;
-	}
-
-	std::wstring command_V(void)
-	{
-		auto p1 = get_byte();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nV " + std::to_wstring(p1) + L", " + p2;
-		if (p1) {
-			std::wstring p3[28];
-
-			for (size_t i = 0; i < 28; i++) {
-				p3[i] = CALI();
-			}
-
-			for (size_t i = 0; i < 28; i++) {
-				ret += L", " + p3[i];
-			}
-		}
-		else {
-			std::pair<unsigned __int16, unsigned __int16> p3[28];
-
-			for (size_t i = 0; i < 28; i++) {
-				p3[i].first = VL_Value();
-				p3[i].second = get_byte();
-			}
-
-			for (size_t i = 0; i < 28; i++) {
-				ret += L", Var" + std::to_wstring(p3[i].first) + L" = " + std::to_wstring(p3[i].second);
-			}
-		}
-
-		ret += L"\n";
-		return ret;
-	}
-
-	std::wstring command_W(void)
+	std::wstring command_E(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
 		std::wstring p4 = CALI();
-		std::wstring ret = L"\nMask (" + p1 + L"," + p2 + L") - (" + p3 + L"," + p4 + L")\n";
-		return ret;
+		std::wstring p5 = CALI();
+		std::wstring p6 = CALI();
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L", " + p3 + L"," + p4 + L", " + p5 + L", " + p6 + L"\n";
 	}
 
 	std::wstring command_G(void) // Load Graphics
@@ -1452,14 +1417,14 @@ class toTXT3 : public toTXT {
 
 	std::wstring command_Q(void)
 	{
-		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring p1 = CALI();
 		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
 	std::wstring command_L(void)
 	{
-		auto p1 = std::to_wstring(this->get_byte());
+		std::wstring p1 = CALI();
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
 		return ret;
 	}
