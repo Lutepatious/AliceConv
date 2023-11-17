@@ -566,7 +566,7 @@ public:
 				ret += L".";
 				this->src++;
 			}
-			else if (isalnum(*this->src)) {
+			else if (_isalnum_l(*this->src, loc_jp)) {
 				wchar_t tmp;
 				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
 				ret += tmp;
@@ -1299,7 +1299,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_P(void) // Set Text Color
+	virtual std::wstring command_P(void) // Set Text Color
 	{
 		// Set text color Pal using RGB
 		std::wstring p1 = CALI();
@@ -1334,7 +1334,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_N(void)
+	virtual std::wstring command_N(void)
 	{
 		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring p2 = CALI();
@@ -1343,7 +1343,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_T(void)
+	virtual std::wstring command_T(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1368,7 +1368,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_B(void)
+	virtual std::wstring command_B(void)
 	{
 		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring p2 = CALI();
@@ -1393,7 +1393,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_I(void)
+	virtual std::wstring command_I(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1411,7 +1411,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_E(void)
+	virtual std::wstring command_E(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1460,7 +1460,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_Z(void)
+	virtual std::wstring command_Z(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1475,5 +1475,70 @@ public:
 	{
 		return this->CALI7();
 	}
+};
+
+class toTXT3t2 : public toTXT3 {
+
+	std::wstring command_P(void) // Set Text Color
+	{
+		// Set text color Pal using RGB
+		std::wstring p1 = CALI();
+		std::wstring ret = L"(Color Pal#" + p1 + L")";
+		return ret;
+	}
+
+	std::wstring command_N(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nN " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_T(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nT " + p1 + L", " + p2  + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_B(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + L"\n";
+		return ret;
+	}
+
+	std::wstring command_I(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret = L"\nI " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_E(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nE " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	std::wstring command_Z(void)
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring p3 = CALI();
+		std::wstring ret;
+
+		ret = L"\nExtra2 " + p1 + L", " + p2 + L", " + p3 + L"\n";
+		return ret;
+	}
+
 };
 #endif

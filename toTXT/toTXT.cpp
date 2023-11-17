@@ -19,6 +19,7 @@ int wmain(int argc, wchar_t** argv)
 	bool is_GakuenSenki = false;
 	bool is_DALK = false;
 	bool is_Rance4 = false;
+	bool is_Toushin2 = false;
 
 	while (--argc) {
 		if (**++argv == L'-') {
@@ -49,6 +50,9 @@ int wmain(int argc, wchar_t** argv)
 			}
 			else if (*(*argv + 1) == L'3') {
 				sysver = 3;
+				if (*(*argv + 2) == L't') {
+					is_Toushin2 = true;
+				}
 			}
 
 			continue;
@@ -105,9 +109,16 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		else if (sysver == 3) {
-			toTXT3 sys3;
-			sys3.init(inbuf);
-			out = sys3.decode();
+			if (is_Toushin2) {
+				toTXT3t2 sys3;
+				sys3.init(inbuf);
+				out = sys3.decode();
+			}
+			else {
+				toTXT3 sys3;
+				sys3.init(inbuf);
+				out = sys3.decode();
+			}
 		}
 
 		_wsplitpath_s(*argv, drive, _MAX_DRIVE, dir, _MAX_DIR, fname, _MAX_FNAME, NULL, 0);
