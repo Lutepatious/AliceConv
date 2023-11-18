@@ -76,18 +76,35 @@ int wmain(int argc, wchar_t** argv)
 		}
 
 		if (sysver == 0) {
-			toTXT0 sys0;
-			sys0.init(inbuf, encoding_MSX);
-			out = sys0.decode();
+			if (encoding_MSX) {
+				toTXT0m sys0;
+				sys0.init(inbuf);
+				out = sys0.decode();
+			}
+			else {
+				toTXT0 sys0;
+				sys0.init(inbuf);
+				out = sys0.decode();
+			}
 		}
 
 		else if (sysver == 1) {
-			toTXT1 sys1;
-			sys1.init(inbuf, encoding_MSX);
-			if (is_GakuenSenki) {
-				sys1.is_GakuenSenkiMSX = true;
+			if (is_GakuenSenki && encoding_MSX) {
+				toTXT1g sys1;
+				sys1.init(inbuf);
+				out = sys1.decode();
 			}
-			out = sys1.decode();
+			else if (encoding_MSX) {
+				toTXT1m sys1;
+				sys1.init(inbuf);
+				out = sys1.decode();
+			}
+			else {
+
+				toTXT1 sys1;
+				sys1.init(inbuf);
+				out = sys1.decode();
+			}
 		}
 
 		else if (sysver == 2) {

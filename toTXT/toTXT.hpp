@@ -21,8 +21,6 @@ enum class VarName {
 };
 
 class toTXT {
-	// printfの出力用バッファ
-
 	// リトルヴァンパイアMSX版と学園戦記MSX版用文字変換テーブル
 	const wchar_t* MSX_char_table = L" !\"#$%&\'()*+,-./0123456789[]<=>?"
 		L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
@@ -34,6 +32,9 @@ class toTXT {
 		L"\x0000。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソ"
 		L"タチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン゛゜"
 		L"たちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん\x0000\x0000";
+
+	// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
+	const wchar_t* X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
 
 	// 清音濁音変換テーブル
 	const wchar_t* seion = L"うかきくけこさしすせそたちつてとはひふへほウカキクケコサシスセソタチツテトハヒフヘホ";
@@ -58,38 +59,30 @@ class toTXT {
 		return target;
 	}
 
-	std::wstring get_string(void)
+	virtual std::wstring get_string(void)
 	{
 		std::wstring ret;
 
-		if (this->encoding_MSX) {
-			while (this->MSX_char_table[*this->src] != 0) {
-				ret += MSX_char_table[*this->src];
+		_wsetlocale(LC_ALL, L"ja_JP");
+		_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
+		while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+			if (*this->src == ' ') {
+				ret += L" ";
 				this->src++;
 			}
-		}
-		else {
-			_wsetlocale(LC_ALL, L"ja_JP");
-			_locale_t loc_jp = _create_locale(LC_CTYPE, "ja_JP");
-			while (*this->src == ' ' || _ismbbkana_l(*this->src, loc_jp) || _ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-				if (*this->src == ' ') {
-					ret += L" ";
-					this->src++;
-				}
-				else if (_ismbbkana_l(*this->src, loc_jp)) {
-					ret += this->X0201kana_table[*this->src - 0xA0];
-					this->src++;
-				}
-				else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
-					wchar_t tmp;
-					int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
+			else if (_ismbbkana_l(*this->src, loc_jp)) {
+				ret += this->X0201kana_table[*this->src - 0xA0];
+				this->src++;
+			}
+			else if (_ismbblead_l(*this->src, loc_jp) && _ismbbtrail_l(*(this->src + 1), loc_jp)) {
+				wchar_t tmp;
+				int nret = _mbtowc_l(&tmp, (const char*)this->src, 2, loc_jp);
 
-					if (nret != 2) {
-						std::wcerr << L"character convert failed." << std::endl;
-					}
-					ret += tmp;
-					this->src += 2;
+				if (nret != 2) {
+					std::wcerr << L"character convert failed." << std::endl;
 				}
+				ret += tmp;
+				this->src += 2;
 			}
 		}
 		return ret;
@@ -120,18 +113,9 @@ class toTXT {
 		return in;
 	}
 
-	bool encoding_MSX = false;
-	bool is_end(void)
+	virtual bool is_end(void)
 	{
-		if (this->encoding_MSX) {
-			if (*(unsigned __int32*)this->src == 0x1A) {
-				return true;
-			}
-			else {
-				return false;
-			}
-		}
-		else if (*(unsigned __int32*)this->src == 0) {
+		if (*(unsigned __int32*)this->src == 0) {
 			return true;
 		}
 		else if (*(unsigned __int32*)this->src == 0x02020102) {
@@ -256,18 +240,35 @@ class toTXT {
 		return ret;
 	}
 
+	virtual std::wstring command_Y(void)  // Extra1
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
+	virtual std::wstring command_Z(void) // Extra2
+	{
+		std::wstring p1 = CALI();
+		std::wstring p2 = CALI();
+		std::wstring ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
+		return ret;
+	}
+
 	virtual unsigned __int16 get_16(void) = 0;
 	virtual unsigned __int16 get_Vword(void) = 0;
 	virtual std::wstring CALI(void) = 0;
 	virtual std::wstring command_Q(void) = 0; // Save Playdata
 	virtual std::wstring command_L(void) = 0; // Load Playdata
-	virtual std::wstring command_Y(void) = 0; // Extra1
-	virtual std::wstring command_Z(void) = 0; // Extra2
 
 protected:
 	unsigned __int8* src = nullptr;
 	unsigned __int8* src_start = nullptr;
 	unsigned __int8* src_end = nullptr;
+
+	// printfの出力用バッファ
+
 	wchar_t printf_buf[1000] = { 0 };
 	wchar_t printf_buf_len = 1000;
 	const wchar_t* text_color[8] = { L"(Black)", L"(Blue)", L"(Red)", L"(Magenta)", L"(Green)", L"(Cyan)", L"(Yellow)", L"(White)" };
@@ -536,15 +537,31 @@ protected:
 	}
 
 public:
-	// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
-	const wchar_t* X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
 
-	void init(std::vector<__int8>& s, bool enc = false)
+	void init(std::vector<__int8>& s)
 	{
 		this->src_start = this->src = (unsigned __int8*)&*s.begin();
 		this->src_end = (unsigned __int8*)&*s.end();
-		this->encoding_MSX = enc;
 		this->header = this->get_16();
+	}
+
+	bool is_end_MSX(void)
+	{
+		if (*(unsigned __int32*)this->src == 0x1A) {
+			return true;
+		}
+		return false;
+	}
+
+	std::wstring get_string_MSX(void)
+	{
+		std::wstring ret;
+
+		while (this->MSX_char_table[*this->src] != 0) {
+			ret += MSX_char_table[*this->src];
+			this->src++;
+		}
+		return ret;
 	}
 
 	std::wstring get_stringM(void)
@@ -899,23 +916,18 @@ class toTXT0 : public toTXT {
 		std::wstring ret{ L"\nLoad Playdata\n" };
 		return ret;
 	}
+};
 
-	std::wstring command_Y(void)
+class toTXT0m : public toTXT0 {
+	bool is_end(void)
 	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
-		return ret;
+		return this->is_end_MSX();
 	}
 
-	std::wstring command_Z(void)
+	std::wstring get_string(void)
 	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
-		return ret;
+		return this->get_string_MSX();
 	}
-
 };
 
 class toTXT1 : public toTXT {
@@ -927,11 +939,6 @@ class toTXT1 : public toTXT {
 	unsigned __int16 inline get_Vword(void)
 	{
 		return this->VL_Value();
-	}
-
-	std::wstring inline CALI(void)
-	{
-		return this->CALI5();
 	}
 
 	std::wstring command_Q(void)
@@ -948,39 +955,41 @@ class toTXT1 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_Y(void)
+public:
+	std::wstring inline CALI(void)
 	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
-		return ret;
+		return this->CALI5();
+	}
+};
+
+class toTXT1m : public toTXT1 {
+	bool is_end(void)
+	{
+		return this->is_end_MSX();
 	}
 
+	std::wstring get_string(void)
+	{
+		return this->get_string_MSX();
+	}
+};
+
+class toTXT1g : public toTXT1m {
 	std::wstring command_Z(void)
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring ret;
 
-		if (this->is_GakuenSenkiMSX) {
-			unsigned __int32 f = std::stoul(p1);
-			if (f == 1) {
-				ret = L"\nLoad Graphics " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
-			}
-			else {
-				ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
-			}
+		unsigned __int32 f = std::stoul(p1);
+		if (f == 1) {
+			ret = L"\nLoad Graphics " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
 		}
 		else {
 			ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
 		}
 		return ret;
 	}
-
-
-public:
-	bool is_GakuenSenkiMSX = false;
-
 };
 
 class toTXT2 : public toTXT {
@@ -1166,24 +1175,6 @@ class toTXT2 : public toTXT {
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
-		return ret;
-	}
-
-	std::wstring command_Y(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
-	virtual std::wstring command_Z(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret;
-
-		ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
 		return ret;
 	}
 
@@ -1452,24 +1443,6 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_Y(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret = L"\nExtra1 " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
-	virtual std::wstring command_Z(void)
-	{
-		std::wstring p1 = CALI();
-		std::wstring p2 = CALI();
-		std::wstring ret;
-
-		ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
-		return ret;
-	}
-
 public:
 	std::wstring inline CALI(void)
 	{
@@ -1500,7 +1473,7 @@ class toTXT3t2 : public toTXT3 {
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
 		std::wstring p3 = CALI();
-		std::wstring ret = L"\nT " + p1 + L", " + p2  + L", " + p3 + L"\n";
+		std::wstring ret = L"\nT " + p1 + L", " + p2 + L", " + p3 + L"\n";
 		return ret;
 	}
 
