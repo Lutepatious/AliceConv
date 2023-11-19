@@ -21,28 +21,12 @@ enum class VarName {
 };
 
 class toTXT {
-	// リトルヴァンパイアMSX版と学園戦記MSX版用文字変換テーブル
-	const wchar_t* MSX_char_table = L" !\"#$%&\'()*+,-./0123456789[]<=>?"
-		L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
-		L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
-		L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
-		L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
-		L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ\x0000\\\x0000^\x0000"
-		L"\x0000\x0000\x0000\x0000\x0000\x0000をぁぃぅぇぉゃゅょっ\x0000あいうえおかきくけこさしすせそ"
-		L"\x0000。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソ"
-		L"タチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン゛゜"
-		L"たちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん\x0000\x0000";
-
-	// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
-	const wchar_t* X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
-
-	// 清音濁音変換テーブル
-	const wchar_t* seion = L"うかきくけこさしすせそたちつてとはひふへほウカキクケコサシスセソタチツテトハヒフヘホ";
-	const wchar_t* dakuon = L"ゔがぎぐげござじずぜぞだぢづでどばびぶべぼヴガギグゲゴザジズゼゾダヂヅデドバビブベボ";
-
-	// 清音半濁音変換テーブル
-	const wchar_t* seion2 = L"はひふへほハヒフヘホ";
-	const wchar_t* handakuon = L"ぱぴぷぺぽパピプペポ";
+	static const wchar_t* MSX_char_table;
+	static const wchar_t* X0201kana_table;
+	static const wchar_t* seion;
+	static const wchar_t* dakuon;
+	static const wchar_t* seion2;
+	static const wchar_t* handakuon;
 
 	// 元ソース
 	// https://www.wabiapp.com/WabiSampleSource/windows/replace_string_w.html
@@ -240,7 +224,7 @@ class toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_Y(void)  // Extra1
+	virtual std::wstring command_Y(void) // Extra1
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -268,7 +252,6 @@ protected:
 	unsigned __int8* src_end = nullptr;
 
 	// printfの出力用バッファ
-
 	wchar_t printf_buf[1000] = { 0 };
 	wchar_t printf_buf_len = 1000;
 	const wchar_t* text_color[8] = { L"(Black)", L"(Blue)", L"(Red)", L"(Magenta)", L"(Green)", L"(Cyan)", L"(Yellow)", L"(White)" };
@@ -537,7 +520,6 @@ protected:
 	}
 
 public:
-
 	void init(std::vector<__int8>& s)
 	{
 		this->src_start = this->src = (unsigned __int8*)&*s.begin();
@@ -819,7 +801,6 @@ public:
 				decoded_command.second = this->command_Q();
 				break;
 
-
 			case 'X':
 			{
 				auto p1 = std::to_wstring(this->get_byte());
@@ -889,29 +870,53 @@ public:
 	}
 };
 
+// リトルヴァンパイアMSX版と学園戦記MSX版用文字変換テーブル
+const wchar_t* toTXT::MSX_char_table =
+L" !\"#$%&\'()*+,-./0123456789[]<=>?"
+L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
+L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
+L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
+L"\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000\x0000"
+L"@ABCDEFGHIJKLMNOPQRSTUVWXYZ\x0000\\\x0000^\x0000"
+L"\x0000\x0000\x0000\x0000\x0000\x0000をぁぃぅぇぉゃゅょっ\x0000あいうえおかきくけこさしすせそ"
+L"\x0000。「」、・ヲァィゥェォャュョッーアイウエオカキクケコサシスセソ"
+L"タチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワン゛゜"
+L"たちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん\x0000\x0000";
+
+// Shift-JISエンコードでのカタカナ→ひらがな復元テーブル
+const wchar_t* toTXT::X0201kana_table = L" 。「」、・をぁぃぅぇぉゃゅょっーあいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわん゛゜";
+
+// 清音濁音変換テーブル
+const wchar_t* toTXT::seion = L"うかきくけこさしすせそたちつてとはひふへほウカキクケコサシスセソタチツテトハヒフヘホ";
+const wchar_t* toTXT::dakuon = L"ゔがぎぐげござじずぜぞだぢづでどばびぶべぼヴガギグゲゴザジズゼゾダヂヅデドバビブベボ";
+
+// 清音半濁音変換テーブル
+const wchar_t* toTXT::seion2 = L"はひふへほハヒフヘホ";
+const wchar_t* toTXT::handakuon = L"ぱぴぷぺぽパピプペポ";
+
 class toTXT0 : public toTXT {
-	unsigned __int16 inline get_16(void)
+	unsigned __int16 inline get_16(void) override
 	{
 		return 0;
 	}
 
-	unsigned __int16 inline get_Vword(void)
+	unsigned __int16 inline get_Vword(void) override
 	{
 		return *this->src++;
 	}
 
-	std::wstring inline CALI(void)
+	std::wstring inline CALI(void) override
 	{
 		return this->CALI3();
 	}
 
-	std::wstring command_Q(void)
+	std::wstring command_Q(void) override
 	{
 		std::wstring ret{ L"\nSave Playdata\n" };
 		return ret;
 	}
 
-	std::wstring command_L(void)
+	std::wstring command_L(void) override
 	{
 		std::wstring ret{ L"\nLoad Playdata\n" };
 		return ret;
@@ -919,36 +924,36 @@ class toTXT0 : public toTXT {
 };
 
 class toTXT0m : public toTXT0 {
-	bool is_end(void)
+	bool is_end(void) override
 	{
 		return this->is_end_MSX();
 	}
 
-	std::wstring get_string(void)
+	std::wstring get_string(void) override
 	{
 		return this->get_string_MSX();
 	}
 };
 
 class toTXT1 : public toTXT {
-	unsigned __int16 inline get_16(void)
+	unsigned __int16 inline get_16(void) override
 	{
 		return this->get_word();
 	}
 
-	unsigned __int16 inline get_Vword(void)
+	unsigned __int16 inline get_Vword(void) override
 	{
 		return this->VL_Value();
 	}
 
-	std::wstring command_Q(void)
+	std::wstring command_Q(void) override
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_L(void)
+	std::wstring command_L(void) override
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
@@ -956,26 +961,26 @@ class toTXT1 : public toTXT {
 	}
 
 public:
-	std::wstring inline CALI(void)
+	std::wstring inline CALI(void) override
 	{
 		return this->CALI5();
 	}
 };
 
 class toTXT1m : public toTXT1 {
-	bool is_end(void)
+	bool is_end(void) override
 	{
 		return this->is_end_MSX();
 	}
 
-	std::wstring get_string(void)
+	std::wstring get_string(void) override
 	{
 		return this->get_string_MSX();
 	}
 };
 
 class toTXT1g : public toTXT1m {
-	std::wstring command_Z(void)
+	std::wstring command_Z(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -993,17 +998,17 @@ class toTXT1g : public toTXT1m {
 };
 
 class toTXT2 : public toTXT {
-	unsigned __int16 inline get_16(void)
+	unsigned __int16 inline get_16(void) override
 	{
 		return get_word();
 	}
 
-	unsigned __int16 inline get_Vword(void)
+	unsigned __int16 inline get_Vword(void) override
 	{
 		return this->VL_Value();
 	}
 
-	virtual std::wstring command_B(void)
+	virtual std::wstring command_B(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1015,7 +1020,7 @@ class toTXT2 : public toTXT {
 		std::wstring ret = L"\nB " + p1 + L", " + p2 + L", " + p3 + L", " + p4 + L", " + p5 + L", " + p6 + L", " + p7 + L"\n";
 		return ret;
 	}
-	virtual std::wstring command_D(void)
+	virtual std::wstring command_D(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1029,7 +1034,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_E(void)
+	virtual std::wstring command_E(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1038,7 +1043,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_I(void)
+	virtual std::wstring command_I(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1047,7 +1052,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_J(void)
+	std::wstring command_J(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1055,7 +1060,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_N(void)
+	std::wstring command_N(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1063,7 +1068,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_T(void)
+	std::wstring command_T(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1072,7 +1077,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_O(void)
+	std::wstring command_O(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1081,13 +1086,13 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_M(void)
+	std::wstring command_M(void) override
 	{
 		std::wstring ret = L"\n(" + this->get_stringM() + L")\n";
 		return ret;
 	}
 
-	std::wstring command_H(void)
+	std::wstring command_H(void) override
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1099,7 +1104,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_V(void)
+	virtual std::wstring command_V(void) override
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1132,7 +1137,7 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_W(void)
+	virtual std::wstring command_W(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1142,14 +1147,14 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_G(void) // Load Graphics
+	std::wstring command_G(void) override // Load Graphics
 	{
 		std::wstring p1 = CALI();
 		std::wstring ret = L"\nCG " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_U(void) // Load Graphics
+	std::wstring command_U(void) override // Load Graphics
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1157,21 +1162,21 @@ class toTXT2 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_P(void) // Set Text Color
+	std::wstring command_P(void) override // Set Text Color
 	{
 		// Set text color Palette 0-15
 		auto p1 = this->get_byte();
 		std::wstring ret = L"(Color #" + std::to_wstring(p1) + L")";
 		return ret;
 	}
-	std::wstring command_Q(void)
+	std::wstring command_Q(void) override
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_L(void)
+	std::wstring command_L(void) override
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
@@ -1179,14 +1184,14 @@ class toTXT2 : public toTXT {
 	}
 
 public:
-	std::wstring inline CALI(void)
+	std::wstring inline CALI(void) override
 	{
 		return this->CALI7();
 	}
 };
 
 class toTXT2d : public toTXT2 {
-	std::wstring command_I(void)
+	std::wstring command_I(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1197,7 +1202,7 @@ class toTXT2d : public toTXT2 {
 };
 
 class toTXT2r4 : public toTXT2 {
-	std::wstring command_W(void)
+	std::wstring command_W(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1206,7 +1211,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_V(void)
+	std::wstring command_V(void) override
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1214,7 +1219,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_B(void)
+	std::wstring command_B(void) override
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1222,7 +1227,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_I(void)
+	std::wstring command_I(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1230,7 +1235,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_D(void)
+	std::wstring command_D(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1239,7 +1244,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_E(void)
+	std::wstring command_E(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1251,7 +1256,7 @@ class toTXT2r4 : public toTXT2 {
 		return ret;
 	}
 
-	std::wstring command_Z(void)
+	std::wstring command_Z(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1264,17 +1269,17 @@ class toTXT2r4 : public toTXT2 {
 };
 
 class toTXT3 : public toTXT {
-	unsigned __int16 inline get_16(void)
+	unsigned __int16 inline get_16(void) override
 	{
 		return get_word();
 	}
 
-	unsigned __int16 inline get_Vword(void)
+	unsigned __int16 inline get_Vword(void) override
 	{
 		return this->VL_Value();
 	}
 
-	std::wstring command_block_begin(void)
+	std::wstring command_block_begin(void) override
 	{
 		auto p1 = this->CALI();
 		auto p2 = std::to_wstring(this->get_word());
@@ -1282,7 +1287,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_block_end(void)
+	std::wstring command_block_end(void) override
 	{
 		auto p1 = this->CALI();
 		auto p2 = std::to_wstring(this->get_byte());
@@ -1290,7 +1295,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_P(void) // Set Text Color
+	virtual std::wstring command_P(void) override // Set Text Color
 	{
 		// Set text color Pal using RGB
 		std::wstring p1 = CALI();
@@ -1301,14 +1306,14 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_K(void)
+	std::wstring command_K(void) override
 	{
 		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring ret = L"\nK " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_J(void)
+	std::wstring command_J(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1316,7 +1321,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_O(void)
+	std::wstring command_O(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = std::to_wstring(VL_Value());
@@ -1325,7 +1330,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_N(void)
+	virtual std::wstring command_N(void) override
 	{
 		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring p2 = CALI();
@@ -1334,7 +1339,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_T(void)
+	virtual std::wstring command_T(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1342,7 +1347,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_W(void)
+	std::wstring command_W(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1351,7 +1356,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_V(void)
+	std::wstring command_V(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1359,7 +1364,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_B(void)
+	virtual std::wstring command_B(void) override
 	{
 		std::wstring p1 = std::to_wstring(this->get_byte());
 		std::wstring p2 = CALI();
@@ -1372,7 +1377,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_H(void)
+	std::wstring command_H(void) override
 	{
 		auto p1 = get_byte();
 		std::wstring p2 = CALI();
@@ -1384,7 +1389,7 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	virtual std::wstring command_I(void)
+	virtual std::wstring command_I(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1396,13 +1401,13 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_M(void)
+	std::wstring command_M(void) override
 	{
 		std::wstring ret = L"\n(" + this->get_stringM() + L")\n";
 		return ret;
 	}
 
-	virtual std::wstring command_E(void)
+	virtual std::wstring command_E(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1414,14 +1419,14 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_G(void) // Load Graphics
+	std::wstring command_G(void) override // Load Graphics
 	{
 		std::wstring p1 = CALI();
 		std::wstring ret = L"\nCG " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_U(void) // Load Graphics
+	std::wstring command_U(void) override // Load Graphics
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1429,14 +1434,14 @@ class toTXT3 : public toTXT {
 		return ret;
 	}
 
-	std::wstring command_Q(void)
+	std::wstring command_Q(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring ret = L"\nSave Playdata " + p1 + L"\n";
 		return ret;
 	}
 
-	std::wstring command_L(void)
+	std::wstring command_L(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring ret = L"\nLoad Playdata " + p1 + L"\n";
@@ -1444,7 +1449,7 @@ class toTXT3 : public toTXT {
 	}
 
 public:
-	std::wstring inline CALI(void)
+	std::wstring inline CALI(void) override
 	{
 		return this->CALI7();
 	}
@@ -1452,7 +1457,7 @@ public:
 
 class toTXT3t2 : public toTXT3 {
 
-	std::wstring command_P(void) // Set Text Color
+	std::wstring command_P(void) override // Set Text Color
 	{
 		// Set text color Pal using RGB
 		std::wstring p1 = CALI();
@@ -1460,7 +1465,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_N(void)
+	std::wstring command_N(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1468,7 +1473,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_T(void)
+	std::wstring command_T(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1477,7 +1482,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_B(void)
+	std::wstring command_B(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1485,7 +1490,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_I(void)
+	std::wstring command_I(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1494,7 +1499,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_E(void)
+	std::wstring command_E(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
@@ -1502,7 +1507,7 @@ class toTXT3t2 : public toTXT3 {
 		return ret;
 	}
 
-	std::wstring command_Z(void)
+	std::wstring command_Z(void) override
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
