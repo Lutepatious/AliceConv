@@ -143,7 +143,7 @@ class toTXT {
 	virtual std::wstring command_G(void) // Load Graphics
 	{
 		auto p1 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L"\n";
 		return ret;
 	}
 
@@ -151,7 +151,7 @@ class toTXT {
 	{
 		auto p1 = std::to_wstring(this->get_byte());
 		auto p2 = std::to_wstring(this->get_byte());
-		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L", Transparent " + p2 + L"\n";
 		return ret;
 	}
 
@@ -800,7 +800,7 @@ public:
 			case 'S':
 			{
 				auto p1 = std::to_wstring(this->get_byte());
-				decoded_command.second = L"\nLoad Sound " + p1 + L"\n";
+				decoded_command.second = L"\nSound " + p1 + L"\n";
 				break;
 			}
 
@@ -983,7 +983,7 @@ class toTXT1g : public toTXT1m {
 
 		unsigned __int32 f = std::stoul(p1);
 		if (f == 1) {
-			ret = L"\nLoad Graphics " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
+			ret = L"\nCG " + std::to_wstring(std::stoul(p2) + 250) + L"\n";
 		}
 		else {
 			ret = L"\nExtra2 " + p1 + L", " + p2 + L"\n";
@@ -1145,7 +1145,7 @@ class toTXT2 : public toTXT {
 	std::wstring command_G(void) // Load Graphics
 	{
 		std::wstring p1 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L"\n";
 		return ret;
 	}
 
@@ -1153,7 +1153,7 @@ class toTXT2 : public toTXT {
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L", Transparent " + p2 + L"\n";
 		return ret;
 	}
 
@@ -1417,7 +1417,7 @@ class toTXT3 : public toTXT {
 	std::wstring command_G(void) // Load Graphics
 	{
 		std::wstring p1 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L"\n";
 		return ret;
 	}
 
@@ -1425,7 +1425,7 @@ class toTXT3 : public toTXT {
 	{
 		std::wstring p1 = CALI();
 		std::wstring p2 = CALI();
-		std::wstring ret = L"\nLoad Graphics " + p1 + L", Transparent " + p2 + L"\n";
+		std::wstring ret = L"\nCG " + p1 + L", Transparent " + p2 + L"\n";
 		return ret;
 	}
 
