@@ -14,7 +14,7 @@
 ソースコードは公開されています。気になる方はソースを参照して自分で修正、コンパイルするか、利用しないでください。
 
 このソフトウェア群は年齢制限のある市販ソフトウェアに対して動作します。
-なお、該当するソフトウェアの最新版の販売から20年経過していることを確認しています。
+なお、該当するソフトウェアの最新版の販売から25年経過していることを確認しています。
 該当するソフトウェアの殆どが現在配布フリー宣言の下、著作権を維持した一定条件下での無償配布が認められています。
 これらの事から、このソフトウェア群により生成された全てのデータの再配布を禁止します。個人で楽しむためだけに利用してください。
 
@@ -44,13 +44,14 @@ PC-9801の実機が壊れた。
 DATSplitter.exe		アリスソフトの.DAT形式アーカイブからファイルを切り出す。
 N88Splitter.exe		N88-BASIC形式のディスクイメージからファイルを切り出す。
 WaveCorrector.exe	Only You 世紀末のジュリエット達のAWAV.DATに含まれるMicrosoft WAVE形式のファイルを補正。
-toPNG.exe			VSPtoPNG.exe, TIFFtoPNG_Y1CD.exe, DRStoPNG.exe, MSXtoPNG.exe 等々の置き換え。
+toPNG.exe			CGデータをPNGに変換
 MAKO2toVGM.exe		MAKO2形式の楽曲データをFM/SSG音源は.vgm、PCM音源は.wavに変換する。
 MAKO1toVGM.exe		MAKO1形式の楽曲データを.vgmに変換する。
 EOMMLtoVGM.exe		eomml形式の楽曲データを.vgmに変換する。
 PSGtoVGM.exe		MSX用PSGの楽曲データを.vgmに変換する。
 PC88toVGM.exe		PC-8801SR版のMML形式の楽曲データを.vgmに変換する。
 MCLtoVGM.exe		MCL形式というかMSXのMML内部形式の楽曲データを.vgmに変換する。
+toTXT.exe			シナリオデータをテキスト化
 
 廃止物
 PC98PCMtoWave.exe	PC-9801版闘神都市IIとAliceの館3のAMUS.DATの後半やAMSE.DATに収録された4bitPCMデータをMicrosoft WAVE形式に変換
@@ -87,7 +88,6 @@ PC-8801版Little Vampire向けに-lオプションを追加しました。
 -lを指定すると自動でlinkmapファイルを読み込むものです。
 使い方は利用手順.txtに入っています。
 
-
 ### N88Splitter.exe ###
 
 コマンドラインで
@@ -118,7 +118,7 @@ wsetargv.objをリンクしてあるのでワイルドカードが使えます�
 
 ### toPNG.exe ###
 
-新しいMSXtoPNG.exeに下敷きに、C++ STLで書き直したツールです。
+新しいMSXtoPNG.exeを下敷きに、C++17 STLで書き直したツールです。
 MSXtoPNG.exe, DRStoPNG.exe, DRStoPNG_TOWNS.exe,TIFFtoPNG_Y1CD.exeの機能を取り込み、
 闘神都市X68000版でのPCG情報の変換機能、TownsMENUのアイコン変換機能、GAIJI.DATの変換機能も追加しました。
 
@@ -172,22 +172,8 @@ MSX2版向けのオプション
 これら全てはtoPNG.exeに機能を統合しました。
 
 ### PC98PCMtoWave.exe ###
-廃止しました。MAKO2toVGM.exeに統合しました。
-
-コマンドラインで
-path>PC98PCMtoWave ファイル
-とすると4bitPCMデータをMicrosoft WAVE形式に変換します。
-一応末尾チェックはしています。
-wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
-
 ### TownsPCMtoWave.exe ###
-廃止しました。MAKO2toVGM.exeに統合しました。
-
-コマンドラインで
-path>TownsPCMtoWave ファイル
-とするとFM TOWNS標準SND形式8bitPCMデータをMicrosoft WAVE形式に変換します。
-一応末尾チェックはしています。
-wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+MAKO2toVGM.exeに統合しました。
 
 ### MAKO2toVGM.exe ###
 MAKO2フォーマットの楽曲をFM/SSG音源は.vgmに、PCM音源は.WAVに変換します。
@@ -352,6 +338,28 @@ path>MCLtoVGM ファイル
 VGMPlay, in_vgmプラグイン, foo_input_vgmプラグインといったソフトなら正しく再生されます。
 MDPlayerでは音が1オクターブ高くなります。
 
+### toTXT.exe ###
+シナリオデータ(?DISK.DATなどし含まれる)をテキスト形式に書き出します。
+まだ開発途上ですが最低限の動作が確認されたので公開します。
+
+コマンドラインで
+path>toTXT オプション ファイル
+とします。
+wsetargv.objをリンクしてあるのでワイルドカードが使えます。ファイル複数指定可。
+
+オプションは以下の通り
+
+-0	Little Vampire PC-8801版, PC-9801版
+-0m	Little Vampire MSX2版
+-1g 学園戦記 MSX2版
+-1  RanceからD.P.S -SG-(set2, set3含む)までの全て 
+-2	RanceIIIからあゆみちゃん物語まで
+	(但しD.P.S -SG- set2, set3, DALK, DALKヒントディスク, ぷろ すちゅーでんとGのSystem3版, あゆみちゃん物語のPC-9801 256色版とSystem3版を除く、
+	DALKヒントディスクに含まれるDr.STOPのアップデートは含む)
+-2d DALK, DALKヒントディスクのみ(DALKヒントディスクに含まれるDr.STOPのアップデートは除く)
+-2r RanceIV, RanceIVヒントディスクのみ
+-3	AmbivalenZから人魚 -蘿子-まで(但し闘神都市II, ALICEの館3に含まれるにせなぐりまくりたわあ, 学園KINGを除く)
+-3t 闘神都市II, ALICEの館3に含まれるにせなぐりまくりたわあ, 学園KINGのみ
 
 現在
 
@@ -365,7 +373,6 @@ PC-88VA版Rance IIヒントディスク
 鬼畜王ランスなどSystem 3.5以降のゲームに対応する気はありません。
 既存のツールが動かないわけでもないので。
 
-Azure DevOpsに登録しているのですが、主にBoehm GCとの絡みでエラーが出ています。
-少しづつC++ 17ベースのコードに変えているので対応までしばらくかかる見込みです。
+ほぼC++17に書き換えが進み、Azure DevOpsを利用したので32bit版はそちらで生成されます。
 DATSplitterみたいな物を書き換えると全動作チェックが入るので進みにくいです。
 
