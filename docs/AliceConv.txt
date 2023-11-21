@@ -358,7 +358,8 @@ wsetargv.objをリンクしてあるのでワイルドカードが使えます�
 	DALKヒントディスクに含まれるDr.STOPのアップデートは含む)
 -2d DALK, DALKヒントディスクのみ(DALKヒントディスクに含まれるDr.STOPのアップデートは除く)
 -2r RanceIV, RanceIVヒントディスクのみ
--3	AmbivalenZから人魚 -蘿子-まで(但し闘神都市II, ALICEの館3に含まれるにせなぐりまくりたわあ, 学園KINGを除く)
+-3	AmbivalenZから人魚 -蘿子-まで(但し闘神都市II, ALICEの館3に含まれるにせなぐりまくりたわあ、学園KINGを除く、
+	ぷろ すちゅーでんとGのSystem3版, あゆみちゃん物語のPC-9801 256色版とSystem3版を含む)
 -3t 闘神都市II, ALICEの館3に含まれるにせなぐりまくりたわあ, 学園KINGのみ
 
 現在
