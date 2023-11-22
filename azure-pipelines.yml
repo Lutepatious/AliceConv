@@ -84,5 +84,4 @@ steps:
     feedsToUsePublish: 'internal'
     vstsFeedPublish: 'a2f6766f-c9eb-45ac-8864-d379f2268234/501becc7-847a-4609-b440-eb0ae84ff952'
     vstsFeedPackagePublish: 'aliceconv'
-    versionOption: 'custom'
-    versionPublish: '2.0.0'
+    versionOption: 'patch'
