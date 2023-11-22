@@ -1,5 +1,6 @@
 # AliceConv
 Converters for OLD (to System3.x) Alicesoft Product.　They replace DOS based similer tool.
+docs/AliceConv.html
 
 0. Archive extractor
 N88Splitter
@@ -16,4 +17,5 @@ PSGtoVGM
 PC98toVGM
 MCLtoVGM
 
-docs/AliceConv.html
+3. Scenario Decoder (experimental)
+toTXT

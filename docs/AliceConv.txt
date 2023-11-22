@@ -349,10 +349,10 @@ wsetargv.objをリンクしてあるのでワイルドカードが使えます�
 
 オプションは以下の通り
 
--0	Little Vampire PC-8801版, PC-9801版
+-0	Little Vampire PC-8801版, PC-9801版 (Alice-NET版を除く)
 -0m	Little Vampire MSX2版
 -1g 学園戦記 MSX2版
--1  RanceからD.P.S -SG-(set2, set3含む)までの全て 
+-1  RanceからD.P.S -SG-(set2, set3含む)まで。 Little Vampire Alice-NET版
 -2	RanceIIIからあゆみちゃん物語まで
 	(但しD.P.S -SG- set2, set3, DALK, DALKヒントディスク, ぷろ すちゅーでんとGのSystem3版, あゆみちゃん物語のPC-9801 256色版とSystem3版を除く、
 	DALKヒントディスクに含まれるDr.STOPのアップデートは含む)
