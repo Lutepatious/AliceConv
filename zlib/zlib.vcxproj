@@ -233,6 +233,7 @@
     <ClInclude Include="ints.h" />
     <ClInclude Include="ioapi.h" />
     <ClInclude Include="iowin32.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="skipset.h" />
     <ClInclude Include="trees.h" />
     <ClInclude Include="unzip.h" />

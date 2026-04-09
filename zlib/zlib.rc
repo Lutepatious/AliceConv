@@ -1,37 +1,88 @@
-#include <winver.h>
-#include "zlib.h"
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+/////////////////////////////////////////////////////////////////////////////
+// 日本語 (日本) resources
 
-VS_VERSION_INFO		VERSIONINFO
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_JPN)
+LANGUAGE LANG_JAPANESE, SUBLANG_DEFAULT
+#pragma code_page(932)
 
-  FILEVERSION		ZLIB_VER_MAJOR,ZLIB_VER_MINOR,ZLIB_VER_REVISION,0
-  PRODUCTVERSION	ZLIB_VER_MAJOR,ZLIB_VER_MINOR,ZLIB_VER_REVISION,0
-  FILEFLAGSMASK		VS_FFI_FILEFLAGSMASK
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,3,2,0
+ PRODUCTVERSION 1,3,2,0
+ FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
-  FILEFLAGS		1
+ FILEFLAGS 0x1L
 #else
-  FILEFLAGS		0
+ FILEFLAGS 0x0L
 #endif
-  FILEOS		VOS__WINDOWS32
-  FILETYPE		VFT_DLL
-  FILESUBTYPE		0	// not used
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
 BEGIN
-  BLOCK "StringFileInfo"
-  BEGIN
-    BLOCK "040904E4"
-    //language ID = U.S. English, char set = Windows, Multilingual
+    BLOCK "StringFileInfo"
     BEGIN
-      VALUE "FileDescription",	"zlib data compression library\0"
-      VALUE "FileVersion",	ZLIB_VERSION "\0"
-      VALUE "InternalName",	"zlib1.dll\0"
-      VALUE "LegalCopyright",	"(C) 1995-2026 Jean-loup Gailly & Mark Adler\0"
-      VALUE "OriginalFilename",	"zlib1.dll\0"
-      VALUE "ProductName",	"zlib\0"
-      VALUE "ProductVersion",	ZLIB_VERSION "\0"
-      VALUE "Comments",		"For more information visit https://www.zlib.net/\0"
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "Comments", "For more information visit https://www.zlib.net/"
+            VALUE "FileDescription", "zlib data compression library"
+            VALUE "FileVersion", "1.3.2"
+            VALUE "InternalName", "zlib1.dll"
+            VALUE "LegalCopyright", "(C) 1995-2026 Jean-loup Gailly & Mark Adler"
+            VALUE "OriginalFilename", "zlib.dll"
+            VALUE "ProductName", "zlib"
+            VALUE "ProductVersion", "1.3.2"
+        END
     END
-  END
-  BLOCK "VarFileInfo"
-  BEGIN
-    VALUE "Translation", 0x0409, 1252
-  END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
 END
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+#endif    // 日本語 (日本) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
