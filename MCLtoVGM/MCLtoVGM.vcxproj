@@ -31,7 +31,8 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <SpectreMitigation>Spectre</SpectreMitigation>
+    <SpectreMitigation>
+    </SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -39,14 +40,16 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <SpectreMitigation>Spectre</SpectreMitigation>
+    <SpectreMitigation>
+    </SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-    <SpectreMitigation>Spectre</SpectreMitigation>
+    <SpectreMitigation>
+    </SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -54,7 +57,8 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-    <SpectreMitigation>Spectre</SpectreMitigation>
+    <SpectreMitigation>
+    </SpectreMitigation>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -99,13 +103,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AssemblerOutput>All</AssemblerOutput>
       <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
-      <DiagnosticsFormat>
-      </DiagnosticsFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <IntelJCCErratum>true</IntelJCCErratum>
+      <IntelJCCErratum>
+      </IntelJCCErratum>
       <OpenMPSupport>true</OpenMPSupport>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -127,13 +132,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AssemblerOutput>All</AssemblerOutput>
       <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
-      <DiagnosticsFormat>
-      </DiagnosticsFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <IntelJCCErratum>true</IntelJCCErratum>
+      <IntelJCCErratum>
+      </IntelJCCErratum>
       <OpenMPSupport>true</OpenMPSupport>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -155,13 +161,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AssemblerOutput>All</AssemblerOutput>
       <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
-      <DiagnosticsFormat>
-      </DiagnosticsFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <IntelJCCErratum>true</IntelJCCErratum>
+      <IntelJCCErratum>
+      </IntelJCCErratum>
       <OpenMPSupport>true</OpenMPSupport>
       <StringPooling>true</StringPooling>
     </ClCompile>
@@ -183,13 +190,14 @@
       <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AssemblerOutput>All</AssemblerOutput>
       <AdditionalIncludeDirectories>../aclib</AdditionalIncludeDirectories>
-      <DiagnosticsFormat>
-      </DiagnosticsFormat>
-      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <DiagnosticsFormat>Column</DiagnosticsFormat>
+      <MultiProcessorCompilation>
+      </MultiProcessorCompilation>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <IntelJCCErratum>true</IntelJCCErratum>
+      <IntelJCCErratum>
+      </IntelJCCErratum>
       <OpenMPSupport>true</OpenMPSupport>
       <StringPooling>true</StringPooling>
     </ClCompile>
