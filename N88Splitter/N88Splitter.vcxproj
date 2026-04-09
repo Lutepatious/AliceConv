@@ -85,6 +85,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>false</VcpkgEnabled>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -96,13 +99,19 @@
       <AssemblerOutput>All</AssemblerOutput>
       <UseUnicodeForAssemblerListing>
       </UseUnicodeForAssemblerListing>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <StringPooling>
-      </StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <StringPooling>true</StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <StructMemberAlignment>
+      </StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,13 +132,19 @@
       <AssemblerOutput>All</AssemblerOutput>
       <UseUnicodeForAssemblerListing>
       </UseUnicodeForAssemblerListing>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <StringPooling>
-      </StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <StringPooling>true</StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <StructMemberAlignment>
+      </StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,13 +163,19 @@
       <AssemblerOutput>All</AssemblerOutput>
       <UseUnicodeForAssemblerListing>
       </UseUnicodeForAssemblerListing>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <StringPooling>
-      </StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <StringPooling>true</StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <StructMemberAlignment>
+      </StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -175,13 +196,19 @@
       <AssemblerOutput>All</AssemblerOutput>
       <UseUnicodeForAssemblerListing>
       </UseUnicodeForAssemblerListing>
-      <ControlFlowGuard>
-      </ControlFlowGuard>
-      <StringPooling>
-      </StringPooling>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+      <StringPooling>true</StringPooling>
       <IntelJCCErratum>true</IntelJCCErratum>
       <AdditionalIncludeDirectories>
       </AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
+      <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
+      <OpenMPSupport>true</OpenMPSupport>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
+      <StructMemberAlignment>
+      </StructMemberAlignment>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
